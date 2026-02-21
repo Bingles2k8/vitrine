@@ -34,7 +34,7 @@ export default function Home() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-1.5 mb-8">
               <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span className="text-xs font-mono text-amber-400 tracking-wide">Trusted by museums across the UK</span>
+              <span className="text-xs font-mono text-amber-400 tracking-wide">Built for museums of every size</span>
             </div>
 
             <h1 className="font-serif text-6xl md:text-8xl italic font-normal leading-none tracking-tight mb-6">
@@ -123,9 +123,9 @@ export default function Home() {
       {/* Logos */}
       <div className="border-y border-white/5 py-10 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-mono text-stone-600 uppercase tracking-widest text-center mb-8">Used by institutions across the UK</p>
+          <p className="text-xs font-mono text-stone-600 uppercase tracking-widest text-center mb-8">Designed for institutions of all sizes</p>
           <div className="flex flex-wrap items-center justify-center gap-12">
-            {['Victoria & Albert','Hackney Museum','Tullie House','Beaney','Pitt Rivers'].map(name => (
+            {['National museums','Regional galleries','Local heritage centres','University collections','Independent museums'].map(name => (
               <span key={name} className="font-serif italic text-stone-600 text-lg">{name}</span>
             ))}
           </div>
