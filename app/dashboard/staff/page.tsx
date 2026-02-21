@@ -1,0 +1,452 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+
+type AccessLevel = 'Admin' | 'Editor' | 'Viewer'
+
+interface StaffMember {
+  id: string
+  name: string
+  email: string
+  role: string
+  department: string
+  access: AccessLevel
+  created_at: string
+}
+
+const DEPARTMENTS = ['Curatorial', 'Conservation', 'Education', 'Operations', 'Finance', 'Marketing']
+const ACCESS_LEVELS: AccessLevel[] = ['Admin', 'Editor', 'Viewer']
+
+const ACCESS_DESCRIPTIONS: Record<AccessLevel, string> = {
+  Admin: 'Full access — can manage staff, site settings, and all artifacts',
+  Editor: 'Can add and edit artifacts, cannot manage staff or billing',
+  Viewer: 'Read-only access to the dashboard and collection',
+}
+
+const ACCESS_STYLES: Record<AccessLevel, string> = {
+  Admin: 'bg-red-50 text-red-600',
+  Editor: 'bg-amber-50 text-amber-700',
+  Viewer: 'bg-stone-100 text-stone-500',
+}
+
+export default function StaffPage() {
+  const [museum, setMuseum] = useState<any>(null)
+  const [staff, setStaff] = useState<StaffMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [filterDept, setFilterDept] = useState('All')
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    role: '',
+    department: 'Curatorial',
+    access: 'Editor' as AccessLevel,
+  })
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+
+    const { data: museum } = await supabase
+      .from('museums')
+      .select('*')
+      .eq('owner_id', user.id)
+      .single()
+
+    if (!museum) { router.push('/onboarding'); return }
+
+    const { data: staff } = await supabase
+      .from('staff_members')
+      .select('*')
+      .eq('museum_id', museum.id)
+      .order('created_at', { ascending: true })
+
+    setMuseum(museum)
+    setStaff(staff || [])
+    setLoading(false)
+  }
+
+  function set(field: string, value: string) {
+    setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function openAdd() {
+    setEditingId(null)
+    setForm({ name: '', email: '', role: '', department: 'Curatorial', access: 'Editor' })
+    setError('')
+    setModalOpen(true)
+  }
+
+  function openEdit(member: StaffMember) {
+    setEditingId(member.id)
+    setForm({
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department,
+      access: member.access,
+    })
+    setError('')
+    setModalOpen(true)
+  }
+
+  async function handleSave() {
+    if (!form.name.trim()) { setError('Name is required'); return }
+    if (!form.email.trim()) { setError('Email is required'); return }
+    if (!form.role.trim()) { setError('Job title is required'); return }
+    setSaving(true)
+    setError('')
+
+    if (editingId) {
+      const { error } = await supabase
+        .from('staff_members')
+        .update(form)
+        .eq('id', editingId)
+      if (error) { setError(error.message); setSaving(false); return }
+    } else {
+      const { error } = await supabase
+        .from('staff_members')
+        .insert({ ...form, museum_id: museum.id })
+      if (error) { setError(error.message); setSaving(false); return }
+    }
+
+    setSaving(false)
+    setModalOpen(false)
+    load()
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Remove ${name} from your team? They will lose access immediately.`)) return
+    await supabase.from('staff_members').delete().eq('id', id)
+    load()
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  const filtered = staff.filter(s => filterDept === 'All' || s.department === filterDept)
+  const depts = ['All', ...DEPARTMENTS]
+
+  const initials = (name: string) =>
+    name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+
+  const avatarColors: Record<string, string> = {
+    Curatorial: '#1a4a8a', Conservation: '#1a6b5a', Education: '#8a6020',
+    Operations: '#2d3a4a', Finance: '#4a2d6a', Marketing: '#6a2d2d',
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <p className="font-mono text-sm text-stone-400">Loading…</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-50 flex">
+
+      {/* Sidebar */}
+      <aside className="w-56 bg-white border-r border-stone-200 flex flex-col fixed top-0 left-0 bottom-0">
+        <div className="p-5 border-b border-stone-200">
+          <span className="font-serif text-xl italic text-stone-900">Vitrine<span className="text-amber-600">.</span></span>
+        </div>
+        <div className="p-4 border-b border-stone-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-lg">
+              {museum.logo_emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-stone-900 truncate">{museum.name}</div>
+              <div className="text-xs text-amber-600 tracking-wide uppercase">{museum.plan} plan</div>
+            </div>
+          </div>
+        </div>
+        <nav className="p-3 flex-1">
+          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
+          <div
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50"
+          >
+            <span>⬡</span> Artifacts
+          </div>
+          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Website</div>
+          <div
+            onClick={() => router.push('/dashboard/site')}
+            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50"
+          >
+            <span>◫</span> Site Builder
+          </div>
+          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
+          <div className="flex items-center gap-2 px-3 py-2 rounded bg-stone-900 text-white text-xs font-mono mb-1 cursor-pointer">
+            <span>◉</span> Staff & Roles
+            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Data</div>
+          <div onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50">
+            <span>◈</span> Analytics
+          </div>
+          </div>
+        </nav>
+        <div className="p-4 border-t border-stone-200">
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+          >
+            Sign out →
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="ml-56 flex-1 flex flex-col">
+        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0 z-10">
+          <span className="font-serif text-lg italic text-stone-900">Staff & Roles</span>
+          <button
+            onClick={openAdd}
+            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded"
+          >
+            + Invite staff
+          </button>
+        </div>
+
+        <div className="p-8">
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[
+              { label: 'Total Staff', value: staff.length },
+              { label: 'Admins', value: staff.filter(s => s.access === 'Admin').length },
+              { label: 'Editors', value: staff.filter(s => s.access === 'Editor').length },
+            ].map(s => (
+              <div key={s.label} className="bg-white border border-stone-200 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{s.label}</div>
+                <div className="font-serif text-4xl text-stone-900">{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filter tabs */}
+          <div className="flex items-center gap-2 mb-4">
+            {depts.map(d => (
+              <button
+                key={d}
+                onClick={() => setFilterDept(d)}
+                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
+                  filterDept === d
+                    ? 'bg-stone-900 text-white border-stone-900'
+                    : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+
+          {/* Table */}
+          {staff.length === 0 ? (
+            <div className="bg-white border border-stone-200 rounded-lg flex flex-col items-center justify-center py-24 text-center">
+              <div className="text-5xl mb-4">👥</div>
+              <div className="font-serif text-2xl italic text-stone-900 mb-2">No staff yet</div>
+              <p className="text-sm text-stone-400 mb-6">Invite your team to collaborate on the collection.</p>
+              <button
+                onClick={openAdd}
+                className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded"
+              >
+                + Invite your first team member
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Name</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Department</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Job Title</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Email</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Access</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(member => (
+                    <tr key={member.id} className="border-b border-stone-100 hover:bg-stone-50">
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-mono flex-shrink-0"
+                            style={{ background: avatarColors[member.department] || '#2d3a4a' }}
+                          >
+                            {initials(member.name)}
+                          </div>
+                          <div className="text-sm font-medium text-stone-900">{member.name}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-stone-500">{member.department}</td>
+                      <td className="px-4 py-3 text-xs text-stone-500">{member.role}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-400">{member.email}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-mono px-2 py-1 rounded-full ${ACCESS_STYLES[member.access]}`}>
+                          {member.access}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEdit(member)}
+                            className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <span className="text-stone-200">·</span>
+                          <button
+                            onClick={() => handleDelete(member.id, member.name)}
+                            className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Access level legend */}
+          <div className="mt-6 border border-stone-200 rounded-lg p-5 bg-white">
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-4">Access Levels</div>
+            <div className="space-y-3">
+              {ACCESS_LEVELS.map(level => (
+                <div key={level} className="flex items-center gap-4">
+                  <span className={`text-xs font-mono px-2 py-1 rounded-full w-16 text-center ${ACCESS_STYLES[level]}`}>
+                    {level}
+                  </span>
+                  <span className="text-xs text-stone-500">{ACCESS_DESCRIPTIONS[level]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      {/* Modal */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center"
+          onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}
+        >
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
+              <h2 className="font-serif text-xl italic text-stone-900">
+                {editingId ? 'Edit staff member' : 'Invite staff member'}
+              </h2>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="text-stone-300 hover:text-stone-900 transition-colors text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Full Name *</label>
+                  <input
+                    value={form.name}
+                    onChange={e => set('name', e.target.value)}
+                    placeholder="Dr. Jane Smith"
+                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Job Title *</label>
+                  <input
+                    value={form.role}
+                    onChange={e => set('role', e.target.value)}
+                    placeholder="Senior Curator"
+                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Email *</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => set('email', e.target.value)}
+                  placeholder="jane@yourmuseum.org"
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Department</label>
+                  <select
+                    value={form.department}
+                    onChange={e => set('department', e.target.value)}
+                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                  >
+                    {DEPARTMENTS.map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Access Level</label>
+                  <select
+                    value={form.access}
+                    onChange={e => set('access', e.target.value as AccessLevel)}
+                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                  >
+                    {ACCESS_LEVELS.map(a => <option key={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Access description */}
+              <div className="bg-stone-50 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-stone-500">{ACCESS_DESCRIPTIONS[form.access]}</p>
+              </div>
+
+              {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
+            </div>
+
+            <div className="px-6 py-4 border-t border-stone-100 flex justify-end gap-3">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="border border-stone-200 text-stone-500 text-sm font-mono px-5 py-2 rounded hover:bg-stone-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-stone-900 text-white text-sm font-mono px-5 py-2 rounded disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : editingId ? 'Save changes →' : 'Add to team →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}

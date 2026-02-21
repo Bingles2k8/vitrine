@@ -1,0 +1,177 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import Link from 'next/link'
+
+interface Artifact {
+  id: string
+  title: string
+  artist: string
+  year: string
+  medium: string
+  culture: string
+  status: string
+  emoji: string
+  image_url: string | null
+}
+
+interface Props {
+  artifacts: Artifact[]
+  slug: string
+  accentColor: string
+}
+
+export default function CollectionSearch({ artifacts, slug, accentColor }: Props) {
+  const [query, setQuery] = useState('')
+  const [activeMedium, setActiveMedium] = useState('All')
+  const [activeStatus, setActiveStatus] = useState('All')
+
+  const mediums = useMemo(() => {
+    const all = artifacts.map(a => a.medium).filter(Boolean)
+    return ['All', ...Array.from(new Set(all)).sort()]
+  }, [artifacts])
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim()
+    return artifacts.filter(a => {
+      const matchesQuery = !q || [a.title, a.artist, a.medium, a.culture, a.year]
+        .some(field => field?.toLowerCase().includes(q))
+      const matchesMedium = activeMedium === 'All' || a.medium === activeMedium
+      const matchesStatus = activeStatus === 'All' || a.status === activeStatus
+      return matchesQuery && matchesMedium && matchesStatus
+    })
+  }, [artifacts, query, activeMedium, activeStatus])
+
+  const hasActiveFilters = query || activeMedium !== 'All' || activeStatus !== 'All'
+
+  function clearAll() {
+    setQuery('')
+    setActiveMedium('All')
+    setActiveStatus('All')
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-6 py-12">
+
+      <div className="relative mb-6">
+        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+          <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8}>
+            <circle cx="9" cy="9" r="5.5" />
+            <path d="M13.5 13.5 17 17" strokeLinecap="round" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search by title, artist, medium, culture…"
+          className="w-full pl-11 pr-10 py-3.5 border border-stone-200 rounded-xl text-sm text-stone-900 outline-none focus:border-stone-400 transition-colors bg-white shadow-sm"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="absolute inset-y-0 right-4 flex items-center text-stone-300 hover:text-stone-600 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
+              <path d="M3 3 13 13M13 3 3 13" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <div className="flex items-center gap-1.5 bg-white border border-stone-200 rounded-lg p-1">
+          {['All', 'On Display', 'On Loan'].map(s => (
+            <button
+              key={s}
+              onClick={() => setActiveStatus(s)}
+              className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
+                activeStatus === s
+                  ? 'bg-stone-900 text-white'
+                  : 'text-stone-500 hover:text-stone-900'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {mediums.map(m => (
+            <button
+              key={m}
+              onClick={() => setActiveMedium(m)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+                activeMedium === m
+                  ? 'bg-stone-900 text-white border-stone-900'
+                  : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex items-center gap-4">
+          {hasActiveFilters && (
+            <button
+              onClick={clearAll}
+              className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors underline underline-offset-2"
+            >
+              Clear filters
+            </button>
+          )}
+          <span className="text-xs font-mono text-stone-400">
+            <span className="text-stone-900 font-medium">{filtered.length}</span> of {artifacts.length} works
+          </span>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-32">
+          <div className="text-5xl mb-4">🔍</div>
+          <div className="font-serif text-2xl italic text-stone-400 mb-2">No works found</div>
+          <p className="text-sm text-stone-400 mb-5">
+            Try a different search term or{' '}
+            <button onClick={clearAll} className="underline underline-offset-2 hover:text-stone-900 transition-colors">
+              clear all filters
+            </button>
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filtered.map(a => (
+            <Link
+              key={a.id}
+              href={`/museum/${slug}/artifact/${a.id}`}
+              className="group border border-stone-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 bg-white"
+            >
+              <div className="aspect-square bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                {a.image_url ? (
+                  <img src={a.image_url} alt={a.title} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{a.emoji}</span>
+                )}
+              </div>
+              <div className="p-4">
+                <div className="font-serif text-base text-stone-900 mb-1 leading-snug">{a.title}</div>
+                <div className="text-xs text-stone-400 italic mb-2">{a.artist}</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-mono text-stone-400">{a.year}</div>
+                  {a.status === 'On Loan' && (
+                    <span
+                      className="text-xs font-mono px-2 py-0.5 rounded-full"
+                      style={{ background: `${accentColor}18`, color: accentColor }}
+                    >
+                      On Loan
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
