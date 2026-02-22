@@ -276,6 +276,7 @@ export default function ArtifactDetail() {
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '' })
     const { data } = await supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setLoanHistory(data || [])
+    router.refresh()
   }
 
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
