@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function Home() {
   return (
@@ -44,7 +45,7 @@ export default function Home() {
             </h1>
 
             <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-10">
-              Vitrine gives every museum — from the V&A to your local heritage centre — a professional collection CMS and public-facing website. No technical knowledge required.
+              Vitrine gives every museum — large or small — a professional collection CMS and public-facing website. No technical knowledge required.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
