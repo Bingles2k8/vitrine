@@ -27,12 +27,14 @@ export default function EntryRegisterPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<any | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   const today = new Date().toISOString().slice(0, 10)
 
   const [form, setForm] = useState({
+    entry_number: '',
     entry_date: today,
     depositor_name: '',
     depositor_contact: '',
@@ -55,6 +57,33 @@ export default function EntryRegisterPage() {
 
   function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function handleEdit(entry: any) {
+    setForm({
+      entry_number: entry.entry_number || '',
+      entry_date: entry.entry_date || today,
+      depositor_name: entry.depositor_name || '',
+      depositor_contact: entry.depositor_contact || '',
+      entry_reason: entry.entry_reason || 'Potential acquisition',
+      object_description: entry.object_description || '',
+      object_count: entry.object_count || 1,
+      legal_owner: entry.legal_owner || '',
+      terms_accepted: entry.terms_accepted || false,
+      terms_accepted_date: entry.terms_accepted_date || '',
+      liability_statement: entry.liability_statement || '',
+      receipt_issued: entry.receipt_issued || false,
+      receipt_date: entry.receipt_date || '',
+      outcome: entry.outcome || 'Pending',
+      received_by: entry.received_by || '',
+      risk_notes: entry.risk_notes || '',
+      quarantine_required: entry.quarantine_required || false,
+      notes: entry.notes || '',
+      artifact_id: entry.artifact_id || '',
+    })
+    setEditingEntry(entry)
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   useEffect(() => {
@@ -86,44 +115,90 @@ export default function EntryRegisterPage() {
     if (!form.received_by.trim()) return
     setSaving(true)
 
-    const year = new Date().getFullYear()
-    const entryNumber = `OE-${year}-${String(entries.length + 1).padStart(3, '0')}`
+    if (editingEntry) {
+      // UPDATE mode
+      const { data, error } = await supabase
+        .from('entry_records')
+        .update({
+          entry_number: form.entry_number || editingEntry.entry_number,
+          entry_date: form.entry_date,
+          depositor_name: form.depositor_name,
+          depositor_contact: form.depositor_contact || null,
+          entry_reason: form.entry_reason,
+          object_description: form.object_description,
+          object_count: form.object_count,
+          legal_owner: form.legal_owner || null,
+          terms_accepted: form.terms_accepted,
+          terms_accepted_date: form.terms_accepted ? (form.terms_accepted_date || today) : null,
+          liability_statement: form.liability_statement || null,
+          receipt_issued: form.receipt_issued,
+          receipt_date: form.receipt_issued ? (form.receipt_date || today) : null,
+          outcome: form.outcome,
+          received_by: form.received_by,
+          risk_notes: form.risk_notes || null,
+          quarantine_required: form.quarantine_required,
+          notes: form.notes || null,
+          artifact_id: form.artifact_id || null,
+        })
+        .eq('id', editingEntry.id)
+        .select('*, artifacts(title, accession_no)')
+        .single()
 
-    const { data, error } = await supabase.from('entry_records').insert({
-      museum_id: museum.id,
-      artifact_id: form.artifact_id || null,
-      entry_number: entryNumber,
-      entry_date: form.entry_date,
-      depositor_name: form.depositor_name,
-      depositor_contact: form.depositor_contact || null,
-      entry_reason: form.entry_reason,
-      object_description: form.object_description,
-      object_count: form.object_count,
-      legal_owner: form.legal_owner || null,
-      terms_accepted: form.terms_accepted,
-      terms_accepted_date: form.terms_accepted ? (form.terms_accepted_date || today) : null,
-      liability_statement: form.liability_statement || null,
-      receipt_issued: form.receipt_issued,
-      receipt_date: form.receipt_issued ? (form.receipt_date || today) : null,
-      outcome: form.outcome,
-      received_by: form.received_by,
-      risk_notes: form.risk_notes || null,
-      quarantine_required: form.quarantine_required,
-      notes: form.notes || null,
-    }).select('*, artifacts(title, accession_no)').single()
+      if (!error && data) {
+        setEntries(e => e.map(entry => entry.id === editingEntry.id ? data : entry))
+        setShowForm(false)
+        setEditingEntry(null)
+        setForm({
+          entry_number: '', entry_date: today, depositor_name: '', depositor_contact: '',
+          entry_reason: 'Potential acquisition', object_description: '',
+          object_count: 1, legal_owner: '', terms_accepted: false,
+          terms_accepted_date: '', liability_statement: '',
+          receipt_issued: false, receipt_date: '', outcome: 'Pending',
+          received_by: '', risk_notes: '', quarantine_required: false,
+          notes: '', artifact_id: '',
+        })
+      }
+    } else {
+      // INSERT mode
+      const year = new Date().getFullYear()
+      const entryNumber = form.entry_number || `OE-${year}-${String(entries.length + 1).padStart(3, '0')}`
 
-    if (!error && data) {
-      setEntries(e => [data, ...e])
-      setShowForm(false)
-      setForm({
-        entry_date: today, depositor_name: '', depositor_contact: '',
-        entry_reason: 'Potential acquisition', object_description: '',
-        object_count: 1, legal_owner: '', terms_accepted: false,
-        terms_accepted_date: '', liability_statement: '',
-        receipt_issued: false, receipt_date: '', outcome: 'Pending',
-        received_by: '', risk_notes: '', quarantine_required: false,
-        notes: '', artifact_id: '',
-      })
+      const { data, error } = await supabase.from('entry_records').insert({
+        museum_id: museum.id,
+        artifact_id: form.artifact_id || null,
+        entry_number: entryNumber,
+        entry_date: form.entry_date,
+        depositor_name: form.depositor_name,
+        depositor_contact: form.depositor_contact || null,
+        entry_reason: form.entry_reason,
+        object_description: form.object_description,
+        object_count: form.object_count,
+        legal_owner: form.legal_owner || null,
+        terms_accepted: form.terms_accepted,
+        terms_accepted_date: form.terms_accepted ? (form.terms_accepted_date || today) : null,
+        liability_statement: form.liability_statement || null,
+        receipt_issued: form.receipt_issued,
+        receipt_date: form.receipt_issued ? (form.receipt_date || today) : null,
+        outcome: form.outcome,
+        received_by: form.received_by,
+        risk_notes: form.risk_notes || null,
+        quarantine_required: form.quarantine_required,
+        notes: form.notes || null,
+      }).select('*, artifacts(title, accession_no)').single()
+
+      if (!error && data) {
+        setEntries(e => [data, ...e])
+        setShowForm(false)
+        setForm({
+          entry_number: '', entry_date: today, depositor_name: '', depositor_contact: '',
+          entry_reason: 'Potential acquisition', object_description: '',
+          object_count: 1, legal_owner: '', terms_accepted: false,
+          terms_accepted_date: '', liability_statement: '',
+          receipt_issued: false, receipt_date: '', outcome: 'Pending',
+          received_by: '', risk_notes: '', quarantine_required: false,
+          notes: '', artifact_id: '',
+        })
+      }
     }
     setSaving(false)
   }
@@ -207,13 +282,22 @@ export default function EntryRegisterPage() {
           {/* Inline form */}
           {showForm && (
             <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400">New Entry Record — Spectrum Procedure 1</div>
+              <div className="text-xs uppercase tracking-widest text-stone-400">
+                {editingEntry ? `Edit Entry Record — ${editingEntry.entry_number}` : 'New Entry Record — Spectrum Procedure 1'}
+              </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Entry Number</label>
+                  <input type="text" value={form.entry_number} onChange={e => set('entry_number', e.target.value)} className={`${inputCls} font-mono`} placeholder="Auto-generated (e.g. OE-2025-001)" />
+                </div>
                 <div>
                   <label className={labelCls}>Entry Date *</label>
                   <input type="date" value={form.entry_date} onChange={e => set('entry_date', e.target.value)} className={inputCls} />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Entry Reason *</label>
                   <select value={form.entry_reason} onChange={e => set('entry_reason', e.target.value)} className={inputCls}>
@@ -323,9 +407,9 @@ export default function EntryRegisterPage() {
 
               <div className="flex gap-3">
                 <button type="button" onClick={handleSave} disabled={saving || !form.depositor_name || !form.object_description || !form.received_by} className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
-                  {saving ? 'Saving…' : 'Save Entry Record'}
+                  {saving ? 'Saving…' : (editingEntry ? 'Save Changes' : 'Save Entry Record')}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors px-3">
+                <button type="button" onClick={() => { setShowForm(false); setEditingEntry(null); setForm({ entry_number: '', entry_date: today, depositor_name: '', depositor_contact: '', entry_reason: 'Potential acquisition', object_description: '', object_count: 1, legal_owner: '', terms_accepted: false, terms_accepted_date: '', liability_statement: '', receipt_issued: false, receipt_date: '', outcome: 'Pending', received_by: '', risk_notes: '', quarantine_required: false, notes: '', artifact_id: '' }); }} className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors px-3">
                   Cancel
                 </button>
               </div>
@@ -360,7 +444,7 @@ export default function EntryRegisterPage() {
                 </thead>
                 <tbody>
                   {entries.map(e => (
-                    <tr key={e.id} className="border-b border-stone-100 hover:bg-stone-50">
+                    <tr key={e.id} className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer" onClick={() => handleEdit(e)}>
                       <td className="px-6 py-3 text-xs font-mono text-stone-600">{e.entry_number}</td>
                       <td className="px-4 py-3 text-xs font-mono text-stone-500">
                         {new Date(e.entry_date + 'T00:00:00').toLocaleDateString('en-GB')}
@@ -383,18 +467,18 @@ export default function EntryRegisterPage() {
                           : <span className="text-xs font-mono text-amber-600">Pending</span>
                         }
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                         {e.outcome === 'Acquired' ? (
                           e.artifact_id ? (
                             <button
-                              onClick={() => router.push(`/dashboard/artifacts/${e.artifact_id}`)}
+                              onClick={(ev) => { ev.stopPropagation(); router.push(`/dashboard/artifacts/${e.artifact_id}`); }}
                               className="text-xs font-mono text-amber-600 hover:text-amber-700 transition-colors"
                             >
                               View object →
                             </button>
                           ) : (
                             <button
-                              onClick={() => handlePromote(e)}
+                              onClick={(ev) => { ev.stopPropagation(); handlePromote(e); }}
                               className="text-xs font-mono text-emerald-600 hover:text-emerald-700 transition-colors"
                             >
                               Create record →
