@@ -3,10 +3,45 @@
 import ImageUpload from '@/components/ImageUpload'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
+
+const MEDIUMS = ['Oil on canvas','Watercolour','Sculpture','Photography','Ceramics','Textiles','Metalwork','Mixed media','Wood','Glass','Print']
+const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Deaccessioned']
+const EMOJIS = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨']
+const OBJECT_TYPES = ['Painting','Drawing','Print','Photograph','Sculpture','Ceramic','Textile','Furniture','Metalwork','Glass','Archaeological','Natural History','Document / Archive','Other']
+const ACQ_METHODS = ['Purchase','Gift','Bequest','Transfer','Found','Fieldwork','Exchange','Unknown']
+const CONDITION_GRADES = ['Excellent','Good','Fair','Poor','Critical']
+const TREATMENT_TYPES = ['Cleaning','Stabilisation','Restoration','Rehousing','Examination','Other']
+const COPYRIGHT_OPTIONS = ['In Copyright','Out of Copyright','Public Domain','Unknown','CC BY','CC BY-SA','CC BY-NC']
+const DISPOSAL_METHODS = ['Sale','Transfer','Destruction','Return to Owner','Exchange','Unknown']
+const LOCATION_REASONS = ['Display change','Conservation','Loan','Inventory','Security','Other']
+
+const CONDITION_STYLES: Record<string, string> = {
+  'Excellent': 'bg-emerald-50 text-emerald-700',
+  'Good':      'bg-green-50 text-green-700',
+  'Fair':      'bg-amber-50 text-amber-700',
+  'Poor':      'bg-orange-50 text-orange-700',
+  'Critical':  'bg-red-50 text-red-600',
+}
+
+const TABS = [
+  { id: 'overview',     label: 'Overview' },
+  { id: 'acquisition',  label: 'Acquisition' },
+  { id: 'location',     label: 'Location' },
+  { id: 'condition',    label: 'Condition' },
+  { id: 'conservation', label: 'Conservation' },
+  { id: 'loans',        label: 'Loans' },
+  { id: 'rights',       label: 'Rights & Legal' },
+  { id: 'audit',        label: 'Audit' },
+]
+
+const inputCls = 'w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white'
+const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 mb-1.5'
+const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 mb-4'
 
 export default function ArtifactDetail() {
   const [artifact, setArtifact] = useState<any>(null)
+  const [museum, setMuseum] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -14,20 +49,50 @@ export default function ArtifactDetail() {
   const [saved, setSaved] = useState(false)
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
+
+  // History data — lazy loaded per tab
+  const [locationHistory, setLocationHistory] = useState<any[]>([])
+  const [locationLoaded, setLocationLoaded] = useState(false)
+  const [conditionHistory, setConditionHistory] = useState<any[]>([])
+  const [conditionLoaded, setConditionLoaded] = useState(false)
+  const [conservationHistory, setConservationHistory] = useState<any[]>([])
+  const [conservationLoaded, setConservationLoaded] = useState(false)
+  const [loanHistory, setLoanHistory] = useState<any[]>([])
+  const [loanLoaded, setLoanLoaded] = useState(false)
+  const [auditHistory, setAuditHistory] = useState<any[]>([])
+  const [auditLoaded, setAuditLoaded] = useState(false)
+
+  // Inline add-record forms
+  const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '' })
+  const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: '', assessor: '', notes: '' })
+  const [conservationForm, setConservationForm] = useState({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '' })
+  const [loanForm, setLoanForm] = useState({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '' })
+  const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', discrepancy: '', notes: '' })
+
   const [form, setForm] = useState({
-    title: '',
-    artist: '',
-    year: '',
-    medium: 'Oil on canvas',
-    culture: '',
-    accession_no: '',
-    dimensions: '',
-    description: '',
-    emoji: '🖼️',
-    status: 'On Display',
-    image_url: '',
+    title: '', artist: '', year: '', medium: 'Oil on canvas', culture: '',
+    accession_no: '', dimensions: '', description: '', emoji: '🖼️',
+    status: 'On Display', image_url: '',
+    // Cataloguing
+    object_type: '', inscription: '', marks: '', provenance: '',
+    // Acquisition
+    acquisition_method: '', acquisition_date: '', acquisition_source: '',
+    acquisition_note: '', legal_transfer_date: '',
+    // Location
+    current_location: '', location_note: '',
+    // Condition
+    condition_grade: '', condition_date: '', condition_assessor: '',
+    // Rights
+    copyright_status: '', rights_holder: '',
+    // Deaccession
+    disposal_method: '', disposal_date: '', disposal_note: '',
+    disposal_authorization: '', disposal_recipient: '',
+    // Audit
+    last_inventoried: '', inventoried_by: '',
   })
 
   useEffect(() => {
@@ -35,22 +100,16 @@ export default function ArtifactDetail() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: museum } = await supabase
-        .from('museums')
-        .select('*')
-        .eq('owner_id', user.id)
-        .single()
+      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
       if (!museum) { router.push('/onboarding'); return }
 
       const { data: artifact } = await supabase
-        .from('artifacts')
-        .select('*')
-        .eq('id', params.id)
-        .eq('museum_id', museum.id)
-        .single()
+        .from('artifacts').select('*')
+        .eq('id', params.id).eq('museum_id', museum.id).single()
 
       if (!artifact) { router.push('/dashboard'); return }
 
+      setMuseum(museum)
       setArtifact(artifact)
       setForm({
         title: artifact.title || '',
@@ -64,33 +123,80 @@ export default function ArtifactDetail() {
         emoji: artifact.emoji || '🖼️',
         status: artifact.status || 'On Display',
         image_url: artifact.image_url || '',
+        object_type: artifact.object_type || '',
+        inscription: artifact.inscription || '',
+        marks: artifact.marks || '',
+        provenance: artifact.provenance || '',
+        acquisition_method: artifact.acquisition_method || '',
+        acquisition_date: artifact.acquisition_date || '',
+        acquisition_source: artifact.acquisition_source || '',
+        acquisition_note: artifact.acquisition_note || '',
+        legal_transfer_date: artifact.legal_transfer_date || '',
+        current_location: artifact.current_location || '',
+        location_note: artifact.location_note || '',
+        condition_grade: artifact.condition_grade || '',
+        condition_date: artifact.condition_date || '',
+        condition_assessor: artifact.condition_assessor || '',
+        copyright_status: artifact.copyright_status || '',
+        rights_holder: artifact.rights_holder || '',
+        disposal_method: artifact.disposal_method || '',
+        disposal_date: artifact.disposal_date || '',
+        disposal_note: artifact.disposal_note || '',
+        disposal_authorization: artifact.disposal_authorization || '',
+        disposal_recipient: artifact.disposal_recipient || '',
+        last_inventoried: artifact.last_inventoried || '',
+        inventoried_by: artifact.inventoried_by || '',
       })
       setLoading(false)
     }
     load()
   }, [])
 
+  // Lazy load history per tab
+  useEffect(() => {
+    if (!artifact) return
+    if (activeTab === 'location' && !locationLoaded) {
+      supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
+        .then(({ data }) => { setLocationHistory(data || []); setLocationLoaded(true) })
+    }
+    if (activeTab === 'condition' && !conditionLoaded) {
+      supabase.from('condition_assessments').select('*').eq('artifact_id', artifact.id).order('assessed_at', { ascending: false })
+        .then(({ data }) => { setConditionHistory(data || []); setConditionLoaded(true) })
+    }
+    if (activeTab === 'conservation' && !conservationLoaded) {
+      supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+        .then(({ data }) => { setConservationHistory(data || []); setConservationLoaded(true) })
+    }
+    if (activeTab === 'loans' && !loanLoaded) {
+      supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+        .then(({ data }) => { setLoanHistory(data || []); setLoanLoaded(true) })
+    }
+    if (activeTab === 'audit' && !auditLoaded) {
+      supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
+        .then(({ data }) => { setAuditHistory(data || []); setAuditLoaded(true) })
+    }
+  }, [activeTab, artifact])
+
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
   }
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!form.title.trim()) { setError('Title is required'); return }
     setSaving(true)
     setError('')
 
-    const { error } = await supabase
-      .from('artifacts')
-      .update(form)
-      .eq('id', params.id)
+    const { error } = await supabase.from('artifacts').update({
+      ...form,
+      acquisition_date: form.acquisition_date || null,
+      legal_transfer_date: form.legal_transfer_date || null,
+      condition_date: form.condition_date || null,
+      disposal_date: form.disposal_date || null,
+      last_inventoried: form.last_inventoried || null,
+    }).eq('id', params.id)
 
-    if (error) {
-      setError(error.message)
-    } else {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    }
+    if (error) { setError(error.message) } else { setSaved(true); setTimeout(() => setSaved(false), 2000) }
     setSaving(false)
   }
 
@@ -98,23 +204,72 @@ export default function ArtifactDetail() {
     if (!artifact) return
     if (!confirm('Delete "' + artifact.title + '"? This cannot be undone.')) return
     setDeleting(true)
-
-    const { error } = await supabase
-      .from('artifacts')
-      .delete()
-      .eq('id', params.id)
-
-    if (error) {
-      setError(error.message)
-      setDeleting(false)
-    } else {
-      router.push('/dashboard')
-    }
+    const { error } = await supabase.from('artifacts').delete().eq('id', params.id)
+    if (error) { setError(error.message); setDeleting(false) } else { router.push('/dashboard') }
   }
 
-  const mediums = ['Oil on canvas','Watercolour','Sculpture','Photography','Ceramics','Textiles','Metalwork','Mixed media','Wood','Glass','Print']
-  const statuses = ['On Display','Storage','On Loan','Restoration']
-  const emojis = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨']
+  // Location history
+  async function addLocation() {
+    if (!locationForm.location) return
+    await supabase.from('location_history').insert({ ...locationForm, artifact_id: artifact.id, museum_id: museum.id })
+    await supabase.from('artifacts').update({ current_location: locationForm.location }).eq('id', artifact.id)
+    setForm(f => ({ ...f, current_location: locationForm.location }))
+    setLocationForm({ location: '', reason: '', moved_by: '' })
+    const { data } = await supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
+    setLocationHistory(data || [])
+  }
+
+  // Condition assessment
+  async function addCondition() {
+    if (!conditionForm.grade || !conditionForm.assessed_at) return
+    await supabase.from('condition_assessments').insert({ ...conditionForm, artifact_id: artifact.id, museum_id: museum.id })
+    await supabase.from('artifacts').update({ condition_grade: conditionForm.grade, condition_date: conditionForm.assessed_at, condition_assessor: conditionForm.assessor }).eq('id', artifact.id)
+    setForm(f => ({ ...f, condition_grade: conditionForm.grade, condition_date: conditionForm.assessed_at, condition_assessor: conditionForm.assessor }))
+    setConditionForm({ grade: '', assessed_at: '', assessor: '', notes: '' })
+    const { data } = await supabase.from('condition_assessments').select('*').eq('artifact_id', artifact.id).order('assessed_at', { ascending: false })
+    setConditionHistory(data || [])
+  }
+
+  // Conservation treatment
+  async function addConservation() {
+    if (!conservationForm.treatment_type) return
+    await supabase.from('conservation_treatments').insert({ ...conservationForm, artifact_id: artifact.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null })
+    setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '' })
+    const { data } = await supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setConservationHistory(data || [])
+  }
+
+  async function updateConservationStatus(id: string, status: string) {
+    await supabase.from('conservation_treatments').update({ status }).eq('id', id)
+    setConservationHistory(h => h.map(t => t.id === id ? { ...t, status } : t))
+  }
+
+  // Loans
+  async function addLoan() {
+    if (!loanForm.borrowing_institution) return
+    await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null })
+    setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '' })
+    const { data } = await supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setLoanHistory(data || [])
+  }
+
+  async function endLoan(loanId: string) {
+    await supabase.from('loans').update({ status: 'Returned' }).eq('id', loanId)
+    await supabase.from('artifacts').update({ status: 'Storage' }).eq('id', artifact.id)
+    setForm(f => ({ ...f, status: 'Storage' }))
+    setLoanHistory(h => h.map(l => l.id === loanId ? { ...l, status: 'Returned' } : l))
+  }
+
+  // Audit
+  async function addAudit() {
+    if (!auditForm.inventoried_at) return
+    await supabase.from('audit_records').insert({ ...auditForm, artifact_id: artifact.id, museum_id: museum.id })
+    await supabase.from('artifacts').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', artifact.id)
+    setForm(f => ({ ...f, last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }))
+    setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', discrepancy: '', notes: '' })
+    const { data } = await supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
+    setAuditHistory(data || [])
+  }
 
   if (loading || !artifact) {
     return (
@@ -133,56 +288,62 @@ export default function ArtifactDetail() {
         </div>
         <nav className="p-3 flex-1">
           <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
-          <div
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50"
-          >
-            <span>⬡</span> Artifacts
+          <div onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50">
+            <span>⬡</span> Objects
           </div>
         </nav>
       </aside>
 
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0">
+        {/* Top bar */}
+        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
-            >
+            <button onClick={() => router.push('/dashboard')}
+              className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors">
               ← Collection
             </button>
             <span className="text-stone-200">/</span>
             <span className="font-serif text-lg italic text-stone-900">{artifact.title}</span>
           </div>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
-          >
-            {deleting ? 'Deleting…' : 'Delete artifact'}
-          </button>
+          <div className="flex items-center gap-4">
+            {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
+            {error && <span className="text-xs font-mono text-red-500">{error}</span>}
+            <button onClick={handleDelete} disabled={deleting}
+              className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
+              {deleting ? 'Deleting…' : 'Delete object'}
+            </button>
+          </div>
         </div>
 
-        <div className="p-8 max-w-2xl">
-          <form onSubmit={handleSave} className="space-y-6">
+        {/* Tab bar */}
+        <div className="bg-white border-b border-stone-200 px-8 flex gap-1 overflow-x-auto">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-stone-900 text-stone-900'
+                  : 'border-transparent text-stone-400 hover:text-stone-600'
+              }`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
+        <form onSubmit={handleSave} className="p-8 max-w-3xl space-y-6">
+
+          {/* ── OVERVIEW ─────────────────────────────────── */}
+          {activeTab === 'overview' && <>
             <div className="bg-white border border-stone-200 rounded-lg p-6">
-              <ImageUpload
-                currentUrl={form.image_url}
-                onUpload={(url) => set('image_url', url)}
-              />
+              <ImageUpload currentUrl={form.image_url} onUpload={(url) => set('image_url', url)} />
             </div>
 
             <div className="bg-white border border-stone-200 rounded-lg p-6">
-              <label className="block text-xs uppercase tracking-widest text-stone-400 mb-3">Icon</label>
+              <label className={labelCls}>Icon</label>
               <div className="flex gap-2 flex-wrap">
-                {emojis.map(e => (
-                  <button
-                    key={e}
-                    type="button"
-                    onClick={() => set('emoji', e)}
-                    className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100' : 'border-stone-200 hover:bg-stone-50'}`}
-                  >
+                {EMOJIS.map(e => (
+                  <button key={e} type="button" onClick={() => set('emoji', e)}
+                    className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100' : 'border-stone-200 hover:bg-stone-50'}`}>
                     {e}
                   </button>
                 ))}
@@ -190,86 +351,50 @@ export default function ArtifactDetail() {
             </div>
 
             <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 mb-1">Details</div>
+              <div className={sectionTitle}>Core Details</div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Title *</label>
-                <input
-                  value={form.title}
-                  onChange={e => set('title', e.target.value)}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
-                />
+                <label className={labelCls}>Title *</label>
+                <input value={form.title} onChange={e => set('title', e.target.value)} className={inputCls} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Artist / Maker</label><input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} /></div>
+                <div><label className={labelCls}>Date / Year</label><input value={form.year} onChange={e => set('year', e.target.value)} className={inputCls} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Artist / Maker</label>
-                  <input
-                    value={form.artist}
-                    onChange={e => set('artist', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Date / Year</label>
-                  <input
-                    value={form.year}
-                    onChange={e => set('year', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Medium</label>
-                  <select
-                    value={form.medium}
-                    onChange={e => set('medium', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
-                  >
-                    {mediums.map(m => <option key={m}>{m}</option>)}
+                  <label className={labelCls}>Medium</label>
+                  <select value={form.medium} onChange={e => set('medium', e.target.value)} className={inputCls}>
+                    {MEDIUMS.map(m => <option key={m}>{m}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Culture / Origin</label>
-                  <input
-                    value={form.culture}
-                    onChange={e => set('culture', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
-                  />
-                </div>
+                <div><label className={labelCls}>Culture / Origin</label><input value={form.culture} onChange={e => set('culture', e.target.value)} className={inputCls} /></div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Accession No.</label><input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} /></div>
+                <div><label className={labelCls}>Dimensions</label><input value={form.dimensions} onChange={e => set('dimensions', e.target.value)} className={inputCls} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Accession No.</label>
-                  <input
-                    value={form.accession_no}
-                    onChange={e => set('accession_no', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 transition-colors"
-                  />
+                  <label className={labelCls}>Object Type</label>
+                  <select value={form.object_type} onChange={e => set('object_type', e.target.value)} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {OBJECT_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Dimensions</label>
-                  <input
-                    value={form.dimensions}
-                    onChange={e => set('dimensions', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
-                  />
-                </div>
+                <div><label className={labelCls}>Current Location</label><input value={form.current_location} onChange={e => set('current_location', e.target.value)} placeholder="Gallery A, Case 3" className={inputCls} /></div>
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Status</label>
-                <div className="flex gap-2">
-                  {statuses.map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => set('status', s)}
-                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}
-                    >
+                <label className={labelCls}>Status</label>
+                <div className="flex gap-2 flex-wrap">
+                  {STATUSES.map(s => (
+                    <button key={s} type="button" onClick={() => set('status', s)}
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
                       {s}
                     </button>
                   ))}
@@ -277,41 +402,479 @@ export default function ArtifactDetail() {
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => set('description', e.target.value)}
-                  rows={4}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none"
-                />
+                <label className={labelCls}>Description (public)</label>
+                <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4}
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+
+              <div>
+                <label className={labelCls}>Inscription</label>
+                <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={2}
+                  placeholder="Text inscribed on the object…"
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+
+              <div>
+                <label className={labelCls}>Marks & Stamps</label>
+                <textarea value={form.marks} onChange={e => set('marks', e.target.value)} rows={2}
+                  placeholder="Hallmarks, maker's marks, stamps, signatures on reverse…"
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+
+              <div>
+                <label className={labelCls}>Provenance</label>
+                <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
+                  placeholder="Known ownership history prior to acquisition…"
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
               </div>
             </div>
 
-            {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
+            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+          </>}
 
-            <div className="flex gap-3 items-center">
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-stone-900 text-white text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
-              >
-                {saving ? 'Saving…' : 'Save changes →'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50"
-              >
-                Cancel
-              </button>
-              {saved && (
-                <span className="text-xs font-mono text-emerald-600">✓ Saved</span>
-              )}
+          {/* ── ACQUISITION ──────────────────────────────── */}
+          {activeTab === 'acquisition' && <>
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Acquisition (Spectrum Procedure 2)</div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Acquisition Method</label>
+                  <select value={form.acquisition_method} onChange={e => set('acquisition_method', e.target.value)} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {ACQ_METHODS.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div><label className={labelCls}>Acquisition Date</label><input type="date" value={form.acquisition_date} onChange={e => set('acquisition_date', e.target.value)} className={inputCls} /></div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Acquisition Source</label><input value={form.acquisition_source} onChange={e => set('acquisition_source', e.target.value)} placeholder="Donor name, auction house…" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Legal Transfer Date</label>
+                  <input type="date" value={form.legal_transfer_date} onChange={e => set('legal_transfer_date', e.target.value)} className={inputCls} />
+                  <p className="text-xs text-stone-400 mt-1">The date legal title formally passed to the museum</p>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Acquisition Notes</label>
+                <textarea value={form.acquisition_note} onChange={e => set('acquisition_note', e.target.value)} rows={4}
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
             </div>
 
-          </form>
-        </div>
+            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+          </>}
+
+          {/* ── LOCATION ─────────────────────────────────── */}
+          {activeTab === 'location' && <>
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Current Location (Spectrum Procedure 3)</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Current Location</label><input value={form.current_location} onChange={e => set('current_location', e.target.value)} placeholder="Gallery A, Case 3" className={inputCls} /></div>
+                <div><label className={labelCls}>Location Note</label><input value={form.location_note} onChange={e => set('location_note', e.target.value)} placeholder="Additional context" className={inputCls} /></div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Record a Movement</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>New Location *</label><input value={locationForm.location} onChange={e => setLocationForm(f => ({ ...f, location: e.target.value }))} placeholder="Gallery B, Case 1" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Reason</label>
+                  <select value={locationForm.reason} onChange={e => setLocationForm(f => ({ ...f, reason: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {LOCATION_REASONS.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Moved By</label><input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <button type="button" onClick={addLocation}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
+                Save movement →
+              </button>
+            </div>
+
+            {locationLoaded && locationHistory.length > 0 && (
+              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Movement History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Moved By</th>
+                  </tr></thead>
+                  <tbody>
+                    {locationHistory.map(h => (
+                      <tr key={h.id} className="border-b border-stone-100">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.moved_at).toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3 text-sm text-stone-900">{h.location}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.reason}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.moved_by}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+          </>}
+
+          {/* ── CONDITION ────────────────────────────────── */}
+          {activeTab === 'condition' && <>
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Log Condition Assessment (Spectrum Procedure 4)</div>
+              <div>
+                <label className={labelCls}>Condition Grade *</label>
+                <div className="flex gap-2 flex-wrap">
+                  {CONDITION_GRADES.map(g => (
+                    <button key={g} type="button" onClick={() => setConditionForm(f => ({ ...f, grade: g }))}
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${conditionForm.grade === g ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Assessment Date *</label><input type="date" value={conditionForm.assessed_at} onChange={e => setConditionForm(f => ({ ...f, assessed_at: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Assessor</label><input value={conditionForm.assessor} onChange={e => setConditionForm(f => ({ ...f, assessor: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={conditionForm.notes} onChange={e => setConditionForm(f => ({ ...f, notes: e.target.value }))} rows={3}
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+              <button type="button" onClick={addCondition}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
+                Log assessment →
+              </button>
+            </div>
+
+            {form.condition_grade && (
+              <div className="bg-white border border-stone-200 rounded-lg p-6">
+                <div className={sectionTitle}>Current Condition (snapshot)</div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>{form.condition_grade}</span>
+                  {form.condition_date && <span className="text-xs text-stone-400">Assessed {new Date(form.condition_date).toLocaleDateString('en-GB')}</span>}
+                  {form.condition_assessor && <span className="text-xs text-stone-400">by {form.condition_assessor}</span>}
+                </div>
+              </div>
+            )}
+
+            {conditionLoaded && conditionHistory.length > 0 && (
+              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Assessment History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Grade</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Assessor</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Notes</th>
+                  </tr></thead>
+                  <tbody>
+                    {conditionHistory.map(h => (
+                      <tr key={h.id} className="border-b border-stone-100">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.assessed_at).toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.grade] || 'bg-stone-100 text-stone-500'}`}>{h.grade}</span></td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.assessor}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>}
+
+          {/* ── CONSERVATION ─────────────────────────────── */}
+          {activeTab === 'conservation' && <>
+            {form.status !== 'Restoration' && conservationHistory.some(t => t.status === 'Active') && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
+                This object has an active treatment — consider setting status to <strong>Restoration</strong> on the Overview tab.
+              </div>
+            )}
+
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Add Conservation Treatment (Spectrum Procedure 5)</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Treatment Type *</label>
+                  <select value={conservationForm.treatment_type} onChange={e => setConservationForm(f => ({ ...f, treatment_type: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {TREATMENT_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div><label className={labelCls}>Conservator</label><input value={conservationForm.conservator} onChange={e => setConservationForm(f => ({ ...f, conservator: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Start Date</label><input type="date" value={conservationForm.start_date} onChange={e => setConservationForm(f => ({ ...f, start_date: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>End Date (leave blank if ongoing)</label><input type="date" value={conservationForm.end_date} onChange={e => setConservationForm(f => ({ ...f, end_date: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div>
+                <label className={labelCls}>Description</label>
+                <textarea value={conservationForm.description} onChange={e => setConservationForm(f => ({ ...f, description: e.target.value }))} rows={3}
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+              <button type="button" onClick={addConservation}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
+                Save treatment →
+              </button>
+            </div>
+
+            {conservationLoaded && conservationHistory.length > 0 && (
+              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Treatment History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Conservator</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                    <th className="px-4 py-3"></th>
+                  </tr></thead>
+                  <tbody>
+                    {conservationHistory.map(t => (
+                      <tr key={t.id} className="border-b border-stone-100">
+                        <td className="px-6 py-3 text-sm text-stone-900">{t.treatment_type}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{t.conservator}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                          {t.start_date ? new Date(t.start_date).toLocaleDateString('en-GB') : '—'}
+                          {' → '}
+                          {t.end_date ? new Date(t.end_date).toLocaleDateString('en-GB') : <span className="text-amber-600">Ongoing</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-mono px-2 py-1 rounded-full ${t.status === 'Active' ? 'bg-amber-50 text-amber-700' : t.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{t.status}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {t.status === 'Active' && (
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => updateConservationStatus(t.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-emerald-700">Complete</button>
+                              <button type="button" onClick={() => updateConservationStatus(t.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-red-500">Cancel</button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>}
+
+          {/* ── LOANS ────────────────────────────────────── */}
+          {activeTab === 'loans' && <>
+            {form.status === 'On Loan' && loanHistory.some(l => l.status === 'Active') && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
+                This object is currently on loan — the active loan record is highlighted below.
+              </div>
+            )}
+
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Add Loan Record (Spectrum Procedures 4 & 5)</div>
+              <div>
+                <label className={labelCls}>Direction</label>
+                <div className="flex gap-2">
+                  {['Out','In'].map(d => (
+                    <button key={d} type="button" onClick={() => setLoanForm(f => ({ ...f, direction: d }))}
+                      className={`px-4 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.direction === d ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      Loan {d}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-stone-400 mt-1">{loanForm.direction === 'Out' ? 'We lend this object to another institution' : 'Another institution lends this object to us'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Institution *</label><input value={loanForm.borrowing_institution} onChange={e => setLoanForm(f => ({ ...f, borrowing_institution: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Contact Name</label><input value={loanForm.contact_name} onChange={e => setLoanForm(f => ({ ...f, contact_name: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Contact Email</label><input type="email" value={loanForm.contact_email} onChange={e => setLoanForm(f => ({ ...f, contact_email: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Insurance Value (£)</label><input type="number" value={loanForm.insurance_value} onChange={e => setLoanForm(f => ({ ...f, insurance_value: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Loan Start</label><input type="date" value={loanForm.loan_start_date} onChange={e => setLoanForm(f => ({ ...f, loan_start_date: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Expected Return</label><input type="date" value={loanForm.loan_end_date} onChange={e => setLoanForm(f => ({ ...f, loan_end_date: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" /></div>
+              <button type="button" onClick={addLoan}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
+                Save loan record →
+              </button>
+            </div>
+
+            {loanLoaded && loanHistory.length > 0 && (
+              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Loan History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Direction</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Institution</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                    <th className="px-4 py-3"></th>
+                  </tr></thead>
+                  <tbody>
+                    {loanHistory.map(l => (
+                      <tr key={l.id} className={`border-b border-stone-100 ${l.status === 'Active' ? 'bg-amber-50/30' : ''}`}>
+                        <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
+                        <td className="px-4 py-3 text-sm text-stone-900">{l.borrowing_institution}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                          {l.loan_start_date ? new Date(l.loan_start_date).toLocaleDateString('en-GB') : '—'}
+                          {' → '}
+                          {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{l.status}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {l.status === 'Active' && (
+                            <button type="button" onClick={() => endLoan(l.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900">End loan →</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>}
+
+          {/* ── RIGHTS & LEGAL ───────────────────────────── */}
+          {activeTab === 'rights' && <>
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Rights Management (Spectrum Procedure 9)</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Copyright Status</label>
+                  <select value={form.copyright_status} onChange={e => set('copyright_status', e.target.value)} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {COPYRIGHT_OPTIONS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div><label className={labelCls}>Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} /></div>
+              </div>
+            </div>
+
+            {form.status === 'Deaccessioned' && (
+              <div className="bg-white border border-amber-200 rounded-lg p-6 space-y-4">
+                <div className="text-xs uppercase tracking-widest text-amber-600 mb-4">Deaccession Record (Spectrum Procedure 8)</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Disposal Method</label>
+                    <select value={form.disposal_method} onChange={e => set('disposal_method', e.target.value)} className={inputCls}>
+                      <option value="">— Select —</option>
+                      {DISPOSAL_METHODS.map(d => <option key={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div><label className={labelCls}>Disposal Date</label><input type="date" value={form.disposal_date} onChange={e => set('disposal_date', e.target.value)} className={inputCls} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className={labelCls}>Authorised By</label><input value={form.disposal_authorization} onChange={e => set('disposal_authorization', e.target.value)} placeholder="Name and role of authorising person" className={inputCls} /></div>
+                  <div><label className={labelCls}>Recipient</label><input value={form.disposal_recipient} onChange={e => set('disposal_recipient', e.target.value)} placeholder="Name of receiving party" className={inputCls} /></div>
+                </div>
+                <div>
+                  <label className={labelCls}>Disposal Notes</label>
+                  <textarea value={form.disposal_note} onChange={e => set('disposal_note', e.target.value)} rows={4}
+                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                </div>
+              </div>
+            )}
+
+            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+          </>}
+
+          {/* ── AUDIT ────────────────────────────────────── */}
+          {activeTab === 'audit' && <>
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Record Inventory Check (Spectrum Procedure 7)</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Location Confirmed</label><input value={auditForm.location_confirmed} onChange={e => setAuditForm(f => ({ ...f, location_confirmed: e.target.value }))} placeholder="Actual location found" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Condition Confirmed</label>
+                  <select value={auditForm.condition_confirmed} onChange={e => setAuditForm(f => ({ ...f, condition_confirmed: e.target.value }))} className={inputCls}>
+                    <option value="">— Not assessed —</option>
+                    {CONDITION_GRADES.map(g => <option key={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Discrepancy</label>
+                <textarea value={auditForm.discrepancy} onChange={e => setAuditForm(f => ({ ...f, discrepancy: e.target.value }))} rows={2}
+                  placeholder="Note any discrepancy from the catalogue record…"
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+              </div>
+              <button type="button" onClick={addAudit}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
+                Save audit record →
+              </button>
+            </div>
+
+            {form.last_inventoried && (
+              <div className="bg-white border border-stone-200 rounded-lg p-6">
+                <div className={sectionTitle}>Last Inventoried</div>
+                <p className="text-sm text-stone-900">{new Date(form.last_inventoried).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}{form.inventoried_by && ` by ${form.inventoried_by}`}</p>
+              </div>
+            )}
+
+            {auditLoaded && auditHistory.length > 0 && (
+              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Audit History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">By</th>
+                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 font-normal px-4 py-3">Location Found</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Condition</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Discrepancy</th>
+                  </tr></thead>
+                  <tbody>
+                    {auditHistory.map(h => (
+                      <tr key={h.id} className="border-b border-stone-100">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.inventoried_by}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.location_confirmed}</td>
+                        <td className="px-4 py-3">{h.condition_confirmed && <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.condition_confirmed] || 'bg-stone-100 text-stone-500'}`}>{h.condition_confirmed}</span>}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.discrepancy}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>}
+
+        </form>
       </main>
+    </div>
+  )
+}
+
+function SaveBar({ saving, saved, onCancel }: { saving: boolean; saved: boolean; onCancel: () => void }) {
+  return (
+    <div className="flex gap-3 items-center">
+      <button type="submit" disabled={saving}
+        className="bg-stone-900 text-white text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+        {saving ? 'Saving…' : 'Save changes →'}
+      </button>
+      <button type="button" onClick={onCancel}
+        className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+        Cancel
+      </button>
+      {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
     </div>
   )
 }

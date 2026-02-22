@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Sidebar from '@/components/Sidebar'
 
 type AccessLevel = 'Admin' | 'Editor' | 'Viewer'
 
@@ -20,8 +21,8 @@ const DEPARTMENTS = ['Curatorial', 'Conservation', 'Education', 'Operations', 'F
 const ACCESS_LEVELS: AccessLevel[] = ['Admin', 'Editor', 'Viewer']
 
 const ACCESS_DESCRIPTIONS: Record<AccessLevel, string> = {
-  Admin: 'Full access — can manage staff, site settings, and all artifacts',
-  Editor: 'Can add and edit artifacts, cannot manage staff or billing',
+  Admin: 'Full access — can manage staff, site settings, and all objects',
+  Editor: 'Can add and edit objects, cannot manage staff or billing',
   Viewer: 'Read-only access to the dashboard and collection',
 }
 
@@ -160,55 +161,7 @@ export default function StaffPage() {
   return (
     <div className="min-h-screen bg-stone-50 flex">
 
-      {/* Sidebar */}
-      <aside className="w-56 bg-white border-r border-stone-200 flex flex-col fixed top-0 left-0 bottom-0">
-        <div className="p-5 border-b border-stone-200">
-          <span className="font-serif text-xl italic text-stone-900">Vitrine<span className="text-amber-600">.</span></span>
-        </div>
-        <div className="p-4 border-b border-stone-200">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-lg">
-              {museum.logo_emoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-stone-900 truncate">{museum.name}</div>
-              <div className="text-xs text-amber-600 tracking-wide uppercase">{museum.plan} plan</div>
-            </div>
-          </div>
-        </div>
-        <nav className="p-3 flex-1">
-          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
-          <div
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50"
-          >
-            <span>⬡</span> Artifacts
-          </div>
-          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Website</div>
-          <div
-            onClick={() => router.push('/dashboard/site')}
-            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50"
-          >
-            <span>◫</span> Site Builder
-          </div>
-          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded bg-stone-900 text-white text-xs font-mono mb-1 cursor-pointer">
-            <span>◉</span> Staff & Roles
-            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Data</div>
-          <div onClick={() => router.push('/dashboard/analytics')} className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50">
-            <span>◈</span> Analytics
-          </div>
-          </div>
-        </nav>
-        <div className="p-4 border-t border-stone-200">
-          <button
-            onClick={handleSignOut}
-            className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
-          >
-            Sign out →
-          </button>
-        </div>
-      </aside>
+      <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} />
 
       {/* Main */}
       <main className="ml-56 flex-1 flex flex-col">
