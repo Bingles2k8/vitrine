@@ -128,6 +128,41 @@ export default function EntryRegisterPage() {
     setSaving(false)
   }
 
+  async function handlePromote(entry: any) {
+    // Create a new artifact with pre-populated fields from the entry record
+    const { data: newArtifact, error: createError } = await supabase.from('artifacts').insert({
+      museum_id: museum.id,
+      title: entry.object_description,
+      acquisition_source: entry.depositor_name,
+      acquisition_source_contact: entry.depositor_contact,
+      acquisition_object_count: entry.object_count,
+      status: 'Entry',
+      emoji: '🖼️',
+    }).select('id').single()
+
+    if (createError) {
+      console.error('Error creating artifact:', createError)
+      return
+    }
+
+    // Update the entry record with the artifact_id
+    const { error: updateError } = await supabase
+      .from('entry_records')
+      .update({ artifact_id: newArtifact.id })
+      .eq('id', entry.id)
+
+    if (updateError) {
+      console.error('Error updating entry record:', updateError)
+      return
+    }
+
+    // Update local state
+    setEntries(entries.map(e => e.id === entry.id ? { ...e, artifact_id: newArtifact.id } : e))
+
+    // Navigate to the artifact detail page
+    router.push(`/dashboard/artifacts/${newArtifact.id}`)
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-stone-50">
       <p className="font-mono text-sm text-stone-400">Loading…</p>
@@ -320,6 +355,7 @@ export default function EntryRegisterPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Received By</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Outcome</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Receipt</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Object</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -346,6 +382,27 @@ export default function EntryRegisterPage() {
                           ? <span className="text-xs font-mono text-emerald-600">✓ Issued</span>
                           : <span className="text-xs font-mono text-amber-600">Pending</span>
                         }
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {e.outcome === 'Acquired' ? (
+                          e.artifact_id ? (
+                            <button
+                              onClick={() => router.push(`/dashboard/artifacts/${e.artifact_id}`)}
+                              className="text-xs font-mono text-amber-600 hover:text-amber-700 transition-colors"
+                            >
+                              View object →
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handlePromote(e)}
+                              className="text-xs font-mono text-emerald-600 hover:text-emerald-700 transition-colors"
+                            >
+                              Create record →
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-xs text-stone-300">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

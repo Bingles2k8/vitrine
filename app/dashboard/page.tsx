@@ -89,12 +89,6 @@ export default function Dashboard() {
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900">Collection</span>
-          <button
-            onClick={() => router.push('/dashboard/artifacts/new')}
-            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded"
-          >
-            + Add Object
-          </button>
         </div>
 
         <div className="p-8">
@@ -124,12 +118,12 @@ export default function Dashboard() {
             <div className="bg-white border border-stone-200 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">🏛️</div>
               <div className="font-serif text-2xl italic text-stone-900 mb-2">Your collection is empty</div>
-              <p className="text-sm text-stone-400 mb-6">Add your first object to get started.</p>
+              <p className="text-sm text-stone-400 mb-6">Log an object in the Entry Register to begin.</p>
               <button
-                onClick={() => router.push('/dashboard/artifacts/new')}
+                onClick={() => router.push('/dashboard/entry')}
                 className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded"
               >
-                + Add your first object
+                + New Entry Record
               </button>
             </div>
           ) : (
