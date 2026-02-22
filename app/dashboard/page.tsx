@@ -17,6 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function Dashboard() {
   const [museum, setMuseum] = useState<any>(null)
   const [artifacts, setArtifacts] = useState<any[]>([])
+  const [loans, setLoans] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
   const router = useRouter()
@@ -35,14 +36,14 @@ export default function Dashboard() {
 
       if (!museum) { router.push('/onboarding'); return }
 
-      const { data: artifacts } = await supabase
-        .from('artifacts')
-        .select('*')
-        .eq('museum_id', museum.id)
-        .order('created_at', { ascending: false })
+      const [{ data: artifacts }, { data: activeLoans }] = await Promise.all([
+        supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
+      ])
 
       setMuseum(museum)
       setArtifacts(artifacts || [])
+      setLoans(activeLoans || [])
       setLoading(false)
     }
     load()
@@ -62,6 +63,12 @@ export default function Dashboard() {
   }
 
   const statusCount = (s: string) => artifacts.filter(a => a.status === s).length
+
+  const today = new Date().toISOString().slice(0, 10)
+  const loanByArtifact: Record<string, any> = Object.fromEntries(loans.map(l => [l.artifact_id, l]))
+  const overdueDays = (loan: any) => loan?.loan_end_date && loan.loan_end_date < today
+    ? Math.floor((new Date(today).getTime() - new Date(loan.loan_end_date).getTime()) / 86400000)
+    : 0
 
   // null = show all; a status string = show only that status
   const CARDS = [
@@ -168,9 +175,34 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-xs font-mono text-stone-500">{a.year}</td>
                       <td className="px-4 py-3 text-xs text-stone-500">{a.medium}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500'}`}>
-                          {a.status}
-                        </span>
+                        {(() => {
+                          const loan = loanByArtifact[a.id]
+                          const days = a.status === 'On Loan' ? overdueDays(loan) : 0
+                          if (days > 0) {
+                            return (
+                              <div className="relative group/tt inline-block">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); router.push('/dashboard/loans') }}
+                                  className="text-xs font-mono px-2 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                >
+                                  Loan Overdue
+                                </button>
+                                <div className="absolute bottom-full left-0 mb-2 w-60 p-3 bg-stone-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover/tt:opacity-100 group-hover/tt:visible transition-all z-50 pointer-events-none">
+                                  <div className="font-medium text-red-400 mb-1">Loan overdue</div>
+                                  <div className="text-stone-300">Expected: {new Date(loan.loan_end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                                  <div className="text-stone-300">{days} day{days !== 1 ? 's' : ''} overdue</div>
+                                  <div className="text-stone-500 mt-2">Click to view loan details →</div>
+                                </div>
+                              </div>
+                            )
+                          }
+                          return (
+                            <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500'}`}>
+                              {a.status}
+                            </span>
+                          )
+                        })()}
                       </td>
                     </tr>
                   ))}

@@ -1,7 +1,7 @@
 'use client'
 
 import ImageUpload from '@/components/ImageUpload'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 
@@ -15,6 +15,9 @@ const TREATMENT_TYPES = ['Cleaning','Stabilisation','Restoration','Rehousing','E
 const COPYRIGHT_OPTIONS = ['In Copyright','Out of Copyright','Public Domain','Unknown','CC BY','CC BY-SA','CC BY-NC']
 const DISPOSAL_METHODS = ['Sale','Transfer','Destruction','Return to Owner','Exchange','Unknown']
 const LOCATION_REASONS = ['Display change','Conservation','Loan','Inventory','Security','Other']
+const TITLE_GUARANTEE_OPTIONS = ['Deed of Gift','Bill of Sale','Transfer document','Found in collection','Unknown','Other']
+const INSURANCE_TYPES = ['Own policy','Borrower\'s policy','Government Indemnity Scheme','None']
+const INVENTORY_OUTCOMES = ['Present and correct','Present — location differs','Not found','Found in collection','No prior record']
 
 const CONDITION_STYLES: Record<string, string> = {
   'Excellent': 'bg-emerald-50 text-emerald-700',
@@ -67,13 +70,13 @@ export default function ArtifactDetail() {
   const [auditLoaded, setAuditLoaded] = useState(false)
 
   // Inline add-record forms
-  const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '' })
+  const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '', authorised_by: '' })
   const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: '', assessor: '', notes: '' })
   const [conservationForm, setConservationForm] = useState({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '' })
-  const [loanForm, setLoanForm] = useState({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '' })
-  const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', discrepancy: '', notes: '' })
+  const [loanForm, setLoanForm] = useState({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '' })
+  const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Record<string, any>>({
     title: '', artist: '', year: '', medium: 'Oil on canvas', culture: '',
     accession_no: '', dimensions: '', description: '', emoji: '🖼️',
     status: 'On Display', image_url: '',
@@ -82,6 +85,14 @@ export default function ArtifactDetail() {
     // Acquisition
     acquisition_method: '', acquisition_date: '', acquisition_source: '',
     acquisition_note: '', legal_transfer_date: '',
+    // Acquisition governance (Spectrum 2 mandatory)
+    acquisition_source_contact: '', acquisition_authorised_by: '',
+    acquisition_authority_date: '', acquisition_title_guarantee: '',
+    acquisition_object_count: 1,
+    accession_register_confirmed: false,
+    // Ethics checks
+    ethics_art_loss_register: false, ethics_cites: false,
+    ethics_dealing_act: false, ethics_human_remains: false,
     // Location
     current_location: '', location_note: '',
     // Condition
@@ -132,6 +143,16 @@ export default function ArtifactDetail() {
         acquisition_source: artifact.acquisition_source || '',
         acquisition_note: artifact.acquisition_note || '',
         legal_transfer_date: artifact.legal_transfer_date || '',
+        acquisition_source_contact: artifact.acquisition_source_contact || '',
+        acquisition_authorised_by: artifact.acquisition_authorised_by || '',
+        acquisition_authority_date: artifact.acquisition_authority_date || '',
+        acquisition_title_guarantee: artifact.acquisition_title_guarantee || '',
+        acquisition_object_count: artifact.acquisition_object_count ?? 1,
+        accession_register_confirmed: artifact.accession_register_confirmed ?? false,
+        ethics_art_loss_register: artifact.ethics_art_loss_register ?? false,
+        ethics_cites: artifact.ethics_cites ?? false,
+        ethics_dealing_act: artifact.ethics_dealing_act ?? false,
+        ethics_human_remains: artifact.ethics_human_remains ?? false,
         current_location: artifact.current_location || '',
         location_note: artifact.location_note || '',
         condition_grade: artifact.condition_grade || '',
@@ -177,7 +198,7 @@ export default function ArtifactDetail() {
     }
   }, [activeTab, artifact])
 
-  function set(field: string, value: string) {
+  function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
   }
 
@@ -191,12 +212,14 @@ export default function ArtifactDetail() {
       ...form,
       acquisition_date: form.acquisition_date || null,
       legal_transfer_date: form.legal_transfer_date || null,
+      acquisition_authority_date: form.acquisition_authority_date || null,
+      acquisition_object_count: form.acquisition_object_count ? parseInt(form.acquisition_object_count) : 1,
       condition_date: form.condition_date || null,
       disposal_date: form.disposal_date || null,
       last_inventoried: form.last_inventoried || null,
     }).eq('id', params.id)
 
-    if (error) { setError(error.message) } else { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+    if (error) { setError(error.message) } else { setSaved(true); router.refresh(); setTimeout(() => setSaved(false), 2000) }
     setSaving(false)
   }
 
@@ -214,7 +237,7 @@ export default function ArtifactDetail() {
     await supabase.from('location_history').insert({ ...locationForm, artifact_id: artifact.id, museum_id: museum.id })
     await supabase.from('artifacts').update({ current_location: locationForm.location }).eq('id', artifact.id)
     setForm(f => ({ ...f, current_location: locationForm.location }))
-    setLocationForm({ location: '', reason: '', moved_by: '' })
+    setLocationForm({ location: '', reason: '', moved_by: '', authorised_by: '' })
     const { data } = await supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
     setLocationHistory(data || [])
   }
@@ -247,26 +270,55 @@ export default function ArtifactDetail() {
   // Loans
   async function addLoan() {
     if (!loanForm.borrowing_institution) return
-    await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null })
-    setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '' })
+    await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null })
+    await supabase.from('artifacts').update({ status: 'On Loan' }).eq('id', artifact.id)
+    setForm(f => ({ ...f, status: 'On Loan' }))
+    setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '' })
     const { data } = await supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setLoanHistory(data || [])
   }
 
-  async function endLoan(loanId: string) {
-    await supabase.from('loans').update({ status: 'Returned' }).eq('id', loanId)
-    await supabase.from('artifacts').update({ status: 'Storage' }).eq('id', artifact.id)
-    setForm(f => ({ ...f, status: 'Storage' }))
+  const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
+  const [returnLocation, setReturnLocation] = useState('')
+  const [returnCondition, setReturnCondition] = useState('')
+
+  function promptEndLoan(loanId: string) {
+    setEndingLoanId(loanId)
+    setReturnLocation(form.current_location || '')
+    setReturnCondition('')
+  }
+
+  async function confirmEndLoan(loanId: string) {
+    const today = new Date().toISOString().slice(0, 10)
+    await supabase.from('loans').update({ status: 'Returned', condition_return: returnCondition || null, return_confirmed: true, return_confirmed_date: today }).eq('id', loanId)
+    await supabase.from('artifacts').update({ status: 'Storage', current_location: returnLocation }).eq('id', artifact.id)
+    if (returnLocation) {
+      await supabase.from('location_history').insert({
+        artifact_id: artifact.id, museum_id: museum.id,
+        location: returnLocation, reason: 'Loan', moved_by: '',
+      })
+      if (locationLoaded) {
+        const { data } = await supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
+        setLocationHistory(data || [])
+      }
+    }
+    setForm(f => ({ ...f, status: 'Storage', current_location: returnLocation }))
     setLoanHistory(h => h.map(l => l.id === loanId ? { ...l, status: 'Returned' } : l))
+    setEndingLoanId(null)
+    router.refresh()
   }
 
   // Audit
   async function addAudit() {
     if (!auditForm.inventoried_at) return
-    await supabase.from('audit_records').insert({ ...auditForm, artifact_id: artifact.id, museum_id: museum.id })
+    await supabase.from('audit_records').insert({
+      ...auditForm,
+      artifact_id: artifact.id, museum_id: museum.id,
+      action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
+    })
     await supabase.from('artifacts').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', artifact.id)
     setForm(f => ({ ...f, last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }))
-    setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', discrepancy: '', notes: '' })
+    setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
     const { data } = await supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
     setAuditHistory(data || [])
   }
@@ -464,6 +516,56 @@ export default function ArtifactDetail() {
               </div>
             </div>
 
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Governance (Spectrum 2 — Mandatory)</div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Source Contact Details</label><input value={form.acquisition_source_contact} onChange={e => set('acquisition_source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} /></div>
+                <div><label className={labelCls}>Authorised By</label><input value={form.acquisition_authorised_by} onChange={e => set('acquisition_authorised_by', e.target.value)} placeholder="Name and role of authorising person or body" className={inputCls} /></div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Authority Date</label>
+                  <input type="date" value={form.acquisition_authority_date} onChange={e => set('acquisition_authority_date', e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Title / Legal Basis</label>
+                  <select value={form.acquisition_title_guarantee} onChange={e => set('acquisition_title_guarantee', e.target.value)} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {TITLE_GUARANTEE_OPTIONS.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Number of Objects</label>
+                  <input type="number" min={1} value={form.acquisition_object_count} onChange={e => set('acquisition_object_count', e.target.value)} className={inputCls} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <input type="checkbox" id="accession_confirmed" checked={!!form.accession_register_confirmed} onChange={e => set('accession_register_confirmed', e.target.checked)} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
+                <label htmlFor="accession_confirmed" className="text-sm text-stone-700">Formally entered in accession register</label>
+                {form.accession_register_confirmed && <span className="text-xs font-mono text-emerald-600">✓ Confirmed</span>}
+              </div>
+            </div>
+
+            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-3">
+              <div className={sectionTitle}>Legal & Ethics Checks (Spectrum 2 — Mandatory)</div>
+              <p className="text-xs text-stone-400 -mt-2">Tick each check once completed. All must be considered for acquisitions made after 2005.</p>
+
+              {[
+                { field: 'ethics_art_loss_register', label: 'Art Loss Register — checked that object is not listed as stolen' },
+                { field: 'ethics_cites', label: 'CITES — no endangered species materials (ivory, tortoiseshell, feathers, etc.)' },
+                { field: 'ethics_dealing_act', label: 'Dealing in Cultural Objects (Offences) Act 2003 — checked country of origin' },
+                { field: 'ethics_human_remains', label: 'Human Remains — guidance followed if object contains human material' },
+              ].map(({ field, label }) => (
+                <div key={field} className="flex items-center gap-3">
+                  <input type="checkbox" id={field} checked={!!form[field]} onChange={e => set(field, e.target.checked)} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
+                  <label htmlFor={field} className="text-sm text-stone-700">{label}</label>
+                </div>
+              ))}
+            </div>
+
             <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
           </>}
 
@@ -491,6 +593,7 @@ export default function ArtifactDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Moved By</label><input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Authorised By</label><input value={locationForm.authorised_by} onChange={e => setLocationForm(f => ({ ...f, authorised_by: e.target.value }))} placeholder="Staff member or governing body" className={inputCls} /></div>
               </div>
               <button type="button" onClick={addLocation}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
@@ -507,6 +610,7 @@ export default function ArtifactDetail() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Reason</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Moved By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Authorised By</th>
                   </tr></thead>
                   <tbody>
                     {locationHistory.map(h => (
@@ -515,6 +619,7 @@ export default function ArtifactDetail() {
                         <td className="px-4 py-3 text-sm text-stone-900">{h.location}</td>
                         <td className="px-4 py-3 text-xs text-stone-500">{h.reason}</td>
                         <td className="px-4 py-3 text-xs text-stone-500">{h.moved_by}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">{h.authorised_by}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -700,6 +805,29 @@ export default function ArtifactDetail() {
                 <div><label className={labelCls}>Loan Start</label><input type="date" value={loanForm.loan_start_date} onChange={e => setLoanForm(f => ({ ...f, loan_start_date: e.target.value }))} className={inputCls} /></div>
                 <div><label className={labelCls}>Expected Return</label><input type="date" value={loanForm.loan_end_date} onChange={e => setLoanForm(f => ({ ...f, loan_end_date: e.target.value }))} className={inputCls} /></div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Agreement Reference</label><input value={loanForm.agreement_reference} onChange={e => setLoanForm(f => ({ ...f, agreement_reference: e.target.value }))} placeholder="Loan agreement document ref" className={inputCls} /></div>
+                <div><label className={labelCls}>Agreement Signed Date</label><input type="date" value={loanForm.agreement_signed_date} onChange={e => setLoanForm(f => ({ ...f, agreement_signed_date: e.target.value }))} className={inputCls} /></div>
+              </div>
+              {loanForm.direction === 'In' && (
+                <div><label className={labelCls}>Lender's Object Reference</label><input value={loanForm.lender_object_ref} onChange={e => setLoanForm(f => ({ ...f, lender_object_ref: e.target.value }))} placeholder="Lender's own catalogue or accession number" className={inputCls} /></div>
+              )}
+              <div>
+                <label className={labelCls}>Insurance Type</label>
+                <div className="flex gap-2 flex-wrap">
+                  {INSURANCE_TYPES.map(t => (
+                    <button key={t} type="button" onClick={() => setLoanForm(f => ({ ...f, insurance_type: t }))}
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.insurance_type === t ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Loan Coordinator</label><input value={loanForm.loan_coordinator} onChange={e => setLoanForm(f => ({ ...f, loan_coordinator: e.target.value }))} placeholder="Staff member managing this loan" className={inputCls} /></div>
+                <div><label className={labelCls}>Approved By</label><input value={loanForm.approved_by} onChange={e => setLoanForm(f => ({ ...f, approved_by: e.target.value }))} placeholder="Authorising person or body" className={inputCls} /></div>
+              </div>
+              <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" /></div>
               <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" /></div>
               <button type="button" onClick={addLoan}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
@@ -720,23 +848,66 @@ export default function ArtifactDetail() {
                   </tr></thead>
                   <tbody>
                     {loanHistory.map(l => (
-                      <tr key={l.id} className={`border-b border-stone-100 ${l.status === 'Active' ? 'bg-amber-50/30' : ''}`}>
-                        <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
-                        <td className="px-4 py-3 text-sm text-stone-900">{l.borrowing_institution}</td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
-                          {l.loan_start_date ? new Date(l.loan_start_date).toLocaleDateString('en-GB') : '—'}
-                          {' → '}
-                          {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{l.status}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {l.status === 'Active' && (
-                            <button type="button" onClick={() => endLoan(l.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900">End loan →</button>
-                          )}
-                        </td>
-                      </tr>
+                      <Fragment key={l.id}>
+                        <tr className={`border-b border-stone-100 ${l.status === 'Active' ? 'bg-amber-50/30' : ''}`}>
+                          <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
+                          <td className="px-4 py-3 text-sm text-stone-900">{l.borrowing_institution}</td>
+                          <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                            {l.loan_start_date ? new Date(l.loan_start_date).toLocaleDateString('en-GB') : '—'}
+                            {' → '}
+                            {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{l.status}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {l.status === 'Active' && (
+                              endingLoanId === l.id
+                                ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 hover:text-stone-900">Cancel</button>
+                                : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900">End loan →</button>
+                            )}
+                          </td>
+                        </tr>
+                        {endingLoanId === l.id && (
+                          <tr className="border-b border-stone-200 bg-stone-50">
+                            <td colSpan={5} className="px-6 py-4 space-y-3">
+                              <div className="text-xs uppercase tracking-widest text-stone-400">Confirm Return</div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs text-stone-400 mb-1">Return location</label>
+                                  <input
+                                    type="text"
+                                    value={returnLocation}
+                                    onChange={e => setReturnLocation(e.target.value)}
+                                    placeholder="e.g. Gallery 3, Cabinet A"
+                                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-stone-400 mb-1">Condition on return</label>
+                                  <input
+                                    type="text"
+                                    value={returnCondition}
+                                    onChange={e => setReturnCondition(e.target.value)}
+                                    placeholder="e.g. Good — minor surface dust"
+                                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => confirmEndLoan(l.id)}
+                                  className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded whitespace-nowrap"
+                                >
+                                  Confirm return
+                                </button>
+                                <p className="text-xs text-stone-400">Marks the loan returned, sets status to Storage, and logs a location change.</p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -807,6 +978,40 @@ export default function ArtifactDetail() {
                 </div>
               </div>
               <div>
+                <label className={labelCls}>Inventory Outcome *</label>
+                <div className="flex gap-2 flex-wrap">
+                  {INVENTORY_OUTCOMES.map(o => (
+                    <button key={o} type="button" onClick={() => setAuditForm(f => ({ ...f, inventory_outcome: o }))}
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${auditForm.inventory_outcome === o ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {auditForm.inventory_outcome && auditForm.inventory_outcome !== 'Present and correct' && (
+                <div className="space-y-3 border border-amber-200 rounded-lg p-4 bg-amber-50/30">
+                  <div className="text-xs uppercase tracking-widest text-amber-600">Action Required</div>
+                  <div>
+                    <label className={labelCls}>Action Required</label>
+                    <input value={auditForm.action_required} onChange={e => setAuditForm(f => ({ ...f, action_required: e.target.value }))} placeholder="Describe action needed (e.g. update location, further investigation)" className={inputCls} />
+                  </div>
+                  {auditForm.action_required && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="action_completed" checked={auditForm.action_completed} onChange={e => setAuditForm(f => ({ ...f, action_completed: e.target.checked }))} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
+                        <label htmlFor="action_completed" className="text-sm text-stone-700">Action completed</label>
+                      </div>
+                      {auditForm.action_completed && (
+                        <div>
+                          <label className={labelCls}>Completed Date</label>
+                          <input type="date" value={auditForm.action_completed_date} onChange={e => setAuditForm(f => ({ ...f, action_completed_date: e.target.value }))} className={inputCls} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div>
                 <label className={labelCls}>Discrepancy</label>
                 <textarea value={auditForm.discrepancy} onChange={e => setAuditForm(f => ({ ...f, discrepancy: e.target.value }))} rows={2}
                   placeholder="Note any discrepancy from the catalogue record…"
@@ -837,18 +1042,28 @@ export default function ArtifactDetail() {
                   <thead><tr className="bg-stone-50 border-b border-stone-200">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">By</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 font-normal px-4 py-3">Location Found</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Outcome</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location Found</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Condition</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Discrepancy</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Action</th>
                   </tr></thead>
                   <tbody>
                     {auditHistory.map(h => (
                       <tr key={h.id} className="border-b border-stone-100">
                         <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
                         <td className="px-4 py-3 text-xs text-stone-500">{h.inventoried_by}</td>
+                        <td className="px-4 py-3">
+                          {h.inventory_outcome && (
+                            <span className={`text-xs font-mono px-2 py-1 rounded-full ${h.inventory_outcome === 'Present and correct' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{h.inventory_outcome}</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-xs text-stone-500">{h.location_confirmed}</td>
                         <td className="px-4 py-3">{h.condition_confirmed && <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.condition_confirmed] || 'bg-stone-100 text-stone-500'}`}>{h.condition_confirmed}</span>}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.discrepancy}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500">
+                          {h.action_required && (
+                            <span className={h.action_completed ? 'text-emerald-600 line-through' : 'text-amber-600'}>{h.action_required}</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

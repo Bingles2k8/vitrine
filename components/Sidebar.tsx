@@ -47,9 +47,13 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Objects')}
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Compliance</div>
+        {navItem('/dashboard/entry', '🗂', 'Object Entry')}
+        {navItem('/dashboard/register', '📋', 'Accession Register')}
         {navItem('/dashboard/loans', '⇄', 'Loans Register')}
         {navItem('/dashboard/conservation', '⚗', 'Conservation')}
         {navItem('/dashboard/audit', '◎', 'Audit & Inventory')}
+        {navItem('/dashboard/exits', '↗', 'Object Exit')}
+        {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder')}
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
