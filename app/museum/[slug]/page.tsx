@@ -111,7 +111,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           background: heroBg,
           backgroundImage: museum.hero_image_url ? `url(${museum.hero_image_url})` : undefined,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: museum.hero_image_url ? (museum.hero_image_position || '50% 50%') : 'center',
         }}>
           {museum.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
           <div className="max-w-6xl mx-auto relative z-10">

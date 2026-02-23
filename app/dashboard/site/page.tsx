@@ -59,6 +59,7 @@ export default function SiteBuilder() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [uploadingField, setUploadingField] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -68,6 +69,7 @@ export default function SiteBuilder() {
     logo_emoji: '🏛️',
     logo_image_url: '',
     hero_image_url: '',
+    hero_image_position: '50% 50%',
     heading_font: 'playfair',
     primary_color: '#0f0e0c',
     accent_color: '#c8961e',
@@ -95,6 +97,7 @@ export default function SiteBuilder() {
         logo_emoji: museum.logo_emoji || '🏛️',
         logo_image_url: museum.logo_image_url || '',
         hero_image_url: museum.hero_image_url || '',
+        hero_image_position: museum.hero_image_position || '50% 50%',
         heading_font: museum.heading_font || 'playfair',
         primary_color: museum.primary_color || '#0f0e0c',
         accent_color: museum.accent_color || '#c8961e',
@@ -127,6 +130,13 @@ export default function SiteBuilder() {
       set(field, publicUrl)
     }
     setUploadingField(null)
+  }
+
+  function handleFocalPoint(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)))
+    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)))
+    set('hero_image_position', `${x}% ${y}%`)
   }
 
   function selectTemplate(id: string) {
@@ -325,14 +335,44 @@ export default function SiteBuilder() {
                 <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Header Image</label>
                 <p className="text-xs text-stone-400 mb-3">Background image for the hero section. Wide landscape images work best.</p>
                 {form.hero_image_url ? (
-                  <div className="relative rounded-lg overflow-hidden border border-stone-200 group">
-                    <img src={form.hero_image_url} alt="Header" className="w-full h-24 object-cover" />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <label className="text-xs font-mono text-white bg-black/60 px-3 py-1.5 rounded cursor-pointer">
-                        {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change'}
+                  <div className="space-y-2">
+                    {/* Focal point picker */}
+                    <div
+                      className="relative rounded-lg overflow-hidden border border-stone-200 select-none"
+                      style={{ height: '120px', cursor: 'crosshair' }}
+                      onMouseDown={e => { setIsDragging(true); handleFocalPoint(e) }}
+                      onMouseMove={e => { if (isDragging) handleFocalPoint(e) }}
+                      onMouseUp={() => setIsDragging(false)}
+                      onMouseLeave={() => setIsDragging(false)}
+                    >
+                      <img
+                        src={form.hero_image_url} alt="Header" draggable={false}
+                        className="w-full h-full object-cover pointer-events-none"
+                        style={{ objectPosition: form.hero_image_position }}
+                      />
+                      {/* Focal point indicator */}
+                      {(() => {
+                        const parts = (form.hero_image_position || '50% 50%').split(' ')
+                        const px = parseInt(parts[0]) || 50
+                        const py = parseInt(parts[1]) || 50
+                        return (
+                          <div
+                            className="absolute w-5 h-5 rounded-full border-2 border-white pointer-events-none"
+                            style={{ left: `${px}%`, top: `${py}%`, transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 1.5px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3)' }}
+                          />
+                        )
+                      })()}
+                      {/* Hint */}
+                      <div className="absolute bottom-0 inset-x-0 px-2.5 py-1.5 bg-gradient-to-t from-black/50 to-transparent pointer-events-none">
+                        <p className="text-xs text-white/80 font-mono">Drag to reposition</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <label className="text-xs font-mono text-stone-600 border border-stone-200 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 transition-colors">
+                        {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change image'}
                         <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                       </label>
-                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-white bg-red-500/80 px-3 py-1.5 rounded">Remove</button>
+                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
                   </div>
                 ) : (
@@ -515,7 +555,7 @@ export default function SiteBuilder() {
                   background: previewHeroBg,
                   backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
                 }}>
                   {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
                   <div className="relative z-10">
