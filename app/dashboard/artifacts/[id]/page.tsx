@@ -19,6 +19,9 @@ const TITLE_GUARANTEE_OPTIONS = ['Deed of Gift','Bill of Sale','Transfer documen
 const INSURANCE_TYPES = ['Own policy','Borrower\'s policy','Government Indemnity Scheme','None']
 const INVENTORY_OUTCOMES = ['Present and correct','Present — location differs','Not found','Found in collection','No prior record']
 
+const ENTRY_REASONS = ['Potential acquisition', 'Loan in', 'Enquiry', 'Return from loan', 'Found in collection']
+const ENTRY_OUTCOMES = ['Pending', 'Acquired', 'Returned to depositor', 'Transferred to loan', 'Disposed']
+
 const CONDITION_STYLES: Record<string, string> = {
   'Excellent': 'bg-emerald-50 text-emerald-700',
   'Good':      'bg-green-50 text-green-700',
@@ -29,6 +32,7 @@ const CONDITION_STYLES: Record<string, string> = {
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
+  { id: 'entry',        label: 'Object Entry' },
   { id: 'acquisition',  label: 'Acquisition' },
   { id: 'location',     label: 'Location' },
   { id: 'condition',    label: 'Condition' },
@@ -68,6 +72,19 @@ export default function ArtifactDetail() {
   const [loanLoaded, setLoanLoaded] = useState(false)
   const [auditHistory, setAuditHistory] = useState<any[]>([])
   const [auditLoaded, setAuditLoaded] = useState(false)
+
+  // Object Entry record
+  const [entryRecord, setEntryRecord] = useState<any>(null)
+  const [entryLoaded, setEntryLoaded] = useState(false)
+  const [savingEntry, setSavingEntry] = useState(false)
+  const today = new Date().toISOString().slice(0, 10)
+  const [entryForm, setEntryForm] = useState<Record<string, any>>({
+    entry_number: '', entry_date: '', depositor_name: '', depositor_contact: '',
+    entry_reason: 'Potential acquisition', object_description: '', object_count: 1,
+    legal_owner: '', terms_accepted: false, terms_accepted_date: '',
+    liability_statement: '', receipt_issued: false, receipt_date: '',
+    outcome: 'Pending', received_by: '', risk_notes: '', quarantine_required: false, notes: '',
+  })
 
   // Inline add-record forms
   const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '', authorised_by: '' })
@@ -196,6 +213,36 @@ export default function ArtifactDetail() {
       supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
         .then(({ data }) => { setAuditHistory(data || []); setAuditLoaded(true) })
     }
+    if (activeTab === 'entry' && !entryLoaded) {
+      supabase.from('entry_records').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false }).limit(1)
+        .then(({ data }) => {
+          const record = data?.[0] || null
+          setEntryRecord(record)
+          if (record) {
+            setEntryForm({
+              entry_number: record.entry_number || '',
+              entry_date: record.entry_date || '',
+              depositor_name: record.depositor_name || '',
+              depositor_contact: record.depositor_contact || '',
+              entry_reason: record.entry_reason || 'Potential acquisition',
+              object_description: record.object_description || '',
+              object_count: record.object_count || 1,
+              legal_owner: record.legal_owner || '',
+              terms_accepted: record.terms_accepted || false,
+              terms_accepted_date: record.terms_accepted_date || '',
+              liability_statement: record.liability_statement || '',
+              receipt_issued: record.receipt_issued || false,
+              receipt_date: record.receipt_date || '',
+              outcome: record.outcome || 'Pending',
+              received_by: record.received_by || '',
+              risk_notes: record.risk_notes || '',
+              quarantine_required: record.quarantine_required || false,
+              notes: record.notes || '',
+            })
+          }
+          setEntryLoaded(true)
+        })
+    }
   }, [activeTab, artifact])
 
   function set(field: string, value: any) {
@@ -229,6 +276,38 @@ export default function ArtifactDetail() {
     setDeleting(true)
     const { error } = await supabase.from('artifacts').delete().eq('id', params.id)
     if (error) { setError(error.message); setDeleting(false) } else { router.push('/dashboard') }
+  }
+
+  function setE(field: string, value: any) {
+    setEntryForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function saveEntry() {
+    if (!entryRecord) return
+    setSavingEntry(true)
+    await supabase.from('entry_records').update({
+      entry_number: entryForm.entry_number || entryRecord.entry_number,
+      entry_date: entryForm.entry_date,
+      depositor_name: entryForm.depositor_name,
+      depositor_contact: entryForm.depositor_contact || null,
+      entry_reason: entryForm.entry_reason,
+      object_description: entryForm.object_description,
+      object_count: entryForm.object_count,
+      legal_owner: entryForm.legal_owner || null,
+      terms_accepted: entryForm.terms_accepted,
+      terms_accepted_date: entryForm.terms_accepted ? (entryForm.terms_accepted_date || today) : null,
+      liability_statement: entryForm.liability_statement || null,
+      receipt_issued: entryForm.receipt_issued,
+      receipt_date: entryForm.receipt_issued ? (entryForm.receipt_date || today) : null,
+      outcome: entryForm.outcome,
+      received_by: entryForm.received_by,
+      risk_notes: entryForm.risk_notes || null,
+      quarantine_required: entryForm.quarantine_required,
+      notes: entryForm.notes || null,
+    }).eq('id', entryRecord.id)
+    setSavingEntry(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   // Location history
@@ -483,6 +562,155 @@ export default function ArtifactDetail() {
             </div>
 
             <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+          </>}
+
+          {/* ── OBJECT ENTRY ─────────────────────────────── */}
+          {activeTab === 'entry' && <>
+            {!entryLoaded ? (
+              <div className="bg-white border border-stone-200 rounded-lg p-8 text-center">
+                <p className="text-sm font-mono text-stone-400">Loading…</p>
+              </div>
+            ) : !entryRecord ? (
+              <div className="bg-white border border-stone-200 rounded-lg p-8 text-center">
+                <div className="text-4xl mb-3">🗂</div>
+                <div className="text-sm font-medium text-stone-700 mb-1">No entry record linked</div>
+                <p className="text-xs text-stone-400">This object was added directly to the collection. Entry records are created in the Object Entry Register.</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                  <div className={sectionTitle}>Entry Record — {entryRecord.entry_number}</div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Entry Number</label>
+                      <input type="text" value={entryForm.entry_number} onChange={e => setE('entry_number', e.target.value)} className={`${inputCls} font-mono`} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Entry Date</label>
+                      <input type="date" value={entryForm.entry_date} onChange={e => setE('entry_date', e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Entry Reason</label>
+                      <select value={entryForm.entry_reason} onChange={e => setE('entry_reason', e.target.value)} className={inputCls}>
+                        {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Outcome</label>
+                      <select value={entryForm.outcome} onChange={e => setE('outcome', e.target.value)} className={inputCls}>
+                        {ENTRY_OUTCOMES.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Number of Objects</label>
+                      <input type="number" min={1} value={entryForm.object_count} onChange={e => setE('object_count', parseInt(e.target.value) || 1)} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Received By</label>
+                      <input type="text" value={entryForm.received_by} onChange={e => setE('received_by', e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                  <div className={sectionTitle}>Depositor</div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Depositor Name</label>
+                      <input type="text" value={entryForm.depositor_name} onChange={e => setE('depositor_name', e.target.value)} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Depositor Contact</label>
+                      <input type="text" value={entryForm.depositor_contact} onChange={e => setE('depositor_contact', e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Legal Owner / Title Holder</label>
+                      <input type="text" value={entryForm.legal_owner} onChange={e => setE('legal_owner', e.target.value)} className={inputCls} placeholder="If different from depositor" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Object Description</label>
+                    <textarea rows={3} value={entryForm.object_description} onChange={e => setE('object_description', e.target.value)} className={inputCls} />
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Liability Statement</label>
+                    <textarea rows={2} value={entryForm.liability_statement} onChange={e => setE('liability_statement', e.target.value)} className={inputCls} />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                  <div className={sectionTitle}>Receipt & Terms</div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="e_terms" checked={entryForm.terms_accepted} onChange={e => setE('terms_accepted', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
+                        <label htmlFor="e_terms" className="text-sm text-stone-700">Terms &amp; conditions accepted</label>
+                      </div>
+                      {entryForm.terms_accepted && (
+                        <div>
+                          <label className={labelCls}>Date accepted</label>
+                          <input type="date" value={entryForm.terms_accepted_date} onChange={e => setE('terms_accepted_date', e.target.value)} className={inputCls} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="e_receipt" checked={entryForm.receipt_issued} onChange={e => setE('receipt_issued', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
+                        <label htmlFor="e_receipt" className="text-sm text-stone-700">Receipt issued to depositor</label>
+                      </div>
+                      {entryForm.receipt_issued && (
+                        <div>
+                          <label className={labelCls}>Receipt date</label>
+                          <input type="date" value={entryForm.receipt_date} onChange={e => setE('receipt_date', e.target.value)} className={inputCls} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                  <div className={sectionTitle}>Risk</div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Risk Notes</label>
+                      <textarea rows={2} value={entryForm.risk_notes} onChange={e => setE('risk_notes', e.target.value)} className={inputCls} placeholder="Pest, hazardous materials, fragility…" />
+                    </div>
+                    <div className="flex items-center gap-3 pt-6">
+                      <input type="checkbox" id="e_quarantine" checked={entryForm.quarantine_required} onChange={e => setE('quarantine_required', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
+                      <label htmlFor="e_quarantine" className="text-sm text-stone-700">Quarantine required</label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Notes</label>
+                    <textarea rows={2} value={entryForm.notes} onChange={e => setE('notes', e.target.value)} className={inputCls} />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 items-center">
+                  <button type="button" onClick={saveEntry} disabled={savingEntry}
+                    className="bg-stone-900 text-white text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                    {savingEntry ? 'Saving…' : 'Save entry record →'}
+                  </button>
+                  {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
+                </div>
+              </>
+            )}
           </>}
 
           {/* ── ACQUISITION ──────────────────────────────── */}

@@ -60,6 +60,11 @@ export default function EntryRegisterPage() {
   }
 
   function handleEdit(entry: any) {
+    // If this entry has been promoted to an artifact, go to the unified detail page
+    if (entry.artifact_id) {
+      router.push(`/dashboard/artifacts/${entry.artifact_id}?tab=entry`)
+      return
+    }
     setForm({
       entry_number: entry.entry_number || '',
       entry_date: entry.entry_date || today,
