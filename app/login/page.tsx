@@ -44,17 +44,17 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-stone-50">
+    <main className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl italic text-stone-900 mb-2">Vitrine.</h1>
-          <p className="text-stone-400 text-sm">Museum CMS</p>
+          <h1 className="font-serif text-4xl italic text-stone-900 dark:text-stone-100 mb-2">Vitrine.</h1>
+          <p className="text-stone-400 dark:text-stone-500 text-sm">Museum CMS</p>
         </div>
 
-        <div className="bg-white border border-stone-200 rounded-lg p-8">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8">
           <form className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-widest text-stone-400 mb-2">
+              <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
                 Email
               </label>
               <input
@@ -62,12 +62,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@museum.org"
-                className="w-full border border-stone-200 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 transition-colors"
+                className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs uppercase tracking-widest text-stone-400 mb-2">
+              <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
                 Password
               </label>
               <input
@@ -75,7 +75,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-stone-200 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 transition-colors"
+                className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
               />
             </div>
 
@@ -87,14 +87,14 @@ export default function LoginPage() {
               <button
                 onClick={handleLogin}
                 disabled={loading}
-                className="flex-1 bg-stone-900 text-white rounded py-2 text-sm font-mono disabled:opacity-50"
+                className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded py-2 text-sm font-mono disabled:opacity-50"
               >
                 {loading ? 'Loading…' : 'Sign in'}
               </button>
               <button
                 onClick={handleSignUp}
                 disabled={loading}
-                className="flex-1 border border-stone-200 text-stone-600 rounded py-2 text-sm font-mono disabled:opacity-50"
+                className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 rounded py-2 text-sm font-mono disabled:opacity-50 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
               >
                 Sign up
               </button>
@@ -102,8 +102,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-stone-300 mt-6">
-          © 2025 Vitrine Ltd.
+        <p className="text-center text-xs text-stone-300 dark:text-stone-600 mt-6">
+          © 2026 Vitrine Ltd.
         </p>
       </div>
     </main>

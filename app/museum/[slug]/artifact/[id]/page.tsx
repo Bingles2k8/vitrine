@@ -19,6 +19,7 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
     .select('*')
     .eq('id', id)
     .eq('museum_id', museum.id)
+    .eq('show_on_site', true)
     .single()
 
   if (!artifact) notFound()

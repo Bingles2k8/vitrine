@@ -166,33 +166,50 @@ export default function Home() {
           <h2 className="font-serif text-5xl italic font-normal mb-4">Right-sized for<br />every museum.</h2>
           <p className="text-stone-400 font-light text-lg max-w-xl mb-16">From village heritage centres to national institutions.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             {[
               {
                 tier: 'Community',
-                price: '0',
+                price: 'Free',
+                priceNote: null,
                 desc: 'Perfect for small local museums and heritage societies.',
-                features: ['Up to 250 collection items', 'Public collection website', '2 staff accounts', 'Basic customisation'],
-                missing: ['Ticket booking', 'Analytics', 'Priority support'],
+                features: ['Up to 150 collection items', 'Public collection website', 'Basic site customisation'],
+                missing: ['Spectrum compliance tools', 'Analytics', 'Staff management'],
                 cta: 'Start free →',
+                ctaHref: '/login',
                 featured: false,
               },
               {
                 tier: 'Professional',
-                price: '79',
+                price: '£79',
+                priceNote: '/ month',
                 desc: 'For regional museums ready to go further online.',
-                features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Logo, colours & banner', 'Ticket booking', 'Analytics'],
+                features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Spectrum compliance tools', 'Analytics'],
                 missing: ['Priority support'],
                 cta: 'Get started →',
+                ctaHref: '/login',
                 featured: true,
               },
               {
                 tier: 'Institution',
-                price: '349',
-                desc: 'Enterprise-grade for national collections.',
-                features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Full brand customisation', 'Ticket booking', 'Advanced analytics', 'Priority support'],
+                price: '£349',
+                priceNote: '/ month',
+                desc: 'For regional and national collections.',
+                features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Spectrum compliance tools', 'Advanced analytics', 'Priority support'],
+                missing: [],
+                cta: 'Get started →',
+                ctaHref: '/login',
+                featured: false,
+              },
+              {
+                tier: 'Enterprise',
+                price: 'Custom',
+                priceNote: null,
+                desc: 'For national institutions and large-scale collections.',
+                features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Spectrum compliance tools', 'Advanced analytics', 'Dedicated support'],
                 missing: [],
                 cta: 'Contact us →',
+                ctaHref: 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry',
                 featured: false,
               },
             ].map(p => (
@@ -204,9 +221,8 @@ export default function Home() {
                 )}
                 <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{p.tier}</div>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-stone-500 text-lg">£</span>
-                  <span className="font-serif text-5xl text-white">{p.price}</span>
-                  <span className="text-stone-500 text-sm">/ month</span>
+                  <span className="font-serif text-4xl text-white">{p.price}</span>
+                  {p.priceNote && <span className="text-stone-500 text-sm">{p.priceNote}</span>}
                 </div>
                 <p className="text-sm text-stone-500 font-light mb-6">{p.desc}</p>
                 <hr className="border-white/8 mb-6" />
@@ -223,7 +239,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <Link
-                  href="/login"
+                  href={p.ctaHref}
                   className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
                 >
                   {p.cta}
