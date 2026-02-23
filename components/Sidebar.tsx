@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 
 interface SidebarProps {
   museum: any
@@ -10,6 +11,8 @@ interface SidebarProps {
 
 export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps) {
   const router = useRouter()
+  const supabase = createClient()
+  const simple = museum?.ui_mode === 'simple'
 
   function navItem(path: string, icon: string, label: string) {
     const active = activePath === path
@@ -23,6 +26,13 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
         <span>{icon}</span> {label}
       </div>
     )
+  }
+
+  async function toggleMode() {
+    if (!museum) return
+    const newMode = simple ? 'full' : 'simple'
+    await supabase.from('museums').update({ ui_mode: newMode }).eq('id', museum.id)
+    window.location.reload()
   }
 
   return (
@@ -46,22 +56,45 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
       <nav className="p-3 flex-1 overflow-y-auto">
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Objects')}
-        <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Compliance</div>
-        {navItem('/dashboard/entry', '🗂', 'Object Entry')}
-        {navItem('/dashboard/register', '📋', 'Accession Register')}
-        {navItem('/dashboard/loans', '⇄', 'Loans Register')}
-        {navItem('/dashboard/conservation', '⚗', 'Conservation')}
-        {navItem('/dashboard/audit', '◎', 'Audit & Inventory')}
-        {navItem('/dashboard/exits', '↗', 'Object Exit')}
-        {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
+
+        {simple ? (
+          <>
+            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Record</div>
+            {navItem('/dashboard/entry', '🗂', 'Add Object')}
+          </>
+        ) : (
+          <>
+            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Compliance</div>
+            {navItem('/dashboard/entry', '🗂', 'Object Entry')}
+            {navItem('/dashboard/register', '📋', 'Accession Register')}
+            {navItem('/dashboard/loans', '⇄', 'Loans Register')}
+            {navItem('/dashboard/conservation', '⚗', 'Conservation')}
+            {navItem('/dashboard/audit', '◎', 'Audit & Inventory')}
+            {navItem('/dashboard/exits', '↗', 'Object Exit')}
+            {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
+          </>
+        )}
+
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder')}
-        <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
-        {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
+
+        {!simple && (
+          <>
+            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
+            {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
+          </>
+        )}
+
         <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '◈', 'Analytics')}
       </nav>
-      <div className="p-4 border-t border-stone-200">
+      <div className="p-4 border-t border-stone-200 space-y-3">
+        <button
+          onClick={toggleMode}
+          className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+        >
+          {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
+        </button>
         <button
           onClick={onSignOut}
           className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"

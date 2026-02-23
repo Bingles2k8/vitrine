@@ -42,6 +42,8 @@ const TABS = [
   { id: 'audit',        label: 'Audit' },
 ]
 
+const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition']
+
 const inputCls = 'w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 mb-1.5'
 const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 mb-4'
@@ -450,7 +452,7 @@ export default function ArtifactDetail() {
 
         {/* Tab bar */}
         <div className="bg-white border-b border-stone-200 px-8 flex gap-1 overflow-x-auto">
-          {TABS.map(tab => (
+          {(museum?.ui_mode === 'simple' ? TABS.filter(t => SIMPLE_TABS.includes(t.id)) : TABS).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.id

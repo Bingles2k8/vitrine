@@ -249,6 +249,7 @@ export default function EntryRegisterPage() {
     </div>
   )
 
+  const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
   const returned = entries.filter(e => e.outcome === 'Returned to depositor').length
@@ -288,7 +289,7 @@ export default function EntryRegisterPage() {
           {showForm && (
             <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
               <div className="text-xs uppercase tracking-widest text-stone-400">
-                {editingEntry ? `Edit Entry Record — ${editingEntry.entry_number}` : 'New Entry Record — Spectrum Procedure 1'}
+                {editingEntry ? `Edit Entry Record — ${editingEntry.entry_number}` : (simple ? 'New Object Record' : 'New Entry Record — Spectrum Procedure 1')}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -327,10 +328,12 @@ export default function EntryRegisterPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Legal Owner / Title Holder</label>
-                  <input type="text" value={form.legal_owner} onChange={e => set('legal_owner', e.target.value)} className={inputCls} placeholder="If different from depositor" />
-                </div>
+                {!simple && (
+                  <div>
+                    <label className={labelCls}>Legal Owner / Title Holder</label>
+                    <input type="text" value={form.legal_owner} onChange={e => set('legal_owner', e.target.value)} className={inputCls} placeholder="If different from depositor" />
+                  </div>
+                )}
                 <div>
                   <label className={labelCls}>Received By *</label>
                   <input type="text" value={form.received_by} onChange={e => set('received_by', e.target.value)} className={inputCls} placeholder="Staff member name" />
@@ -342,50 +345,56 @@ export default function EntryRegisterPage() {
                 <textarea rows={3} value={form.object_description} onChange={e => set('object_description', e.target.value)} className={inputCls} placeholder="Name, materials, brief description — enough to identify the object(s)" />
               </div>
 
-              <div>
-                <label className={labelCls}>Liability Statement</label>
-                <textarea rows={2} value={form.liability_statement} onChange={e => set('liability_statement', e.target.value)} className={inputCls} placeholder="What the museum is/isn't responsible for" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" id="terms" checked={form.terms_accepted} onChange={e => set('terms_accepted', e.target.checked)} className={checkboxCls} />
-                    <label htmlFor="terms" className="text-sm text-stone-700">Terms &amp; conditions accepted</label>
-                  </div>
-                  {form.terms_accepted && (
-                    <div>
-                      <label className={labelCls}>Date accepted</label>
-                      <input type="date" value={form.terms_accepted_date} onChange={e => set('terms_accepted_date', e.target.value)} className={inputCls} />
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" id="receipt" checked={form.receipt_issued} onChange={e => set('receipt_issued', e.target.checked)} className={checkboxCls} />
-                    <label htmlFor="receipt" className="text-sm text-stone-700">Receipt issued to depositor</label>
-                  </div>
-                  {form.receipt_issued && (
-                    <div>
-                      <label className={labelCls}>Receipt date</label>
-                      <input type="date" value={form.receipt_date} onChange={e => set('receipt_date', e.target.value)} className={inputCls} />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              {!simple && (
                 <div>
-                  <label className={labelCls}>Risk Notes</label>
-                  <textarea rows={2} value={form.risk_notes} onChange={e => set('risk_notes', e.target.value)} className={inputCls} placeholder="Pest, hazardous materials, fragility concerns…" />
+                  <label className={labelCls}>Liability Statement</label>
+                  <textarea rows={2} value={form.liability_statement} onChange={e => set('liability_statement', e.target.value)} className={inputCls} placeholder="What the museum is/isn't responsible for" />
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 mt-6">
-                    <input type="checkbox" id="quarantine" checked={form.quarantine_required} onChange={e => set('quarantine_required', e.target.checked)} className={checkboxCls} />
-                    <label htmlFor="quarantine" className="text-sm text-stone-700">Quarantine required</label>
+              )}
+
+              {!simple && (
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" id="terms" checked={form.terms_accepted} onChange={e => set('terms_accepted', e.target.checked)} className={checkboxCls} />
+                      <label htmlFor="terms" className="text-sm text-stone-700">Terms &amp; conditions accepted</label>
+                    </div>
+                    {form.terms_accepted && (
+                      <div>
+                        <label className={labelCls}>Date accepted</label>
+                        <input type="date" value={form.terms_accepted_date} onChange={e => set('terms_accepted_date', e.target.value)} className={inputCls} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" id="receipt" checked={form.receipt_issued} onChange={e => set('receipt_issued', e.target.checked)} className={checkboxCls} />
+                      <label htmlFor="receipt" className="text-sm text-stone-700">Receipt issued to depositor</label>
+                    </div>
+                    {form.receipt_issued && (
+                      <div>
+                        <label className={labelCls}>Receipt date</label>
+                        <input type="date" value={form.receipt_date} onChange={e => set('receipt_date', e.target.value)} className={inputCls} />
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {!simple && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Risk Notes</label>
+                    <textarea rows={2} value={form.risk_notes} onChange={e => set('risk_notes', e.target.value)} className={inputCls} placeholder="Pest, hazardous materials, fragility concerns…" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mt-6">
+                      <input type="checkbox" id="quarantine" checked={form.quarantine_required} onChange={e => set('quarantine_required', e.target.checked)} className={checkboxCls} />
+                      <label htmlFor="quarantine" className="text-sm text-stone-700">Quarantine required</label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -443,7 +452,7 @@ export default function EntryRegisterPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Objects</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Received By</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Outcome</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Receipt</th>
+                    {!simple && <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Receipt</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Object</th>
                   </tr>
                 </thead>
@@ -466,12 +475,14 @@ export default function EntryRegisterPage() {
                           {e.outcome || 'Pending'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        {e.receipt_issued
-                          ? <span className="text-xs font-mono text-emerald-600">✓ Issued</span>
-                          : <span className="text-xs font-mono text-amber-600">Pending</span>
-                        }
-                      </td>
+                      {!simple && (
+                        <td className="px-4 py-3">
+                          {e.receipt_issued
+                            ? <span className="text-xs font-mono text-emerald-600">✓ Issued</span>
+                            : <span className="text-xs font-mono text-amber-600">Pending</span>
+                          }
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                         {e.outcome === 'Acquired' ? (
                           e.artifact_id ? (
