@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 
 const STATUS_STYLES: Record<string, string> = {
-  'Entry':         'bg-blue-50 text-blue-600',
-  'On Display':    'bg-emerald-50 text-emerald-700',
-  'Storage':       'bg-stone-100 text-stone-500',
-  'On Loan':       'bg-amber-50 text-amber-700',
-  'Restoration':   'bg-red-50 text-red-600',
-  'Deaccessioned': 'bg-stone-200 text-stone-400',
+  'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
+  'On Display':    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
+  'Storage':       'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400',
+  'On Loan':       'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  'Restoration':   'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
+  'Deaccessioned': 'bg-stone-200 text-stone-400 dark:bg-stone-800 dark:text-stone-500',
 }
 
 export default function Dashboard() {
@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
         <p className="font-mono text-sm text-stone-400">Loading…</p>
       </div>
     )
@@ -82,13 +82,13 @@ export default function Dashboard() {
   const visibleArtifacts = filter ? artifacts.filter(a => a.status === filter) : artifacts
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
 
       <Sidebar museum={museum} activePath="/dashboard" onSignOut={handleSignOut} />
 
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900">Collection</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
         </div>
 
         <div className="p-8">
@@ -102,40 +102,40 @@ export default function Dashboard() {
                   onClick={() => setFilter(card.filterKey)}
                   className={`text-left rounded-lg p-5 border transition-all ${
                     active
-                      ? 'bg-stone-900 border-stone-900'
-                      : 'bg-white border-stone-200 hover:border-stone-400 hover:shadow-sm'
+                      ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white'
+                      : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 hover:shadow-sm'
                   }`}
                 >
-                  <div className={`text-xs uppercase tracking-widest mb-2 ${active ? 'text-stone-400' : 'text-stone-400'}`}>{card.label}</div>
-                  <div className={`font-serif text-4xl ${active ? 'text-white' : 'text-stone-900'}`}>{card.value}</div>
-                  <div className={`text-xs mt-1 ${active ? 'text-stone-400' : 'text-stone-400'}`}>{card.sub}</div>
+                  <div className={`text-xs uppercase tracking-widest mb-2 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.label}</div>
+                  <div className={`font-serif text-4xl ${active ? 'text-white dark:text-stone-900' : 'text-stone-900 dark:text-stone-100'}`}>{card.value}</div>
+                  <div className={`text-xs mt-1 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.sub}</div>
                 </button>
               )
             })}
           </div>
 
           {artifacts.length === 0 ? (
-            <div className="bg-white border border-stone-200 rounded-lg flex flex-col items-center justify-center py-24 text-center">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">🏛️</div>
-              <div className="font-serif text-2xl italic text-stone-900 mb-2">Your collection is empty</div>
-              <p className="text-sm text-stone-400 mb-6">Log an object in the Entry Register to begin.</p>
+              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">Your collection is empty</div>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Log an object in the Entry Register to begin.</p>
               <button
                 onClick={() => router.push('/dashboard/entry')}
-                className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded"
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
               >
                 + New Entry Record
               </button>
             </div>
           ) : (
-            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
               {filter && (
-                <div className="px-6 py-3 border-b border-stone-100 flex items-center justify-between bg-stone-50">
-                  <span className="text-xs font-mono text-stone-500">
+                <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
+                  <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
                     Showing {visibleArtifacts.length} {visibleArtifacts.length === 1 ? 'object' : 'objects'} — {filter}
                   </span>
                   <button
                     onClick={() => setFilter(null)}
-                    className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+                    className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                   >
                     Show all objects ×
                   </button>
@@ -143,31 +143,31 @@ export default function Dashboard() {
               )}
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Year</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Medium</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Year</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Medium</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleArtifacts.map(a => (
                     <tr
                       key={a.id}
-                      className={`border-b border-stone-100 hover:bg-stone-50 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''}`}
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''}`}
                       onClick={() => router.push(`/dashboard/artifacts/${a.id}`)}
                     >
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded bg-stone-100 flex items-center justify-center text-lg">{a.emoji}</div>
+                          <div className="w-9 h-9 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">{a.emoji}</div>
                           <div>
-                            <div className="text-sm font-medium text-stone-900">{a.title}</div>
-                            <div className="text-xs text-stone-400">{a.accession_no}</div>
+                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</div>
+                            <div className="text-xs text-stone-400 dark:text-stone-500">{a.accession_no}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500">{a.year}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500">{a.medium}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.year}</td>
+                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
                       <td className="px-4 py-3">
                         {(() => {
                           const loan = loanByArtifact[a.id]
@@ -178,7 +178,7 @@ export default function Dashboard() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); router.push('/dashboard/loans') }}
-                                  className="text-xs font-mono px-2 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                  className="text-xs font-mono px-2 py-1 rounded-full bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
                                 >
                                   Loan Overdue
                                 </button>
@@ -192,7 +192,7 @@ export default function Dashboard() {
                             )
                           }
                           return (
-                            <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500'}`}>
+                            <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
                               {a.status}
                             </span>
                           )
@@ -202,7 +202,7 @@ export default function Dashboard() {
                   ))}
                   {visibleArtifacts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-400">
+                      <td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
                         No objects with status "{filter}"
                       </td>
                     </tr>

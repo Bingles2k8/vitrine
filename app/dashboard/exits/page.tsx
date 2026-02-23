@@ -8,8 +8,8 @@ import Sidebar from '@/components/Sidebar'
 const EXIT_REASONS = ['Return to depositor', 'Outgoing loan', 'Transfer', 'Disposal', 'Conservation', 'Photography', 'Sale']
 const TEMP_REASONS = new Set(['Outgoing loan', 'Conservation', 'Photography'])
 
-const inputCls = 'w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white'
-const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 mb-1.5'
+const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 const checkboxCls = 'w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900'
 
 export default function ObjectExitsPage() {
@@ -110,8 +110,8 @@ export default function ObjectExitsPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50">
-      <p className="font-mono text-sm text-stone-400">Loading…</p>
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
     </div>
   )
 
@@ -122,21 +122,21 @@ export default function ObjectExitsPage() {
   const isTemp = TEMP_REASONS.has(form.exit_reason)
 
   function exitStatus(e: any) {
-    if (!e.expected_return_date) return { label: 'Permanent', cls: 'bg-stone-100 text-stone-500' }
-    if (e.expected_return_date < todayStr) return { label: 'Overdue', cls: 'bg-red-50 text-red-600' }
-    return { label: 'Temporary', cls: 'bg-amber-50 text-amber-700' }
+    if (!e.expected_return_date) return { label: 'Permanent', cls: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' }
+    if (e.expected_return_date < todayStr) return { label: 'Overdue', cls: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' }
+    return { label: 'Temporary', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' }
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
       <Sidebar museum={museum} activePath="/dashboard/exits" onSignOut={handleSignOut} />
 
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900">Object Exit Register</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Exit Register</span>
           <button
             onClick={() => setShowForm(s => !s)}
-            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded"
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
           >
             {showForm ? '× Cancel' : '+ New Exit'}
           </button>
@@ -151,17 +151,17 @@ export default function ObjectExitsPage() {
               { label: 'Permanent', value: permanent.length },
               { label: 'Overdue Returns', value: overdue.length },
             ].map(s => (
-              <div key={s.label} className="bg-white border border-stone-200 rounded-lg p-5">
-                <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{s.label}</div>
-                <div className={`font-serif text-4xl ${s.label === 'Overdue Returns' && s.value > 0 ? 'text-red-600' : 'text-stone-900'}`}>{s.value}</div>
+              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
+                <div className={`font-serif text-4xl ${s.label === 'Overdue Returns' && s.value > 0 ? 'text-red-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>
             ))}
           </div>
 
           {/* Inline form */}
           {showForm && (
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400">New Exit Record — Spectrum Procedure 6</div>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">New Exit Record — Spectrum Procedure 6</div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -215,7 +215,7 @@ export default function ObjectExitsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <input type="checkbox" id="signed" checked={form.signed_receipt} onChange={e => set('signed_receipt', e.target.checked)} className={checkboxCls} />
-                    <label htmlFor="signed" className="text-sm text-stone-700">Signed receipt obtained</label>
+                    <label htmlFor="signed" className="text-sm text-stone-700 dark:text-stone-300">Signed receipt obtained</label>
                   </div>
                   {form.signed_receipt && (
                     <div>
@@ -250,10 +250,10 @@ export default function ObjectExitsPage() {
               </div>
 
               <div className="flex gap-3">
-                <button type="button" onClick={handleSave} disabled={saving || !form.artifact_id || !form.recipient_name || !form.exit_authorised_by} className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
+                <button type="button" onClick={handleSave} disabled={saving || !form.artifact_id || !form.recipient_name || !form.exit_authorised_by} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
                   {saving ? 'Saving…' : 'Save Exit Record'}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors px-3">
+                <button type="button" onClick={() => setShowForm(false)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors px-3">
                   Cancel
                 </button>
               </div>
@@ -262,56 +262,56 @@ export default function ObjectExitsPage() {
 
           {/* Table */}
           {exits.length === 0 && !showForm ? (
-            <div className="bg-white border border-stone-200 rounded-lg flex flex-col items-center justify-center py-24 text-center">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">↗</div>
-              <div className="font-serif text-2xl italic text-stone-900 mb-2">No exit records yet</div>
-              <p className="text-sm text-stone-400 mb-6">Record every object that leaves your premises, for any reason.</p>
-              <button onClick={() => setShowForm(true)} className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded">
+              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No exit records yet</div>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Record every object that leaves your premises, for any reason.</p>
+              <button onClick={() => setShowForm(true)} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">
                 + New Exit Record
               </button>
             </div>
           ) : exits.length > 0 && (
-            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Exit No.</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Exit Reason</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Recipient</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Receipt</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Expected Return</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Exit No.</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Exit Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Recipient</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Expected Return</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {exits.map(e => {
                     const status = exitStatus(e)
                     return (
-                      <tr key={e.id} className={`border-b border-stone-100 hover:bg-stone-50 ${status.label === 'Overdue' ? 'bg-red-50/20' : ''}`}>
-                        <td className="px-6 py-3 text-xs font-mono text-stone-600">{e.exit_number}</td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                      <tr key={e.id} className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${status.label === 'Overdue' ? 'bg-red-50/20' : ''}`}>
+                        <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
                           {new Date(e.exit_date + 'T00:00:00').toLocaleDateString('en-GB')}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <span className="text-base">{e.artifacts?.emoji}</span>
                             <div>
-                              <div className="text-sm font-medium text-stone-900">{e.artifacts?.title}</div>
-                              <div className="text-xs font-mono text-stone-400">{e.artifacts?.accession_no}</div>
+                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.artifacts?.title}</div>
+                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{e.artifacts?.accession_no}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-600">{e.exit_reason}</td>
-                        <td className="px-4 py-3 text-sm text-stone-700">{e.recipient_name}</td>
+                        <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
+                        <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
                         <td className="px-4 py-3">
                           {e.signed_receipt
                             ? <span className="text-xs font-mono text-emerald-600">✓ Signed</span>
                             : <span className="text-xs font-mono text-amber-600">Pending</span>
                           }
                         </td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
                           {e.expected_return_date ? new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}
                         </td>
                         <td className="px-4 py-3">

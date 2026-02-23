@@ -2,6 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useState, useEffect, useRef } from 'react'
+
+type Theme = 'system' | 'light' | 'dark'
 
 interface SidebarProps {
   museum: any
@@ -13,6 +16,52 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
   const router = useRouter()
   const supabase = createClient()
   const simple = museum?.ui_mode === 'simple'
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [theme, setTheme] = useState<Theme>('system')
+  const settingsRef = useRef<HTMLDivElement>(null)
+
+  // Initialise theme from localStorage
+  useEffect(() => {
+    const stored = (localStorage.getItem('theme') as Theme) || 'system'
+    setTheme(stored)
+  }, [])
+
+  // Apply/remove dark class and listen to system preference
+  useEffect(() => {
+    function applyTheme(t: Theme) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (t === 'dark' || (t === 'system' && prefersDark)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+
+    applyTheme(theme)
+
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = () => applyTheme('system')
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    }
+  }, [theme])
+
+  // Close settings panel on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false)
+      }
+    }
+    if (settingsOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [settingsOpen])
+
+  function changeTheme(t: Theme) {
+    setTheme(t)
+    localStorage.setItem('theme', t)
+  }
 
   function navItem(path: string, icon: string, label: string) {
     const active = activePath === path
@@ -20,7 +69,9 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
       <div
         onClick={() => router.push(path)}
         className={`flex items-center gap-2 px-3 py-2 rounded text-xs font-mono mb-1 cursor-pointer transition-colors ${
-          active ? 'bg-stone-900 text-white' : 'text-stone-500 hover:bg-stone-50'
+          active
+            ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900'
+            : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-800'
         }`}
       >
         <span>{icon}</span> {label}
@@ -36,35 +87,35 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
   }
 
   return (
-    <aside className="w-56 bg-white border-r border-stone-200 flex flex-col fixed top-0 left-0 bottom-0">
-      <div className="p-5 border-b border-stone-200">
-        <span className="font-serif text-xl italic text-stone-900">Vitrine<span className="text-amber-600">.</span></span>
+    <aside className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
+      <div className="p-5 border-b border-stone-200 dark:border-stone-800">
+        <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
       {museum && (
-        <div className="p-4 border-b border-stone-200">
+        <div className="p-4 border-b border-stone-200 dark:border-stone-800">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-lg">
+            <div className="w-8 h-8 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-lg">
               {museum.logo_emoji}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-stone-900 truncate">{museum.name}</div>
+              <div className="text-xs font-medium text-stone-900 dark:text-stone-100 truncate">{museum.name}</div>
               <div className="text-xs text-amber-600 tracking-wide uppercase">{museum.plan} plan</div>
             </div>
           </div>
         </div>
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
-        <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
+        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Objects')}
 
         {simple ? (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Record</div>
+            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Record</div>
             {navItem('/dashboard/entry', '🗂', 'Add Object')}
           </>
         ) : (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Compliance</div>
+            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Compliance</div>
             {navItem('/dashboard/entry', '🗂', 'Object Entry')}
             {navItem('/dashboard/register', '📋', 'Accession Register')}
             {navItem('/dashboard/loans', '⇄', 'Loans Register')}
@@ -75,31 +126,88 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
           </>
         )}
 
-        <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Website</div>
+        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder')}
 
         {!simple && (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">People</div>
+            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">People</div>
             {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
           </>
         )}
 
-        <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2 mt-2">Data</div>
+        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '◈', 'Analytics')}
       </nav>
-      <div className="p-4 border-t border-stone-200 space-y-3">
+
+      {/* Settings footer */}
+      <div className="relative border-t border-stone-200 dark:border-stone-800" ref={settingsRef}>
+        {/* Settings panel */}
+        {settingsOpen && (
+          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 dark:border-stone-800">
+              <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Settings</span>
+              <button
+                onClick={() => setSettingsOpen(false)}
+                className="text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 text-sm leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 space-y-4">
+              {/* Appearance */}
+              <div>
+                <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Appearance</div>
+                <div className="flex gap-1">
+                  {(['system', 'light', 'dark'] as Theme[]).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => changeTheme(t)}
+                      className={`flex-1 py-1.5 text-xs font-mono rounded transition-colors capitalize ${
+                        theme === t
+                          ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900'
+                          : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interface */}
+              {museum && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Interface</div>
+                  <button
+                    onClick={toggleMode}
+                    className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                  >
+                    {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
+                  </button>
+                </div>
+              )}
+
+              {/* Account */}
+              <div>
+                <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Account</div>
+                <button
+                  onClick={onSignOut}
+                  className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                >
+                  Sign out →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={toggleMode}
-          className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+          onClick={() => setSettingsOpen(prev => !prev)}
+          className="w-full px-5 py-4 text-left text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors flex items-center gap-2"
         >
-          {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
-        </button>
-        <button
-          onClick={onSignOut}
-          className="w-full text-left text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
-        >
-          Sign out →
+          <span>⚙</span> Settings
         </button>
       </div>
     </aside>

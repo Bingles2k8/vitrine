@@ -66,8 +66,8 @@ export default function AuditPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50">
-      <p className="font-mono text-sm text-stone-400">Loading…</p>
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
     </div>
   )
 
@@ -81,12 +81,12 @@ export default function AuditPage() {
   const overdue = artifacts.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
       <Sidebar museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} />
 
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900">Audit & Inventory</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Audit & Inventory</span>
         </div>
 
         <div className="p-8 space-y-6">
@@ -97,25 +97,25 @@ export default function AuditPage() {
               { label: 'Inventoried This Year', value: inventoriedThisYear.length, warn: false },
               { label: 'Overdue (> 12 months)', value: overdue.length, warn: overdue.length > 0 },
             ].map(s => (
-              <div key={s.label} className="bg-white border border-stone-200 rounded-lg p-5">
-                <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{s.label}</div>
-                <div className={`font-serif text-4xl ${s.warn && s.value > 0 ? 'text-amber-600' : 'text-stone-900'}`}>{s.value}</div>
+              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
+                <div className={`font-serif text-4xl ${s.warn && s.value > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-stone-400">Objects sorted by last inventoried date — never-inventoried items appear first. Spectrum recommends annual inventory checks.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Spectrum recommends annual inventory checks.</p>
 
           {/* Table */}
-          <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-stone-50 border-b border-stone-200">
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Object</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Last Inventoried</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">By</th>
+                <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Last Inventoried</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">By</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -127,41 +127,41 @@ export default function AuditPage() {
 
                   return (
                     <Fragment key={a.id}>
-                      <tr className={`border-b border-stone-100 hover:bg-stone-50 ${isNever || isOld ? 'bg-amber-50/20' : ''}`}>
+                      <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${isNever || isOld ? 'bg-amber-50/20' : ''}`}>
                         <td className="px-6 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded bg-stone-100 flex items-center justify-center text-base">{a.emoji}</div>
+                            <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{a.emoji}</div>
                             <div>
-                              <div className="text-sm font-medium text-stone-900">{a.title}</div>
-                              <div className="text-xs font-mono text-stone-400">{a.accession_no}</div>
+                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</div>
+                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{a.accession_no}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs text-stone-500">{a.status}</span>
+                          <span className="text-xs text-stone-500 dark:text-stone-400">{a.status}</span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{a.current_location || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.current_location || '—'}</td>
                         <td className="px-4 py-3 text-xs font-mono">
                           {isNever ? (
                             <span className="text-amber-600">Never</span>
                           ) : isOld ? (
                             <span className="text-amber-600">{new Date(a.last_inventoried).toLocaleDateString('en-GB')} ⚠</span>
                           ) : (
-                            <span className="text-stone-500">{new Date(a.last_inventoried).toLocaleDateString('en-GB')}</span>
+                            <span className="text-stone-500 dark:text-stone-400">{new Date(a.last_inventoried).toLocaleDateString('en-GB')}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{a.inventoried_by || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.inventoried_by || '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-3">
                             <button
                               onClick={() => { setRecordingId(isRecording ? null : a.id); setQuickForm({ inventoried_by: '', location_confirmed: a.current_location || '', discrepancy: '' }) }}
-                              className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+                              className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                             >
                               {isRecording ? 'Cancel' : 'Record now →'}
                             </button>
                             <button
                               onClick={() => router.push(`/dashboard/artifacts/${a.id}?tab=audit`)}
-                              className="text-xs font-mono text-stone-300 hover:text-stone-600 transition-colors"
+                              className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
                             >
                               Full record →
                             </button>
@@ -169,26 +169,26 @@ export default function AuditPage() {
                         </td>
                       </tr>
                       {isRecording && (
-                        <tr className="border-b border-stone-200 bg-stone-50">
+                        <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                           <td colSpan={6} className="px-6 py-4">
                             <div className="flex items-end gap-4">
                               <div className="flex-1">
-                                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1">Inventoried By</label>
+                                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Inventoried By</label>
                                 <input value={quickForm.inventoried_by} onChange={e => setQuickForm(f => ({ ...f, inventoried_by: e.target.value }))}
-                                  placeholder="Your name" className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 bg-white" />
+                                  placeholder="Your name" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
                               </div>
                               <div className="flex-1">
-                                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1">Location Confirmed</label>
+                                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Location Confirmed</label>
                                 <input value={quickForm.location_confirmed} onChange={e => setQuickForm(f => ({ ...f, location_confirmed: e.target.value }))}
-                                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 bg-white" />
+                                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
                               </div>
                               <div className="flex-1">
-                                <label className="block text-xs uppercase tracking-widests text-stone-400 mb-1">Discrepancy (if any)</label>
+                                <label className="block text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 mb-1">Discrepancy (if any)</label>
                                 <input value={quickForm.discrepancy} onChange={e => setQuickForm(f => ({ ...f, discrepancy: e.target.value }))}
-                                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 bg-white" />
+                                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
                               </div>
                               <button onClick={() => recordInventory(a.id)} disabled={saving}
-                                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-50 flex-shrink-0">
+                                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-50 flex-shrink-0">
                                 {saving ? 'Saving…' : 'Save →'}
                               </button>
                             </div>

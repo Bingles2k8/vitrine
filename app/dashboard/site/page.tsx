@@ -22,11 +22,11 @@ function OptionToggle({ label, options, value, onChange }: {
 }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{label}</div>
+      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{label}</div>
       <div className="flex gap-1.5 flex-wrap">
         {options.map(o => (
           <button key={o.value} type="button" onClick={() => onChange(o.value)}
-            className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${value === o.value ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+            className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${value === o.value ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
             {o.label}
           </button>
         ))}
@@ -39,14 +39,14 @@ function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-widests text-stone-400">Card Corner Radius</div>
-        <div className="text-xs font-mono text-stone-400">{value}px</div>
+        <div className="text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500">Card Corner Radius</div>
+        <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{value}px</div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="w-6 h-6 border border-stone-300 flex-shrink-0" style={{ borderRadius: '0px' }} />
+        <div className="w-6 h-6 border border-stone-300 dark:border-stone-600 flex-shrink-0" style={{ borderRadius: '0px' }} />
         <input type="range" min={0} max={20} value={value} onChange={e => onChange(parseInt(e.target.value))}
-          className="flex-1 accent-stone-900" />
-        <div className="w-6 h-6 border border-stone-300 flex-shrink-0" style={{ borderRadius: '20px' }} />
+          className="flex-1 accent-stone-900 dark:accent-white" />
+        <div className="w-6 h-6 border border-stone-300 dark:border-stone-600 flex-shrink-0" style={{ borderRadius: '20px' }} />
       </div>
     </div>
   )
@@ -172,7 +172,7 @@ export default function SiteBuilder() {
   const emojis = ['🏛️','🖼️','🏺','🗿','🔮','🎨','📜','🌿','💎','🦋','🏯','⛩️','🗽','🎭']
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
       <p className="font-mono text-sm text-stone-400">Loading...</p>
     </div>
   )
@@ -213,7 +213,7 @@ export default function SiteBuilder() {
   const sampleEmojis = ['🏺','🖼️','💎','📜','🗿','🌿']
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
 
       {/* Preload all Google Fonts so the picker preview renders instantly */}
       {FONTS.map(f => (
@@ -229,17 +229,17 @@ export default function SiteBuilder() {
 
       {/* Main */}
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0 z-10">
-          <span className="font-serif text-lg italic text-stone-900">Site Builder</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
           <div className="flex items-center gap-3">
             {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
             {error && <span className="text-xs font-mono text-red-500">{error}</span>}
             <button onClick={() => window.open('/museum/' + museum.slug, '_blank')}
-              className="border border-stone-200 text-stone-600 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50">
+              className="border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
               View public site
             </button>
             <button onClick={handleSave} disabled={saving}
-              className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
+              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
               {saving ? 'Saving...' : 'Save changes'}
             </button>
           </div>
@@ -251,13 +251,13 @@ export default function SiteBuilder() {
           <div className="space-y-6">
 
             {/* Template picker */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400 mb-1">Template</div>
-              <p className="text-xs text-stone-400 mb-4">Choose a starting point — everything below can be customised.</p>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Template</div>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
               <div className="grid grid-cols-5 gap-3">
                 {TEMPLATES.map(t => (
                   <button key={t.id} onClick={() => selectTemplate(t.id)}
-                    className={`text-left rounded-lg border-2 overflow-hidden transition-all ${form.template === t.id ? 'border-stone-900 shadow-md' : 'border-stone-200 hover:border-stone-400'}`}>
+                    className={`text-left rounded-lg border-2 overflow-hidden transition-all ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
                     <div className="h-20 relative" style={{ background: t.previewBg }}>
                       <div className="px-2 py-1.5 border-b flex items-center" style={{ borderColor: t.previewText + '15' }}>
                         <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
@@ -272,8 +272,8 @@ export default function SiteBuilder() {
                         </div>
                       )}
                     </div>
-                    <div className="px-2 py-1.5 bg-white border-t border-stone-100">
-                      <div className="text-xs font-medium text-stone-900">{t.name}</div>
+                    <div className="px-2 py-1.5 bg-white dark:bg-stone-800 border-t border-stone-100 dark:border-stone-700">
+                      <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.name}</div>
                     </div>
                   </button>
                 ))}
@@ -281,25 +281,25 @@ export default function SiteBuilder() {
             </div>
 
             {/* Identity */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Museum Identity</div>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Museum Identity</div>
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Museum Name</label>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum Name</label>
                 <input value={form.name} onChange={e => set('name', e.target.value)}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-900 transition-colors" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Tagline</label>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Tagline</label>
                 <input value={form.tagline} onChange={e => set('tagline', e.target.value)}
                   placeholder="A short description of your museum"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-900 transition-colors" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 mb-2">Logo Emoji</label>
                 <div className="flex gap-2 flex-wrap">
                   {emojis.map(e => (
                     <button key={e} type="button" onClick={() => set('logo_emoji', e)}
-                      className={'w-9 h-9 rounded-lg border text-lg transition-all ' + (form.logo_emoji === e ? 'border-stone-900 bg-stone-100' : 'border-stone-200 hover:bg-stone-50')}>
+                      className={'w-9 h-9 rounded-lg border text-lg transition-all ' + (form.logo_emoji === e ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700' : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800')}>
                       {e}
                     </button>
                   ))}
@@ -307,38 +307,38 @@ export default function SiteBuilder() {
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Logo Image</label>
-                <p className="text-xs text-stone-400 mb-3">Upload an image to replace the emoji in the nav bar. Square images work best.</p>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Logo Image</label>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Upload an image to replace the emoji in the nav bar. Square images work best.</p>
                 {form.logo_image_url ? (
                   <div className="flex items-center gap-3">
-                    <img src={form.logo_image_url} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
+                    <img src={form.logo_image_url} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-stone-200 dark:border-stone-700" />
                     <div className="flex gap-2">
-                      <label className="text-xs font-mono text-stone-600 border border-stone-200 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 transition-colors">
+                      <label className="text-xs font-mono text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                         {uploadingField === 'logo_image_url' ? 'Uploading…' : 'Change'}
                         <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
                       </label>
-                      <button type="button" onClick={() => set('logo_image_url', '')} className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors px-2">Remove</button>
+                      <button type="button" onClick={() => set('logo_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
                   </div>
                 ) : (
                   <label className="flex items-center gap-3 cursor-pointer w-fit">
-                    <div className="w-12 h-12 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-xl hover:border-stone-400 transition-colors">
+                    <div className="w-12 h-12 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center text-xl hover:border-stone-400 dark:hover:border-stone-500 transition-colors">
                       {uploadingField === 'logo_image_url' ? <span className="text-xs font-mono text-stone-400">…</span> : form.logo_emoji}
                     </div>
-                    <span className="text-xs text-stone-400 hover:text-stone-600 transition-colors">Upload logo image</span>
+                    <span className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Upload logo image</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
                   </label>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Header Image</label>
-                <p className="text-xs text-stone-400 mb-3">Background image for the hero section. Wide landscape images work best.</p>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Header Image</label>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Background image for the hero section. Wide landscape images work best.</p>
                 {form.hero_image_url ? (
                   <div className="space-y-2">
                     {/* Focal point picker */}
                     <div
-                      className="relative rounded-lg overflow-hidden border border-stone-200 select-none"
+                      className="relative rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 select-none"
                       style={{ height: '120px', cursor: 'crosshair' }}
                       onMouseDown={e => { setIsDragging(true); handleFocalPoint(e) }}
                       onMouseMove={e => { if (isDragging) handleFocalPoint(e) }}
@@ -368,21 +368,21 @@ export default function SiteBuilder() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <label className="text-xs font-mono text-stone-600 border border-stone-200 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 transition-colors">
+                      <label className="text-xs font-mono text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                         {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change image'}
                         <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                       </label>
-                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors px-2">Remove</button>
+                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 transition-colors bg-stone-50">
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-800">
                     {uploadingField === 'hero_image_url' ? (
                       <span className="text-xs font-mono text-stone-400">Uploading…</span>
                     ) : (
                       <>
                         <div className="text-2xl mb-1">🖼️</div>
-                        <div className="text-xs text-stone-400">Upload a header image</div>
+                        <div className="text-xs text-stone-400 dark:text-stone-500">Upload a header image</div>
                       </>
                     )}
                     <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
@@ -392,26 +392,26 @@ export default function SiteBuilder() {
             </div>
 
             {/* Colours */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Colours</div>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Colours</div>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-stone-900 mb-1">Primary colour</div>
-                  <div className="text-xs text-stone-400">Used for the hero banner</div>
+                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Primary colour</div>
+                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for the hero banner</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg border border-stone-200" style={{ background: form.primary_color }} />
+                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.primary_color }} />
                   <input type="color" value={form.primary_color} onChange={e => set('primary_color', e.target.value)}
                     className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-stone-900 mb-1">Accent colour</div>
-                  <div className="text-xs text-stone-400">Used for labels and highlights</div>
+                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Accent colour</div>
+                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for labels and highlights</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg border border-stone-200" style={{ background: form.accent_color }} />
+                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.accent_color }} />
                   <input type="color" value={form.accent_color} onChange={e => set('accent_color', e.target.value)}
                     className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
                 </div>
@@ -419,17 +419,17 @@ export default function SiteBuilder() {
             </div>
 
             {/* Layout & Style */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Layout & Style</div>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Layout & Style</div>
 
               <div>
                 <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Heading Font</div>
                 <div className="space-y-2">
                   {FONTS.map(f => (
                     <button key={f.id} type="button" onClick={() => set('heading_font', f.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-stone-50 border-stone-200 hover:border-stone-400'}`}>
-                      <span className={form.heading_font === f.id ? 'text-white' : 'text-stone-800'} style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
-                      <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400' : 'text-stone-500'}`}>{f.sample}</span>
+                      className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
+                      <span className={form.heading_font === f.id ? 'text-white dark:text-stone-900' : 'text-stone-800 dark:text-stone-200'} style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
+                      <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400 dark:text-stone-600' : 'text-stone-500 dark:text-stone-400'}`}>{f.sample}</span>
                     </button>
                   ))}
                 </div>
@@ -498,19 +498,19 @@ export default function SiteBuilder() {
             </div>
 
             {/* Visit info */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Visit Information</div>
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Visit Information</div>
               <div>
                 <label className="block text-xs uppercase tracking-widests text-stone-400 mb-1.5">Address</label>
                 <textarea value={form.address} onChange={e => set('address', e.target.value)}
                   placeholder="123 Museum Street, London W1 2AB" rows={2}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Opening Hours</label>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Opening Hours</label>
                 <textarea value={form.opening_hours} onChange={e => set('opening_hours', e.target.value)}
                   placeholder="Mon-Fri: 10:00-17:00, Sat-Sun: 10:00-18:00" rows={3}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
               </div>
             </div>
 
@@ -518,17 +518,17 @@ export default function SiteBuilder() {
 
           {/* Right — live preview */}
           <div className="sticky top-24">
-            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Live Preview</div>
-            <div className="border border-stone-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Live Preview</div>
+            <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden shadow-sm">
 
               {/* Browser chrome */}
-              <div className="bg-stone-100 px-3 py-2 flex items-center gap-2 border-b border-stone-200">
+              <div className="bg-stone-100 dark:bg-stone-800 px-3 py-2 flex items-center gap-2 border-b border-stone-200 dark:border-stone-700">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-stone-300" />
-                  <div className="w-3 h-3 rounded-full bg-stone-300" />
-                  <div className="w-3 h-3 rounded-full bg-stone-300" />
+                  <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
+                  <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
+                  <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
                 </div>
-                <div className="flex-1 bg-white rounded px-3 py-1 text-xs font-mono text-stone-400 text-center">
+                <div className="flex-1 bg-white dark:bg-stone-900 rounded px-3 py-1 text-xs font-mono text-stone-400 dark:text-stone-500 text-center">
                   vitrine.app/museum/{museum.slug}
                 </div>
               </div>

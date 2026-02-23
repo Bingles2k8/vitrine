@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 
-const inputCls = 'w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white'
-const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 mb-1.5'
+const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 
 interface ComplianceRow {
   procedure: string
@@ -20,7 +20,7 @@ function ProgressBar({ pct }: { pct: number }) {
   const colour = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-400'
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${colour}`} style={{ width: `${pct}%` }} />
       </div>
       <span className={`text-xs font-mono w-10 text-right ${pct >= 80 ? 'text-emerald-700' : pct >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
@@ -223,8 +223,8 @@ export default function DocumentationPlanPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50">
-      <p className="font-mono text-sm text-stone-400">Loading…</p>
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
     </div>
   )
 
@@ -240,50 +240,50 @@ export default function DocumentationPlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
       <Sidebar museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} />
 
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900">Documentation Plan</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
         </div>
 
         <div className="p-8 space-y-8">
           {/* Overall compliance score */}
-          <div className="bg-white border border-stone-200 rounded-lg p-6 flex items-center gap-8">
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-center gap-8">
             <div>
-              <div className="text-xs uppercase tracking-widest text-stone-400 mb-1">Overall Compliance Score</div>
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Overall Compliance Score</div>
               <div className={`font-serif text-6xl ${overall >= 80 ? 'text-emerald-700' : overall >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
                 {overall}%
               </div>
-              <div className="text-xs text-stone-400 mt-1 font-mono">Spectrum 5.1 — 9 Primary Procedures</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">Spectrum 5.1 — 9 Primary Procedures</div>
             </div>
             <div className="flex-1">
-              <div className="h-3 bg-stone-100 rounded-full overflow-hidden">
+              <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${overall >= 80 ? 'bg-emerald-500' : overall >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
                   style={{ width: `${overall}%` }}
                 />
               </div>
-              <div className="flex justify-between mt-1 text-xs font-mono text-stone-300">
+              <div className="flex justify-between mt-1 text-xs font-mono text-stone-300 dark:text-stone-600">
                 <span>0%</span><span>50%</span><span>100%</span>
               </div>
             </div>
           </div>
 
           {/* Procedure-by-procedure breakdown */}
-          <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-stone-100">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Compliance by Procedure</div>
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Compliance by Procedure</div>
             </div>
             <table className="w-full">
               <thead>
-                <tr className="bg-stone-50 border-b border-stone-200">
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Procedure</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Metric</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3 w-12">Done</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3 w-12">Total</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3 w-48">Progress</th>
+                <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Procedure</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Metric</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3 w-12">Done</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3 w-12">Total</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3 w-48">Progress</th>
                   <th className="px-4 py-3 w-24"></th>
                 </tr>
               </thead>
@@ -292,21 +292,21 @@ export default function DocumentationPlanPage() {
                   const pct = row.denominator > 0 ? Math.round((row.numerator / row.denominator) * 100) : 100
                   const showProcedure = i === 0 || metrics[i - 1].procedure !== row.procedure
                   return (
-                    <tr key={i} className="border-b border-stone-100 hover:bg-stone-50">
+                    <tr key={i} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
                       <td className="px-6 py-3">
                         {showProcedure && (
-                          <span className="text-xs font-mono text-stone-600">{row.procedure}</span>
+                          <span className="text-xs font-mono text-stone-600 dark:text-stone-400">{row.procedure}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-stone-700">{row.metric}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-600">{row.numerator}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-400">{row.denominator}</td>
+                      <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{row.metric}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{row.numerator}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-400 dark:text-stone-500">{row.denominator}</td>
                       <td className="px-4 py-3">
-                        {row.denominator > 0 ? <ProgressBar pct={pct} /> : <span className="text-xs font-mono text-stone-300">N/A</span>}
+                        {row.denominator > 0 ? <ProgressBar pct={pct} /> : <span className="text-xs font-mono text-stone-300 dark:text-stone-600">N/A</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {pct < 100 && row.denominator > 0 && (
-                          <button onClick={() => router.push(row.link)} className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors">
+                          <button onClick={() => router.push(row.link)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                             View backlog →
                           </button>
                         )}
@@ -319,8 +319,8 @@ export default function DocumentationPlanPage() {
           </div>
 
           {/* Documentation Plan Settings */}
-          <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
-            <div className="text-xs uppercase tracking-widest text-stone-400">Documentation Plan — Spectrum Procedure 9</div>
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Spectrum Procedure 9</div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -358,12 +358,12 @@ export default function DocumentationPlanPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button onClick={savePlan} disabled={saving} className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
+              <button onClick={savePlan} disabled={saving} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
                 {saving ? 'Saving…' : 'Save Documentation Plan'}
               </button>
               {saved && <span className="text-xs font-mono text-emerald-600">Saved ✓</span>}
               {plan?.updated_at && !saved && (
-                <span className="text-xs font-mono text-stone-400">
+                <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
                   Last saved {new Date(plan.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               )}

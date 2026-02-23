@@ -23,11 +23,11 @@ const ENTRY_REASONS = ['Potential acquisition', 'Loan in', 'Enquiry', 'Return fr
 const ENTRY_OUTCOMES = ['Pending', 'Acquired', 'Returned to depositor', 'Transferred to loan', 'Disposed']
 
 const CONDITION_STYLES: Record<string, string> = {
-  'Excellent': 'bg-emerald-50 text-emerald-700',
-  'Good':      'bg-green-50 text-green-700',
-  'Fair':      'bg-amber-50 text-amber-700',
-  'Poor':      'bg-orange-50 text-orange-700',
-  'Critical':  'bg-red-50 text-red-600',
+  'Excellent': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
+  'Good':      'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400',
+  'Fair':      'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  'Poor':      'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400',
+  'Critical':  'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
 }
 
 const TABS = [
@@ -44,9 +44,9 @@ const TABS = [
 
 const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition']
 
-const inputCls = 'w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white'
-const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 mb-1.5'
-const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 mb-4'
+const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
+const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4'
 
 export default function ArtifactDetail() {
   const [artifact, setArtifact] = useState<any>(null)
@@ -407,23 +407,23 @@ export default function ArtifactDetail() {
 
   if (loading || !artifact) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
         <p className="font-mono text-sm text-stone-400">Loading…</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
 
-      <aside className="w-56 bg-white border-r border-stone-200 flex flex-col fixed top-0 left-0 bottom-0">
-        <div className="p-5 border-b border-stone-200">
-          <span className="font-serif text-xl italic text-stone-900">Vitrine<span className="text-amber-600">.</span></span>
+      <aside className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
+        <div className="p-5 border-b border-stone-200 dark:border-stone-800">
+          <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
         </div>
         <nav className="p-3 flex-1">
-          <div className="text-xs tracking-widest uppercase text-stone-300 px-2 py-2">Collections</div>
+          <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
           <div onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50">
+            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 dark:text-stone-400 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800">
             <span>⬡</span> Objects
           </div>
         </nav>
@@ -431,14 +431,14 @@ export default function ArtifactDetail() {
 
       <main className="ml-56 flex-1 flex flex-col">
         {/* Top bar */}
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0 z-10">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push('/dashboard')}
-              className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors">
+              className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
               ← Collection
             </button>
-            <span className="text-stone-200">/</span>
-            <span className="font-serif text-lg italic text-stone-900">{artifact.title}</span>
+            <span className="text-stone-200 dark:text-stone-700">/</span>
+            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{artifact.title}</span>
           </div>
           <div className="flex items-center gap-4">
             {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
@@ -451,13 +451,13 @@ export default function ArtifactDetail() {
         </div>
 
         {/* Tab bar */}
-        <div className="bg-white border-b border-stone-200 px-8 flex gap-1 overflow-x-auto">
+        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-8 flex gap-1 overflow-x-auto">
           {(museum?.ui_mode === 'simple' ? TABS.filter(t => SIMPLE_TABS.includes(t.id)) : TABS).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.id
-                  ? 'border-stone-900 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600'
+                  ? 'border-stone-900 dark:border-white text-stone-900 dark:text-white'
+                  : 'border-transparent text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
               }`}>
               {tab.label}
             </button>
@@ -468,23 +468,23 @@ export default function ArtifactDetail() {
 
           {/* ── OVERVIEW ─────────────────────────────────── */}
           {activeTab === 'overview' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
               <ImageUpload currentUrl={form.image_url} onUpload={(url) => set('image_url', url)} />
             </div>
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
               <label className={labelCls}>Icon</label>
               <div className="flex gap-2 flex-wrap">
                 {EMOJIS.map(e => (
                   <button key={e} type="button" onClick={() => set('emoji', e)}
-                    className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100' : 'border-stone-200 hover:bg-stone-50'}`}>
+                    className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700' : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                     {e}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Core Details</div>
 
               <div>
@@ -528,7 +528,7 @@ export default function ArtifactDetail() {
                 <div className="flex gap-2 flex-wrap">
                   {STATUSES.map(s => (
                     <button key={s} type="button" onClick={() => set('status', s)}
-                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                       {s}
                     </button>
                   ))}
@@ -538,28 +538,28 @@ export default function ArtifactDetail() {
               <div>
                 <label className={labelCls}>Description (public)</label>
                 <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
 
               <div>
                 <label className={labelCls}>Inscription</label>
                 <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={2}
                   placeholder="Text inscribed on the object…"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
 
               <div>
                 <label className={labelCls}>Marks & Stamps</label>
                 <textarea value={form.marks} onChange={e => set('marks', e.target.value)} rows={2}
                   placeholder="Hallmarks, maker's marks, stamps, signatures on reverse…"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
 
               <div>
                 <label className={labelCls}>Provenance</label>
                 <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
                   placeholder="Known ownership history prior to acquisition…"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
             </div>
 
@@ -580,7 +580,7 @@ export default function ArtifactDetail() {
               </div>
             ) : (
               <>
-                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
                   <div className={sectionTitle}>Entry Record — {entryRecord.entry_number}</div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -621,7 +621,7 @@ export default function ArtifactDetail() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
                   <div className={sectionTitle}>Depositor</div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -653,14 +653,14 @@ export default function ArtifactDetail() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
                   <div className={sectionTitle}>Receipt & Terms</div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" id="e_terms" checked={entryForm.terms_accepted} onChange={e => setE('terms_accepted', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
-                        <label htmlFor="e_terms" className="text-sm text-stone-700">Terms &amp; conditions accepted</label>
+                        <label htmlFor="e_terms" className="text-sm text-stone-700 dark:text-stone-300">Terms &amp; conditions accepted</label>
                       </div>
                       {entryForm.terms_accepted && (
                         <div>
@@ -672,7 +672,7 @@ export default function ArtifactDetail() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" id="e_receipt" checked={entryForm.receipt_issued} onChange={e => setE('receipt_issued', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
-                        <label htmlFor="e_receipt" className="text-sm text-stone-700">Receipt issued to depositor</label>
+                        <label htmlFor="e_receipt" className="text-sm text-stone-700 dark:text-stone-300">Receipt issued to depositor</label>
                       </div>
                       {entryForm.receipt_issued && (
                         <div>
@@ -684,7 +684,7 @@ export default function ArtifactDetail() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
                   <div className={sectionTitle}>Risk</div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -694,7 +694,7 @@ export default function ArtifactDetail() {
                     </div>
                     <div className="flex items-center gap-3 pt-6">
                       <input type="checkbox" id="e_quarantine" checked={entryForm.quarantine_required} onChange={e => setE('quarantine_required', e.target.checked)} className="w-4 h-4 rounded border-stone-300" />
-                      <label htmlFor="e_quarantine" className="text-sm text-stone-700">Quarantine required</label>
+                      <label htmlFor="e_quarantine" className="text-sm text-stone-700 dark:text-stone-300">Quarantine required</label>
                     </div>
                   </div>
 
@@ -717,7 +717,7 @@ export default function ArtifactDetail() {
 
           {/* ── ACQUISITION ──────────────────────────────── */}
           {activeTab === 'acquisition' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Acquisition (Spectrum Procedure 2)</div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -736,18 +736,18 @@ export default function ArtifactDetail() {
                 <div>
                   <label className={labelCls}>Legal Transfer Date</label>
                   <input type="date" value={form.legal_transfer_date} onChange={e => set('legal_transfer_date', e.target.value)} className={inputCls} />
-                  <p className="text-xs text-stone-400 mt-1">The date legal title formally passed to the museum</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">The date legal title formally passed to the museum</p>
                 </div>
               </div>
 
               <div>
                 <label className={labelCls}>Acquisition Notes</label>
                 <textarea value={form.acquisition_note} onChange={e => set('acquisition_note', e.target.value)} rows={4}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
             </div>
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Governance (Spectrum 2 — Mandatory)</div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -775,7 +775,7 @@ export default function ArtifactDetail() {
 
               <div className="flex items-center gap-3 pt-1">
                 <input type="checkbox" id="accession_confirmed" checked={!!form.accession_register_confirmed} onChange={e => set('accession_register_confirmed', e.target.checked)} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
-                <label htmlFor="accession_confirmed" className="text-sm text-stone-700">Formally entered in accession register</label>
+                <label htmlFor="accession_confirmed" className="text-sm text-stone-700 dark:text-stone-300">Formally entered in accession register</label>
                 {form.accession_register_confirmed && <span className="text-xs font-mono text-emerald-600">✓ Confirmed</span>}
               </div>
             </div>
@@ -792,7 +792,7 @@ export default function ArtifactDetail() {
               ].map(({ field, label }) => (
                 <div key={field} className="flex items-center gap-3">
                   <input type="checkbox" id={field} checked={!!form[field]} onChange={e => set(field, e.target.checked)} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
-                  <label htmlFor={field} className="text-sm text-stone-700">{label}</label>
+                  <label htmlFor={field} className="text-sm text-stone-700 dark:text-stone-300">{label}</label>
                 </div>
               ))}
             </div>
@@ -802,7 +802,7 @@ export default function ArtifactDetail() {
 
           {/* ── LOCATION ─────────────────────────────────── */}
           {activeTab === 'location' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Current Location (Spectrum Procedure 3)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Current Location</label><input value={form.current_location} onChange={e => set('current_location', e.target.value)} placeholder="Gallery A, Case 3" className={inputCls} /></div>
@@ -810,7 +810,7 @@ export default function ArtifactDetail() {
               </div>
             </div>
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Record a Movement</div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>New Location *</label><input value={locationForm.location} onChange={e => setLocationForm(f => ({ ...f, location: e.target.value }))} placeholder="Gallery B, Case 1" className={inputCls} /></div>
@@ -833,24 +833,24 @@ export default function ArtifactDetail() {
             </div>
 
             {locationLoaded && locationHistory.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Movement History</div></div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Movement History</div></div>
                 <table className="w-full">
-                  <thead><tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Reason</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Moved By</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Authorised By</th>
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Moved By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Authorised By</th>
                   </tr></thead>
                   <tbody>
                     {locationHistory.map(h => (
-                      <tr key={h.id} className="border-b border-stone-100">
-                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.moved_at).toLocaleDateString('en-GB')}</td>
-                        <td className="px-4 py-3 text-sm text-stone-900">{h.location}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.reason}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.moved_by}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.authorised_by}</td>
+                      <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.moved_at).toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100">{h.location}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.reason}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.moved_by}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.authorised_by}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -863,14 +863,14 @@ export default function ArtifactDetail() {
 
           {/* ── CONDITION ────────────────────────────────── */}
           {activeTab === 'condition' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Log Condition Assessment (Spectrum Procedure 4)</div>
               <div>
                 <label className={labelCls}>Condition Grade *</label>
                 <div className="flex gap-2 flex-wrap">
                   {CONDITION_GRADES.map(g => (
                     <button key={g} type="button" onClick={() => setConditionForm(f => ({ ...f, grade: g }))}
-                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${conditionForm.grade === g ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${conditionForm.grade === g ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                       {g}
                     </button>
                   ))}
@@ -883,7 +883,7 @@ export default function ArtifactDetail() {
               <div>
                 <label className={labelCls}>Notes</label>
                 <textarea value={conditionForm.notes} onChange={e => setConditionForm(f => ({ ...f, notes: e.target.value }))} rows={3}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
               <button type="button" onClick={addCondition}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
@@ -892,7 +892,7 @@ export default function ArtifactDetail() {
             </div>
 
             {form.condition_grade && (
-              <div className="bg-white border border-stone-200 rounded-lg p-6">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
                 <div className={sectionTitle}>Current Condition (snapshot)</div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>{form.condition_grade}</span>
@@ -903,22 +903,22 @@ export default function ArtifactDetail() {
             )}
 
             {conditionLoaded && conditionHistory.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Assessment History</div></div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Assessment History</div></div>
                 <table className="w-full">
-                  <thead><tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Grade</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Assessor</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Notes</th>
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Grade</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Assessor</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Notes</th>
                   </tr></thead>
                   <tbody>
                     {conditionHistory.map(h => (
-                      <tr key={h.id} className="border-b border-stone-100">
-                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.assessed_at).toLocaleDateString('en-GB')}</td>
+                      <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.assessed_at).toLocaleDateString('en-GB')}</td>
                         <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.grade] || 'bg-stone-100 text-stone-500'}`}>{h.grade}</span></td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.assessor}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.notes}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.assessor}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.notes}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -935,7 +935,7 @@ export default function ArtifactDetail() {
               </div>
             )}
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Add Conservation Treatment (Spectrum Procedure 5)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -954,7 +954,7 @@ export default function ArtifactDetail() {
               <div>
                 <label className={labelCls}>Description</label>
                 <textarea value={conservationForm.description} onChange={e => setConservationForm(f => ({ ...f, description: e.target.value }))} rows={3}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
               <button type="button" onClick={addConservation}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
@@ -963,22 +963,22 @@ export default function ArtifactDetail() {
             </div>
 
             {conservationLoaded && conservationHistory.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Treatment History</div></div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Treatment History</div></div>
                 <table className="w-full">
-                  <thead><tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Type</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Conservator</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Dates</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Conservator</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
                     <th className="px-4 py-3"></th>
                   </tr></thead>
                   <tbody>
                     {conservationHistory.map(t => (
-                      <tr key={t.id} className="border-b border-stone-100">
+                      <tr key={t.id} className="border-b border-stone-100 dark:border-stone-800">
                         <td className="px-6 py-3 text-sm text-stone-900">{t.treatment_type}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{t.conservator}</td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{t.conservator}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
                           {t.start_date ? new Date(t.start_date).toLocaleDateString('en-GB') : '—'}
                           {' → '}
                           {t.end_date ? new Date(t.end_date).toLocaleDateString('en-GB') : <span className="text-amber-600">Ongoing</span>}
@@ -1010,19 +1010,19 @@ export default function ArtifactDetail() {
               </div>
             )}
 
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Add Loan Record (Spectrum Procedures 4 & 5)</div>
               <div>
                 <label className={labelCls}>Direction</label>
                 <div className="flex gap-2">
                   {['Out','In'].map(d => (
                     <button key={d} type="button" onClick={() => setLoanForm(f => ({ ...f, direction: d }))}
-                      className={`px-4 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.direction === d ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      className={`px-4 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.direction === d ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                       Loan {d}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-stone-400 mt-1">{loanForm.direction === 'Out' ? 'We lend this object to another institution' : 'Another institution lends this object to us'}</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{loanForm.direction === 'Out' ? 'We lend this object to another institution' : 'Another institution lends this object to us'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Institution *</label><input value={loanForm.borrowing_institution} onChange={e => setLoanForm(f => ({ ...f, borrowing_institution: e.target.value }))} className={inputCls} /></div>
@@ -1048,7 +1048,7 @@ export default function ArtifactDetail() {
                 <div className="flex gap-2 flex-wrap">
                   {INSURANCE_TYPES.map(t => (
                     <button key={t} type="button" onClick={() => setLoanForm(f => ({ ...f, insurance_type: t }))}
-                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.insurance_type === t ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.insurance_type === t ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                       {t}
                     </button>
                   ))}
@@ -1058,8 +1058,8 @@ export default function ArtifactDetail() {
                 <div><label className={labelCls}>Loan Coordinator</label><input value={loanForm.loan_coordinator} onChange={e => setLoanForm(f => ({ ...f, loan_coordinator: e.target.value }))} placeholder="Staff member managing this loan" className={inputCls} /></div>
                 <div><label className={labelCls}>Approved By</label><input value={loanForm.approved_by} onChange={e => setLoanForm(f => ({ ...f, approved_by: e.target.value }))} placeholder="Authorising person or body" className={inputCls} /></div>
               </div>
-              <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" /></div>
-              <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" /></div>
+              <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
+              <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
               <button type="button" onClick={addLoan}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
                 Save loan record →
@@ -1067,23 +1067,23 @@ export default function ArtifactDetail() {
             </div>
 
             {loanLoaded && loanHistory.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Loan History</div></div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Loan History</div></div>
                 <table className="w-full">
-                  <thead><tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Direction</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Institution</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Dates</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Status</th>
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Direction</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Institution</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
                     <th className="px-4 py-3"></th>
                   </tr></thead>
                   <tbody>
                     {loanHistory.map(l => (
                       <Fragment key={l.id}>
-                        <tr className={`border-b border-stone-100 ${l.status === 'Active' ? 'bg-amber-50/30' : ''}`}>
+                        <tr className={`border-b border-stone-100 dark:border-stone-800 ${l.status === 'Active' ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`}>
                           <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
-                          <td className="px-4 py-3 text-sm text-stone-900">{l.borrowing_institution}</td>
-                          <td className="px-4 py-3 text-xs font-mono text-stone-500">
+                          <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100">{l.borrowing_institution}</td>
+                          <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
                             {l.loan_start_date ? new Date(l.loan_start_date).toLocaleDateString('en-GB') : '—'}
                             {' → '}
                             {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
@@ -1094,8 +1094,8 @@ export default function ArtifactDetail() {
                           <td className="px-4 py-3">
                             {l.status === 'Active' && (
                               endingLoanId === l.id
-                                ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 hover:text-stone-900">Cancel</button>
-                                : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900">End loan →</button>
+                                ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
+                                : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">End loan →</button>
                             )}
                           </td>
                         </tr>
@@ -1111,7 +1111,7 @@ export default function ArtifactDetail() {
                                     value={returnLocation}
                                     onChange={e => setReturnLocation(e.target.value)}
                                     placeholder="e.g. Gallery 3, Cabinet A"
-                                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                                   />
                                 </div>
                                 <div>
@@ -1121,7 +1121,7 @@ export default function ArtifactDetail() {
                                     value={returnCondition}
                                     onChange={e => setReturnCondition(e.target.value)}
                                     placeholder="e.g. Good — minor surface dust"
-                                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                                   />
                                 </div>
                               </div>
@@ -1148,7 +1148,7 @@ export default function ArtifactDetail() {
 
           {/* ── RIGHTS & LEGAL ───────────────────────────── */}
           {activeTab === 'rights' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Rights Management (Spectrum Procedure 9)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1182,7 +1182,7 @@ export default function ArtifactDetail() {
                 <div>
                   <label className={labelCls}>Disposal Notes</label>
                   <textarea value={form.disposal_note} onChange={e => set('disposal_note', e.target.value)} rows={4}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
                 </div>
               </div>
             )}
@@ -1192,7 +1192,7 @@ export default function ArtifactDetail() {
 
           {/* ── AUDIT ────────────────────────────────────── */}
           {activeTab === 'audit' && <>
-            <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className={sectionTitle}>Record Inventory Check (Spectrum Procedure 7)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
@@ -1213,14 +1213,14 @@ export default function ArtifactDetail() {
                 <div className="flex gap-2 flex-wrap">
                   {INVENTORY_OUTCOMES.map(o => (
                     <button key={o} type="button" onClick={() => setAuditForm(f => ({ ...f, inventory_outcome: o }))}
-                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${auditForm.inventory_outcome === o ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+                      className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${auditForm.inventory_outcome === o ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                       {o}
                     </button>
                   ))}
                 </div>
               </div>
               {auditForm.inventory_outcome && auditForm.inventory_outcome !== 'Present and correct' && (
-                <div className="space-y-3 border border-amber-200 rounded-lg p-4 bg-amber-50/30">
+                <div className="space-y-3 border border-amber-200 dark:border-amber-800 rounded-lg p-4 bg-amber-50/30 dark:bg-amber-950/20">
                   <div className="text-xs uppercase tracking-widest text-amber-600">Action Required</div>
                   <div>
                     <label className={labelCls}>Action Required</label>
@@ -1230,7 +1230,7 @@ export default function ArtifactDetail() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" id="action_completed" checked={auditForm.action_completed} onChange={e => setAuditForm(f => ({ ...f, action_completed: e.target.checked }))} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
-                        <label htmlFor="action_completed" className="text-sm text-stone-700">Action completed</label>
+                        <label htmlFor="action_completed" className="text-sm text-stone-700 dark:text-stone-300">Action completed</label>
                       </div>
                       {auditForm.action_completed && (
                         <div>
@@ -1246,12 +1246,12 @@ export default function ArtifactDetail() {
                 <label className={labelCls}>Discrepancy</label>
                 <textarea value={auditForm.discrepancy} onChange={e => setAuditForm(f => ({ ...f, discrepancy: e.target.value }))} rows={2}
                   placeholder="Note any discrepancy from the catalogue record…"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
               <div>
                 <label className={labelCls}>Notes</label>
                 <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors resize-none" />
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
               <button type="button" onClick={addAudit}
                 className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
@@ -1260,37 +1260,37 @@ export default function ArtifactDetail() {
             </div>
 
             {form.last_inventoried && (
-              <div className="bg-white border border-stone-200 rounded-lg p-6">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
                 <div className={sectionTitle}>Last Inventoried</div>
                 <p className="text-sm text-stone-900">{new Date(form.last_inventoried).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}{form.inventoried_by && ` by ${form.inventoried_by}`}</p>
               </div>
             )}
 
             {auditLoaded && auditHistory.length > 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100"><div className={sectionTitle} style={{marginBottom:0}}>Audit History</div></div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Audit History</div></div>
                 <table className="w-full">
-                  <thead><tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">By</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Outcome</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Location Found</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Condition</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Action</th>
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location Found</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Condition</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Action</th>
                   </tr></thead>
                   <tbody>
                     {auditHistory.map(h => (
-                      <tr key={h.id} className="border-b border-stone-100">
-                        <td className="px-6 py-3 text-xs font-mono text-stone-500">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.inventoried_by}</td>
+                      <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.inventoried_by}</td>
                         <td className="px-4 py-3">
                           {h.inventory_outcome && (
                             <span className={`text-xs font-mono px-2 py-1 rounded-full ${h.inventory_outcome === 'Present and correct' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{h.inventory_outcome}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-500">{h.location_confirmed}</td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.location_confirmed}</td>
                         <td className="px-4 py-3">{h.condition_confirmed && <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.condition_confirmed] || 'bg-stone-100 text-stone-500'}`}>{h.condition_confirmed}</span>}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500">
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">
                           {h.action_required && (
                             <span className={h.action_completed ? 'text-emerald-600 line-through' : 'text-amber-600'}>{h.action_required}</span>
                           )}
@@ -1313,11 +1313,11 @@ function SaveBar({ saving, saved, onCancel }: { saving: boolean; saved: boolean;
   return (
     <div className="flex gap-3 items-center">
       <button type="submit" disabled={saving}
-        className="bg-stone-900 text-white text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+        className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
         {saving ? 'Saving…' : 'Save changes →'}
       </button>
       <button type="button" onClick={onCancel}
-        className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+        className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
         Cancel
       </button>
       {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}

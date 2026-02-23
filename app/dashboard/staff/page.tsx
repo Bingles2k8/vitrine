@@ -27,9 +27,9 @@ const ACCESS_DESCRIPTIONS: Record<AccessLevel, string> = {
 }
 
 const ACCESS_STYLES: Record<AccessLevel, string> = {
-  Admin: 'bg-red-50 text-red-600',
-  Editor: 'bg-amber-50 text-amber-700',
-  Viewer: 'bg-stone-100 text-stone-500',
+  Admin: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
+  Editor: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  Viewer: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400',
 }
 
 export default function StaffPage() {
@@ -152,24 +152,24 @@ export default function StaffPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <p className="font-mono text-sm text-stone-400">Loading…</p>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+        <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
 
       <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} />
 
       {/* Main */}
       <main className="ml-56 flex-1 flex flex-col">
-        <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-8 sticky top-0 z-10">
-          <span className="font-serif text-lg italic text-stone-900">Staff & Roles</span>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff & Roles</span>
           <button
             onClick={openAdd}
-            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded"
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
           >
             + Invite staff
           </button>
@@ -184,9 +184,9 @@ export default function StaffPage() {
               { label: 'Admins', value: staff.filter(s => s.access === 'Admin').length },
               { label: 'Editors', value: staff.filter(s => s.access === 'Editor').length },
             ].map(s => (
-              <div key={s.label} className="bg-white border border-stone-200 rounded-lg p-5">
-                <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{s.label}</div>
-                <div className="font-serif text-4xl text-stone-900">{s.value}</div>
+              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
+                <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{s.value}</div>
               </div>
             ))}
           </div>
@@ -199,8 +199,8 @@ export default function StaffPage() {
                 onClick={() => setFilterDept(d)}
                 className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
                   filterDept === d
-                    ? 'bg-stone-900 text-white border-stone-900'
-                    : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white'
+                    : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
                 }`}
               >
                 {d}
@@ -210,33 +210,33 @@ export default function StaffPage() {
 
           {/* Table */}
           {staff.length === 0 ? (
-            <div className="bg-white border border-stone-200 rounded-lg flex flex-col items-center justify-center py-24 text-center">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">👥</div>
-              <div className="font-serif text-2xl italic text-stone-900 mb-2">No staff yet</div>
-              <p className="text-sm text-stone-400 mb-6">Invite your team to collaborate on the collection.</p>
+              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No staff yet</div>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Invite your team to collaborate on the collection.</p>
               <button
                 onClick={openAdd}
-                className="bg-stone-900 text-white text-xs font-mono px-5 py-2.5 rounded"
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
               >
                 + Invite your first team member
               </button>
             </div>
           ) : (
-            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-6 py-3">Name</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Department</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Job Title</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Email</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-4 py-3">Access</th>
+                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Name</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Department</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Job Title</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Email</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Access</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(member => (
-                    <tr key={member.id} className="border-b border-stone-100 hover:bg-stone-50">
+                    <tr key={member.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
                           <div
@@ -245,12 +245,12 @@ export default function StaffPage() {
                           >
                             {initials(member.name)}
                           </div>
-                          <div className="text-sm font-medium text-stone-900">{member.name}</div>
+                          <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{member.name}</div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500">{member.department}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500">{member.role}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-400">{member.email}</td>
+                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{member.department}</td>
+                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{member.role}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-400 dark:text-stone-500">{member.email}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${ACCESS_STYLES[member.access]}`}>
                           {member.access}
@@ -260,14 +260,14 @@ export default function StaffPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEdit(member)}
-                            className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors"
+                            className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                           >
                             Edit
                           </button>
-                          <span className="text-stone-200">·</span>
+                          <span className="text-stone-200 dark:text-stone-700">·</span>
                           <button
                             onClick={() => handleDelete(member.id, member.name)}
-                            className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors"
+                            className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors"
                           >
                             Remove
                           </button>
@@ -281,15 +281,15 @@ export default function StaffPage() {
           )}
 
           {/* Access level legend */}
-          <div className="mt-6 border border-stone-200 rounded-lg p-5 bg-white">
-            <div className="text-xs uppercase tracking-widest text-stone-400 mb-4">Access Levels</div>
+          <div className="mt-6 border border-stone-200 dark:border-stone-700 rounded-lg p-5 bg-white dark:bg-stone-900">
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4">Access Levels</div>
             <div className="space-y-3">
               {ACCESS_LEVELS.map(level => (
                 <div key={level} className="flex items-center gap-4">
                   <span className={`text-xs font-mono px-2 py-1 rounded-full w-16 text-center ${ACCESS_STYLES[level]}`}>
                     {level}
                   </span>
-                  <span className="text-xs text-stone-500">{ACCESS_DESCRIPTIONS[level]}</span>
+                  <span className="text-xs text-stone-500 dark:text-stone-400">{ACCESS_DESCRIPTIONS[level]}</span>
                 </div>
               ))}
             </div>
@@ -304,14 +304,14 @@ export default function StaffPage() {
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center"
           onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
-              <h2 className="font-serif text-xl italic text-stone-900">
+          <div className="bg-white dark:bg-stone-900 rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
+              <h2 className="font-serif text-xl italic text-stone-900 dark:text-stone-100">
                 {editingId ? 'Edit staff member' : 'Invite staff member'}
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-stone-300 hover:text-stone-900 transition-colors text-lg leading-none"
+                className="text-stone-300 dark:text-stone-600 hover:text-stone-900 dark:hover:text-stone-100 transition-colors text-lg leading-none"
               >
                 ×
               </button>
@@ -320,53 +320,53 @@ export default function StaffPage() {
             <div className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Full Name *</label>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Full Name *</label>
                   <input
                     value={form.name}
                     onChange={e => set('name', e.target.value)}
                     placeholder="Dr. Jane Smith"
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Job Title *</label>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Job Title *</label>
                   <input
                     value={form.role}
                     onChange={e => set('role', e.target.value)}
                     placeholder="Senior Curator"
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Email *</label>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Email *</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={e => set('email', e.target.value)}
                   placeholder="jane@yourmuseum.org"
-                  className="w-full border border-stone-200 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 transition-colors"
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Department</label>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Department</label>
                   <select
                     value={form.department}
                     onChange={e => set('department', e.target.value)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   >
                     {DEPARTMENTS.map(d => <option key={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Access Level</label>
+                  <label className="block text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 mb-1.5">Access Level</label>
                   <select
                     value={form.access}
                     onChange={e => set('access', e.target.value as AccessLevel)}
-                    className="w-full border border-stone-200 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 transition-colors bg-white"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   >
                     {ACCESS_LEVELS.map(a => <option key={a}>{a}</option>)}
                   </select>
@@ -374,24 +374,24 @@ export default function StaffPage() {
               </div>
 
               {/* Access description */}
-              <div className="bg-stone-50 rounded-lg px-3 py-2.5">
-                <p className="text-xs text-stone-500">{ACCESS_DESCRIPTIONS[form.access]}</p>
+              <div className="bg-stone-50 dark:bg-stone-800 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-stone-500 dark:text-stone-400">{ACCESS_DESCRIPTIONS[form.access]}</p>
               </div>
 
               {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
             </div>
 
-            <div className="px-6 py-4 border-t border-stone-100 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-3">
               <button
                 onClick={() => setModalOpen(false)}
-                className="border border-stone-200 text-stone-500 text-sm font-mono px-5 py-2 rounded hover:bg-stone-50"
+                className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono px-5 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-stone-900 text-white text-sm font-mono px-5 py-2 rounded disabled:opacity-50"
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2 rounded disabled:opacity-50"
               >
                 {saving ? 'Saving…' : editingId ? 'Save changes →' : 'Add to team →'}
               </button>
