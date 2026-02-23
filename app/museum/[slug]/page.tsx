@@ -4,6 +4,14 @@ import Link from 'next/link'
 import CollectionSearch from '@/components/CollectionSearch'
 import { getTemplate } from '@/lib/templates'
 
+const FONT_MAP: Record<string, { google: string; css: string }> = {
+  playfair:  { google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                css: "'Playfair Display', serif" },
+  cormorant: { google: 'Cormorant+Garamond:ital,wght@0,400;0,600;1,400',             css: "'Cormorant Garamond', serif" },
+  'dm-serif':{ google: 'DM+Serif+Display:ital@0;1',                                  css: "'DM Serif Display', serif" },
+  libre:     { google: 'Libre+Baskerville:ital,wght@0,400;0,700;1,400',              css: "'Libre Baskerville', serif" },
+  'dm-sans': { google: 'DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,700;1,9..40,300', css: "'DM Sans', sans-serif" },
+}
+
 export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const supabase = await createServerSideClient()
@@ -58,12 +66,15 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   const isLightHero = tmpl.id === 'minimal' || tmpl.id === 'editorial'
   const heroBg = isLightHero ? '#ffffff' : primary
-  const heroText = isLightHero ? '#111111' : '#ffffff'
-  const heroSubText = isLightHero ? '#888888' : 'rgba(255,255,255,0.5)'
+  const hasHeroImage = !!museum.hero_image_url
+  const heroText = hasHeroImage ? '#ffffff' : (isLightHero ? '#111111' : '#ffffff')
+  const heroSubText = hasHeroImage ? 'rgba(255,255,255,0.7)' : (isLightHero ? '#888888' : 'rgba(255,255,255,0.5)')
+  const heroAccent = hasHeroImage ? 'rgba(255,255,255,0.8)' : accent
 
+  const font = FONT_MAP[museum.heading_font || 'playfair'] || FONT_MAP.playfair
   const headingStyle = tmpl.id === 'editorial'
-    ? { fontFamily: 'serif', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '-0.02em' }
-    : { fontFamily: 'serif', fontStyle: 'italic' }
+    ? { fontFamily: font.css, fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '-0.02em' }
+    : { fontFamily: font.css, fontStyle: 'italic' }
 
   const pageBg: Record<string, string> = {
     minimal: '#fafaf9', dramatic: '#0c0a09', archival: '#f5f0e8', editorial: '#ffffff', classic: '#111827',
@@ -71,11 +82,18 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen" style={{ background: pageBg[tmpl.id] || '#fafaf9' }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`} />
 
       <nav className={`sticky top-0 z-50 backdrop-blur-md ${nav.nav}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className={`text-xl ${nav.text}`} style={headingStyle}>
-            {museum.logo_emoji} {museum.name}
+          <div className={`text-xl flex items-center gap-2 ${nav.text}`} style={headingStyle}>
+            {museum.logo_image_url
+              ? <img src={museum.logo_image_url} alt={museum.name} className="h-8 w-8 rounded object-cover" />
+              : museum.logo_emoji
+            }
+            {museum.name}
           </div>
           <div className="flex items-center gap-8">
             <Link href={`/museum/${slug}`} className={`text-sm border-b pb-0.5 ${nav.text}`} style={{ borderColor: accent }}>
@@ -89,11 +107,17 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
       </nav>
 
       {showHero && (
-        <div className={`px-6 ${heroPad}`} style={{ background: heroBg }}>
-          <div className="max-w-6xl mx-auto">
+        <div className={`px-6 ${heroPad} relative`} style={{
+          background: heroBg,
+          backgroundImage: museum.hero_image_url ? `url(${museum.hero_image_url})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}>
+          {museum.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
+          <div className="max-w-6xl mx-auto relative z-10">
             {tmpl.id === 'editorial' ? (
               <>
-                <div className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: accent }}>
+                <div className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: heroAccent }}>
                   {museum.name} — Permanent Collection
                 </div>
                 <h1 className="leading-none mb-6" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(3rem, 8vw, 7rem)' }}>
@@ -106,7 +130,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               </>
             ) : (
               <>
-                <div className="text-xs uppercase tracking-widest mb-4 font-mono" style={{ color: accent }}>
+                <div className="text-xs uppercase tracking-widest mb-4 font-mono" style={{ color: heroAccent }}>
                   {museum.name}
                 </div>
                 <h1 className="font-normal leading-tight mb-4" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>

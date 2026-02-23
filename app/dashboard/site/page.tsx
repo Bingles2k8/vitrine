@@ -6,6 +6,14 @@ import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
 import Sidebar from '@/components/Sidebar'
 
+const FONTS = [
+  { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
+  { id: 'cormorant',  name: 'Cormorant Garamond',  sample: 'Classical & literary', google: 'Cormorant+Garamond:ital,wght@0,400;0,600;1,400',               css: "'Cormorant Garamond', serif" },
+  { id: 'dm-serif',   name: 'DM Serif Display',    sample: 'Modern & bold',        google: 'DM+Serif+Display:ital@0;1',                                    css: "'DM Serif Display', serif" },
+  { id: 'libre',      name: 'Libre Baskerville',   sample: 'Scholarly & legible',  google: 'Libre+Baskerville:ital,wght@0,400;0,700;1,400',                css: "'Libre Baskerville', serif" },
+  { id: 'dm-sans',    name: 'DM Sans',             sample: 'Clean & contemporary', google: 'DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,700;1,9..40,300',  css: "'DM Sans', sans-serif" },
+]
+
 function OptionToggle({ label, options, value, onChange }: {
   label: string
   options: { value: string; label: string }[]
@@ -50,6 +58,7 @@ export default function SiteBuilder() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [uploadingField, setUploadingField] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -57,6 +66,9 @@ export default function SiteBuilder() {
     name: '',
     tagline: '',
     logo_emoji: '🏛️',
+    logo_image_url: '',
+    hero_image_url: '',
+    heading_font: 'playfair',
     primary_color: '#0f0e0c',
     accent_color: '#c8961e',
     address: '',
@@ -81,6 +93,9 @@ export default function SiteBuilder() {
         name: museum.name || '',
         tagline: museum.tagline || '',
         logo_emoji: museum.logo_emoji || '🏛️',
+        logo_image_url: museum.logo_image_url || '',
+        hero_image_url: museum.hero_image_url || '',
+        heading_font: museum.heading_font || 'playfair',
         primary_color: museum.primary_color || '#0f0e0c',
         accent_color: museum.accent_color || '#c8961e',
         address: museum.address || '',
@@ -100,6 +115,18 @@ export default function SiteBuilder() {
 
   function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function uploadImage(file: File, field: 'hero_image_url' | 'logo_image_url') {
+    setUploadingField(field)
+    const ext = file.name.split('.').pop()
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { data, error } = await supabase.storage.from('artifact-images').upload(filename, file, { upsert: true })
+    if (!error && data) {
+      const { data: { publicUrl } } = supabase.storage.from('artifact-images').getPublicUrl(data.path)
+      set(field, publicUrl)
+    }
+    setUploadingField(null)
   }
 
   function selectTemplate(id: string) {
@@ -154,9 +181,10 @@ export default function SiteBuilder() {
   const navBg = previewNavBg[form.template] || '#ffffff'
   const navText = previewNavText[form.template] || '#111111'
 
+  const selectedFont = FONTS.find(f => f.id === form.heading_font) || FONTS[0]
   const previewHeadingStyle = form.template === 'editorial'
-    ? { fontFamily: 'serif', fontStyle: 'normal', fontWeight: 700, textTransform: 'uppercase' as const }
-    : { fontFamily: 'serif', fontStyle: 'italic' }
+    ? { fontFamily: selectedFont.css, fontStyle: 'normal', fontWeight: 700, textTransform: 'uppercase' as const }
+    : { fontFamily: selectedFont.css, fontStyle: 'italic' }
 
   const heroPy: Record<string, string> = {
     none: 'py-0', compact: 'py-4', medium: 'py-8', tall: 'py-14', fullscreen: 'py-20',
@@ -176,6 +204,11 @@ export default function SiteBuilder() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex">
+
+      {/* Preload all Google Fonts so the picker preview renders instantly */}
+      {FONTS.map(f => (
+        <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
+      ))}
 
       {/* Sidebar — pass live form values so name/emoji update as the user edits */}
       <Sidebar
@@ -262,6 +295,60 @@ export default function SiteBuilder() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Logo Image</label>
+                <p className="text-xs text-stone-400 mb-3">Upload an image to replace the emoji in the nav bar. Square images work best.</p>
+                {form.logo_image_url ? (
+                  <div className="flex items-center gap-3">
+                    <img src={form.logo_image_url} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
+                    <div className="flex gap-2">
+                      <label className="text-xs font-mono text-stone-600 border border-stone-200 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 transition-colors">
+                        {uploadingField === 'logo_image_url' ? 'Uploading…' : 'Change'}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
+                      </label>
+                      <button type="button" onClick={() => set('logo_image_url', '')} className="text-xs font-mono text-stone-400 hover:text-red-500 transition-colors px-2">Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-3 cursor-pointer w-fit">
+                    <div className="w-12 h-12 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-xl hover:border-stone-400 transition-colors">
+                      {uploadingField === 'logo_image_url' ? <span className="text-xs font-mono text-stone-400">…</span> : form.logo_emoji}
+                    </div>
+                    <span className="text-xs text-stone-400 hover:text-stone-600 transition-colors">Upload logo image</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
+                  </label>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Header Image</label>
+                <p className="text-xs text-stone-400 mb-3">Background image for the hero section. Wide landscape images work best.</p>
+                {form.hero_image_url ? (
+                  <div className="relative rounded-lg overflow-hidden border border-stone-200 group">
+                    <img src={form.hero_image_url} alt="Header" className="w-full h-24 object-cover" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <label className="text-xs font-mono text-white bg-black/60 px-3 py-1.5 rounded cursor-pointer">
+                        {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change'}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
+                      </label>
+                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-white bg-red-500/80 px-3 py-1.5 rounded">Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-stone-200 rounded-lg cursor-pointer hover:border-stone-400 transition-colors bg-stone-50">
+                    {uploadingField === 'hero_image_url' ? (
+                      <span className="text-xs font-mono text-stone-400">Uploading…</span>
+                    ) : (
+                      <>
+                        <div className="text-2xl mb-1">🖼️</div>
+                        <div className="text-xs text-stone-400">Upload a header image</div>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* Colours */}
@@ -294,6 +381,19 @@ export default function SiteBuilder() {
             {/* Layout & Style */}
             <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-6">
               <div className="text-xs uppercase tracking-widest text-stone-400">Layout & Style</div>
+
+              <div>
+                <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Heading Font</div>
+                <div className="space-y-2">
+                  {FONTS.map(f => (
+                    <button key={f.id} type="button" onClick={() => set('heading_font', f.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 hover:bg-stone-50'}`}>
+                      <span style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
+                      <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400' : 'text-stone-300'}`}>{f.sample}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <RadiusSlider value={form.card_radius} onChange={v => set('card_radius', v)} />
 
@@ -396,8 +496,12 @@ export default function SiteBuilder() {
               {/* Nav */}
               <div className="px-4 h-10 flex items-center justify-between border-b"
                 style={{ background: navBg, borderColor: navText + '15' }}>
-                <div className="text-sm" style={{ ...previewHeadingStyle, color: navText }}>
-                  {form.logo_emoji} {form.name || 'Your Museum'}
+                <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: navText }}>
+                  {form.logo_image_url
+                    ? <img src={form.logo_image_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
+                    : form.logo_emoji
+                  }
+                  {form.name || 'Your Museum'}
                 </div>
                 <div className="flex gap-4">
                   <span className="text-xs border-b" style={{ color: navText, borderColor: form.accent_color }}>Collection</span>
@@ -407,16 +511,24 @@ export default function SiteBuilder() {
 
               {/* Hero */}
               {form.hero_height !== 'none' && (
-                <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'}`} style={{ background: previewHeroBg }}>
-                  <div className="text-xs uppercase tracking-widest mb-1.5 font-mono" style={{ color: form.accent_color }}>
-                    {form.name || 'Your Museum'}
-                  </div>
-                  <div style={{
-                    ...previewHeadingStyle,
-                    color: previewHeroText,
-                    fontSize: form.hero_height === 'fullscreen' ? '20px' : form.hero_height === 'tall' ? '16px' : '13px'
-                  }}>
-                    {form.tagline || 'Explore the collection'}
+                <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
+                  background: previewHeroBg,
+                  backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}>
+                  {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
+                  <div className="relative z-10">
+                    <div className="text-xs uppercase tracking-widest mb-1.5 font-mono" style={{ color: form.hero_image_url ? '#fff' : form.accent_color }}>
+                      {form.name || 'Your Museum'}
+                    </div>
+                    <div style={{
+                      ...previewHeadingStyle,
+                      color: form.hero_image_url ? '#fff' : previewHeroText,
+                      fontSize: form.hero_height === 'fullscreen' ? '20px' : form.hero_height === 'tall' ? '16px' : '13px'
+                    }}>
+                      {form.tagline || 'Explore the collection'}
+                    </div>
                   </div>
                 </div>
               )}
