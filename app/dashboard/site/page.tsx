@@ -124,9 +124,9 @@ export default function SiteBuilder() {
     setUploadingField(field)
     const ext = file.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('artifact-images').upload(filename, file, { upsert: true })
+    const { data, error } = await supabase.storage.from('museum-assets').upload(filename, file, { upsert: true })
     if (!error && data) {
-      const { data: { publicUrl } } = supabase.storage.from('artifact-images').getPublicUrl(data.path)
+      const { data: { publicUrl } } = supabase.storage.from('museum-assets').getPublicUrl(data.path)
       set(field, publicUrl)
     }
     setUploadingField(null)
