@@ -28,7 +28,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     .from('artifacts')
     .select('*')
     .eq('museum_id', museum.id)
-    .in('status', ['On Display', 'On Loan'])
+    .eq('show_on_site', true)
     .order('created_at', { ascending: false })
 
   const allArtifacts = artifacts || []

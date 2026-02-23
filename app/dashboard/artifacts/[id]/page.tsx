@@ -186,6 +186,7 @@ export default function ArtifactDetail() {
         disposal_recipient: artifact.disposal_recipient || '',
         last_inventoried: artifact.last_inventoried || '',
         inventoried_by: artifact.inventoried_by || '',
+        show_on_site: artifact.show_on_site ?? true,
       })
       setLoading(false)
     }
@@ -533,6 +534,24 @@ export default function ArtifactDetail() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Public Site</label>
+                <button
+                  type="button"
+                  onClick={() => set('show_on_site', !form.show_on_site)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                    form.show_on_site
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                      : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                  }`}
+                >
+                  <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_on_site ? 'bg-emerald-500 dark:bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_on_site ? 'left-4' : 'left-0.5'}`} />
+                  </span>
+                  {form.show_on_site ? 'Visible on public site' : 'Hidden from public site'}
+                </button>
               </div>
 
               <div>
