@@ -4,12 +4,14 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
+import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
 
 export default function Onboarding() {
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🏛️')
   const [template, setTemplate] = useState('minimal')
+  const [plan, setPlan] = useState<PlanId>('community')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -27,6 +29,10 @@ export default function Onboarding() {
   }
 
   async function handleSubmit() {
+    if (plan === 'enterprise') {
+      window.location.href = 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry'
+      return
+    }
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
@@ -42,6 +48,8 @@ export default function Onboarding() {
       template,
       primary_color: selectedTemplate.primary_color,
       accent_color: selectedTemplate.accent_color,
+      plan,
+      ui_mode: PLANS[plan].fullMode ? 'full' : 'simple',
     })
 
     if (error) {
@@ -52,21 +60,23 @@ export default function Onboarding() {
     }
   }
 
+  const TOTAL_STEPS = 3
+
   return (
     <main className="min-h-screen bg-stone-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-3xl">
         <div className="text-center mb-10">
           <h1 className="font-serif text-4xl italic text-stone-900 mb-2">Welcome to Vitrine.</h1>
-          <p className="text-stone-400 text-sm">Let's set up your museum in two quick steps.</p>
+          <p className="text-stone-400 text-sm">Let's set up your museum in three quick steps.</p>
         </div>
 
         <div className="flex items-center justify-center gap-3 mb-10">
-          {[1, 2].map(s => (
+          {[1, 2, 3].map(s => (
             <div key={s} className="flex items-center gap-3">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono transition-all ${step >= s ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-400'}`}>
                 {s}
               </div>
-              {s < 2 && <div className={`w-12 h-px transition-all ${step > s ? 'bg-stone-900' : 'bg-stone-200'}`} />}
+              {s < TOTAL_STEPS && <div className={`w-12 h-px transition-all ${step > s ? 'bg-stone-900' : 'bg-stone-200'}`} />}
             </div>
           ))}
         </div>
@@ -129,8 +139,76 @@ export default function Onboarding() {
               <button onClick={() => setStep(1)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
                 ← Back
               </button>
-              <button onClick={handleSubmit} disabled={loading} className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded disabled:opacity-50">
-                {loading ? 'Creating…' : 'Create my museum →'}
+              <button onClick={() => setStep(3)} className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded">
+                Next — Choose a plan →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
+            <p className="text-sm text-stone-400 text-center mb-8">You can upgrade at any time from your account settings.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {PLAN_ORDER.map(id => {
+                const p = PLANS[id]
+                const selected = plan === id
+                const isEnterprise = id === 'enterprise'
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => !isEnterprise && setPlan(id)}
+                    className={`text-left rounded-xl border-2 p-6 transition-all ${
+                      isEnterprise
+                        ? 'border-stone-200 opacity-75 cursor-default'
+                        : selected
+                          ? 'border-stone-900 shadow-lg bg-white'
+                          : 'border-stone-200 bg-white hover:border-stone-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-1">{p.label}</div>
+                        <div className="text-2xl font-serif font-medium text-stone-900">{p.price}</div>
+                      </div>
+                      {!isEnterprise && (
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all ${
+                          selected ? 'border-stone-900 bg-stone-900' : 'border-stone-300'
+                        }`}>
+                          {selected && <span className="text-white text-xs">✓</span>}
+                        </div>
+                      )}
+                    </div>
+                    <ul className="space-y-1.5 mb-4">
+                      {p.features.map(f => (
+                        <li key={f} className="flex items-start gap-2 text-xs text-stone-500">
+                          <span className="text-stone-300 mt-0.5">—</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    {isEnterprise && (
+                      <div className="text-xs font-mono text-amber-600 mt-2">
+                        Contact us to get started →
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {error && <p className="text-xs text-red-500 font-mono text-center mb-4">{error}</p>}
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setStep(2)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+                ← Back
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded disabled:opacity-50"
+              >
+                {loading ? 'Creating…' : plan === 'enterprise' ? 'Contact us →' : 'Create my museum →'}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import { getPlan } from '@/lib/plans'
 
 const ENTRY_REASONS = ['Potential acquisition', 'Loan in', 'Enquiry', 'Return from loan', 'Found in collection']
 const OUTCOMES = ['Pending', 'Acquired', 'Returned to depositor', 'Transferred to loan', 'Disposed']
@@ -28,6 +29,7 @@ export default function EntryRegisterPage() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingEntry, setEditingEntry] = useState<any | null>(null)
+  const [promoteError, setPromoteError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -190,6 +192,18 @@ export default function EntryRegisterPage() {
   }
 
   async function handlePromote(entry: any) {
+    setPromoteError('')
+    const planInfo = getPlan(museum?.plan)
+    const limit = planInfo.artifacts
+    if (limit !== null) {
+      const { count } = await supabase
+        .from('artifacts').select('*', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+      if (count !== null && count >= limit) {
+        setPromoteError(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`)
+        return
+      }
+    }
     const { data: newArtifact, error: createError } = await supabase.from('artifacts').insert({
       museum_id: museum.id,
       title: entry.object_description,
@@ -250,6 +264,50 @@ export default function EntryRegisterPage() {
               </div>
             ))}
           </div>
+
+          {/* Artifact usage bar */}
+          {(() => {
+            const planInfo = getPlan(museum?.plan)
+            const limit = planInfo.artifacts
+            if (limit === null) return null
+            const count = artifacts.length
+            const pct = Math.min(100, Math.round((count / limit) * 100))
+            const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
+            const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
+            return (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
+                    <span className={`text-xs font-mono ${textColor}`}>{count.toLocaleString()} / {limit.toLocaleString()} objects</span>
+                  </div>
+                  <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                {pct >= 80 && (
+                  <button
+                    onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors flex-shrink-0"
+                  >
+                    Upgrade →
+                  </button>
+                )}
+              </div>
+            )
+          })()}
+
+          {promoteError && (
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-5 py-3 flex items-center justify-between">
+              <span className="text-xs font-mono text-red-600 dark:text-red-400">{promoteError}</span>
+              <button
+                onClick={() => router.push('/dashboard/plan')}
+                className="text-xs font-mono text-red-600 dark:text-red-400 underline ml-4 whitespace-nowrap"
+              >
+                View plans →
+              </button>
+            </div>
+          )}
 
           {/* Inline form */}
           {showForm && (

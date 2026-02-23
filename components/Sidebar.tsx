@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect, useRef } from 'react'
+import { getPlan } from '@/lib/plans'
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -16,6 +17,8 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
   const router = useRouter()
   const supabase = createClient()
   const simple = museum?.ui_mode === 'simple'
+  const planInfo = museum ? getPlan(museum.plan) : null
+  const communityLocked = planInfo ? !planInfo.fullMode : false
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
   const settingsRef = useRef<HTMLDivElement>(null)
@@ -80,7 +83,7 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
   }
 
   async function toggleMode() {
-    if (!museum) return
+    if (!museum || communityLocked) return
     const newMode = simple ? 'full' : 'simple'
     await supabase.from('museums').update({ ui_mode: newMode }).eq('id', museum.id)
     window.location.reload()
@@ -180,11 +183,31 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
               {museum && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Interface</div>
+                  {communityLocked ? (
+                    <span className="text-xs font-mono text-stone-300 dark:text-stone-600">
+                      ◎ Simple mode (Community plan)
+                    </span>
+                  ) : (
+                    <button
+                      onClick={toggleMode}
+                      className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                    >
+                      {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Plan */}
+              {museum && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Plan</div>
+                  <div className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-1.5 capitalize">{museum.plan}</div>
                   <button
-                    onClick={toggleMode}
-                    className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                    onClick={() => { setSettingsOpen(false); router.push('/dashboard/plan') }}
+                    className="w-full text-left text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
                   >
-                    {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
+                    Upgrade plan →
                   </button>
                 </div>
               )}
