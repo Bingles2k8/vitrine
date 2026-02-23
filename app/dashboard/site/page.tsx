@@ -387,9 +387,9 @@ export default function SiteBuilder() {
                 <div className="space-y-2">
                   {FONTS.map(f => (
                     <button key={f.id} type="button" onClick={() => set('heading_font', f.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 hover:bg-stone-50'}`}>
-                      <span style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
-                      <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400' : 'text-stone-300'}`}>{f.sample}</span>
+                      className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-stone-50 border-stone-200 hover:border-stone-400'}`}>
+                      <span className={form.heading_font === f.id ? 'text-white' : 'text-stone-800'} style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
+                      <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400' : 'text-stone-500'}`}>{f.sample}</span>
                     </button>
                   ))}
                 </div>
