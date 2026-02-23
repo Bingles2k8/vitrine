@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function Home() {
   return (
@@ -254,8 +253,11 @@ export default function Home() {
       <footer className="border-t border-white/5 py-10 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <span className="font-serif italic text-stone-600">Vitrine<span className="text-amber-500">.</span></span>
-          <span className="text-xs text-stone-700 font-mono">© 2025 Vitrine Ltd.</span>
-          <span className="text-xs text-stone-700">Made for museums, by people who love them.</span>
+          <div className="flex gap-5">
+            <Link href="/privacy" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Terms</Link>
+          </div>
+          <span className="text-xs text-stone-700 font-mono">© 2026 Vitrine Ltd.</span>
         </div>
       </footer>
 

@@ -93,6 +93,13 @@ export default function LoginPage() {
               <p className="text-xs text-red-500 font-mono">{error}</p>
             )}
 
+            <p className="text-xs text-stone-400 dark:text-stone-500 leading-relaxed">
+              By creating an account you agree to our{' '}
+              <Link href="/terms" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Privacy Policy</Link>.
+            </p>
+
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleLogin}

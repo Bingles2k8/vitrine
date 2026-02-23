@@ -82,6 +82,46 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
     )
   }
 
+  async function handleExport() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: museumData } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
+    if (!museumData) return
+    const mid = museumData.id
+    const [artifacts, staff, entries, loans, conservation, audits, exits] = await Promise.all([
+      supabase.from('artifacts').select('*').eq('museum_id', mid),
+      supabase.from('staff_members').select('*').eq('museum_id', mid),
+      supabase.from('entry_records').select('*').eq('museum_id', mid),
+      supabase.from('loans').select('*').eq('museum_id', mid),
+      supabase.from('conservation_treatments').select('*').eq('museum_id', mid),
+      supabase.from('audit_records').select('*').eq('museum_id', mid),
+      supabase.from('object_exits').select('*').eq('museum_id', mid),
+    ])
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      museum: museumData,
+      artifacts: artifacts.data,
+      staff: staff.data,
+      entry_records: entries.data,
+      loans: loans.data,
+      conservation_treatments: conservation.data,
+      audit_records: audits.data,
+      object_exits: exits.data,
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `vitrine-export-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
+  async function handleDeleteAccount() {
+    if (!confirm('This will permanently delete your museum, all collection data, and your account. This cannot be undone. Continue?')) return
+    const res = await fetch('/api/delete-account', { method: 'POST' })
+    if (res.ok) router.push('/login')
+  }
+
   async function toggleMode() {
     if (!museum || communityLocked) return
     const newMode = simple ? 'full' : 'simple'
@@ -217,9 +257,21 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
                 <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Account</div>
                 <button
                   onClick={onSignOut}
-                  className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                  className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
                 >
                   Sign out →
+                </button>
+                <button
+                  onClick={handleExport}
+                  className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
+                >
+                  Export my data →
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="w-full text-left text-xs font-mono text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                >
+                  Delete account →
                 </button>
               </div>
             </div>
