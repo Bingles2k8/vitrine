@@ -5,42 +5,35 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (password !== confirm) {
+      setError('Passwords do not match')
+      return
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
       router.push('/dashboard')
-    }
-  }
-
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const { error } = await supabase.auth.signUp({ email, password })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      setError('Check your email to confirm your account.')
-      setLoading(false)
     }
   }
 
@@ -53,67 +46,59 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8">
-          <form className="space-y-4">
+          <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">
+            Choose a new password for your account.
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@museum.org"
-                className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
-                Password
+                New password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
+                required
                 className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
               />
             </div>
 
-            <div className="text-right -mt-1">
-              <Link
-                href="/forgot-password"
-                className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-mono"
-              >
-                Forgot password?
-              </Link>
+            <div>
+              <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+              />
             </div>
 
             {error && (
               <p className="text-xs text-red-500 font-mono">{error}</p>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleLogin}
-                disabled={loading}
-                className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded py-2 text-sm font-mono disabled:opacity-50"
-              >
-                {loading ? 'Loading…' : 'Sign in'}
-              </button>
-              <button
-                onClick={handleSignUp}
-                disabled={loading}
-                className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 rounded py-2 text-sm font-mono disabled:opacity-50 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-              >
-                Sign up
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded py-2 text-sm font-mono disabled:opacity-50"
+            >
+              {loading ? 'Updating…' : 'Set new password'}
+            </button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-stone-300 dark:text-stone-600 mt-6">
-          © 2026 Vitrine Ltd.
+        <p className="text-center mt-6">
+          <Link
+            href="/login"
+            className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-mono"
+          >
+            ← Back to sign in
+          </Link>
         </p>
       </div>
     </main>
