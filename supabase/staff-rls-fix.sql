@@ -7,23 +7,34 @@
 -- "stack depth limit exceeded", which the JS client receives as {data: null},
 -- causing the dashboard to redirect everyone to /onboarding.
 --
--- Fix: replace the direct subquery in the museums staff policy with a
--- SECURITY DEFINER function. The function runs as the database owner and
--- bypasses RLS on staff_members, so it does not recurse back into museums.
+-- Fix: use a scalar boolean SECURITY DEFINER function. It runs as the
+-- database owner, bypasses RLS on staff_members, and returns a plain
+-- boolean — which is what policy expressions require.
+-- (Set-returning functions are not allowed in policy expressions.)
 -- =============================================================
 
-CREATE OR REPLACE FUNCTION get_staff_museum_ids()
-  RETURNS SETOF uuid
+-- Drop the set-returning function from the first attempt (if it was created)
+DROP FUNCTION IF EXISTS get_staff_museum_ids();
+
+-- Scalar boolean SECURITY DEFINER function.
+-- Checks whether the current user is a staff member of a specific museum
+-- without triggering RLS on staff_members (breaks the circular reference).
+CREATE OR REPLACE FUNCTION is_staff_of_museum(museum_uuid uuid)
+  RETURNS boolean
   LANGUAGE sql
   SECURITY DEFINER
   SET search_path = public
 AS $$
-  SELECT museum_id FROM staff_members WHERE user_id = auth.uid();
+  SELECT EXISTS (
+    SELECT 1 FROM staff_members
+    WHERE user_id = auth.uid()
+      AND museum_id = museum_uuid
+  );
 $$;
 
-GRANT EXECUTE ON FUNCTION get_staff_museum_ids() TO authenticated;
+GRANT EXECUTE ON FUNCTION is_staff_of_museum(uuid) TO authenticated;
 
 DROP POLICY IF EXISTS "Staff can view their museum" ON museums;
 CREATE POLICY "Staff can view their museum"
   ON museums FOR SELECT
-  USING (id = ANY(get_staff_museum_ids()));
+  USING (is_staff_of_museum(id));
