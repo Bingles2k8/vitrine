@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
@@ -14,8 +14,45 @@ export default function Onboarding() {
   const [plan, setPlan] = useState<PlanId>('community')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null)
+  const [slugChecking, setSlugChecking] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  // Redirect to dashboard if user already has a museum
+  useEffect(() => {
+    async function checkExisting() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: existing } = await supabase
+        .from('museums')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single()
+      if (existing) router.replace('/dashboard')
+    }
+    checkExisting()
+  }, [])
+
+  // Debounced slug availability check
+  useEffect(() => {
+    const slug = toSlug(name)
+    if (!slug) { setSlugAvailable(null); setSlugChecking(false); return }
+
+    setSlugChecking(true)
+    setSlugAvailable(null)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/check-slug?slug=${encodeURIComponent(slug)}`)
+      const { available } = await res.json()
+      setSlugAvailable(available)
+      setSlugChecking(false)
+    }, 400)
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [name])
 
   function toSlug(str: string) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -24,6 +61,7 @@ export default function Onboarding() {
   function handleNext(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Please enter your museum name'); return }
+    if (slugAvailable === false) { setError('This name is already taken — please choose another'); return }
     setError('')
     setStep(2)
   }
@@ -35,7 +73,7 @@ export default function Onboarding() {
     }
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    if (!user) { setLoading(false); router.push('/login'); return }
 
     const selectedTemplate = TEMPLATES.find(t => t.id === template)!
     const slug = toSlug(name)
@@ -56,7 +94,8 @@ export default function Onboarding() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      // Use full navigation to ensure session cookies are read fresh by the dashboard
+      window.location.href = '/dashboard'
     }
   }
 
@@ -107,13 +146,24 @@ export default function Onboarding() {
                 </div>
               </div>
               {name && (
-                <div className="bg-stone-50 rounded px-3 py-2">
-                  <span className="text-xs font-mono text-stone-400">Your public URL: </span>
-                  <span className="text-xs font-mono text-stone-600">vitrine.app/{toSlug(name)}</span>
+                <div className="bg-stone-50 rounded px-3 py-2 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-mono text-stone-400">Your public URL: </span>
+                    <span className="text-xs font-mono text-stone-600">vitrinecms.com/{toSlug(name)}</span>
+                  </div>
+                  <div className="flex-shrink-0 text-xs font-mono">
+                    {slugChecking && <span className="text-stone-400">checking…</span>}
+                    {!slugChecking && slugAvailable === true && <span className="text-emerald-600">✓ Available</span>}
+                    {!slugChecking && slugAvailable === false && <span className="text-red-500">✗ Taken</span>}
+                  </div>
                 </div>
               )}
               {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
-              <button type="submit" className="w-full bg-stone-900 text-white rounded py-2.5 text-sm font-mono">
+              <button
+                type="submit"
+                disabled={slugChecking || slugAvailable === false}
+                className="w-full bg-stone-900 text-white rounded py-2.5 text-sm font-mono disabled:opacity-50"
+              >
                 Next — Choose a template →
               </button>
             </form>
@@ -148,7 +198,7 @@ export default function Onboarding() {
 
         {step === 3 && (
           <div>
-            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
+            <div className="text-xs uppercase tracking-widests text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
             <p className="text-sm text-stone-400 text-center mb-8">You can upgrade at any time from your account settings.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {PLAN_ORDER.map(id => {
