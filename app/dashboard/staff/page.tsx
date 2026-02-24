@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getPlan } from '@/lib/plans'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 type AccessLevel = 'Admin' | 'Editor' | 'Viewer'
 
@@ -16,6 +17,8 @@ interface StaffMember {
   department: string
   access: AccessLevel
   created_at: string
+  user_id: string | null
+  invited_at: string | null
 }
 
 const DEPARTMENTS = ['Curatorial', 'Conservation', 'Education', 'Operations', 'Finance', 'Marketing']
@@ -35,6 +38,8 @@ const ACCESS_STYLES: Record<AccessLevel, string> = {
 
 export default function StaffPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -42,6 +47,7 @@ export default function StaffPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [filterDept, setFilterDept] = useState('All')
+  const [inviting, setInviting] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -58,25 +64,20 @@ export default function StaffPage() {
   }, [])
 
   async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    const result = await getMuseumForUser(supabase)
+    if (!result) { router.push('/onboarding'); return }
+    const { museum, isOwner, staffAccess } = result
+    setMuseum(museum)
+    setIsOwner(isOwner)
+    setStaffAccess(staffAccess)
 
-    const { data: museum } = await supabase
-      .from('museums')
-      .select('*')
-      .eq('owner_id', user.id)
-      .single()
-
-    if (!museum) { router.push('/onboarding'); return }
-
-    const { data: staff } = await supabase
+    const { data: staffData } = await supabase
       .from('staff_members')
       .select('*')
       .eq('museum_id', museum.id)
       .order('created_at', { ascending: true })
 
-    setMuseum(museum)
-    setStaff(staff || [])
+    setStaff(staffData || [])
     setLoading(false)
   }
 
@@ -135,6 +136,22 @@ export default function StaffPage() {
     load()
   }
 
+  async function handleInvite(staffId: string, email: string) {
+    setInviting(staffId)
+    const res = await fetch('/api/invite-staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staffId, email }),
+    })
+    setInviting(null)
+    if (res.ok) {
+      load()
+    } else {
+      const { error } = await res.json()
+      alert(error || 'Failed to send invite')
+    }
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
@@ -151,6 +168,16 @@ export default function StaffPage() {
     Operations: '#2d3a4a', Finance: '#4a2d6a', Marketing: '#6a2d2d',
   }
 
+  function InviteStatusBadge({ member }: { member: StaffMember }) {
+    if (member.user_id) {
+      return <span className="text-xs font-mono px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">Active</span>
+    }
+    if (member.invited_at) {
+      return <span className="text-xs font-mono px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">Invited</span>
+    }
+    return <span className="text-xs font-mono px-2 py-1 rounded-full bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500">Not invited</span>
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
@@ -162,7 +189,7 @@ export default function StaffPage() {
   if (!getPlan(museum?.plan).spectrum) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-        <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} />
+        <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
         <main className="ml-56 flex-1 flex flex-col">
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff &amp; Roles</span>
@@ -188,18 +215,20 @@ export default function StaffPage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
 
-      <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       {/* Main */}
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff & Roles</span>
-          <button
-            onClick={openAdd}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
-          >
-            + Invite staff
-          </button>
+          {isOwner && (
+            <button
+              onClick={openAdd}
+              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
+            >
+              + Invite staff
+            </button>
+          )}
         </div>
 
         <div className="p-8">
@@ -241,12 +270,14 @@ export default function StaffPage() {
               <div className="text-5xl mb-4">👥</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No staff yet</div>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Invite your team to collaborate on the collection.</p>
-              <button
-                onClick={openAdd}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
-              >
-                + Invite your first team member
-              </button>
+              {isOwner && (
+                <button
+                  onClick={openAdd}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
+                >
+                  + Invite your first team member
+                </button>
+              )}
             </div>
           ) : (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
@@ -258,6 +289,7 @@ export default function StaffPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Job Title</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Email</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Access</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -284,20 +316,37 @@ export default function StaffPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
+                        <InviteStatusBadge member={member} />
+                      </td>
+                      <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEdit(member)}
-                            className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <span className="text-stone-200 dark:text-stone-700">·</span>
-                          <button
-                            onClick={() => handleDelete(member.id, member.name)}
-                            className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors"
-                          >
-                            Remove
-                          </button>
+                          {isOwner && !member.user_id && (
+                            <button
+                              onClick={() => handleInvite(member.id, member.email)}
+                              disabled={inviting === member.id}
+                              className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 transition-colors disabled:opacity-50"
+                            >
+                              {inviting === member.id ? 'Sending…' : member.invited_at ? 'Resend invite' : 'Send invite'}
+                            </button>
+                          )}
+                          {isOwner && !member.user_id && <span className="text-stone-200 dark:text-stone-700">·</span>}
+                          {isOwner && (
+                            <button
+                              onClick={() => openEdit(member)}
+                              className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {isOwner && <span className="text-stone-200 dark:text-stone-700">·</span>}
+                          {isOwner && (
+                            <button
+                              onClick={() => handleDelete(member.id, member.name)}
+                              className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -326,7 +375,7 @@ export default function StaffPage() {
       </main>
 
       {/* Modal */}
-      {modalOpen && (
+      {isOwner && modalOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center"
           onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}

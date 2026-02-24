@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
 import Sidebar from '@/components/Sidebar'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -54,6 +55,8 @@ function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number
 
 export default function SiteBuilder() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -88,9 +91,12 @@ export default function SiteBuilder() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setForm({
         name: museum.name || '',
         tagline: museum.tagline || '',
@@ -225,6 +231,8 @@ export default function SiteBuilder() {
         museum={{ ...museum, logo_emoji: form.logo_emoji, name: form.name }}
         activePath="/dashboard/site"
         onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }}
+        isOwner={isOwner}
+        staffAccess={staffAccess}
       />
 
       {/* Main */}

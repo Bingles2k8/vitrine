@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 export default function ConservationPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [treatments, setTreatments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Active' | 'Completed' | 'Cancelled'>('All')
@@ -17,14 +20,17 @@ export default function ConservationPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
       const { data: treatments } = await supabase
         .from('conservation_treatments')
         .select('*, artifacts(title, accession_no, emoji, status)')
         .eq('museum_id', museum.id)
         .order('start_date', { ascending: false })
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setTreatments(treatments || [])
       setLoading(false)
     }
@@ -56,7 +62,7 @@ export default function ConservationPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/conservation" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/conservation" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">

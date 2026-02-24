@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getPlan } from '@/lib/plans'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 interface Artifact {
   id: string
@@ -68,6 +69,8 @@ function BreakdownCard({ title, data, color }: { title: string; data: [string, n
 
 export default function AnalyticsPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -77,10 +80,13 @@ export default function AnalyticsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
       const { data: artifacts } = await supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false })
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setArtifacts(artifacts || [])
       setLoading(false)
     }
@@ -134,7 +140,7 @@ export default function AnalyticsPage() {
   if (!getPlan(museum?.plan).analytics) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-        <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} />
+        <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
         <main className="ml-56 flex-1 flex flex-col">
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
@@ -161,7 +167,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">

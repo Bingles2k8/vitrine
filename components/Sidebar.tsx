@@ -11,9 +11,11 @@ interface SidebarProps {
   museum: any
   activePath: string
   onSignOut: () => void
+  isOwner?: boolean
+  staffAccess?: string | null
 }
 
-export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps) {
+export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null }: SidebarProps) {
   const router = useRouter()
   const supabase = createClient()
   const simple = museum?.ui_mode === 'simple'
@@ -172,7 +174,7 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder')}
 
-        {!simple && (
+        {!simple && (isOwner || staffAccess === 'Admin') && (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">People</div>
             {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
@@ -238,8 +240,8 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
                 </div>
               )}
 
-              {/* Plan */}
-              {museum && (
+              {/* Plan (owner only) */}
+              {museum && isOwner && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Plan</div>
                   <div className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-1.5 capitalize">{museum.plan}</div>
@@ -252,6 +254,14 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
                 </div>
               )}
 
+              {/* Access level (staff only) */}
+              {!isOwner && staffAccess && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Your access</div>
+                  <div className="text-xs font-mono text-stone-500 dark:text-stone-400 capitalize">{staffAccess}</div>
+                </div>
+              )}
+
               {/* Account */}
               <div>
                 <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Account</div>
@@ -261,18 +271,22 @@ export default function Sidebar({ museum, activePath, onSignOut }: SidebarProps)
                 >
                   Sign out →
                 </button>
-                <button
-                  onClick={handleExport}
-                  className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
-                >
-                  Export my data →
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  className="w-full text-left text-xs font-mono text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                >
-                  Delete account →
-                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={handleExport}
+                      className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
+                    >
+                      Export my data →
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="w-full text-left text-xs font-mono text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                    >
+                      Delete account →
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

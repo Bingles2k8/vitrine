@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 const ACQ_METHODS = ['Purchase', 'Gift', 'Bequest', 'Transfer', 'Found', 'Fieldwork', 'Exchange', 'Unknown']
 
 export default function AccessionRegisterPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [yearFilter, setYearFilter] = useState('')
@@ -20,8 +23,9 @@ export default function AccessionRegisterPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
       const { data: artifacts } = await supabase
         .from('artifacts')
         .select('id, title, accession_no, acquisition_date, acquisition_method, acquisition_source, acquisition_authorised_by, accession_register_confirmed, emoji, status')
@@ -29,6 +33,8 @@ export default function AccessionRegisterPage() {
         .not('accession_no', 'is', null)
         .order('acquisition_date', { ascending: true, nullsFirst: false })
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setArtifacts(artifacts || [])
       setLoading(false)
     }
@@ -65,7 +71,7 @@ export default function AccessionRegisterPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">

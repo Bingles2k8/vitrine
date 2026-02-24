@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -32,6 +33,8 @@ function ProgressBar({ pct }: { pct: number }) {
 
 export default function DocumentationPlanPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [plan, setPlan] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -56,8 +59,9 @@ export default function DocumentationPlanPage() {
       try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
 
       // Fetch everything needed for compliance metrics.
       // Use select('*') and maybeSingle() to be resilient before SQL migrations are run.
@@ -180,6 +184,8 @@ export default function DocumentationPlanPage() {
 
       setMetrics(rows)
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
 
       if (docPlan) {
         setPlan(docPlan)
@@ -241,7 +247,7 @@ export default function DocumentationPlanPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">

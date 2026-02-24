@@ -4,6 +4,7 @@ import ImageUpload from '@/components/ImageUpload'
 import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 const MEDIUMS = ['Oil on canvas','Watercolour','Sculpture','Photography','Ceramics','Textiles','Metalwork','Mixed media','Wood','Glass','Print']
 const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Deaccessioned']
@@ -51,6 +52,8 @@ const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 dark:text
 export default function ArtifactDetail() {
   const [artifact, setArtifact] = useState<any>(null)
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -130,8 +133,9 @@ export default function ArtifactDetail() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
 
       const { data: artifact } = await supabase
         .from('artifacts').select('*')
@@ -140,6 +144,8 @@ export default function ArtifactDetail() {
       if (!artifact) { router.push('/dashboard'); return }
 
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setArtifact(artifact)
       setForm({
         title: artifact.title || '',

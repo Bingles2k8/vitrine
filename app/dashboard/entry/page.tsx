@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getPlan } from '@/lib/plans'
+import { getMuseumForUser } from '@/lib/get-museum'
 
 const ENTRY_REASONS = ['Potential acquisition', 'Loan in', 'Enquiry', 'Return from loan', 'Found in collection']
 const OUTCOMES = ['Pending', 'Acquired', 'Returned to depositor', 'Transferred to loan', 'Disposed']
@@ -23,6 +24,8 @@ const checkboxCls = 'w-4 h-4 rounded border-stone-300 dark:border-stone-600 text
 
 export default function EntryRegisterPage() {
   const [museum, setMuseum] = useState<any>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [entries, setEntries] = useState<any[]>([])
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,13 +99,16 @@ export default function EntryRegisterPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: museum } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
-      if (!museum) { router.push('/onboarding'); return }
+      const result = await getMuseumForUser(supabase)
+      if (!result) { router.push('/onboarding'); return }
+      const { museum, isOwner, staffAccess } = result
       const [{ data: entries }, { data: artifacts }] = await Promise.all([
         supabase.from('entry_records').select('*, artifacts(title, accession_no)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
         supabase.from('artifacts').select('id, title, accession_no').eq('museum_id', museum.id).order('title'),
       ])
       setMuseum(museum)
+      setIsOwner(isOwner)
+      setStaffAccess(staffAccess)
       setEntries(entries || [])
       setArtifacts(artifacts || [])
       setLoading(false)
@@ -236,7 +242,7 @@ export default function EntryRegisterPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/entry" onSignOut={handleSignOut} />
+      <Sidebar museum={museum} activePath="/dashboard/entry" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
 
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
