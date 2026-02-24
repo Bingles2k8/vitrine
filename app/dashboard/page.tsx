@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
+  const [activityLog, setActivityLog] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
   const router = useRouter()
@@ -35,9 +36,10 @@ export default function Dashboard() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
 
-      const [{ data: artifacts }, { data: activeLoans }] = await Promise.all([
+      const [{ data: artifacts }, { data: activeLoans }, { data: activity }] = await Promise.all([
         supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
+        supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
       ])
 
       setMuseum(museum)
@@ -45,6 +47,7 @@ export default function Dashboard() {
       setStaffAccess(staffAccess)
       setArtifacts(artifacts || [])
       setLoans(activeLoans || [])
+      setActivityLog(activity || [])
       setLoading(false)
     }
     load()
@@ -210,6 +213,34 @@ export default function Dashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+          {activityLog.length > 0 && (
+            <div className="mt-8">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Recent Activity</div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                {activityLog.map((entry, i) => {
+                  const ago = (() => {
+                    const diff = Date.now() - new Date(entry.created_at).getTime()
+                    const mins = Math.floor(diff / 60000)
+                    if (mins < 1) return 'just now'
+                    if (mins < 60) return `${mins}m ago`
+                    const hrs = Math.floor(mins / 60)
+                    if (hrs < 24) return `${hrs}h ago`
+                    return `${Math.floor(hrs / 24)}d ago`
+                  })()
+                  return (
+                    <div key={entry.id} className={`flex items-center justify-between px-5 py-3 text-sm ${i < activityLog.length - 1 ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-stone-300 dark:text-stone-600 text-xs font-mono">◎</span>
+                        <span className="text-stone-700 dark:text-stone-300">{entry.description}</span>
+                        {entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500">by {entry.user_name}</span>}
+                      </div>
+                      <span className="text-xs font-mono text-stone-400 dark:text-stone-500 flex-shrink-0 ml-4">{ago}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
