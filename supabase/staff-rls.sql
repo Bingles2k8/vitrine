@@ -41,10 +41,11 @@ DROP POLICY IF EXISTS "Staff can view other staff in their museum" ON staff_memb
 CREATE POLICY "Staff can view other staff in their museum"
   ON staff_members FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM staff_members s2
-      WHERE s2.museum_id = staff_members.museum_id
-        AND s2.user_id = auth.uid()
+    user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM museums
+      WHERE museums.id = staff_members.museum_id
+        AND museums.owner_id = auth.uid()
     )
   );
 
@@ -71,7 +72,7 @@ CREATE POLICY "Staff editors can create artifacts in their museums"
       SELECT 1 FROM staff_members
       WHERE staff_members.museum_id = artifacts.museum_id
         AND staff_members.user_id = auth.uid()
-        AND staff_members.role IN ('Admin', 'Editor')
+        AND staff_members.access IN ('Admin', 'Editor')
     )
   );
 
@@ -83,7 +84,7 @@ CREATE POLICY "Staff editors can update artifacts in their museums"
       SELECT 1 FROM staff_members
       WHERE staff_members.museum_id = artifacts.museum_id
         AND staff_members.user_id = auth.uid()
-        AND staff_members.role IN ('Admin', 'Editor')
+        AND staff_members.access IN ('Admin', 'Editor')
     )
   )
   WITH CHECK (
@@ -91,7 +92,7 @@ CREATE POLICY "Staff editors can update artifacts in their museums"
       SELECT 1 FROM staff_members
       WHERE staff_members.museum_id = artifacts.museum_id
         AND staff_members.user_id = auth.uid()
-        AND staff_members.role IN ('Admin', 'Editor')
+        AND staff_members.access IN ('Admin', 'Editor')
     )
   );
 
@@ -103,7 +104,7 @@ CREATE POLICY "Staff admins can delete artifacts in their museums"
       SELECT 1 FROM staff_members
       WHERE staff_members.museum_id = artifacts.museum_id
         AND staff_members.user_id = auth.uid()
-        AND staff_members.role = 'Admin'
+        AND staff_members.access = 'Admin'
     )
   );
 
@@ -119,18 +120,18 @@ CREATE POLICY "Staff can view location_history in their museums"
 DROP POLICY IF EXISTS "Staff editors can create location_history in their museums" ON location_history;
 CREATE POLICY "Staff editors can create location_history in their museums"
   ON location_history FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update location_history in their museums" ON location_history;
 CREATE POLICY "Staff editors can update location_history in their museums"
   ON location_history FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete location_history in their museums" ON location_history;
 CREATE POLICY "Staff admins can delete location_history in their museums"
   ON location_history FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = location_history.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -144,18 +145,18 @@ CREATE POLICY "Staff can view condition_assessments in their museums"
 DROP POLICY IF EXISTS "Staff editors can create condition_assessments in their museums" ON condition_assessments;
 CREATE POLICY "Staff editors can create condition_assessments in their museums"
   ON condition_assessments FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update condition_assessments in their museums" ON condition_assessments;
 CREATE POLICY "Staff editors can update condition_assessments in their museums"
   ON condition_assessments FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete condition_assessments in their museums" ON condition_assessments;
 CREATE POLICY "Staff admins can delete condition_assessments in their museums"
   ON condition_assessments FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = condition_assessments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -169,18 +170,18 @@ CREATE POLICY "Staff can view conservation_treatments in their museums"
 DROP POLICY IF EXISTS "Staff editors can create conservation_treatments in their museums" ON conservation_treatments;
 CREATE POLICY "Staff editors can create conservation_treatments in their museums"
   ON conservation_treatments FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update conservation_treatments in their museums" ON conservation_treatments;
 CREATE POLICY "Staff editors can update conservation_treatments in their museums"
   ON conservation_treatments FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete conservation_treatments in their museums" ON conservation_treatments;
 CREATE POLICY "Staff admins can delete conservation_treatments in their museums"
   ON conservation_treatments FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = conservation_treatments.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -194,18 +195,18 @@ CREATE POLICY "Staff can view loans in their museums"
 DROP POLICY IF EXISTS "Staff editors can create loans in their museums" ON loans;
 CREATE POLICY "Staff editors can create loans in their museums"
   ON loans FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update loans in their museums" ON loans;
 CREATE POLICY "Staff editors can update loans in their museums"
   ON loans FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete loans in their museums" ON loans;
 CREATE POLICY "Staff admins can delete loans in their museums"
   ON loans FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = loans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -219,18 +220,18 @@ CREATE POLICY "Staff can view audit_records in their museums"
 DROP POLICY IF EXISTS "Staff editors can create audit_records in their museums" ON audit_records;
 CREATE POLICY "Staff editors can create audit_records in their museums"
   ON audit_records FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update audit_records in their museums" ON audit_records;
 CREATE POLICY "Staff editors can update audit_records in their museums"
   ON audit_records FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete audit_records in their museums" ON audit_records;
 CREATE POLICY "Staff admins can delete audit_records in their museums"
   ON audit_records FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = audit_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -244,18 +245,18 @@ CREATE POLICY "Staff can view entry_records in their museums"
 DROP POLICY IF EXISTS "Staff editors can create entry_records in their museums" ON entry_records;
 CREATE POLICY "Staff editors can create entry_records in their museums"
   ON entry_records FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update entry_records in their museums" ON entry_records;
 CREATE POLICY "Staff editors can update entry_records in their museums"
   ON entry_records FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete entry_records in their museums" ON entry_records;
 CREATE POLICY "Staff admins can delete entry_records in their museums"
   ON entry_records FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = entry_records.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -269,18 +270,18 @@ CREATE POLICY "Staff can view object_exits in their museums"
 DROP POLICY IF EXISTS "Staff editors can create object_exits in their museums" ON object_exits;
 CREATE POLICY "Staff editors can create object_exits in their museums"
   ON object_exits FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update object_exits in their museums" ON object_exits;
 CREATE POLICY "Staff editors can update object_exits in their museums"
   ON object_exits FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete object_exits in their museums" ON object_exits;
 CREATE POLICY "Staff admins can delete object_exits in their museums"
   ON object_exits FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_exits.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -296,13 +297,13 @@ CREATE POLICY "Staff can view documentation_plans in their museums"
 DROP POLICY IF EXISTS "Staff editors can create documentation_plans in their museums" ON documentation_plans;
 CREATE POLICY "Staff editors can create documentation_plans in their museums"
   ON documentation_plans FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update documentation_plans in their museums" ON documentation_plans;
 CREATE POLICY "Staff editors can update documentation_plans in their museums"
   ON documentation_plans FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = documentation_plans.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 
 -- -------------------------------------------------------------
@@ -316,18 +317,18 @@ CREATE POLICY "Staff can view valuations in their museums"
 DROP POLICY IF EXISTS "Staff editors can create valuations in their museums" ON valuations;
 CREATE POLICY "Staff editors can create valuations in their museums"
   ON valuations FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update valuations in their museums" ON valuations;
 CREATE POLICY "Staff editors can update valuations in their museums"
   ON valuations FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete valuations in their museums" ON valuations;
 CREATE POLICY "Staff admins can delete valuations in their museums"
   ON valuations FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = valuations.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -341,18 +342,18 @@ CREATE POLICY "Staff can view risk_register in their museums"
 DROP POLICY IF EXISTS "Staff editors can create risk_register in their museums" ON risk_register;
 CREATE POLICY "Staff editors can create risk_register in their museums"
   ON risk_register FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update risk_register in their museums" ON risk_register;
 CREATE POLICY "Staff editors can update risk_register in their museums"
   ON risk_register FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete risk_register in their museums" ON risk_register;
 CREATE POLICY "Staff admins can delete risk_register in their museums"
   ON risk_register FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = risk_register.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
 
 
 -- -------------------------------------------------------------
@@ -383,15 +384,15 @@ CREATE POLICY "Staff can view artifact_images in their museums"
 DROP POLICY IF EXISTS "Staff editors can create artifact_images in their museums" ON artifact_images;
 CREATE POLICY "Staff editors can create artifact_images in their museums"
   ON artifact_images FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff editors can update artifact_images in their museums" ON artifact_images;
 CREATE POLICY "Staff editors can update artifact_images in their museums"
   ON artifact_images FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 DROP POLICY IF EXISTS "Staff admins can delete artifact_images in their museums" ON artifact_images;
 CREATE POLICY "Staff admins can delete artifact_images in their museums"
   ON artifact_images FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role = 'Admin'));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));

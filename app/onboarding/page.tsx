@@ -23,17 +23,23 @@ export default function Onboarding() {
   const router = useRouter()
   const supabase = createClient()
 
-  // Redirect to dashboard if user already has a museum
+  // Redirect to dashboard if user already has a museum (as owner or staff)
   useEffect(() => {
     async function checkExisting() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: existing } = await supabase
+      const { data: owned } = await supabase
         .from('museums')
         .select('id')
         .eq('owner_id', user.id)
         .single()
-      if (existing) router.replace('/dashboard')
+      if (owned) { router.replace('/dashboard'); return }
+      const { data: staffRecord } = await supabase
+        .from('staff_members')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+      if (staffRecord) router.replace('/dashboard')
     }
     checkExisting()
   }, [])
