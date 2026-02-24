@@ -96,10 +96,8 @@ export default function Onboarding() {
   }
 
   async function handleSubmit() {
-    if (plan === 'enterprise') {
-      window.location.href = 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry'
-      return
-    }
+    // TEST MODE: Enterprise plan is selectable without payment.
+    // TODO: When payment is implemented, gate Enterprise behind a contact/sales flow.
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); router.push('/login'); return }
@@ -246,23 +244,24 @@ export default function Onboarding() {
         {step === 3 && (
           <div>
             <div className="text-xs uppercase tracking-widests text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
-            <p className="text-sm text-stone-400 text-center mb-8">You can upgrade at any time from your account settings.</p>
+            <p className="text-sm text-stone-400 text-center mb-2">You can upgrade at any time from your account settings.</p>
+            {/* TEST MODE: Payment is not required — any plan can be selected for free. Remove this banner when billing is live. */}
+            <p className="text-xs font-mono text-amber-600 text-center mb-8 bg-amber-50 border border-amber-200 rounded px-4 py-2">
+              Testing mode — no payment required. Select any plan to get started.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {PLAN_ORDER.map(id => {
                 const p = PLANS[id]
                 const selected = plan === id
-                const isEnterprise = id === 'enterprise'
                 return (
                   <button
                     key={id}
                     type="button"
-                    onClick={() => !isEnterprise && setPlan(id)}
+                    onClick={() => setPlan(id)}
                     className={`text-left rounded-xl border-2 p-6 transition-all ${
-                      isEnterprise
-                        ? 'border-stone-200 opacity-75 cursor-default'
-                        : selected
-                          ? 'border-stone-900 shadow-lg bg-white'
-                          : 'border-stone-200 bg-white hover:border-stone-400'
+                      selected
+                        ? 'border-stone-900 shadow-lg bg-white'
+                        : 'border-stone-200 bg-white hover:border-stone-400'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -270,13 +269,11 @@ export default function Onboarding() {
                         <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-1">{p.label}</div>
                         <div className="text-2xl font-serif font-medium text-stone-900">{p.price}</div>
                       </div>
-                      {!isEnterprise && (
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all ${
-                          selected ? 'border-stone-900 bg-stone-900' : 'border-stone-300'
-                        }`}>
-                          {selected && <span className="text-white text-xs">✓</span>}
-                        </div>
-                      )}
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all ${
+                        selected ? 'border-stone-900 bg-stone-900' : 'border-stone-300'
+                      }`}>
+                        {selected && <span className="text-white text-xs">✓</span>}
+                      </div>
                     </div>
                     <ul className="space-y-1.5 mb-4">
                       {p.features.map(f => (
@@ -286,11 +283,6 @@ export default function Onboarding() {
                         </li>
                       ))}
                     </ul>
-                    {isEnterprise && (
-                      <div className="text-xs font-mono text-amber-600 mt-2">
-                        Contact us to get started →
-                      </div>
-                    )}
                   </button>
                 )
               })}
@@ -305,7 +297,7 @@ export default function Onboarding() {
                 disabled={loading}
                 className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded disabled:opacity-50"
               >
-                {loading ? 'Creating…' : plan === 'enterprise' ? 'Contact us →' : 'Create my museum →'}
+                {loading ? 'Creating…' : 'Create my museum →'}
               </button>
             </div>
           </div>
