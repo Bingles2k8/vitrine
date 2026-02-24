@@ -28,18 +28,18 @@ export default function Onboarding() {
     async function checkExisting() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: owned } = await supabase
+      const { data: ownedList } = await supabase
         .from('museums')
         .select('id')
         .eq('owner_id', user.id)
-        .single()
-      if (owned) { router.replace('/dashboard'); return }
-      const { data: staffRecord } = await supabase
+        .limit(1)
+      if (ownedList?.[0]) { router.replace('/dashboard'); return }
+      const { data: staffList } = await supabase
         .from('staff_members')
         .select('id')
         .eq('user_id', user.id)
-        .single()
-      if (staffRecord) router.replace('/dashboard')
+        .limit(1)
+      if (staffList?.[0]) router.replace('/dashboard')
     }
     checkExisting()
   }, [])
