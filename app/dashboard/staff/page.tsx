@@ -221,7 +221,7 @@ export default function StaffPage() {
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff & Roles</span>
-          {isOwner && (
+          {(isOwner || staffAccess === 'Admin') && (
             <button
               onClick={openAdd}
               className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
@@ -270,7 +270,7 @@ export default function StaffPage() {
               <div className="text-5xl mb-4">👥</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No staff yet</div>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Invite your team to collaborate on the collection.</p>
-              {isOwner && (
+              {(isOwner || staffAccess === 'Admin') && (
                 <button
                   onClick={openAdd}
                   className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
@@ -320,7 +320,7 @@ export default function StaffPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
-                          {isOwner && !member.user_id && (
+                          {(isOwner || staffAccess === 'Admin') && !member.user_id && (
                             <button
                               onClick={() => handleInvite(member.id, member.email)}
                               disabled={inviting === member.id}
@@ -329,8 +329,8 @@ export default function StaffPage() {
                               {inviting === member.id ? 'Sending…' : member.invited_at ? 'Resend invite' : 'Send invite'}
                             </button>
                           )}
-                          {isOwner && !member.user_id && <span className="text-stone-200 dark:text-stone-700">·</span>}
-                          {isOwner && (
+                          {(isOwner || staffAccess === 'Admin') && !member.user_id && <span className="text-stone-200 dark:text-stone-700">·</span>}
+                          {(isOwner || staffAccess === 'Admin') && (
                             <button
                               onClick={() => openEdit(member)}
                               className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
@@ -338,8 +338,8 @@ export default function StaffPage() {
                               Edit
                             </button>
                           )}
-                          {isOwner && <span className="text-stone-200 dark:text-stone-700">·</span>}
-                          {isOwner && (
+                          {(isOwner || staffAccess === 'Admin') && <span className="text-stone-200 dark:text-stone-700">·</span>}
+                          {(isOwner || staffAccess === 'Admin') && (
                             <button
                               onClick={() => handleDelete(member.id, member.name)}
                               className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors"
@@ -375,7 +375,7 @@ export default function StaffPage() {
       </main>
 
       {/* Modal */}
-      {isOwner && modalOpen && (
+      {(isOwner || staffAccess === 'Admin') && modalOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center"
           onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}

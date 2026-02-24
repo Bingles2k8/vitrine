@@ -260,19 +260,21 @@ export default function ArtifactDetail() {
 
   async function handleSave(e: { preventDefault(): void }) {
     e.preventDefault()
+    if (!isOwner && staffAccess !== 'Admin' && staffAccess !== 'Editor') return
     if (!form.title.trim()) { setError('Title is required'); return }
     setSaving(true)
     setError('')
 
+    // Exclude condition fields — they are only updated via addCondition() to prevent overwrites
+    const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
     const { error } = await supabase.from('artifacts').update({
-      ...form,
-      acquisition_date: form.acquisition_date || null,
-      legal_transfer_date: form.legal_transfer_date || null,
-      acquisition_authority_date: form.acquisition_authority_date || null,
-      acquisition_object_count: form.acquisition_object_count ? parseInt(form.acquisition_object_count) : 1,
-      condition_date: form.condition_date || null,
-      disposal_date: form.disposal_date || null,
-      last_inventoried: form.last_inventoried || null,
+      ...formToSave,
+      acquisition_date: formToSave.acquisition_date || null,
+      legal_transfer_date: formToSave.legal_transfer_date || null,
+      acquisition_authority_date: formToSave.acquisition_authority_date || null,
+      acquisition_object_count: formToSave.acquisition_object_count ? parseInt(formToSave.acquisition_object_count) : 1,
+      disposal_date: formToSave.disposal_date || null,
+      last_inventoried: formToSave.last_inventoried || null,
     }).eq('id', params.id)
 
     if (error) { setError(error.message) } else { setSaved(true); router.refresh(); setTimeout(() => setSaved(false), 2000) }
@@ -412,6 +414,8 @@ export default function ArtifactDetail() {
     setAuditHistory(data || [])
   }
 
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+
   if (loading || !artifact) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
@@ -450,10 +454,12 @@ export default function ArtifactDetail() {
           <div className="flex items-center gap-4">
             {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
             {error && <span className="text-xs font-mono text-red-500">{error}</span>}
-            <button onClick={handleDelete} disabled={deleting}
-              className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
-              {deleting ? 'Deleting…' : 'Delete object'}
-            </button>
+            {canEdit && (
+              <button onClick={handleDelete} disabled={deleting}
+                className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
+                {deleting ? 'Deleting…' : 'Delete object'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -472,6 +478,12 @@ export default function ArtifactDetail() {
         </div>
 
         <form onSubmit={handleSave} className="p-8 max-w-3xl space-y-6">
+
+          {!canEdit && (
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+              View only — contact an Editor or Admin to make changes.
+            </div>
+          )}
 
           {/* ── OVERVIEW ─────────────────────────────────── */}
           {activeTab === 'overview' && <>
@@ -527,7 +539,11 @@ export default function ArtifactDetail() {
                     {OBJECT_TYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
                 </div>
-                <div><label className={labelCls}>Current Location</label><input value={form.current_location} onChange={e => set('current_location', e.target.value)} placeholder="Gallery A, Case 3" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Current Location</label>
+                  <p className="text-sm text-stone-900 dark:text-stone-100 py-2">{form.current_location || <span className="text-stone-400">—</span>}</p>
+                  <button type="button" onClick={() => setActiveTab('location')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Location tab →</button>
+                </div>
               </div>
 
               <div>
@@ -541,6 +557,17 @@ export default function ArtifactDetail() {
                   ))}
                 </div>
               </div>
+
+              {form.condition_grade && (
+                <div>
+                  <label className={labelCls}>Condition</label>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>{form.condition_grade}</span>
+                    {form.condition_date && <span className="text-xs text-stone-400 dark:text-stone-500">Assessed {new Date(form.condition_date).toLocaleDateString('en-GB')}</span>}
+                    <button type="button" onClick={() => setActiveTab('condition')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Condition tab →</button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className={labelCls}>Public Site</label>
@@ -588,7 +615,7 @@ export default function ArtifactDetail() {
               </div>
             </div>
 
-            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+            {canEdit && <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />}
           </>}
 
           {/* ── OBJECT ENTRY ─────────────────────────────── */}
@@ -822,7 +849,7 @@ export default function ArtifactDetail() {
               ))}
             </div>
 
-            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+            {canEdit && <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />}
           </>}
 
           {/* ── LOCATION ─────────────────────────────────── */}
@@ -883,7 +910,7 @@ export default function ArtifactDetail() {
               </div>
             )}
 
-            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+            {canEdit && <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />}
           </>}
 
           {/* ── CONDITION ────────────────────────────────── */}
@@ -1212,7 +1239,7 @@ export default function ArtifactDetail() {
               </div>
             )}
 
-            <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />
+            {canEdit && <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />}
           </>}
 
           {/* ── AUDIT ────────────────────────────────────── */}

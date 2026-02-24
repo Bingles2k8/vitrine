@@ -42,11 +42,6 @@ export default function ConservationPage() {
     router.push('/login')
   }
 
-  async function updateStatus(id: string, status: string) {
-    await supabase.from('conservation_treatments').update({ status }).eq('id', id)
-    setTreatments(t => t.map(tr => tr.id === id ? { ...tr, status } : tr))
-  }
-
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
       <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
@@ -112,12 +107,12 @@ export default function ConservationPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Start</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">End</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(t => (
-                    <tr key={t.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
+                    <tr key={t.id} onClick={() => router.push(`/dashboard/artifacts/${t.artifact_id}?tab=conservation`)}
+                      className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{t.artifacts?.emoji}</div>
@@ -141,17 +136,6 @@ export default function ConservationPage() {
                           t.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' :
                           'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                         }`}>{t.status}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-3">
-                          {t.status === 'Active' && (
-                            <>
-                              <button onClick={() => updateStatus(t.id, 'Completed')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-emerald-700 transition-colors">Complete</button>
-                              <button onClick={() => updateStatus(t.id, 'Cancelled')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors">Cancel</button>
-                            </>
-                          )}
-                          <button onClick={() => router.push(`/dashboard/artifacts/${t.artifact_id}?tab=conservation`)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">View →</button>
-                        </div>
                       </td>
                     </tr>
                   ))}

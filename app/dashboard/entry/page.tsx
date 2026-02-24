@@ -235,6 +235,7 @@ export default function EntryRegisterPage() {
     </div>
   )
 
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
@@ -247,12 +248,14 @@ export default function EntryRegisterPage() {
       <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Entry Register</span>
-          <button
-            onClick={() => setShowForm(s => !s)}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
-          >
-            {showForm ? '× Cancel' : '+ New Entry'}
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowForm(s => !s)}
+              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
+            >
+              {showForm ? '× Cancel' : '+ New Entry'}
+            </button>
+          )}
         </div>
 
         <div className="p-8 space-y-6">
@@ -523,12 +526,16 @@ export default function EntryRegisterPage() {
                               View object →
                             </button>
                           ) : (
+                            canEdit ? (
                             <button
                               onClick={(ev) => { ev.stopPropagation(); handlePromote(e); }}
                               className="text-xs font-mono text-emerald-600 hover:text-emerald-700 transition-colors"
                             >
                               Create record →
                             </button>
+                          ) : (
+                            <span className="text-xs text-stone-300 dark:text-stone-600">—</span>
+                          )
                           )
                         ) : (
                           <span className="text-xs text-stone-300 dark:text-stone-600">—</span>

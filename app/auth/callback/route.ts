@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    if (exchangeError) {
+      return NextResponse.redirect(`${origin}/login?error=auth`)
+    }
 
     // Link user_id to staff_members record if this is an invited staff member
     const { data: { user } } = await supabase.auth.getUser()
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
         .select('id')
         .eq('email', user.email)
         .is('user_id', null)
-        .single()
+        .maybeSingle()
       if (staffRecord) {
         await admin
           .from('staff_members')
