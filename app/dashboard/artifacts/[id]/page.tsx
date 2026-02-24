@@ -88,6 +88,9 @@ export default function ArtifactDetail() {
   const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '' })
   const [latestValuation, setLatestValuation] = useState<any>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [reproductionRequests, setReproductionRequests] = useState<any[]>([])
+  const [reproductionRequestsLoaded, setReproductionRequestsLoaded] = useState(false)
+  const [reproductionForm, setReproductionForm] = useState({ requester_name: '', requester_org: '', request_date: new Date().toISOString().slice(0, 10), purpose: '', status: 'Pending', decision_date: '', decision_by: '', notes: '' })
 
   // Object Entry record
   const [entryRecord, setEntryRecord] = useState<any>(null)
@@ -131,7 +134,7 @@ export default function ArtifactDetail() {
     // Condition
     condition_grade: '', condition_date: '', condition_assessor: '',
     // Rights
-    copyright_status: '', rights_holder: '',
+    copyright_status: '', rights_holder: '', rights_notes: '',
     // Deaccession
     disposal_method: '', disposal_date: '', disposal_note: '',
     disposal_authorization: '', disposal_recipient: '',
@@ -197,6 +200,7 @@ export default function ArtifactDetail() {
         condition_assessor: artifact.condition_assessor || '',
         copyright_status: artifact.copyright_status || '',
         rights_holder: artifact.rights_holder || '',
+        rights_notes: artifact.rights_notes || '',
         disposal_method: artifact.disposal_method || '',
         disposal_date: artifact.disposal_date || '',
         disposal_note: artifact.disposal_note || '',
@@ -240,6 +244,10 @@ export default function ArtifactDetail() {
     if (activeTab === 'valuation' && !valuationsLoaded) {
       supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
         .then(({ data }) => { setValuations(data || []); setValuationsLoaded(true) })
+    }
+    if (activeTab === 'rights' && !reproductionRequestsLoaded) {
+      supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+        .then(({ data }) => { setReproductionRequests(data || []); setReproductionRequestsLoaded(true) })
     }
     if (activeTab === 'entry' && !entryLoaded) {
       supabase.from('entry_records').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false }).limit(1)
@@ -470,6 +478,26 @@ export default function ArtifactDetail() {
     const { data } = await supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
     setValuations(data || [])
     logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${artifact.title}"`)
+  }
+
+  // Reproduction Requests
+  async function addReproductionRequest() {
+    if (!reproductionForm.requester_name || !reproductionForm.request_date) return
+    await supabase.from('reproduction_requests').insert({
+      ...reproductionForm,
+      artifact_id: artifact.id,
+      museum_id: museum.id,
+      decision_date: reproductionForm.decision_date || null,
+    })
+    setReproductionForm({ requester_name: '', requester_org: '', request_date: new Date().toISOString().slice(0, 10), purpose: '', status: 'Pending', decision_date: '', decision_by: '', notes: '' })
+    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setReproductionRequests(data || [])
+  }
+
+  async function updateRequestStatus(id: string, status: string) {
+    await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
+    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setReproductionRequests(data || [])
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
@@ -1273,7 +1301,7 @@ export default function ArtifactDetail() {
           {/* ── RIGHTS & LEGAL ───────────────────────────── */}
           {activeTab === 'rights' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Rights Management (Spectrum Procedure 9)</div>
+              <div className={sectionTitle}>Rights Management (Spectrum — Use of Collections)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Copyright Status</label>
@@ -1284,6 +1312,71 @@ export default function ArtifactDetail() {
                 </div>
                 <div><label className={labelCls}>Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} /></div>
               </div>
+              <div>
+                <label className={labelCls}>Use & Reproduction Restrictions</label>
+                <textarea rows={3} value={form.rights_notes} onChange={e => set('rights_notes', e.target.value)} className={inputCls} placeholder="e.g. Permission required for commercial reproduction. Attribution must include artist name and museum. Not available for advertising use." />
+              </div>
+            </div>
+
+            {/* Reproduction Requests */}
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Reproduction Requests Log</div>
+              {canEdit && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className={labelCls}>Requester Name *</label><input value={reproductionForm.requester_name} onChange={e => setReproductionForm(f => ({ ...f, requester_name: e.target.value }))} placeholder="Name of person or organisation" className={inputCls} /></div>
+                  <div><label className={labelCls}>Organisation</label><input value={reproductionForm.requester_org} onChange={e => setReproductionForm(f => ({ ...f, requester_org: e.target.value }))} placeholder="Publisher, university, etc." className={inputCls} /></div>
+                  <div>
+                    <label className={labelCls}>Purpose</label>
+                    <select value={reproductionForm.purpose} onChange={e => setReproductionForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
+                      <option value="">— Select —</option>
+                      {['Editorial', 'Academic', 'Commercial', 'Personal', 'Exhibition', 'Other'].map(p => <option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div><label className={labelCls}>Request Date *</label><input type="date" value={reproductionForm.request_date} onChange={e => setReproductionForm(f => ({ ...f, request_date: e.target.value }))} className={inputCls} /></div>
+                  <div>
+                    <label className={labelCls}>Status</label>
+                    <select value={reproductionForm.status} onChange={e => setReproductionForm(f => ({ ...f, status: e.target.value }))} className={inputCls}>
+                      {['Pending', 'Approved', 'Declined'].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div><label className={labelCls}>Decision By</label><input value={reproductionForm.decision_by} onChange={e => setReproductionForm(f => ({ ...f, decision_by: e.target.value }))} placeholder="Staff member name" className={inputCls} /></div>
+                  <div className="col-span-2"><label className={labelCls}>Notes</label><input value={reproductionForm.notes} onChange={e => setReproductionForm(f => ({ ...f, notes: e.target.value }))} placeholder="Usage terms, conditions, fees…" className={inputCls} /></div>
+                  <div className="col-span-2">
+                    <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                      Log Request
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {reproductionRequestsLoaded && reproductionRequests.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {reproductionRequests.map(req => (
+                    <div key={req.id} className="border border-stone-100 dark:border-stone-800 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{req.requester_name}{req.requester_org && <span className="font-normal text-stone-400 dark:text-stone-500"> — {req.requester_org}</span>}</div>
+                        <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+                          {req.purpose && <span>{req.purpose} · </span>}
+                          {new Date(req.request_date + 'T00:00:00').toLocaleDateString('en-GB')}
+                          {req.notes && <span> · {req.notes}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-xs font-mono px-2 py-1 rounded-full ${req.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : req.status === 'Declined' ? 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>{req.status}</span>
+                        {canEdit && req.status === 'Pending' && (
+                          <>
+                            <button onClick={() => updateRequestStatus(req.id, 'Approved')} className="text-xs font-mono text-emerald-600 hover:text-emerald-700 transition-colors">Approve</button>
+                            <button onClick={() => updateRequestStatus(req.id, 'Declined')} className="text-xs font-mono text-red-500 hover:text-red-700 transition-colors">Decline</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {reproductionRequestsLoaded && reproductionRequests.length === 0 && (
+                <p className="text-xs text-stone-400 dark:text-stone-500">No reproduction requests logged.</p>
+              )}
             </div>
 
             {form.status === 'Deaccessioned' && (

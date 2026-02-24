@@ -73,6 +73,9 @@ export default function DocumentationPlanPage() {
         { data: activeLoans },
         { data: exits },
         { data: docPlan },
+        { data: valuationArtifacts },
+        { data: artifactImageIds },
+        { data: openRisks },
       ] = await Promise.all([
         supabase.from('artifacts').select('*').eq('museum_id', museum.id),
         supabase.from('entry_records').select('artifact_id').eq('museum_id', museum.id),
@@ -81,6 +84,9 @@ export default function DocumentationPlanPage() {
         supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active'),
         supabase.from('object_exits').select('id').eq('museum_id', museum.id),
         supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).maybeSingle(),
+        supabase.from('valuations').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('artifact_images').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open'),
       ])
 
       const all = artifacts || []
@@ -94,6 +100,8 @@ export default function DocumentationPlanPage() {
       const conditionIds = new Set((conditionAssessments || []).map((c: any) => c.artifact_id))
       const activeLoansWithAgreement = (activeLoans || []).filter((l: any) => l.agreement_reference?.trim()).length
       const activeLoanTotal = (activeLoans || []).length
+      const valuedIds = new Set((valuationArtifacts || []).map((v: any) => v.artifact_id).filter(Boolean))
+      const imageIds = new Set((artifactImageIds || []).map((i: any) => i.artifact_id).filter(Boolean))
 
       const rows: ComplianceRow[] = [
         {
@@ -155,7 +163,7 @@ export default function DocumentationPlanPage() {
         {
           procedure: '★5 Cataloguing',
           metric: 'Image uploaded',
-          numerator: all.filter(a => a.image_url?.trim()).length,
+          numerator: all.filter(a => a.image_url?.trim() || imageIds.has(a.id)).length,
           denominator: total,
           link: '/dashboard',
         },
@@ -179,6 +187,20 @@ export default function DocumentationPlanPage() {
           numerator: all.filter(a => a.condition_grade?.trim()).length,
           denominator: total,
           link: '/dashboard/audit',
+        },
+        {
+          procedure: 'Valuation',
+          metric: 'Objects with valuation',
+          numerator: all.filter(a => valuedIds.has(a.id)).length,
+          denominator: total,
+          link: '/dashboard/valuation',
+        },
+        {
+          procedure: 'Risk Management',
+          metric: 'Open risks in register',
+          numerator: (openRisks || []).length,
+          denominator: 0,
+          link: '/dashboard/risk',
         },
       ]
 

@@ -24,6 +24,16 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
 
   if (!artifact) notFound()
 
+  const { data: galleryImages } = await supabase
+    .from('artifact_images')
+    .select('url, caption, is_primary')
+    .eq('artifact_id', artifact.id)
+    .order('sort_order', { ascending: true })
+
+  const images = galleryImages || []
+  const primaryImage = images.find(img => img.is_primary)?.url || images[0]?.url || artifact.image_url
+  const additionalImages = images.length > 1 ? images.filter(img => img.url !== primaryImage) : []
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b border-stone-200 sticky top-0 bg-white/95 backdrop-blur z-50">
@@ -52,11 +62,22 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
 
-          <div className="aspect-square bg-gradient-to-br from-stone-50 to-stone-100 rounded-xl flex items-center justify-center text-[120px] border border-stone-200 sticky top-24 overflow-hidden">
-            {artifact.image_url ? (
-              <img src={artifact.image_url} alt={artifact.title} className="w-full h-full object-cover" />
-            ) : (
-              <span>{artifact.emoji}</span>
+          <div className="sticky top-24 space-y-3">
+            <div className="aspect-square bg-gradient-to-br from-stone-50 to-stone-100 rounded-xl flex items-center justify-center text-[120px] border border-stone-200 overflow-hidden">
+              {primaryImage ? (
+                <img src={primaryImage} alt={artifact.title} className="w-full h-full object-cover" />
+              ) : (
+                <span>{artifact.emoji}</span>
+              )}
+            </div>
+            {additionalImages.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {additionalImages.map((img, i) => (
+                  <div key={i} className="flex-shrink-0 w-16 h-16 rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
+                    <img src={img.url} alt={img.caption || `${artifact.title} — image ${i + 2}`} className="w-full h-full object-cover" title={img.caption || undefined} />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 

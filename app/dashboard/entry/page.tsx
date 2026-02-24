@@ -26,6 +26,7 @@ export default function EntryRegisterPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [entries, setEntries] = useState<any[]>([])
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,6 +100,7 @@ export default function EntryRegisterPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setCurrentUserId(user.id)
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
@@ -192,6 +194,13 @@ export default function EntryRegisterPage() {
         setEntries(e => [data, ...e])
         setShowForm(false)
         setForm({ entry_number: '', entry_date: today, depositor_name: '', depositor_contact: '', entry_reason: 'Potential acquisition', object_description: '', object_count: 1, legal_owner: '', terms_accepted: false, terms_accepted_date: '', liability_statement: '', receipt_issued: false, receipt_date: '', outcome: 'Pending', received_by: '', risk_notes: '', quarantine_required: false, notes: '', artifact_id: '' })
+        await supabase.from('activity_log').insert({
+          museum_id: museum.id,
+          user_id: currentUserId,
+          user_name: isOwner ? 'Owner' : `Staff (${staffAccess})`,
+          action_type: 'entry_created',
+          description: `Entry record ${entryNumber} created — ${form.depositor_name}`,
+        })
       }
     }
     setSaving(false)

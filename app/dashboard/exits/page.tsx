@@ -17,6 +17,7 @@ export default function ObjectExitsPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [exits, setExits] = useState<any[]>([])
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
@@ -52,6 +53,7 @@ export default function ObjectExitsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setCurrentUserId(user.id)
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
@@ -110,6 +112,15 @@ export default function ObjectExitsPage() {
         recipient_name: '', recipient_contact: '', destination_address: '',
         exit_condition: '', signed_receipt: false, signed_receipt_date: '',
         expected_return_date: '', exit_authorised_by: '', related_loan_id: '', notes: '',
+      })
+      const exitedArtifact = artifacts.find(a => a.id === form.artifact_id)
+      await supabase.from('activity_log').insert({
+        museum_id: museum.id,
+        artifact_id: form.artifact_id || null,
+        user_id: currentUserId,
+        user_name: isOwner ? 'Owner' : `Staff (${staffAccess})`,
+        action_type: 'exit_created',
+        description: `Exit record ${exitNumber} created — ${exitedArtifact?.title || 'object'} (${form.exit_reason})`,
       })
     }
     setSaving(false)
