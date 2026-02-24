@@ -14,8 +14,11 @@ export default function Onboarding() {
   const [plan, setPlan] = useState<PlanId>('community')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null)
   const [slugChecking, setSlugChecking] = useState(false)
+  const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -35,13 +38,20 @@ export default function Onboarding() {
     checkExisting()
   }, [])
 
+  // Sync slug from name when user hasn't manually edited it
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      setSlug(toSlug(name))
+    }
+  }, [name, slugManuallyEdited])
+
   // Debounced slug availability check
   useEffect(() => {
-    const slug = toSlug(name)
-    if (!slug) { setSlugAvailable(null); setSlugChecking(false); return }
+    if (!slug) { setSlugAvailable(null); setSlugChecking(false); setSlugSuggestion(null); return }
 
     setSlugChecking(true)
     setSlugAvailable(null)
+    setSlugSuggestion(null)
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
@@ -49,19 +59,38 @@ export default function Onboarding() {
       const { available } = await res.json()
       setSlugAvailable(available)
       setSlugChecking(false)
+      if (!available) {
+        const suggestion = await findSuggestion(slug)
+        setSlugSuggestion(suggestion)
+      }
     }, 400)
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [name])
+  }, [slug])
 
   function toSlug(str: string) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   }
 
+  function sanitizeSlugInput(str: string) {
+    return str.toLowerCase().replace(/[^a-z0-9-]/g, '')
+  }
+
+  async function findSuggestion(base: string): Promise<string | null> {
+    for (let i = 2; i <= 9; i++) {
+      const candidate = `${base}-${i}`
+      const res = await fetch(`/api/check-slug?slug=${encodeURIComponent(candidate)}`)
+      const { available } = await res.json()
+      if (available) return candidate
+    }
+    return null
+  }
+
   function handleNext(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Please enter your museum name'); return }
-    if (slugAvailable === false) { setError('This name is already taken — please choose another'); return }
+    if (!slug) { setError('Please enter a public URL for your museum'); return }
+    if (slugAvailable === false) { setError('This URL is already taken — please choose another'); return }
     setError('')
     setStep(2)
   }
@@ -76,7 +105,6 @@ export default function Onboarding() {
     if (!user) { setLoading(false); router.push('/login'); return }
 
     const selectedTemplate = TEMPLATES.find(t => t.id === template)!
-    const slug = toSlug(name)
 
     const { error } = await supabase.from('museums').insert({
       name: name.trim(),
@@ -145,19 +173,38 @@ export default function Onboarding() {
                   ))}
                 </div>
               </div>
-              {name && (
-                <div className="bg-stone-50 rounded px-3 py-2 flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-mono text-stone-400">Your public URL: </span>
-                    <span className="text-xs font-mono text-stone-600">vitrinecms.com/{toSlug(name)}</span>
-                  </div>
-                  <div className="flex-shrink-0 text-xs font-mono">
-                    {slugChecking && <span className="text-stone-400">checking…</span>}
-                    {!slugChecking && slugAvailable === true && <span className="text-emerald-600">✓ Available</span>}
-                    {!slugChecking && slugAvailable === false && <span className="text-red-500">✗ Taken</span>}
-                  </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-2">Public URL</label>
+                <div className="flex items-stretch border border-stone-200 rounded focus-within:border-stone-900 transition-colors overflow-hidden">
+                  <span className="bg-stone-50 text-stone-400 text-xs font-mono px-3 flex items-center border-r border-stone-200 whitespace-nowrap">vitrinecms.com/</span>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={e => {
+                      setSlug(sanitizeSlugInput(e.target.value))
+                      setSlugManuallyEdited(true)
+                    }}
+                    placeholder="your-museum"
+                    className="flex-1 px-3 py-2 text-sm text-stone-900 outline-none bg-white min-w-0"
+                  />
                 </div>
-              )}
+                <div className="mt-1.5 text-xs font-mono min-h-[1.25rem]">
+                  {slugChecking && <span className="text-stone-400">checking…</span>}
+                  {!slugChecking && slugAvailable === true && <span className="text-emerald-600">✓ Available</span>}
+                  {!slugChecking && slugAvailable === false && (
+                    <span className="text-red-500">
+                      ✗ Taken
+                      {slugSuggestion && (
+                        <> — use &ldquo;<button
+                          type="button"
+                          onClick={() => { setSlug(slugSuggestion); setSlugManuallyEdited(true) }}
+                          className="underline hover:text-red-700"
+                        >{slugSuggestion}</button>&rdquo;?</>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </div>
               {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
               <button
                 type="submit"
