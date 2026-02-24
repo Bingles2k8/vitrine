@@ -13,13 +13,14 @@
 -- (Set-returning functions are not allowed in policy expressions.)
 -- =============================================================
 
--- Drop the set-returning function from the first attempt (if it was created)
+-- Drop any previous versions of these functions
 DROP FUNCTION IF EXISTS get_staff_museum_ids();
+DROP FUNCTION IF EXISTS is_staff_of_museum(uuid);
 
 -- Scalar boolean SECURITY DEFINER function.
 -- Checks whether the current user is a staff member of a specific museum
 -- without triggering RLS on staff_members (breaks the circular reference).
-CREATE OR REPLACE FUNCTION is_staff_of_museum(museum_uuid uuid)
+CREATE FUNCTION is_staff_of_museum(museum_uuid uuid)
   RETURNS boolean
   LANGUAGE sql
   SECURITY DEFINER
