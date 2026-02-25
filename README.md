@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Vitrine — Museum CMS
 
-## Getting Started
+Vitrine is a specialised, all-in-one Collection Management System (CMS) and public-facing platform designed for museums and heritage institutions of all sizes. Built to bridge the gap between complex archival needs and modern digital presentation, Vitrine allows curators to manage their objects, build a public website, and handle admissions in one unified interface.
+✨ Features
+🗄️ Collection Management
 
-First, run the development server:
+    Rich Metadata: Comprehensive fields for objects, descriptions, acquisitions, and history.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+    Status Tracking: Manage items by status (On Display, On Loan, Restoration, or Storage).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    Spectrum Compliance: Built with industry-standard compliance in mind for museum documentation.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+    Media Support: Easily upload and manage high-resolution images for every record.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🌐 Digital Presence
 
-## Learn More
+    Public Collection Browser: A high-performance, searchable website for visitors to explore your collection online.
 
-To learn more about Next.js, take a look at the following resources:
+    Site Builder: Customise your public site with your own logo, brand colours, and institutional story—all without writing code.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+🎟️ Museum Operations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    Ticket Booking: Integrated system for managing online ticket sales, capacity tracking, and digital confirmations.
 
-## Deploy on Vercel
+    Staff & Roles: Role-based access control (RBAC) to delegate tasks between curators, volunteers, and administrators.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    Analytics: Visual insights into collection growth, medium distribution, and visitor engagement.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🛠️ Tech Stack
+
+    Framework: Next.js (App Router)
+
+    Language: TypeScript
+
+    Database & Auth: Supabase
+
+    Styling: Tailwind CSS
+
+    Components: Radix UI / shadcn/ui
+
+    Deployment: Vercel
+
+📂 Project Structure
+Plaintext
+
+├── app/              # Next.js App Router (Pages, layouts, and API routes)
+├── components/       # Reusable UI components (Site builder, CMS tables, etc.)
+├── lib/              # Shared utilities, hooks, and database schemas
+├── public/           # Static assets and icons
+├── supabase/         # Database migrations and configuration
+└── Spectrum_Compliance_Requirements.pdf  # Standard documentation reference
+
+🏛️ Standards & Compliance
+
+Vitrine is designed to support Spectrum, the UK museum documentation standard. 
