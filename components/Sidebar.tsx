@@ -169,6 +169,9 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             {navItem('/dashboard/exits', '↗', 'Object Exit')}
             {navItem('/dashboard/valuation', '◈', 'Valuation Register')}
             {navItem('/dashboard/risk', '⚑', 'Risk Register')}
+            {navItem('/dashboard/emergency', '⚡', 'Emergency Plans')}
+            {navItem('/dashboard/insurance', '🛡', 'Insurance')}
+            {navItem('/dashboard/damage', '⚠', 'Damage Reports')}
             {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
           </>
         )}

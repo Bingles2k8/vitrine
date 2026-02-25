@@ -76,6 +76,9 @@ export default function DocumentationPlanPage() {
         { data: valuationArtifacts },
         { data: artifactImageIds },
         { data: openRisks },
+        { data: emergencyPlans },
+        { data: insurancePolicies },
+        { data: damageReports },
       ] = await Promise.all([
         supabase.from('artifacts').select('*').eq('museum_id', museum.id),
         supabase.from('entry_records').select('artifact_id').eq('museum_id', museum.id),
@@ -87,6 +90,9 @@ export default function DocumentationPlanPage() {
         supabase.from('valuations').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('artifact_images').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open'),
+        supabase.from('emergency_plans').select('id, status').eq('museum_id', museum.id),
+        supabase.from('insurance_policies').select('id, status').eq('museum_id', museum.id),
+        supabase.from('damage_reports').select('id, status').eq('museum_id', museum.id),
       ])
 
       const all = artifacts || []
@@ -201,6 +207,27 @@ export default function DocumentationPlanPage() {
           numerator: (openRisks || []).length,
           denominator: 0,
           link: '/dashboard/risk',
+        },
+        {
+          procedure: 'Emergency Planning',
+          metric: 'Active emergency plans',
+          numerator: (emergencyPlans || []).filter((p: any) => p.status === 'Active').length,
+          denominator: Math.max((emergencyPlans || []).length, 1),
+          link: '/dashboard/emergency',
+        },
+        {
+          procedure: 'Insurance & Indemnity',
+          metric: 'Active insurance policies',
+          numerator: (insurancePolicies || []).filter((p: any) => p.status === 'Active').length,
+          denominator: Math.max((insurancePolicies || []).length, 1),
+          link: '/dashboard/insurance',
+        },
+        {
+          procedure: 'Damage & Loss',
+          metric: 'Open damage reports',
+          numerator: (damageReports || []).filter((r: any) => r.status === 'Open' || r.status === 'Under Investigation').length,
+          denominator: 0,
+          link: '/dashboard/damage',
         },
       ]
 
