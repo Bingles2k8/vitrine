@@ -57,9 +57,9 @@ CREATE POLICY "Staff can view reproduction_requests in their museums"
 
 CREATE POLICY "Staff editors can create reproduction_requests in their museums"
   ON reproduction_requests FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
 CREATE POLICY "Staff editors can update reproduction_requests in their museums"
   ON reproduction_requests FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.role IN ('Admin', 'Editor')));
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = reproduction_requests.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));

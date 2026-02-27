@@ -5,8 +5,9 @@ import { createClient } from '@supabase/supabase-js'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
-  const redirectUrl = `${origin}${next}`
+  const nextParam = searchParams.get('next') ?? '/dashboard'
+  const safePath = (nextParam.startsWith('/') && !nextParam.startsWith('//')) ? nextParam : '/dashboard'
+  const redirectUrl = `${origin}${safePath}`
 
   if (code) {
     // Create the redirect response first so we can write cookies directly onto it

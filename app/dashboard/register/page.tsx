@@ -136,11 +136,11 @@ export default function AccessionRegisterPage() {
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Accession No.</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Acquisition Date</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Source</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Authorised By</th>
-                    <th className="text-left text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Register ✓</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Acquisition Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Source</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Authorised By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Register ✓</th>
                   </tr>
                 </thead>
                 <tbody>

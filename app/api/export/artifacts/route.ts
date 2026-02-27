@@ -20,8 +20,9 @@ export async function GET() {
   } else {
     const { data: staffRecord } = await supabase
       .from('staff_members')
-      .select('museum_id')
+      .select('museum_id, access')
       .eq('user_id', user.id)
+      .in('access', ['Admin', 'Editor'])
       .maybeSingle()
     if (staffRecord) museumId = staffRecord.museum_id
   }

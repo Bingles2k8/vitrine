@@ -36,6 +36,29 @@ const VALUATION_METHODS = ['Market value', 'Insurance value', 'Replacement cost'
 const VALUATION_PURPOSES = ['Insurance', 'Sale', 'Estate', 'Grant', 'Other']
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
 
+const EXIT_REASONS = ['Return to depositor', 'Outgoing loan', 'Transfer', 'Disposal', 'Conservation', 'Photography', 'Sale']
+const TEMP_REASONS = new Set(['Outgoing loan', 'Conservation', 'Photography'])
+const RISK_TYPES = ['Theft', 'Fire', 'Flood', 'Pest', 'Light damage', 'Handling damage', 'Environmental', 'Provenance', 'Legal', 'Other']
+const RISK_SEVERITIES = ['Low', 'Medium', 'High', 'Critical']
+const RISK_LIKELIHOODS = ['Low', 'Medium', 'High']
+const DAMAGE_TYPES = ['Accidental', 'Environmental', 'Theft', 'Vandalism', 'Pest', 'Handling', 'Transit', 'Unknown']
+const DAMAGE_SEVERITIES = ['Minor', 'Moderate', 'Significant', 'Severe', 'Total Loss']
+
+const RISK_SEVERITY_STYLES: Record<string, string> = {
+  Critical: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',
+  High:     'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  Medium:   'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400',
+  Low:      'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
+}
+
+const DAMAGE_SEVERITY_STYLES: Record<string, string> = {
+  'Total Loss':  'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',
+  Severe:        'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',
+  Significant:   'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  Moderate:      'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400',
+  Minor:         'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
+}
+
 const TABS = [
   { id: 'overview',     label: 'Overview' },
   { id: 'entry',        label: 'Object Entry' },
@@ -47,6 +70,9 @@ const TABS = [
   { id: 'rights',       label: 'Rights & Legal' },
   { id: 'audit',        label: 'Audit' },
   { id: 'valuation',    label: 'Valuation' },
+  { id: 'risk',         label: 'Risk' },
+  { id: 'damage',       label: 'Damage' },
+  { id: 'exits',        label: 'Exits' },
 ]
 
 const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition']
@@ -63,6 +89,7 @@ export default function ArtifactDetail() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const router = useRouter()
@@ -91,6 +118,21 @@ export default function ArtifactDetail() {
   const [reproductionRequests, setReproductionRequests] = useState<any[]>([])
   const [reproductionRequestsLoaded, setReproductionRequestsLoaded] = useState(false)
   const [reproductionForm, setReproductionForm] = useState({ requester_name: '', requester_org: '', request_date: new Date().toISOString().slice(0, 10), purpose: '', status: 'Pending', decision_date: '', decision_by: '', notes: '' })
+
+  // Risk
+  const [riskHistory, setRiskHistory] = useState<any[]>([])
+  const [riskLoaded, setRiskLoaded] = useState(false)
+  const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
+
+  // Damage
+  const [damageHistory, setDamageHistory] = useState<any[]>([])
+  const [damageLoaded, setDamageLoaded] = useState(false)
+  const [damageForm, setDamageForm] = useState({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, action_taken: '', notes: '' })
+
+  // Exits
+  const [exitHistory, setExitHistory] = useState<any[]>([])
+  const [exitLoaded, setExitLoaded] = useState(false)
+  const [exitForm, setExitForm] = useState({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
 
   // Object Entry record
   const [entryRecord, setEntryRecord] = useState<any>(null)
@@ -288,6 +330,18 @@ export default function ArtifactDetail() {
           setEntryLoaded(true)
         })
     }
+    if (activeTab === 'risk' && !riskLoaded) {
+      supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+        .then(({ data }) => { setRiskHistory(data || []); setRiskLoaded(true) })
+    }
+    if (activeTab === 'damage' && !damageLoaded) {
+      supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+        .then(({ data }) => { setDamageHistory(data || []); setDamageLoaded(true) })
+    }
+    if (activeTab === 'exits' && !exitLoaded) {
+      supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
+        .then(({ data }) => { setExitHistory(data || []); setExitLoaded(true) })
+    }
   }, [activeTab, artifact])
 
   function set(field: string, value: any) {
@@ -308,7 +362,7 @@ export default function ArtifactDetail() {
       acquisition_date: formToSave.acquisition_date || null,
       legal_transfer_date: formToSave.legal_transfer_date || null,
       acquisition_authority_date: formToSave.acquisition_authority_date || null,
-      acquisition_object_count: formToSave.acquisition_object_count ? parseInt(formToSave.acquisition_object_count) : 1,
+      acquisition_object_count: formToSave.acquisition_object_count ? parseInt(formToSave.acquisition_object_count, 10) || 1 : 1,
       disposal_date: formToSave.disposal_date || null,
       last_inventoried: formToSave.last_inventoried || null,
     }).eq('id', params.id)
@@ -323,7 +377,7 @@ export default function ArtifactDetail() {
   }
 
   async function handleDelete() {
-    if (!artifact) return
+    if (!artifact || !canEdit) return
     if (!confirm('Delete "' + artifact.title + '"? This cannot be undone.')) return
     setDeleting(true)
     const { error } = await supabase.from('artifacts').delete().eq('id', params.id)
@@ -337,7 +391,7 @@ export default function ArtifactDetail() {
   async function saveEntry() {
     if (!entryRecord) return
     setSavingEntry(true)
-    await supabase.from('entry_records').update({
+    const { error: entryError } = await supabase.from('entry_records').update({
       entry_number: entryForm.entry_number || entryRecord.entry_number,
       entry_date: entryForm.entry_date,
       depositor_name: entryForm.depositor_name,
@@ -358,53 +412,66 @@ export default function ArtifactDetail() {
       notes: entryForm.notes || null,
     }).eq('id', entryRecord.id)
     setSavingEntry(false)
+    if (entryError) { setError(entryError.message); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   // Location history
   async function addLocation() {
-    if (!locationForm.location) return
-    await supabase.from('location_history').insert({ ...locationForm, artifact_id: artifact.id, museum_id: museum.id })
+    if (!locationForm.location || submitting) return
+    setSubmitting(true)
+    const { error: locErr } = await supabase.from('location_history').insert({ ...locationForm, artifact_id: artifact.id, museum_id: museum.id })
+    if (locErr) { setError(locErr.message); setSubmitting(false); return }
     await supabase.from('artifacts').update({ current_location: locationForm.location }).eq('id', artifact.id)
     setForm(f => ({ ...f, current_location: locationForm.location }))
     setLocationForm({ location: '', reason: '', moved_by: '', authorised_by: '' })
     const { data } = await supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
     setLocationHistory(data || [])
     logActivity('location_recorded', `Moved "${artifact.title}" to ${locationForm.location}`)
+    setSubmitting(false)
   }
 
   // Condition assessment
   async function addCondition() {
-    if (!conditionForm.grade || !conditionForm.assessed_at) return
-    await supabase.from('condition_assessments').insert({ ...conditionForm, artifact_id: artifact.id, museum_id: museum.id })
+    if (!conditionForm.grade || !conditionForm.assessed_at || submitting) return
+    setSubmitting(true)
+    const { error: condErr } = await supabase.from('condition_assessments').insert({ ...conditionForm, artifact_id: artifact.id, museum_id: museum.id })
+    if (condErr) { setError(condErr.message); setSubmitting(false); return }
     await supabase.from('artifacts').update({ condition_grade: conditionForm.grade, condition_date: conditionForm.assessed_at, condition_assessor: conditionForm.assessor }).eq('id', artifact.id)
     setForm(f => ({ ...f, condition_grade: conditionForm.grade, condition_date: conditionForm.assessed_at, condition_assessor: conditionForm.assessor }))
     setConditionForm({ grade: '', assessed_at: '', assessor: '', notes: '' })
     const { data } = await supabase.from('condition_assessments').select('*').eq('artifact_id', artifact.id).order('assessed_at', { ascending: false })
     setConditionHistory(data || [])
     logActivity('condition_added', `Recorded condition "${conditionForm.grade}" for "${artifact.title}"`)
+    setSubmitting(false)
   }
 
   // Conservation treatment
   async function addConservation() {
-    if (!conservationForm.treatment_type) return
-    await supabase.from('conservation_treatments').insert({ ...conservationForm, artifact_id: artifact.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null })
+    if (!conservationForm.treatment_type || submitting) return
+    setSubmitting(true)
+    const { error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, artifact_id: artifact.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null })
+    if (consErr) { setError(consErr.message); setSubmitting(false); return }
     setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '' })
     const { data } = await supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setConservationHistory(data || [])
     logActivity('conservation_added', `Added ${conservationForm.treatment_type} treatment for "${artifact.title}"`)
+    setSubmitting(false)
   }
 
   async function updateConservationStatus(id: string, status: string) {
-    await supabase.from('conservation_treatments').update({ status }).eq('id', id)
+    const { error } = await supabase.from('conservation_treatments').update({ status }).eq('id', id)
+    if (error) { setError(error.message); return }
     setConservationHistory(h => h.map(t => t.id === id ? { ...t, status } : t))
   }
 
   // Loans
   async function addLoan() {
-    if (!loanForm.borrowing_institution) return
-    await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null })
+    if (!loanForm.borrowing_institution || submitting) return
+    setSubmitting(true)
+    const { error: loanErr } = await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null })
+    if (loanErr) { setError(loanErr.message); setSubmitting(false); return }
     await supabase.from('artifacts').update({ status: 'On Loan' }).eq('id', artifact.id)
     setForm(f => ({ ...f, status: 'On Loan' }))
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '' })
@@ -412,6 +479,7 @@ export default function ArtifactDetail() {
     setLoanHistory(data || [])
     router.refresh()
     logActivity('loan_added', `Recorded loan for "${artifact.title}" to ${loanForm.borrowing_institution}`)
+    setSubmitting(false)
   }
 
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
@@ -446,18 +514,21 @@ export default function ArtifactDetail() {
 
   // Audit
   async function addAudit() {
-    if (!auditForm.inventoried_at) return
-    await supabase.from('audit_records').insert({
+    if (!auditForm.inventoried_at || submitting) return
+    setSubmitting(true)
+    const { error: auditErr } = await supabase.from('audit_records').insert({
       ...auditForm,
       artifact_id: artifact.id, museum_id: museum.id,
       action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
     })
+    if (auditErr) { setError(auditErr.message); setSubmitting(false); return }
     await supabase.from('artifacts').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', artifact.id)
     setForm(f => ({ ...f, last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }))
     setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
     const { data } = await supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
     setAuditHistory(data || [])
     logActivity('audit_recorded', `Audited "${artifact.title}"${auditForm.inventory_outcome ? ` — ${auditForm.inventory_outcome}` : ''}`)
+    setSubmitting(false)
   }
 
   async function logActivity(actionType: string, description: string) {
@@ -474,39 +545,119 @@ export default function ArtifactDetail() {
 
   // Valuation
   async function addValuation() {
-    if (!valuationForm.value || !valuationForm.valuation_date) return
-    await supabase.from('valuations').insert({
+    if (!valuationForm.value || !valuationForm.valuation_date || submitting) return
+    setSubmitting(true)
+    const { error: valErr } = await supabase.from('valuations').insert({
       ...valuationForm,
       value: parseFloat(valuationForm.value),
       artifact_id: artifact.id,
       museum_id: museum.id,
     })
+    if (valErr) { setError(valErr.message); setSubmitting(false); return }
     const lv = { value: valuationForm.value, currency: valuationForm.currency, valuation_date: valuationForm.valuation_date }
     setLatestValuation(lv)
     setValuationForm({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '' })
     const { data } = await supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
     setValuations(data || [])
     logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${artifact.title}"`)
+    setSubmitting(false)
   }
 
   // Reproduction Requests
   async function addReproductionRequest() {
-    if (!reproductionForm.requester_name || !reproductionForm.request_date) return
-    await supabase.from('reproduction_requests').insert({
+    if (!reproductionForm.requester_name || !reproductionForm.request_date || submitting) return
+    setSubmitting(true)
+    const { error: repErr } = await supabase.from('reproduction_requests').insert({
       ...reproductionForm,
       artifact_id: artifact.id,
       museum_id: museum.id,
       decision_date: reproductionForm.decision_date || null,
     })
+    if (repErr) { setError(repErr.message); setSubmitting(false); return }
     setReproductionForm({ requester_name: '', requester_org: '', request_date: new Date().toISOString().slice(0, 10), purpose: '', status: 'Pending', decision_date: '', decision_by: '', notes: '' })
+    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setReproductionRequests(data || [])
+    setSubmitting(false)
+  }
+
+  async function updateRequestStatus(id: string, status: string) {
+    const { error } = await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
+    if (error) { setError(error.message); return }
     const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setReproductionRequests(data || [])
   }
 
-  async function updateRequestStatus(id: string, status: string) {
-    await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
-    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
-    setReproductionRequests(data || [])
+  // Risk
+  async function addRisk() {
+    if (!riskForm.risk_type || !riskForm.description || submitting) return
+    setSubmitting(true)
+    const { error } = await supabase.from('risk_register').insert({
+      ...riskForm, review_date: riskForm.review_date || null,
+      artifact_id: artifact.id, museum_id: museum.id,
+    })
+    if (error) { setError(error.message); setSubmitting(false); return }
+    setRiskForm({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
+    const { data } = await supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setRiskHistory(data || [])
+    logActivity('risk_added', `Recorded ${riskForm.risk_type} risk for "${artifact.title}"`)
+    setSubmitting(false)
+  }
+
+  async function updateRiskStatus(id: string, status: string) {
+    const { error } = await supabase.from('risk_register').update({ status }).eq('id', id)
+    if (error) { setError(error.message); return }
+    setRiskHistory(h => h.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  // Damage
+  async function addDamage() {
+    if (!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting) return
+    setSubmitting(true)
+    const year = new Date().getFullYear()
+    const existingCount = damageHistory.filter(r => r.report_number?.startsWith(`DR-${year}-`)).length
+    const reportNumber = `DR-${year}-${String(existingCount + 1).padStart(3, '0')}`
+    const { error } = await supabase.from('damage_reports').insert({
+      ...damageForm, report_number: reportNumber,
+      repair_estimate: damageForm.repair_estimate ? Number(damageForm.repair_estimate) : null,
+      artifact_id: artifact.id, museum_id: museum.id,
+    })
+    if (error) { setError(error.message); setSubmitting(false); return }
+    setDamageForm({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, action_taken: '', notes: '' })
+    const { data } = await supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    setDamageHistory(data || [])
+    logActivity('damage_reported', `Reported ${damageForm.damage_type} damage to "${artifact.title}"`)
+    setSubmitting(false)
+  }
+
+  async function updateDamageStatus(id: string, status: string) {
+    const { error } = await supabase.from('damage_reports').update({ status }).eq('id', id)
+    if (error) { setError(error.message); return }
+    setDamageHistory(h => h.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  // Exits
+  async function addExit() {
+    if (!exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
+    setSubmitting(true)
+    const year = new Date().getFullYear()
+    const exitNumber = `EX-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
+    const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
+    const { error } = await supabase.from('object_exits').insert({
+      museum_id: museum.id, artifact_id: artifact.id, exit_number: exitNumber,
+      exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
+      recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
+      destination_address: exitForm.destination_address || null, exit_condition: exitForm.exit_condition || null,
+      signed_receipt: exitForm.signed_receipt,
+      signed_receipt_date: exitForm.signed_receipt ? (exitForm.signed_receipt_date || today) : null,
+      expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
+      exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
+    })
+    if (error) { setError(error.message); setSubmitting(false); return }
+    setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
+    const { data } = await supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
+    setExitHistory(data || [])
+    logActivity('exit_created', `Exit record ${exitNumber} created for "${artifact.title}" (${exitForm.exit_reason})`)
+    setSubmitting(false)
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
@@ -1012,7 +1163,8 @@ export default function ArtifactDetail() {
                   <div className="flex gap-2">
                     <button type="button" onClick={async () => {
                       if (!newLocation.name) return
-                      const { data } = await supabase.from('locations').insert({ ...newLocation, museum_id: museum.id }).select().single()
+                      const { data, error: locError } = await supabase.from('locations').insert({ ...newLocation, museum_id: museum.id }).select().single()
+                      if (locError) { setError(locError.message); return }
                       if (data) {
                         setLocations(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
                         set('current_location', data.name)
@@ -1059,9 +1211,9 @@ export default function ArtifactDetail() {
                 <div><label className={labelCls}>Moved By</label><input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} /></div>
                 <div><label className={labelCls}>Authorised By</label><input value={locationForm.authorised_by} onChange={e => setLocationForm(f => ({ ...f, authorised_by: e.target.value }))} placeholder="Staff member or governing body" className={inputCls} /></div>
               </div>
-              <button type="button" onClick={addLocation}
-                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
-                Save movement →
+              <button type="button" onClick={addLocation} disabled={submitting}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                {submitting ? 'Saving…' : 'Save movement →'}
               </button>
             </div>
 
@@ -1118,9 +1270,9 @@ export default function ArtifactDetail() {
                 <textarea value={conditionForm.notes} onChange={e => setConditionForm(f => ({ ...f, notes: e.target.value }))} rows={3}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
-              <button type="button" onClick={addCondition}
-                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
-                Log assessment →
+              <button type="button" onClick={addCondition} disabled={submitting}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                {submitting ? 'Saving…' : 'Log assessment →'}
               </button>
             </div>
 
@@ -1189,9 +1341,9 @@ export default function ArtifactDetail() {
                 <textarea value={conservationForm.description} onChange={e => setConservationForm(f => ({ ...f, description: e.target.value }))} rows={3}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
-              <button type="button" onClick={addConservation}
-                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
-                Save treatment →
+              <button type="button" onClick={addConservation} disabled={submitting}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                {submitting ? 'Saving…' : 'Save treatment →'}
               </button>
             </div>
 
@@ -1293,9 +1445,9 @@ export default function ArtifactDetail() {
               </div>
               <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
               <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
-              <button type="button" onClick={addLoan}
-                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
-                Save loan record →
+              <button type="button" onClick={addLoan} disabled={submitting}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                {submitting ? 'Saving…' : 'Save loan record →'}
               </button>
             </div>
 
@@ -1423,7 +1575,7 @@ export default function ArtifactDetail() {
                   <div><label className={labelCls}>Decision By</label><input value={reproductionForm.decision_by} onChange={e => setReproductionForm(f => ({ ...f, decision_by: e.target.value }))} placeholder="Staff member name" className={inputCls} /></div>
                   <div className="col-span-2"><label className={labelCls}>Notes</label><input value={reproductionForm.notes} onChange={e => setReproductionForm(f => ({ ...f, notes: e.target.value }))} placeholder="Usage terms, conditions, fees…" className={inputCls} /></div>
                   <div className="col-span-2">
-                    <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                    <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date || submitting} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
                       Log Request
                     </button>
                   </div>
@@ -1551,9 +1703,9 @@ export default function ArtifactDetail() {
                 <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
               </div>
-              <button type="button" onClick={addAudit}
-                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded">
-                Save audit record →
+              <button type="button" onClick={addAudit} disabled={submitting}
+                className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                {submitting ? 'Saving…' : 'Save audit record →'}
               </button>
             </div>
 
@@ -1649,9 +1801,9 @@ export default function ArtifactDetail() {
                   <label className={labelCls}>Notes</label>
                   <textarea value={valuationForm.notes} onChange={e => setValuationForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
                 </div>
-                <button type="button" onClick={addValuation} disabled={!valuationForm.value || !valuationForm.valuation_date}
+                <button type="button" onClick={addValuation} disabled={!valuationForm.value || !valuationForm.valuation_date || submitting}
                   className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
-                  Save valuation →
+                  {submitting ? 'Saving…' : 'Save valuation →'}
                 </button>
               </div>
             )}
@@ -1690,6 +1842,342 @@ export default function ArtifactDetail() {
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-16 text-center">
                 <div className="text-4xl mb-3">◈</div>
                 <p className="text-sm text-stone-400 dark:text-stone-500">No valuations recorded for this object.</p>
+              </div>
+            )}
+          </>}
+
+          {/* ── RISK ─────────────────────────────────── */}
+          {activeTab === 'risk' && <>
+            {canEdit && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className={sectionTitle}>Add Risk</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Risk Type *</label>
+                    <select value={riskForm.risk_type} onChange={e => setRiskForm(f => ({ ...f, risk_type: e.target.value }))} className={inputCls}>
+                      <option value="">Select type…</option>
+                      {RISK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Responsible Person</label>
+                    <input value={riskForm.responsible_person} onChange={e => setRiskForm(f => ({ ...f, responsible_person: e.target.value }))} placeholder="Name" className={inputCls} />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Description *</label>
+                  <textarea value={riskForm.description} onChange={e => setRiskForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Describe the risk…" className={`${inputCls} resize-none`} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>Severity</label>
+                    <select value={riskForm.severity} onChange={e => setRiskForm(f => ({ ...f, severity: e.target.value }))} className={inputCls}>
+                      {RISK_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Likelihood</label>
+                    <select value={riskForm.likelihood} onChange={e => setRiskForm(f => ({ ...f, likelihood: e.target.value }))} className={inputCls}>
+                      {RISK_LIKELIHOODS.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Review Date</label>
+                    <input type="date" value={riskForm.review_date} onChange={e => setRiskForm(f => ({ ...f, review_date: e.target.value }))} className={inputCls} />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Mitigation</label>
+                  <textarea value={riskForm.mitigation} onChange={e => setRiskForm(f => ({ ...f, mitigation: e.target.value }))} rows={2} placeholder="Steps taken or planned to mitigate…" className={`${inputCls} resize-none`} />
+                </div>
+                <div>
+                  <label className={labelCls}>Notes</label>
+                  <textarea value={riskForm.notes} onChange={e => setRiskForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+                </div>
+                <button type="button" onClick={addRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                  {submitting ? 'Saving…' : 'Add risk →'}
+                </button>
+              </div>
+            )}
+
+            {riskLoaded && riskHistory.length > 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Risk History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Severity</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Likelihood</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Review Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                    {canEdit && <th className="px-4 py-3"></th>}
+                  </tr></thead>
+                  <tbody>
+                    {riskHistory.map(r => (
+                      <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3">
+                          <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.risk_type}</div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{r.description}</div>
+                        </td>
+                        <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${RISK_SEVERITY_STYLES[r.severity] || RISK_SEVERITY_STYLES.Medium}`}>{r.severity}</span></td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.likelihood}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{r.review_date ? new Date(r.review_date).toLocaleDateString('en-GB') : '—'}</td>
+                        <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${r.status === 'Closed' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' : r.status === 'Mitigated' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>{r.status}</span></td>
+                        {canEdit && (
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {r.status === 'Open' && <button type="button" onClick={() => updateRiskStatus(r.id, 'Mitigated')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Mitigate</button>}
+                              {r.status !== 'Closed' && <button type="button" onClick={() => updateRiskStatus(r.id, 'Closed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Close</button>}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {riskLoaded && riskHistory.length === 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                <div className="text-4xl mb-3">⚑</div>
+                <p className="text-sm text-stone-400 dark:text-stone-500">No risks recorded for this object.</p>
+              </div>
+            )}
+          </>}
+
+          {/* ── DAMAGE ─────────────────────────────────── */}
+          {activeTab === 'damage' && <>
+            {canEdit && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className={sectionTitle}>Report Damage</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>Incident Date *</label>
+                    <input type="date" value={damageForm.incident_date} onChange={e => setDamageForm(f => ({ ...f, incident_date: e.target.value }))} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Discovered Date</label>
+                    <input type="date" value={damageForm.discovered_date} onChange={e => setDamageForm(f => ({ ...f, discovered_date: e.target.value }))} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Discovered By *</label>
+                    <input value={damageForm.discovered_by} onChange={e => setDamageForm(f => ({ ...f, discovered_by: e.target.value }))} placeholder="Name" className={inputCls} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Damage Type</label>
+                    <select value={damageForm.damage_type} onChange={e => setDamageForm(f => ({ ...f, damage_type: e.target.value }))} className={inputCls}>
+                      {DAMAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Severity</label>
+                    <select value={damageForm.severity} onChange={e => setDamageForm(f => ({ ...f, severity: e.target.value }))} className={inputCls}>
+                      {DAMAGE_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Description *</label>
+                  <textarea value={damageForm.description} onChange={e => setDamageForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Describe the damage or loss…" className={`${inputCls} resize-none`} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Cause</label>
+                    <input value={damageForm.cause} onChange={e => setDamageForm(f => ({ ...f, cause: e.target.value }))} placeholder="Known or suspected cause" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Location at Time of Incident</label>
+                    <input value={damageForm.location_at_incident} onChange={e => setDamageForm(f => ({ ...f, location_at_incident: e.target.value }))} placeholder="Where the object was" className={inputCls} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>Repair Estimate</label>
+                    <input type="number" step="0.01" min="0" value={damageForm.repair_estimate} onChange={e => setDamageForm(f => ({ ...f, repair_estimate: e.target.value }))} placeholder="0.00" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Currency</label>
+                    <select value={damageForm.repair_currency} onChange={e => setDamageForm(f => ({ ...f, repair_currency: e.target.value }))} className={inputCls}>
+                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Insurance Claim Ref</label>
+                    <input value={damageForm.insurance_claim_ref} onChange={e => setDamageForm(f => ({ ...f, insurance_claim_ref: e.target.value }))} placeholder="Claim reference" className={inputCls} />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+                  <input type="checkbox" checked={damageForm.insurance_notified} onChange={e => setDamageForm(f => ({ ...f, insurance_notified: e.target.checked }))} className="rounded border-stone-300" />
+                  Insurance provider notified
+                </label>
+                <div>
+                  <label className={labelCls}>Action Taken</label>
+                  <textarea value={damageForm.action_taken} onChange={e => setDamageForm(f => ({ ...f, action_taken: e.target.value }))} rows={2} placeholder="Immediate steps taken…" className={`${inputCls} resize-none`} />
+                </div>
+                <div>
+                  <label className={labelCls}>Notes</label>
+                  <textarea value={damageForm.notes} onChange={e => setDamageForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+                </div>
+                <button type="button" onClick={addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                  {submitting ? 'Saving…' : 'Add report →'}
+                </button>
+              </div>
+            )}
+
+            {damageLoaded && damageHistory.length > 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Damage History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Report</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Severity</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                    {canEdit && <th className="px-4 py-3"></th>}
+                  </tr></thead>
+                  <tbody>
+                    {damageHistory.map(r => (
+                      <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3">
+                          <div className="text-sm font-medium font-mono text-stone-900 dark:text-stone-100">{r.report_number}</div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{r.description}</div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.damage_type}</td>
+                        <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${DAMAGE_SEVERITY_STYLES[r.severity] || DAMAGE_SEVERITY_STYLES.Minor}`}>{r.severity}</span></td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{r.incident_date ? new Date(r.incident_date).toLocaleDateString('en-GB') : '—'}</td>
+                        <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${r.status === 'Closed' || r.status === 'Write-off' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' : r.status === 'Repaired' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : r.status === 'Under Investigation' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>{r.status}</span></td>
+                        {canEdit && (
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {r.status === 'Open' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Under Investigation')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Investigate</button>}
+                              {(r.status === 'Open' || r.status === 'Under Investigation') && <button type="button" onClick={() => updateDamageStatus(r.id, 'Repaired')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Repaired</button>}
+                              {r.status !== 'Closed' && r.status !== 'Write-off' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Closed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Close</button>}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {damageLoaded && damageHistory.length === 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                <div className="text-4xl mb-3">⚠</div>
+                <p className="text-sm text-stone-400 dark:text-stone-500">No damage reports for this object.</p>
+              </div>
+            )}
+          </>}
+
+          {/* ── EXITS ─────────────────────────────────── */}
+          {activeTab === 'exits' && <>
+            {canEdit && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className={sectionTitle}>Record Exit</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>Exit Date *</label>
+                    <input type="date" value={exitForm.exit_date} onChange={e => setExitForm(f => ({ ...f, exit_date: e.target.value }))} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Exit Reason *</label>
+                    <select value={exitForm.exit_reason} onChange={e => setExitForm(f => ({ ...f, exit_reason: e.target.value }))} className={inputCls}>
+                      {EXIT_REASONS.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Exit Authorised By *</label>
+                    <input value={exitForm.exit_authorised_by} onChange={e => setExitForm(f => ({ ...f, exit_authorised_by: e.target.value }))} placeholder="Staff member or governing body" className={inputCls} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Recipient Name *</label>
+                    <input value={exitForm.recipient_name} onChange={e => setExitForm(f => ({ ...f, recipient_name: e.target.value }))} placeholder="Who received the object" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Recipient Contact</label>
+                    <input value={exitForm.recipient_contact} onChange={e => setExitForm(f => ({ ...f, recipient_contact: e.target.value }))} placeholder="Email, phone" className={inputCls} />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Destination Address</label>
+                  <input value={exitForm.destination_address} onChange={e => setExitForm(f => ({ ...f, destination_address: e.target.value }))} placeholder="Where the object is going" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Condition at Exit</label>
+                  <textarea rows={2} value={exitForm.exit_condition} onChange={e => setExitForm(f => ({ ...f, exit_condition: e.target.value }))} placeholder="Brief condition note" className={`${inputCls} resize-none`} />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+                      <input type="checkbox" checked={exitForm.signed_receipt} onChange={e => setExitForm(f => ({ ...f, signed_receipt: e.target.checked }))} className="rounded border-stone-300" />
+                      Signed receipt obtained
+                    </label>
+                    {exitForm.signed_receipt && (
+                      <div>
+                        <label className={labelCls}>Receipt date</label>
+                        <input type="date" value={exitForm.signed_receipt_date} onChange={e => setExitForm(f => ({ ...f, signed_receipt_date: e.target.value }))} className={inputCls} />
+                      </div>
+                    )}
+                  </div>
+                  {TEMP_REASONS.has(exitForm.exit_reason) && (
+                    <div>
+                      <label className={labelCls}>Expected Return Date</label>
+                      <input type="date" value={exitForm.expected_return_date} onChange={e => setExitForm(f => ({ ...f, expected_return_date: e.target.value }))} className={inputCls} />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className={labelCls}>Notes</label>
+                  <textarea rows={2} value={exitForm.notes} onChange={e => setExitForm(f => ({ ...f, notes: e.target.value }))} className={`${inputCls} resize-none`} />
+                </div>
+                <button type="button" onClick={addExit} disabled={!exitForm.recipient_name || !exitForm.exit_authorised_by || submitting}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                  {submitting ? 'Saving…' : 'Save exit record →'}
+                </button>
+              </div>
+            )}
+
+            {exitLoaded && exitHistory.length > 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Exit History</div></div>
+                <table className="w-full">
+                  <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Exit No.</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Recipient</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Return</th>
+                  </tr></thead>
+                  <tbody>
+                    {exitHistory.map(e => (
+                      <tr key={e.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(e.exit_date + 'T00:00:00').toLocaleDateString('en-GB')}</td>
+                        <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
+                        <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
+                        <td className="px-4 py-3">{e.signed_receipt ? <span className="text-xs font-mono text-emerald-600">✓ Signed</span> : <span className="text-xs font-mono text-amber-600">Pending</span>}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.expected_return_date ? new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {exitLoaded && exitHistory.length === 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-16 text-center">
+                <div className="text-4xl mb-3">↗</div>
+                <p className="text-sm text-stone-400 dark:text-stone-500">No exit records for this object.</p>
               </div>
             )}
           </>}

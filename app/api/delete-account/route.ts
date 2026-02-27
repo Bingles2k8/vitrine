@@ -20,6 +20,12 @@ export async function POST() {
     const mid = museum.id
     // Delete in dependency order (children before parents)
     for (const table of [
+      'activity_log',
+      'artifact_images',
+      'reproduction_requests',
+      'valuations',
+      'risk_register',
+      'damage_reports',
       'location_history',
       'condition_assessments',
       'conservation_treatments',
@@ -27,6 +33,9 @@ export async function POST() {
       'object_exits',
       'loans',
       'entry_records',
+      'insurance_policies',
+      'emergency_plans',
+      'documentation_plans',
       'staff_members',
       'artifacts',
     ]) {

@@ -36,18 +36,22 @@ export default function Dashboard() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
 
-      const [{ data: artifacts }, { data: activeLoans }, { data: activity }] = await Promise.all([
-        supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
-        supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
-        supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
-      ])
+      try {
+        const [{ data: artifacts }, { data: activeLoans }, { data: activity }] = await Promise.all([
+          supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+          supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
+          supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
+        ])
 
-      setMuseum(museum)
-      setIsOwner(isOwner)
-      setStaffAccess(staffAccess)
-      setArtifacts(artifacts || [])
-      setLoans(activeLoans || [])
-      setActivityLog(activity || [])
+        setMuseum(museum)
+        setIsOwner(isOwner)
+        setStaffAccess(staffAccess)
+        setArtifacts(artifacts || [])
+        setLoans(activeLoans || [])
+        setActivityLog(activity || [])
+      } catch {
+        // Queries failed — show empty state rather than infinite loading
+      }
       setLoading(false)
     }
     load()

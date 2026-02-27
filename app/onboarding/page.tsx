@@ -249,7 +249,7 @@ export default function Onboarding() {
 
         {step === 3 && (
           <div>
-            <div className="text-xs uppercase tracking-widests text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
             <p className="text-sm text-stone-400 text-center mb-2">You can upgrade at any time from your account settings.</p>
             {/* TEST MODE: Payment is not required — any plan can be selected for free. Remove this banner when billing is live. */}
             <p className="text-xs font-mono text-amber-600 text-center mb-8 bg-amber-50 border border-amber-200 rounded px-4 py-2">

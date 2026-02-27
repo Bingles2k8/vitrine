@@ -16,8 +16,8 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.from('artifact_images').select('*').eq('artifact_id', artifactId).order('sort_order').order('created_at')
-      .then(({ data }) => setImages(data || []))
+    supabase.from('artifact_images').select('*').eq('artifact_id', artifactId).eq('museum_id', museumId).order('sort_order').order('created_at')
+      .then(({ data, error }) => { if (!error) setImages(data || []) })
   }, [artifactId])
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -48,15 +48,18 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
   }
 
   async function setPrimary(image: any) {
-    await supabase.from('artifact_images').update({ is_primary: false }).eq('artifact_id', artifactId)
-    await supabase.from('artifact_images').update({ is_primary: true }).eq('id', image.id)
+    const { error: e1 } = await supabase.from('artifact_images').update({ is_primary: false }).eq('artifact_id', artifactId)
+    if (e1) return
+    const { error: e2 } = await supabase.from('artifact_images').update({ is_primary: true }).eq('id', image.id)
+    if (e2) return
     await supabase.from('artifacts').update({ image_url: image.url }).eq('id', artifactId)
     setImages(imgs => imgs.map(i => ({ ...i, is_primary: i.id === image.id })))
     onPrimaryChange(image.url)
   }
 
   async function deleteImage(image: any) {
-    await supabase.from('artifact_images').delete().eq('id', image.id)
+    const { error } = await supabase.from('artifact_images').delete().eq('id', image.id)
+    if (error) return
     const remaining = images.filter(i => i.id !== image.id)
     setImages(remaining)
     // If we deleted the primary, promote the first remaining image

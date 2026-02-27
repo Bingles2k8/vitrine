@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   const alreadyRegistered = error?.message?.includes('already been registered')
   if (error && !alreadyRegistered) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ error: 'Failed to send invitation' }, { status: 400 })
   }
 
   // Only record invite timestamp if the invite was actually sent

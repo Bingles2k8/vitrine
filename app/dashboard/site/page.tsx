@@ -40,7 +40,7 @@ function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500">Card Corner Radius</div>
+        <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Card Corner Radius</div>
         <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{value}px</div>
       </div>
       <div className="flex items-center gap-3">
@@ -509,7 +509,7 @@ export default function SiteBuilder() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Visit Information</div>
               <div>
-                <label className="block text-xs uppercase tracking-widests text-stone-400 mb-1.5">Address</label>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Address</label>
                 <textarea value={form.address} onChange={e => set('address', e.target.value)}
                   placeholder="123 Museum Street, London W1 2AB" rows={2}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />

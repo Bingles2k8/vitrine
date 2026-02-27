@@ -132,7 +132,8 @@ export default function StaffPage() {
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Remove ${name} from your team? They will lose access immediately.`)) return
-    await supabase.from('staff_members').delete().eq('id', id)
+    const { error } = await supabase.from('staff_members').delete().eq('id', id)
+    if (error) { alert(`Failed to remove staff member: ${error.message}`); return }
     load()
   }
 
@@ -438,7 +439,7 @@ export default function StaffPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-widests text-stone-400 dark:text-stone-500 mb-1.5">Access Level</label>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Access Level</label>
                   <select
                     value={form.access}
                     onChange={e => set('access', e.target.value as AccessLevel)}
