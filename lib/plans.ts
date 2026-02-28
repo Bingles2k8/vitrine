@@ -1,4 +1,4 @@
-export type PlanId = 'community' | 'professional' | 'institution' | 'enterprise'
+export type PlanId = 'community' | 'hobbyist' | 'professional' | 'institution' | 'enterprise'
 
 export const PLANS: Record<PlanId, {
   label: string
@@ -13,12 +13,22 @@ export const PLANS: Record<PlanId, {
   community: {
     label: 'Community',
     price: 'Free',
-    artifacts: 150,
-    staff: null,
+    artifacts: 100,
+    staff: 1,
     fullMode: false,
     analytics: false,
     compliance: false,
-    features: ['Up to 150 collection items', 'Public collection website', 'Basic site customisation'],
+    features: ['Up to 100 collection items', 'Public collection website', 'Basic site customisation'],
+  },
+  hobbyist: {
+    label: 'Hobbyist',
+    price: '£5/mo',
+    artifacts: 500,
+    staff: 1,
+    fullMode: false,
+    analytics: false,
+    compliance: false,
+    features: ['Up to 500 collection items', 'Public collection website', 'Full site customisation'],
   },
   professional: {
     label: 'Professional',
@@ -52,7 +62,7 @@ export const PLANS: Record<PlanId, {
   },
 }
 
-export const PLAN_ORDER: PlanId[] = ['community', 'professional', 'institution', 'enterprise']
+export const PLAN_ORDER: PlanId[] = ['community', 'hobbyist', 'professional', 'institution', 'enterprise']
 
 export function getPlan(plan: string) {
   return PLANS[plan as PlanId] ?? PLANS.community

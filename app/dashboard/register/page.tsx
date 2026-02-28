@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { getPlan } from '@/lib/plans'
 
 const ACQ_METHODS = ['Purchase', 'Gift', 'Bequest', 'Transfer', 'Found', 'Fieldwork', 'Exchange', 'Unknown']
 
@@ -56,6 +57,32 @@ export default function AccessionRegisterPage() {
       <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
     </div>
   )
+
+  if (!getPlan(museum?.plan).compliance) {
+    return (
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
+        <Sidebar museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
+        <main className="ml-56 flex-1 flex flex-col">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Accession Register</span>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-sm">
+              <div className="text-5xl mb-5">◉</div>
+              <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Accession Register is a Professional feature</h2>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Maintain a formal accession register for your collection. Available on Professional, Institution, and Enterprise plans.</p>
+              <button
+                onClick={() => router.push('/dashboard/plan')}
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+              >
+                View plans →
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   const years = Array.from(new Set(
     artifacts.map(a => a.acquisition_date?.slice(0, 4)).filter(Boolean)

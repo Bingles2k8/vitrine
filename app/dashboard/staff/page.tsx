@@ -109,6 +109,15 @@ export default function StaffPage() {
     if (!form.name.trim()) { setError('Name is required'); return }
     if (!form.email.trim()) { setError('Email is required'); return }
     if (!form.role.trim()) { setError('Job title is required'); return }
+
+    if (!editingId) {
+      const planInfo = getPlan(museum?.plan)
+      if (planInfo.staff !== null && staff.length >= planInfo.staff) {
+        setError(`Your ${planInfo.label} plan allows up to ${planInfo.staff} staff member${planInfo.staff === 1 ? '' : 's'}. Upgrade your plan to add more.`)
+        return
+      }
+    }
+
     setSaving(true)
     setError('')
 

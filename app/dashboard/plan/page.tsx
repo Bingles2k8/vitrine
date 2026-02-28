@@ -68,7 +68,7 @@ export default function PlanPage() {
             <p className="text-xs font-mono text-amber-600 mt-2">Payment processing coming soon — contact us to upgrade now.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             {PLAN_ORDER.map(id => {
               const p = PLANS[id]
               const isCurrent = currentPlan === id
@@ -143,14 +143,14 @@ export default function PlanPage() {
               </thead>
               <tbody>
                 {[
-                  { label: 'Collection items', values: ['150', '5,000', '100,000', 'Unlimited'] },
-                  { label: 'Staff accounts', values: ['1 (owner)', '10', 'Unlimited', 'Unlimited'] },
-                  { label: 'Public website', values: [true, true, true, true] },
-                  { label: 'Site customisation', values: ['Basic', 'Full', 'Full', 'Full'] },
-                  { label: 'Collections compliance tools', values: [false, true, true, true] },
-                  { label: 'Analytics', values: [false, true, true, true] },
-                  { label: 'Staff management', values: [false, true, true, true] },
-                  { label: 'Priority support', values: [false, false, true, true] },
+                  { label: 'Collection items', values: ['100', '500', '5,000', '100,000', 'Unlimited'] },
+                  { label: 'Staff accounts', values: ['1 (owner)', '1 (owner)', '10', 'Unlimited', 'Unlimited'] },
+                  { label: 'Public website', values: [true, true, true, true, true] },
+                  { label: 'Site customisation', values: ['Basic', 'Full', 'Full', 'Full', 'Full'] },
+                  { label: 'Collections compliance tools', values: [false, false, true, true, true] },
+                  { label: 'Analytics', values: [false, false, true, true, true] },
+                  { label: 'Staff management', values: [false, false, true, true, true] },
+                  { label: 'Priority support', values: [false, false, false, true, true] },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="px-6 py-3 text-stone-600 dark:text-stone-400">{row.label}</td>
