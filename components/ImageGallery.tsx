@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { compressImage } from '@/lib/image-compression'
 
 interface Props {
   artifactId: string
@@ -24,9 +25,10 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const ext = file.name.split('.').pop()
+    const compressed = await compressImage(file)
+    const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('artifact-images').upload(filename, file, { upsert: true })
+    const { data, error } = await supabase.storage.from('artifact-images').upload(filename, compressed, { upsert: true })
     if (error) { setUploading(false); return }
     const { data: { publicUrl } } = supabase.storage.from('artifact-images').getPublicUrl(data.path)
     const isPrimary = images.length === 0

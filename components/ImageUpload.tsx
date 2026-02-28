@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { compressImage } from '@/lib/image-compression'
 
 interface Props {
   currentUrl?: string
@@ -17,18 +18,22 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Show local preview immediately
-    const localUrl = URL.createObjectURL(file)
-    setPreview(localUrl)
     setUploading(true)
 
+    // Compress before upload
+    const compressed = await compressImage(file)
+
+    // Show local preview
+    const localUrl = URL.createObjectURL(compressed)
+    setPreview(localUrl)
+
     // Upload to Supabase Storage
-    const ext = file.name.split('.').pop()
+    const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
     const { data, error } = await supabase.storage
       .from('artifact-images')
-      .upload(filename, file, { upsert: true })
+      .upload(filename, compressed, { upsert: true })
 
     if (error) {
       console.error(error)
