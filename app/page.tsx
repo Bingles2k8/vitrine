@@ -59,7 +59,7 @@ export default function Home() {
           </div>
 
           {/* Mockup */}
-          <div className="mt-20 lg:mt-0 lg:absolute lg:left-[55%] lg:right-[-10%] border border-white/8 rounded-xl overflow-hidden shadow-2xl">
+          <div className="mt-20 lg:mt-0 lg:absolute lg:left-[50%] lg:right-[-25%] border border-white/8 rounded-xl overflow-hidden shadow-2xl">
             <div className="bg-stone-900 px-4 py-3 flex items-center gap-2 border-b border-white/5">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-500/60" />
