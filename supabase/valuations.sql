@@ -1,5 +1,5 @@
 -- =============================================================
--- Valuations — Spectrum 5.1 (Valuation Procedure)
+-- Valuations — Valuation Procedure
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

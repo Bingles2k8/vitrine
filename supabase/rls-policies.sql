@@ -139,7 +139,7 @@ CREATE POLICY "Users can delete staff in their museums"
 
 
 -- -------------------------------------------------------------
--- LOCATION HISTORY (Spectrum — Location & Movement Control)
+-- LOCATION HISTORY (Location & Movement Control)
 -- -------------------------------------------------------------
 ALTER TABLE location_history ENABLE ROW LEVEL SECURITY;
 
@@ -162,7 +162,7 @@ CREATE POLICY "Users can delete location_history in their museums"
 
 
 -- -------------------------------------------------------------
--- CONDITION ASSESSMENTS (Spectrum — Condition Checking)
+-- CONDITION ASSESSMENTS (Condition Checking)
 -- -------------------------------------------------------------
 ALTER TABLE condition_assessments ENABLE ROW LEVEL SECURITY;
 
@@ -185,7 +185,7 @@ CREATE POLICY "Users can delete condition_assessments in their museums"
 
 
 -- -------------------------------------------------------------
--- CONSERVATION TREATMENTS (Spectrum — Conservation & Collections Care)
+-- CONSERVATION TREATMENTS (Conservation & Collections Care)
 -- -------------------------------------------------------------
 ALTER TABLE conservation_treatments ENABLE ROW LEVEL SECURITY;
 
@@ -208,7 +208,7 @@ CREATE POLICY "Users can delete conservation_treatments in their museums"
 
 
 -- -------------------------------------------------------------
--- LOANS (Spectrum — Loans In / Loans Out)
+-- LOANS (Loans In / Loans Out)
 -- -------------------------------------------------------------
 ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
 
@@ -231,7 +231,7 @@ CREATE POLICY "Users can delete loans in their museums"
 
 
 -- -------------------------------------------------------------
--- AUDIT RECORDS (Spectrum — Audit)
+-- AUDIT RECORDS (Audit)
 -- -------------------------------------------------------------
 ALTER TABLE audit_records ENABLE ROW LEVEL SECURITY;
 

@@ -1,5 +1,5 @@
 -- =============================================================
--- Spectrum 5.1 Compliance — Schema Migration
+-- Collections Compliance — Schema Migration
 -- =============================================================
 -- Run this in your Supabase Dashboard → SQL Editor
 -- Safe to run on an existing database — all new columns are
@@ -11,14 +11,14 @@
 -- STEP 1: New columns on the artifacts table
 -- -------------------------------------------------------------
 
--- Cataloguing additions (Spectrum Procedure 1)
+-- Cataloguing additions (Procedure 1)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS object_type text,
   ADD COLUMN IF NOT EXISTS inscription text,
   ADD COLUMN IF NOT EXISTS marks       text,
   ADD COLUMN IF NOT EXISTS provenance  text;
 
--- Acquisition (Spectrum Procedure 2)
+-- Acquisition (Procedure 2)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS acquisition_method    text,
   ADD COLUMN IF NOT EXISTS acquisition_date      date,
@@ -26,23 +26,23 @@ ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS acquisition_note      text,
   ADD COLUMN IF NOT EXISTS legal_transfer_date   date;
 
--- Location snapshot (Spectrum Procedure 3)
+-- Location snapshot (Procedure 3)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS current_location text,
   ADD COLUMN IF NOT EXISTS location_note    text;
 
--- Condition snapshot (Spectrum Procedure 4)
+-- Condition snapshot (Procedure 4)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS condition_grade    text,
   ADD COLUMN IF NOT EXISTS condition_date     date,
   ADD COLUMN IF NOT EXISTS condition_assessor text;
 
--- Rights Management (Spectrum Procedure 9)
+-- Rights Management (Procedure 9)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS copyright_status text,
   ADD COLUMN IF NOT EXISTS rights_holder    text;
 
--- Deaccession & Disposal (Spectrum Procedure 8)
+-- Deaccession & Disposal (Procedure 8)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS disposal_method        text,
   ADD COLUMN IF NOT EXISTS disposal_date          date,
@@ -50,14 +50,14 @@ ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS disposal_authorization text,
   ADD COLUMN IF NOT EXISTS disposal_recipient     text;
 
--- Audit & Inventory (Spectrum Procedure 7)
+-- Audit & Inventory (Procedure 7)
 ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS last_inventoried date,
   ADD COLUMN IF NOT EXISTS inventoried_by   text;
 
 
 -- -------------------------------------------------------------
--- STEP 2: Location history table (Spectrum Procedure 3)
+-- STEP 2: Location history table (Procedure 3)
 -- Tracks every physical move of an object.
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS location_history (
@@ -76,7 +76,7 @@ CREATE INDEX IF NOT EXISTS location_history_museum_idx   ON location_history (mu
 
 
 -- -------------------------------------------------------------
--- STEP 3: Condition assessments table (Spectrum Procedure 4)
+-- STEP 3: Condition assessments table (Procedure 4)
 -- Tracks condition check history for each object.
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS condition_assessments (
@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS condition_assessments_museum_idx   ON condition_asses
 
 
 -- -------------------------------------------------------------
--- STEP 4: Conservation treatments table (Spectrum Procedure 5)
+-- STEP 4: Conservation treatments table (Procedure 5)
 -- Tracks conservation and restoration work on each object.
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS conservation_treatments (
@@ -117,7 +117,7 @@ CREATE INDEX IF NOT EXISTS conservation_treatments_museum_idx   ON conservation_
 
 
 -- -------------------------------------------------------------
--- STEP 5: Loans table (Spectrum Procedures 4 & 5 — Loans In/Out)
+-- STEP 5: Loans table (Procedures 4 & 5 — Loans In/Out)
 -- Tracks loans to and from other institutions.
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS loans (
@@ -144,7 +144,7 @@ CREATE INDEX IF NOT EXISTS loans_museum_idx   ON loans (museum_id, status);
 
 
 -- -------------------------------------------------------------
--- STEP 6: Audit records table (Spectrum Procedure 6 — Audit)
+-- STEP 6: Audit records table (Procedure 6 — Audit)
 -- Tracks formal inventory and audit checks.
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_records (

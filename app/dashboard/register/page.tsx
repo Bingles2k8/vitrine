@@ -185,7 +185,7 @@ export default function AccessionRegisterPage() {
           )}
 
           <p className="text-xs text-stone-400 dark:text-stone-500 font-mono">
-            Spectrum 5.1 — Procedure 2: Acquisition & Accessioning. Each row that has been formally entered into your accession register should be marked confirmed. Click any row to open the acquisition record.
+            Procedure 2: Acquisition & Accessioning. Each row that has been formally entered into your accession register should be marked confirmed. Click any row to open the acquisition record.
           </p>
         </div>
       </main>

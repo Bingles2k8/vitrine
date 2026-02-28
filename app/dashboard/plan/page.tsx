@@ -147,7 +147,7 @@ export default function PlanPage() {
                   { label: 'Staff accounts', values: ['1 (owner)', '10', 'Unlimited', 'Unlimited'] },
                   { label: 'Public website', values: [true, true, true, true] },
                   { label: 'Site customisation', values: ['Basic', 'Full', 'Full', 'Full'] },
-                  { label: 'Spectrum compliance tools', values: [false, true, true, true] },
+                  { label: 'Collections compliance tools', values: [false, true, true, true] },
                   { label: 'Analytics', values: [false, true, true, true] },
                   { label: 'Staff management', values: [false, true, true, true] },
                   { label: 'Priority support', values: [false, false, true, true] },

@@ -1,5 +1,5 @@
 -- =============================================================
--- RLS Policies — Spectrum 5.1 Compliance Gap Tables
+-- RLS Policies — Compliance Gap Tables
 -- =============================================================
 -- Run this after compliance-gaps.sql
 -- =============================================================

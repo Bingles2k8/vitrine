@@ -1,15 +1,15 @@
 -- =============================================================
--- Row Level Security — Spectrum Tables Only
+-- Row Level Security — Compliance Tables Only
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
--- This adds RLS policies for the 5 new Spectrum tables.
+-- This adds RLS policies for the 5 new compliance tables.
 -- The existing policies for museums/artifacts/staff_members
 -- were already applied separately and are NOT repeated here.
 -- =============================================================
 
 
 -- -------------------------------------------------------------
--- LOCATION HISTORY (Spectrum — Location & Movement Control)
+-- LOCATION HISTORY (Location & Movement Control)
 -- -------------------------------------------------------------
 ALTER TABLE location_history ENABLE ROW LEVEL SECURITY;
 
@@ -32,7 +32,7 @@ CREATE POLICY "Users can delete location_history in their museums"
 
 
 -- -------------------------------------------------------------
--- CONDITION ASSESSMENTS (Spectrum — Condition Checking)
+-- CONDITION ASSESSMENTS (Condition Checking)
 -- -------------------------------------------------------------
 ALTER TABLE condition_assessments ENABLE ROW LEVEL SECURITY;
 
@@ -55,7 +55,7 @@ CREATE POLICY "Users can delete condition_assessments in their museums"
 
 
 -- -------------------------------------------------------------
--- CONSERVATION TREATMENTS (Spectrum — Conservation & Collections Care)
+-- CONSERVATION TREATMENTS (Conservation & Collections Care)
 -- -------------------------------------------------------------
 ALTER TABLE conservation_treatments ENABLE ROW LEVEL SECURITY;
 
@@ -78,7 +78,7 @@ CREATE POLICY "Users can delete conservation_treatments in their museums"
 
 
 -- -------------------------------------------------------------
--- LOANS (Spectrum — Loans In / Loans Out)
+-- LOANS (Loans In / Loans Out)
 -- -------------------------------------------------------------
 ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
 
@@ -101,7 +101,7 @@ CREATE POLICY "Users can delete loans in their museums"
 
 
 -- -------------------------------------------------------------
--- AUDIT RECORDS (Spectrum — Audit)
+-- AUDIT RECORDS (Audit)
 -- -------------------------------------------------------------
 ALTER TABLE audit_records ENABLE ROW LEVEL SECURITY;
 

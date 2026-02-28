@@ -7,7 +7,7 @@ export const PLANS: Record<PlanId, {
   staff: number | null       // null = unlimited
   fullMode: boolean
   analytics: boolean
-  spectrum: boolean
+  compliance: boolean
   features: string[]
 }> = {
   community: {
@@ -17,7 +17,7 @@ export const PLANS: Record<PlanId, {
     staff: null,
     fullMode: false,
     analytics: false,
-    spectrum: false,
+    compliance: false,
     features: ['Up to 150 collection items', 'Public collection website', 'Basic site customisation'],
   },
   professional: {
@@ -27,8 +27,8 @@ export const PLANS: Record<PlanId, {
     staff: 10,
     fullMode: true,
     analytics: true,
-    spectrum: true,
-    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Spectrum compliance tools', 'Analytics'],
+    compliance: true,
+    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics'],
   },
   institution: {
     label: 'Institution',
@@ -37,8 +37,8 @@ export const PLANS: Record<PlanId, {
     staff: null,
     fullMode: true,
     analytics: true,
-    spectrum: true,
-    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Spectrum compliance tools', 'Advanced analytics', 'Priority support'],
+    compliance: true,
+    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Priority support'],
   },
   enterprise: {
     label: 'Enterprise',
@@ -47,8 +47,8 @@ export const PLANS: Record<PlanId, {
     staff: null,
     fullMode: true,
     analytics: true,
-    spectrum: true,
-    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Spectrum compliance tools', 'Advanced analytics', 'Dedicated support', 'Custom integrations'],
+    compliance: true,
+    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Dedicated support', 'Custom integrations'],
   },
 }
 

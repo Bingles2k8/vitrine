@@ -1,5 +1,5 @@
 -- =============================================================
--- Spectrum 5.1 Full Compliance — Gap-fill Migration
+-- Full Compliance — Gap-fill Migration
 -- =============================================================
 -- Run this in your Supabase Dashboard → SQL Editor
 -- Safe to run on an existing database — all additions are
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS documentation_plans (
   plan_reference          text,
   plan_date               date,
   responsible_person      text,
-  documentation_standards text        DEFAULT 'Spectrum 5.1',
+  documentation_standards text        DEFAULT 'Museum standards',
   systems_in_use          text        DEFAULT 'Vitrine',
   review_date             date,
   backlog_notes           text,

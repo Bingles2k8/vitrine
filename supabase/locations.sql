@@ -1,5 +1,5 @@
 -- =============================================================
--- Locations — Spectrum 5.1 (Location & Movement Control)
+-- Locations — Location & Movement Control
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- Controlled location vocabulary for structured location hierarchy.

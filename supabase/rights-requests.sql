@@ -1,5 +1,5 @@
 -- =============================================================
--- Rights & Reproduction Requests — Spectrum "Use of Collections"
+-- Rights & Reproduction Requests — Use of Collections
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

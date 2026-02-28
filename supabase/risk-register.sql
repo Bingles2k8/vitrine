@@ -1,5 +1,5 @@
 -- =============================================================
--- Risk Register — Spectrum 5.1 (Risk Management Procedure)
+-- Risk Register — Risk Management Procedure
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

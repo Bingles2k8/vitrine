@@ -45,7 +45,7 @@ export default function DocumentationPlanPage() {
     plan_reference: '',
     plan_date: '',
     responsible_person: '',
-    documentation_standards: 'Spectrum 5.1',
+    documentation_standards: 'Museum standards',
     systems_in_use: 'Vitrine',
     review_date: '',
     backlog_notes: '',
@@ -242,7 +242,7 @@ export default function DocumentationPlanPage() {
           plan_reference: docPlan.plan_reference || '',
           plan_date: docPlan.plan_date || '',
           responsible_person: docPlan.responsible_person || '',
-          documentation_standards: docPlan.documentation_standards || 'Spectrum 5.1',
+          documentation_standards: docPlan.documentation_standards || 'Museum standards',
           systems_in_use: docPlan.systems_in_use || 'Vitrine',
           review_date: docPlan.review_date || '',
           backlog_notes: docPlan.backlog_notes || '',
@@ -311,7 +311,7 @@ export default function DocumentationPlanPage() {
               <div className={`font-serif text-6xl ${overall >= 80 ? 'text-emerald-700' : overall >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
                 {overall}%
               </div>
-              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">Spectrum 5.1 — 9 Primary Procedures</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">9 Primary Procedures</div>
             </div>
             <div className="flex-1">
               <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
@@ -375,7 +375,7 @@ export default function DocumentationPlanPage() {
 
           {/* Documentation Plan Settings */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
-            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Spectrum Procedure 9</div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Procedure 9</div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>

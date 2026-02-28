@@ -91,7 +91,7 @@ export default function ValuationPage() {
             ))}
           </div>
 
-          <p className="text-xs text-stone-400 dark:text-stone-500">Spectrum 5.1 recommends recording a current valuation for every object. Click any row to open the object's Valuation tab.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Best practice recommends recording a current valuation for every object. Click any row to open the object's Valuation tab.</p>
 
           {/* Table */}
           {valuations.length === 0 ? (

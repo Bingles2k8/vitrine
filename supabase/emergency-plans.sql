@@ -1,5 +1,5 @@
 -- =============================================================
--- Emergency Plans — Spectrum 5.1 (Emergency Planning for Collections)
+-- Emergency Plans — Emergency Planning for Collections
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

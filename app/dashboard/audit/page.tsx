@@ -80,7 +80,7 @@ export default function AuditPage() {
             ))}
           </div>
 
-          <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Spectrum recommends annual inventory checks. Click any row to record an audit.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Best practice recommends annual inventory checks. Click any row to record an audit.</p>
 
           {/* Table */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">

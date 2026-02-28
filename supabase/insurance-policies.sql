@@ -1,5 +1,5 @@
 -- =============================================================
--- Insurance Policies — Spectrum 5.1 (Insurance & Indemnity)
+-- Insurance Policies — Insurance & Indemnity
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

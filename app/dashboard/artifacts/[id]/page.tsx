@@ -168,7 +168,7 @@ export default function ArtifactDetail() {
     // Acquisition
     acquisition_method: '', acquisition_date: '', acquisition_source: '',
     acquisition_note: '', legal_transfer_date: '',
-    // Acquisition governance (Spectrum 2 mandatory)
+    // Acquisition governance (Procedure 2 mandatory)
     acquisition_source_contact: '', acquisition_authorised_by: '',
     acquisition_authority_date: '', acquisition_title_guarantee: '',
     acquisition_object_count: 1,
@@ -1030,7 +1030,7 @@ export default function ArtifactDetail() {
           {/* ── ACQUISITION ──────────────────────────────── */}
           {activeTab === 'acquisition' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Acquisition (Spectrum Procedure 2)</div>
+              <div className={sectionTitle}>Acquisition (Procedure 2)</div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1060,7 +1060,7 @@ export default function ArtifactDetail() {
             </div>
 
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Governance (Spectrum 2 — Mandatory)</div>
+              <div className={sectionTitle}>Governance (Procedure 2 — Mandatory)</div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Source Contact Details</label><input value={form.acquisition_source_contact} onChange={e => set('acquisition_source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} /></div>
@@ -1093,7 +1093,7 @@ export default function ArtifactDetail() {
             </div>
 
             <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-3">
-              <div className={sectionTitle}>Legal & Ethics Checks (Spectrum 2 — Mandatory)</div>
+              <div className={sectionTitle}>Legal & Ethics Checks (Procedure 2 — Mandatory)</div>
               <p className="text-xs text-stone-400 -mt-2">Tick each check once completed. All must be considered for acquisitions made after 2005.</p>
 
               {[
@@ -1115,7 +1115,7 @@ export default function ArtifactDetail() {
           {/* ── LOCATION ─────────────────────────────────── */}
           {activeTab === 'location' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Current Location (Spectrum Procedure 3)</div>
+              <div className={sectionTitle}>Current Location (Procedure 3)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Current Location</label>
@@ -1249,7 +1249,7 @@ export default function ArtifactDetail() {
           {/* ── CONDITION ────────────────────────────────── */}
           {activeTab === 'condition' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Log Condition Assessment (Spectrum Procedure 4)</div>
+              <div className={sectionTitle}>Log Condition Assessment (Procedure 4)</div>
               <div>
                 <label className={labelCls}>Condition Grade *</label>
                 <div className="flex gap-2 flex-wrap">
@@ -1321,7 +1321,7 @@ export default function ArtifactDetail() {
             )}
 
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Add Conservation Treatment (Spectrum Procedure 5)</div>
+              <div className={sectionTitle}>Add Conservation Treatment (Procedure 5)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Treatment Type *</label>
@@ -1396,7 +1396,7 @@ export default function ArtifactDetail() {
             )}
 
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Add Loan Record (Spectrum Procedures 4 & 5)</div>
+              <div className={sectionTitle}>Add Loan Record (Procedures 4 & 5)</div>
               <div>
                 <label className={labelCls}>Direction</label>
                 <div className="flex gap-2">
@@ -1534,7 +1534,7 @@ export default function ArtifactDetail() {
           {/* ── RIGHTS & LEGAL ───────────────────────────── */}
           {activeTab === 'rights' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Rights Management (Spectrum — Use of Collections)</div>
+              <div className={sectionTitle}>Rights Management (Use of Collections)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Copyright Status</label>
@@ -1614,7 +1614,7 @@ export default function ArtifactDetail() {
 
             {form.status === 'Deaccessioned' && (
               <div className="bg-white border border-amber-200 rounded-lg p-6 space-y-4">
-                <div className="text-xs uppercase tracking-widest text-amber-600 mb-4">Deaccession Record (Spectrum Procedure 8)</div>
+                <div className="text-xs uppercase tracking-widest text-amber-600 mb-4">Deaccession Record (Procedure 8)</div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Disposal Method</label>
@@ -1643,7 +1643,7 @@ export default function ArtifactDetail() {
           {/* ── AUDIT ────────────────────────────────────── */}
           {activeTab === 'audit' && <>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className={sectionTitle}>Record Inventory Check (Spectrum Procedure 7)</div>
+              <div className={sectionTitle}>Record Inventory Check (Procedure 7)</div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelCls}>Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
                 <div><label className={labelCls}>Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>

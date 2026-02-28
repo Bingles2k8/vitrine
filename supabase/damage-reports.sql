@@ -1,5 +1,5 @@
 -- =============================================================
--- Damage Reports — Spectrum 5.1 (Damage & Loss Procedure)
+-- Damage Reports — Damage & Loss Procedure
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================================

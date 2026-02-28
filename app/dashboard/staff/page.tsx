@@ -187,7 +187,7 @@ export default function StaffPage() {
     )
   }
 
-  if (!getPlan(museum?.plan).spectrum) {
+  if (!getPlan(museum?.plan).compliance) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
         <Sidebar museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
