@@ -30,8 +30,8 @@ export default function Home() {
           <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-6xl mx-auto relative">
-          <div className="max-w-3xl">
+        <div className="max-w-6xl mx-auto relative flex flex-col lg:flex-row lg:items-center lg:gap-12">
+          <div className="max-w-3xl lg:max-w-xl lg:flex-shrink-0">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-1.5 mb-8">
               <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               <span className="text-xs font-mono text-amber-400 tracking-wide">Built for museums of every size</span>
@@ -59,7 +59,7 @@ export default function Home() {
           </div>
 
           {/* Mockup */}
-          <div className="mt-20 border border-white/8 rounded-xl overflow-hidden shadow-2xl">
+          <div className="mt-20 lg:mt-0 lg:absolute lg:left-[55%] lg:right-[-10%] border border-white/8 rounded-xl overflow-hidden shadow-2xl">
             <div className="bg-stone-900 px-4 py-3 flex items-center gap-2 border-b border-white/5">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-500/60" />
