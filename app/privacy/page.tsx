@@ -19,12 +19,12 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Who we are</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              Vitrine is operated by <strong className="text-stone-900 dark:text-stone-100">Vitrine Ltd.</strong>, a company registered in England and Wales. We provide collection management software for museums and cultural institutions.
+              Vitrine is operated by <strong className="text-stone-900 dark:text-stone-100">Composition Limited</strong>, a company registered in England and Wales. We provide collection management software for museums and cultural institutions.
             </p>
             <p className="text-sm text-stone-600 dark:text-stone-400">
               Data controller contact:{' '}
-              <a href="mailto:hello@vitrinecms.com" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
-                hello@vitrinecms.com
+              <a href="mailto:hello@composition.agency" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                hello@composition.agency
               </a>
             </p>
           </section>
@@ -138,8 +138,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="text-sm text-stone-600 dark:text-stone-400">
               To exercise any right, email{' '}
-              <a href="mailto:hello@vitrinecms.com" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
-                hello@vitrinecms.com
+              <a href="mailto:hello@composition.agency" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                hello@composition.agency
               </a>. We will respond within 30 days.
             </p>
           </section>
