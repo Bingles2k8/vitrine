@@ -102,13 +102,16 @@ export default function Onboarding() {
   }
 
   async function handleSubmit() {
-    // TEST MODE: Enterprise plan is selectable without payment.
-    // TODO: When payment is implemented, gate Enterprise behind a contact/sales flow.
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); router.push('/login'); return }
 
     const selectedTemplate = TEMPLATES.find(t => t.id === template)!
+    const isPaidPlan = plan !== 'community' && plan !== 'enterprise'
+
+    // Create museum on community first if a paid plan is selected
+    // Stripe webhook will upgrade after successful checkout
+    const insertPlan = isPaidPlan ? 'community' : plan
 
     const { error } = await supabase.from('museums').insert({
       name: name.trim(),
@@ -118,17 +121,36 @@ export default function Onboarding() {
       template,
       primary_color: selectedTemplate.primary_color,
       accent_color: selectedTemplate.accent_color,
-      plan,
+      plan: insertPlan,
       ui_mode: PLANS[plan].fullMode ? 'full' : 'simple',
     })
 
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else {
-      // Use full navigation to ensure session cookies are read fresh by the dashboard
-      window.location.href = '/dashboard'
+      return
     }
+
+    if (isPaidPlan) {
+      // Redirect to Stripe Checkout — webhook will upgrade the plan on success
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: plan }),
+        })
+        const data = await res.json()
+        if (data.url) {
+          window.location.href = data.url
+          return
+        }
+      } catch {
+        // If checkout creation fails, continue to dashboard on community plan
+      }
+    }
+
+    // Use full navigation to ensure session cookies are read fresh by the dashboard
+    window.location.href = '/dashboard'
   }
 
   const TOTAL_STEPS = 3
@@ -250,15 +272,41 @@ export default function Onboarding() {
         {step === 3 && (
           <div>
             <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
-            <p className="text-sm text-stone-400 text-center mb-2">You can upgrade at any time from your account settings.</p>
-            {/* TEST MODE: Payment is not required — any plan can be selected for free. Remove this banner when billing is live. */}
-            <p className="text-xs font-mono text-amber-600 text-center mb-8 bg-amber-50 border border-amber-200 rounded px-4 py-2">
-              Testing mode — no payment required. Select any plan to get started.
-            </p>
+            <p className="text-sm text-stone-400 text-center mb-8">You can upgrade at any time from your account settings.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {PLAN_ORDER.map(id => {
                 const p = PLANS[id]
                 const selected = plan === id
+                const isEnterprise = id === 'enterprise'
+
+                if (isEnterprise) {
+                  return (
+                    <div
+                      key={id}
+                      className="text-left rounded-xl border-2 border-stone-200 bg-white p-6"
+                    >
+                      <div className="mb-3">
+                        <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-1">{p.label}</div>
+                        <div className="text-2xl font-serif font-medium text-stone-900">{p.price}</div>
+                      </div>
+                      <ul className="space-y-1.5 mb-4">
+                        {p.features.map(f => (
+                          <li key={f} className="flex items-start gap-2 text-xs text-stone-500">
+                            <span className="text-stone-300 mt-0.5">—</span>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <a
+                        href="mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry"
+                        className="block text-center text-xs font-mono py-2 rounded bg-stone-900 text-white hover:bg-stone-700 transition-colors"
+                      >
+                        Contact us →
+                      </a>
+                    </div>
+                  )
+                }
+
                 return (
                   <button
                     key={id}

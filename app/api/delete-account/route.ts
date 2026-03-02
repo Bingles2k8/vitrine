@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { stripe } from '@/lib/stripe'
 
 export async function POST() {
   const supabase = await createServerSideClient()
@@ -12,11 +13,21 @@ export async function POST() {
 
   const { data: museum } = await supabase
     .from('museums')
-    .select('id')
+    .select('id, stripe_subscription_id')
     .eq('owner_id', user.id)
     .single()
 
   if (museum) {
+    // Cancel Stripe subscription before deleting museum data
+    if (museum.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.cancel(museum.stripe_subscription_id)
+      } catch {
+        // Log but don't block account deletion
+        console.error('Failed to cancel Stripe subscription')
+      }
+    }
+
     const mid = museum.id
     // Delete in dependency order (children before parents)
     for (const table of [

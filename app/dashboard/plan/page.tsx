@@ -15,6 +15,8 @@ export default function PlanPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [checkoutResult, setCheckoutResult] = useState<'success' | 'cancelled' | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -31,7 +33,52 @@ export default function PlanPage() {
       setLoading(false)
     }
     load()
+
+    const params = new URLSearchParams(window.location.search)
+    const result = params.get('checkout') as 'success' | 'cancelled' | null
+    if (result) {
+      setCheckoutResult(result)
+      window.history.replaceState({}, '', '/dashboard/plan')
+    }
   }, [])
+
+  async function handleUpgrade(planId: PlanId) {
+    setActionLoading(planId)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert(data.error || 'Something went wrong')
+        setActionLoading(null)
+      }
+    } catch {
+      alert('Something went wrong')
+      setActionLoading(null)
+    }
+  }
+
+  async function handleManageSubscription() {
+    setActionLoading('manage')
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert(data.error || 'Something went wrong')
+        setActionLoading(null)
+      }
+    } catch {
+      alert('Something went wrong')
+      setActionLoading(null)
+    }
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -58,6 +105,21 @@ export default function PlanPage() {
         </div>
 
         <div className="p-8 max-w-5xl">
+          {checkoutResult === 'success' && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">
+                Subscription activated! Your plan will update shortly.
+              </p>
+            </div>
+          )}
+          {checkoutResult === 'cancelled' && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-mono">
+                Checkout cancelled. You can upgrade at any time.
+              </p>
+            </div>
+          )}
+
           <div className="mb-8">
             <p className="text-sm text-stone-500 dark:text-stone-400">
               You are currently on the <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> plan.
@@ -65,7 +127,6 @@ export default function PlanPage() {
                 <span> Upgrade to unlock more features and higher collection limits.</span>
               )}
             </p>
-            <p className="text-xs font-mono text-amber-600 mt-2">Payment processing coming soon — contact us to upgrade now.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
@@ -98,11 +159,22 @@ export default function PlanPage() {
                     ))}
                   </ul>
 
-                  <div className="mt-auto">
+                  <div className="mt-auto space-y-2">
                     {isCurrent ? (
-                      <div className="w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500">
-                        Current plan
-                      </div>
+                      <>
+                        <div className="w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500">
+                          Current plan
+                        </div>
+                        {currentPlan !== 'community' && currentPlan !== 'enterprise' && isOwner && (
+                          <button
+                            onClick={handleManageSubscription}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === 'manage' ? 'Redirecting…' : 'Manage subscription'}
+                          </button>
+                        )}
+                      </>
                     ) : isEnterprise ? (
                       <a
                         href="mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry"
@@ -110,15 +182,35 @@ export default function PlanPage() {
                       >
                         Contact us →
                       </a>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 opacity-50 cursor-not-allowed"
-                        title="Payment processing coming soon"
-                      >
-                        Upgrade →
-                      </button>
-                    )}
+                    ) : id === 'community' ? (
+                      currentPlan !== 'community' && isOwner ? (
+                        <button
+                          onClick={handleManageSubscription}
+                          disabled={actionLoading !== null}
+                          className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                        >
+                          {actionLoading === 'manage' ? 'Redirecting…' : 'Downgrade'}
+                        </button>
+                      ) : null
+                    ) : isOwner ? (
+                      museum?.stripe_subscription_id ? (
+                        <button
+                          onClick={handleManageSubscription}
+                          disabled={actionLoading !== null}
+                          className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                        >
+                          {actionLoading === 'manage' ? 'Redirecting…' : PLAN_ORDER.indexOf(id) > PLAN_ORDER.indexOf(currentPlan as PlanId) ? 'Upgrade →' : 'Downgrade'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUpgrade(id)}
+                          disabled={actionLoading !== null}
+                          className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                        >
+                          {actionLoading === id ? 'Redirecting…' : 'Upgrade →'}
+                        </button>
+                      )
+                    ) : null}
                   </div>
                 </div>
               )
