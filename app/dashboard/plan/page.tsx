@@ -123,9 +123,11 @@ export default function PlanPage() {
           <div className="mb-8">
             <p className="text-sm text-stone-500 dark:text-stone-400">
               You are currently on the <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> plan.
-              {currentPlan !== 'enterprise' && (
+              {currentPlan === 'community' ? (
                 <span> Upgrade to unlock more features and higher collection limits.</span>
-              )}
+              ) : currentPlan !== 'enterprise' ? (
+                <span> Manage your subscription or switch plans below.</span>
+              ) : null}
             </p>
           </div>
 
@@ -207,7 +209,7 @@ export default function PlanPage() {
                           disabled={actionLoading !== null}
                           className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
                         >
-                          {actionLoading === id ? 'Redirecting…' : 'Upgrade →'}
+                          {actionLoading === id ? 'Redirecting…' : PLAN_ORDER.indexOf(id) > PLAN_ORDER.indexOf(currentPlan as PlanId) ? 'Upgrade →' : 'Downgrade'}
                         </button>
                       )
                     ) : null}
@@ -216,6 +218,12 @@ export default function PlanPage() {
               )
             })}
           </div>
+
+          {currentPlan !== 'community' && currentPlan !== 'enterprise' && museum?.stripe_subscription_id && (
+            <p className="mt-4 text-xs text-stone-400 dark:text-stone-500 font-mono">
+              When changing plans, you&apos;ll receive a prorated credit for any unused time on your current plan.
+            </p>
+          )}
 
           {/* Feature comparison table */}
           <div className="mt-10 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden">
