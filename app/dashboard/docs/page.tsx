@@ -32,6 +32,16 @@ function ProgressBar({ pct }: { pct: number }) {
   )
 }
 
+const BACKLOG_PROCEDURES = [
+  'Proc 1 — Object Entry', 'Proc 2 — Acquisition', 'Proc 3 — Location',
+  'Proc 4 — Inventory', 'Proc 5 — Cataloguing', 'Proc 6 — Object Exit',
+  'Proc 7/8 — Loans', 'Proc 9 — Documentation Plan', 'Proc 10 — Use of Collections',
+  'Proc 11 — Condition', 'Proc 12 — Conservation', 'Proc 13 — Valuation',
+  'Proc 14 — Insurance', 'Proc 15 — Emergency', 'Proc 16 — Damage & Loss',
+  'Proc 17 — Disposal', 'Proc 18 — Rights', 'Proc 19 — Reproduction',
+  'Proc 20 — Collections Review', 'Proc 21 — Audit',
+]
+
 export default function DocumentationPlanPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
@@ -41,6 +51,8 @@ export default function DocumentationPlanPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [metrics, setMetrics] = useState<ComplianceRow[]>([])
+  const [backlogs, setBacklogs] = useState<any[]>([])
+  const [backlogForm, setBacklogForm] = useState({ procedure_name: BACKLOG_PROCEDURES[0], backlog_count: '', target_date: '', priority: 'Medium', notes: '' })
 
   const [planForm, setPlanForm] = useState({
     plan_reference: '',
@@ -50,6 +62,10 @@ export default function DocumentationPlanPage() {
     systems_in_use: 'Vitrine',
     review_date: '',
     backlog_notes: '',
+    scope_documented_pct: '',
+    priority_order: '',
+    target_completion_dates: '',
+    resources_allocated: '',
   })
 
   const router = useRouter()
@@ -64,8 +80,6 @@ export default function DocumentationPlanPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
 
-      // Fetch everything needed for compliance metrics.
-      // Use select('*') and maybeSingle() to be resilient before SQL migrations are run.
       const [
         { data: artifacts },
         { data: entryRecords },
@@ -80,6 +94,13 @@ export default function DocumentationPlanPage() {
         { data: emergencyPlans },
         { data: insurancePolicies },
         { data: damageReports },
+        { data: collectionUseRecords },
+        { data: disposalRecords },
+        { data: collectionReviews },
+        { data: auditExercises },
+        { data: rightsRecords },
+        { data: reproductionRequests },
+        { data: conservationTreatments },
       ] = await Promise.all([
         supabase.from('artifacts').select('*').eq('museum_id', museum.id),
         supabase.from('entry_records').select('artifact_id').eq('museum_id', museum.id),
@@ -94,6 +115,13 @@ export default function DocumentationPlanPage() {
         supabase.from('emergency_plans').select('id, status').eq('museum_id', museum.id),
         supabase.from('insurance_policies').select('id, status').eq('museum_id', museum.id),
         supabase.from('damage_reports').select('id, status').eq('museum_id', museum.id),
+        supabase.from('collection_use_records').select('id, status').eq('museum_id', museum.id),
+        supabase.from('disposal_records').select('id, status').eq('museum_id', museum.id),
+        supabase.from('collection_reviews').select('id, status').eq('museum_id', museum.id),
+        supabase.from('audit_exercises').select('id, status').eq('museum_id', museum.id),
+        supabase.from('rights_records').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('reproduction_requests').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('conservation_treatments').select('artifact_id').eq('museum_id', museum.id),
       ])
 
       const all = artifacts || []
@@ -109,8 +137,12 @@ export default function DocumentationPlanPage() {
       const activeLoanTotal = (activeLoans || []).length
       const valuedIds = new Set((valuationArtifacts || []).map((v: any) => v.artifact_id).filter(Boolean))
       const imageIds = new Set((artifactImageIds || []).map((i: any) => i.artifact_id).filter(Boolean))
+      const rightsIds = new Set((rightsRecords || []).map((r: any) => r.artifact_id).filter(Boolean))
+      const reproIds = new Set((reproductionRequests || []).map((r: any) => r.artifact_id).filter(Boolean))
+      const conservationIds = new Set((conservationTreatments || []).map((c: any) => c.artifact_id).filter(Boolean))
 
       const rows: ComplianceRow[] = [
+        // Primary procedures (★)
         {
           procedure: '★1 Object Entry',
           metric: 'Objects with entry record',
@@ -188,19 +220,97 @@ export default function DocumentationPlanPage() {
           denominator: activeLoanTotal,
           link: '/dashboard/loans',
         },
+        // Secondary procedures
         {
-          procedure: 'Condition',
+          procedure: '9 Documentation Plan',
+          metric: 'Plan created',
+          numerator: docPlan ? 1 : 0,
+          denominator: 1,
+          link: '/dashboard/docs',
+        },
+        {
+          procedure: '10 Use of Collections',
+          metric: 'Use requests tracked',
+          numerator: (collectionUseRecords || []).length,
+          denominator: 0,
+          link: '/dashboard/collections-use',
+        },
+        {
+          procedure: '11 Condition',
           metric: 'Condition recorded',
           numerator: all.filter(a => a.condition_grade?.trim()).length,
           denominator: total,
           link: '/dashboard/audit',
         },
         {
-          procedure: 'Valuation',
+          procedure: '12 Conservation',
+          metric: 'Objects with treatment record',
+          numerator: all.filter(a => conservationIds.has(a.id)).length,
+          denominator: total,
+          link: '/dashboard',
+        },
+        {
+          procedure: '13 Valuation',
           metric: 'Objects with valuation',
           numerator: all.filter(a => valuedIds.has(a.id)).length,
           denominator: total,
           link: '/dashboard/valuation',
+        },
+        {
+          procedure: '14 Insurance & Indemnity',
+          metric: 'Active insurance policies',
+          numerator: (insurancePolicies || []).filter((p: any) => p.status === 'Active').length,
+          denominator: Math.max((insurancePolicies || []).length, 1),
+          link: '/dashboard/insurance',
+        },
+        {
+          procedure: '15 Emergency Planning',
+          metric: 'Active emergency plans',
+          numerator: (emergencyPlans || []).filter((p: any) => p.status === 'Active').length,
+          denominator: Math.max((emergencyPlans || []).length, 1),
+          link: '/dashboard/emergency',
+        },
+        {
+          procedure: '16 Damage & Loss',
+          metric: 'Open damage reports',
+          numerator: (damageReports || []).filter((r: any) => r.status === 'Open' || r.status === 'Under Investigation').length,
+          denominator: 0,
+          link: '/dashboard/damage',
+        },
+        {
+          procedure: '17 Disposal',
+          metric: 'Disposal records tracked',
+          numerator: (disposalRecords || []).length,
+          denominator: 0,
+          link: '/dashboard/disposal',
+        },
+        {
+          procedure: '18 Rights',
+          metric: 'Objects with rights record',
+          numerator: all.filter(a => rightsIds.has(a.id)).length,
+          denominator: total,
+          link: '/dashboard',
+        },
+        {
+          procedure: '19 Reproduction',
+          metric: 'Reproduction requests logged',
+          numerator: (reproductionRequests || []).length,
+          denominator: 0,
+          link: '/dashboard',
+        },
+        {
+          procedure: '20 Collections Review',
+          metric: 'Reviews conducted',
+          numerator: (collectionReviews || []).filter((r: any) => r.status === 'Completed').length,
+          denominator: Math.max((collectionReviews || []).length, 1),
+          link: '/dashboard/collections-review',
+        },
+        {
+          procedure: '21 Audit',
+          metric: 'Audit exercises completed',
+          numerator: (auditExercises || []).filter((a: any) => a.status === 'Completed').length,
+          denominator: Math.max((auditExercises || []).length, 1),
+          link: '/dashboard/audit',
         },
         {
           procedure: 'Risk Management',
@@ -208,27 +318,6 @@ export default function DocumentationPlanPage() {
           numerator: (openRisks || []).length,
           denominator: 0,
           link: '/dashboard/risk',
-        },
-        {
-          procedure: 'Emergency Planning',
-          metric: 'Active emergency plans',
-          numerator: (emergencyPlans || []).filter((p: any) => p.status === 'Active').length,
-          denominator: Math.max((emergencyPlans || []).length, 1),
-          link: '/dashboard/emergency',
-        },
-        {
-          procedure: 'Insurance & Indemnity',
-          metric: 'Active insurance policies',
-          numerator: (insurancePolicies || []).filter((p: any) => p.status === 'Active').length,
-          denominator: Math.max((insurancePolicies || []).length, 1),
-          link: '/dashboard/insurance',
-        },
-        {
-          procedure: 'Damage & Loss',
-          metric: 'Open damage reports',
-          numerator: (damageReports || []).filter((r: any) => r.status === 'Open' || r.status === 'Under Investigation').length,
-          denominator: 0,
-          link: '/dashboard/damage',
         },
       ]
 
@@ -247,7 +336,19 @@ export default function DocumentationPlanPage() {
           systems_in_use: docPlan.systems_in_use || 'Vitrine',
           review_date: docPlan.review_date || '',
           backlog_notes: docPlan.backlog_notes || '',
+          scope_documented_pct: docPlan.scope_documented_pct?.toString() || '',
+          priority_order: docPlan.priority_order || '',
+          target_completion_dates: docPlan.target_completion_dates || '',
+          resources_allocated: docPlan.resources_allocated || '',
         })
+
+        // Load backlogs
+        const { data: backlogData } = await supabase
+          .from('documentation_plan_backlogs')
+          .select('*')
+          .eq('plan_id', docPlan.id)
+          .order('priority', { ascending: true })
+        setBacklogs(backlogData || [])
       }
       setLoading(false)
       } catch (err) {
@@ -266,7 +367,12 @@ export default function DocumentationPlanPage() {
   async function savePlan() {
     if (!museum) return
     setSaving(true)
-    const payload = { ...planForm, museum_id: museum.id, updated_at: new Date().toISOString() }
+    const payload = {
+      ...planForm,
+      museum_id: museum.id,
+      updated_at: new Date().toISOString(),
+      scope_documented_pct: planForm.scope_documented_pct ? parseFloat(planForm.scope_documented_pct) : null,
+    }
     if (plan) {
       await supabase.from('documentation_plans').update(payload).eq('id', plan.id)
     } else {
@@ -276,6 +382,28 @@ export default function DocumentationPlanPage() {
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
     setSaving(false)
+  }
+
+  async function addBacklog() {
+    if (!plan || !backlogForm.procedure_name) return
+    setSaving(true)
+    const { data } = await supabase.from('documentation_plan_backlogs').insert({
+      plan_id: plan.id,
+      museum_id: museum.id,
+      procedure_name: backlogForm.procedure_name,
+      backlog_count: backlogForm.backlog_count ? parseInt(backlogForm.backlog_count) : 0,
+      target_date: backlogForm.target_date || null,
+      priority: backlogForm.priority,
+      notes: backlogForm.notes || null,
+    }).select().single()
+    if (data) setBacklogs(prev => [...prev, data])
+    setBacklogForm({ procedure_name: BACKLOG_PROCEDURES[0], backlog_count: '', target_date: '', priority: 'Medium', notes: '' })
+    setSaving(false)
+  }
+
+  async function deleteBacklog(id: string) {
+    await supabase.from('documentation_plan_backlogs').delete().eq('id', id)
+    setBacklogs(prev => prev.filter(b => b.id !== id))
   }
 
   if (loading) return (
@@ -310,16 +438,10 @@ export default function DocumentationPlanPage() {
     )
   }
 
-  const overall = metrics.length > 0
-    ? Math.round(metrics.filter(m => m.denominator > 0).reduce((sum, m) => sum + (m.numerator / m.denominator) * 100, 0) / metrics.filter(m => m.denominator > 0).length)
+  const scorableMetrics = metrics.filter(m => m.denominator > 0)
+  const overall = scorableMetrics.length > 0
+    ? Math.round(scorableMetrics.reduce((sum, m) => sum + (m.numerator / m.denominator) * 100, 0) / scorableMetrics.length)
     : 0
-
-  // Group rows by procedure
-  const grouped: Record<string, ComplianceRow[]> = {}
-  for (const row of metrics) {
-    if (!grouped[row.procedure]) grouped[row.procedure] = []
-    grouped[row.procedure].push(row)
-  }
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
@@ -338,7 +460,7 @@ export default function DocumentationPlanPage() {
               <div className={`font-serif text-6xl ${overall >= 80 ? 'text-emerald-700' : overall >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
                 {overall}%
               </div>
-              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">9 Primary Procedures</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">21 Spectrum 5.1 Procedures</div>
             </div>
             <div className="flex-1">
               <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
@@ -384,12 +506,17 @@ export default function DocumentationPlanPage() {
                       <td className="px-4 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{row.numerator}</td>
                       <td className="px-4 py-3 text-xs font-mono text-stone-400 dark:text-stone-500">{row.denominator}</td>
                       <td className="px-4 py-3">
-                        {row.denominator > 0 ? <ProgressBar pct={pct} /> : <span className="text-xs font-mono text-stone-300 dark:text-stone-600">N/A</span>}
+                        {row.denominator > 0 ? <ProgressBar pct={pct} /> : <span className="text-xs font-mono text-stone-300 dark:text-stone-600">{row.numerator > 0 ? `${row.numerator} tracked` : 'N/A'}</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {pct < 100 && row.denominator > 0 && (
                           <button onClick={() => router.push(row.link)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                             View backlog →
+                          </button>
+                        )}
+                        {row.denominator === 0 && row.numerator > 0 && (
+                          <button onClick={() => router.push(row.link)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                            View →
                           </button>
                         )}
                       </td>
@@ -400,7 +527,7 @@ export default function DocumentationPlanPage() {
             </table>
           </div>
 
-          {/* Documentation Plan Settings */}
+          {/* Documentation Plan Settings (Proc 9) */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
             <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Procedure 9</div>
 
@@ -434,9 +561,30 @@ export default function DocumentationPlanPage() {
               </div>
             </div>
 
-            <div>
-              <label className={labelCls}>Backlog Notes &amp; Priorities</label>
-              <textarea rows={4} value={planForm.backlog_notes} onChange={e => setPlanForm(f => ({ ...f, backlog_notes: e.target.value }))} className={inputCls} placeholder="Describe documentation backlogs by procedure, priorities, and resources allocated…" />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className={labelCls}>Scope Documented (%)</label>
+                <input type="number" step="0.01" min="0" max="100" value={planForm.scope_documented_pct} onChange={e => setPlanForm(f => ({ ...f, scope_documented_pct: e.target.value }))} className={inputCls} placeholder="e.g. 65.50" />
+              </div>
+              <div>
+                <label className={labelCls}>Priority Order</label>
+                <input type="text" value={planForm.priority_order} onChange={e => setPlanForm(f => ({ ...f, priority_order: e.target.value }))} className={inputCls} placeholder="e.g. Cataloguing > Inventory > Location" />
+              </div>
+              <div>
+                <label className={labelCls}>Resources Allocated</label>
+                <input type="text" value={planForm.resources_allocated} onChange={e => setPlanForm(f => ({ ...f, resources_allocated: e.target.value }))} className={inputCls} placeholder="e.g. 2 FTE, £5,000 budget" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Target Completion Dates</label>
+                <textarea rows={2} value={planForm.target_completion_dates} onChange={e => setPlanForm(f => ({ ...f, target_completion_dates: e.target.value }))} className={inputCls} placeholder="Key milestones and target dates…" />
+              </div>
+              <div>
+                <label className={labelCls}>Backlog Notes &amp; Priorities</label>
+                <textarea rows={2} value={planForm.backlog_notes} onChange={e => setPlanForm(f => ({ ...f, backlog_notes: e.target.value }))} className={inputCls} placeholder="Describe documentation backlogs by procedure…" />
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -451,6 +599,75 @@ export default function DocumentationPlanPage() {
               )}
             </div>
           </div>
+
+          {/* Backlog by Procedure */}
+          {plan && (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Backlog by Procedure</div>
+
+              <div className="grid grid-cols-5 gap-4 items-end">
+                <div>
+                  <label className={labelCls}>Procedure</label>
+                  <select value={backlogForm.procedure_name} onChange={e => setBacklogForm(f => ({ ...f, procedure_name: e.target.value }))} className={inputCls}>
+                    {BACKLOG_PROCEDURES.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Backlog Count</label>
+                  <input type="number" min="0" value={backlogForm.backlog_count} onChange={e => setBacklogForm(f => ({ ...f, backlog_count: e.target.value }))} className={inputCls} placeholder="0" />
+                </div>
+                <div>
+                  <label className={labelCls}>Target Date</label>
+                  <input type="date" value={backlogForm.target_date} onChange={e => setBacklogForm(f => ({ ...f, target_date: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Priority</label>
+                  <select value={backlogForm.priority} onChange={e => setBacklogForm(f => ({ ...f, priority: e.target.value }))} className={inputCls}>
+                    {['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <button type="button" onClick={addBacklog} disabled={saving} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2.5 rounded disabled:opacity-40">
+                  Add backlog
+                </button>
+              </div>
+
+              {backlogs.length > 0 && (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-stone-200 dark:border-stone-700">
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal py-2">Procedure</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal py-2">Backlog</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal py-2">Target</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal py-2">Priority</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal py-2">Notes</th>
+                      <th className="py-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {backlogs.map(b => (
+                      <tr key={b.id} className="border-b border-stone-100 dark:border-stone-800">
+                        <td className="py-2 text-sm text-stone-700 dark:text-stone-300">{b.procedure_name}</td>
+                        <td className="py-2 text-sm font-mono text-stone-600 dark:text-stone-400">{b.backlog_count}</td>
+                        <td className="py-2 text-xs font-mono text-stone-500 dark:text-stone-400">{b.target_date ? new Date(b.target_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                        <td className="py-2">
+                          <span className={`text-xs font-mono px-2 py-1 rounded-full ${b.priority === 'High' ? 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' : b.priority === 'Low' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400'}`}>
+                            {b.priority}
+                          </span>
+                        </td>
+                        <td className="py-2 text-xs text-stone-400 dark:text-stone-500">{b.notes || '—'}</td>
+                        <td className="py-2">
+                          <button onClick={() => deleteBacklog(b.id)} className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors">×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {backlogs.length === 0 && (
+                <p className="text-xs text-stone-400 dark:text-stone-500">No backlogs recorded. Add procedure-specific backlogs to track documentation gaps.</p>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -90,7 +90,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     const { data: museumData } = await supabase.from('museums').select('*').eq('owner_id', user.id).single()
     if (!museumData) return
     const mid = museumData.id
-    const [artifacts, staff, entries, loans, conservation, audits, exits] = await Promise.all([
+    const [
+      artifacts, staff, entries, loans, conservation, audits, exits,
+      locations, locationHistory, conditions, valuations, risks,
+      emergencyPlans, insurance, damage, reproductions,
+      collectionUse, disposals, collectionReviews, auditExercises,
+      inventoryExercises, rightsRecords, docPlans, docBacklogs,
+    ] = await Promise.all([
       supabase.from('artifacts').select('*').eq('museum_id', mid),
       supabase.from('staff_members').select('*').eq('museum_id', mid),
       supabase.from('entry_records').select('*').eq('museum_id', mid),
@@ -98,6 +104,23 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       supabase.from('conservation_treatments').select('*').eq('museum_id', mid),
       supabase.from('audit_records').select('*').eq('museum_id', mid),
       supabase.from('object_exits').select('*').eq('museum_id', mid),
+      supabase.from('locations').select('*').eq('museum_id', mid),
+      supabase.from('location_history').select('*').eq('museum_id', mid),
+      supabase.from('condition_assessments').select('*').eq('museum_id', mid),
+      supabase.from('valuations').select('*').eq('museum_id', mid),
+      supabase.from('risk_register').select('*').eq('museum_id', mid),
+      supabase.from('emergency_plans').select('*').eq('museum_id', mid),
+      supabase.from('insurance_policies').select('*').eq('museum_id', mid),
+      supabase.from('damage_reports').select('*').eq('museum_id', mid),
+      supabase.from('reproduction_requests').select('*').eq('museum_id', mid),
+      supabase.from('collection_use_records').select('*').eq('museum_id', mid),
+      supabase.from('disposal_records').select('*').eq('museum_id', mid),
+      supabase.from('collection_reviews').select('*').eq('museum_id', mid),
+      supabase.from('audit_exercises').select('*').eq('museum_id', mid),
+      supabase.from('inventory_exercises').select('*').eq('museum_id', mid),
+      supabase.from('rights_records').select('*').eq('museum_id', mid),
+      supabase.from('documentation_plans').select('*').eq('museum_id', mid),
+      supabase.from('documentation_plan_backlogs').select('*').eq('museum_id', mid),
     ])
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -109,6 +132,23 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       conservation_treatments: conservation.data,
       audit_records: audits.data,
       object_exits: exits.data,
+      locations: locations.data,
+      location_history: locationHistory.data,
+      condition_assessments: conditions.data,
+      valuations: valuations.data,
+      risk_register: risks.data,
+      emergency_plans: emergencyPlans.data,
+      insurance_policies: insurance.data,
+      damage_reports: damage.data,
+      reproduction_requests: reproductions.data,
+      collection_use_records: collectionUse.data,
+      disposal_records: disposals.data,
+      collection_reviews: collectionReviews.data,
+      audit_exercises: auditExercises.data,
+      inventory_exercises: inventoryExercises.data,
+      rights_records: rightsRecords.data,
+      documentation_plans: docPlans.data,
+      documentation_plan_backlogs: docBacklogs.data,
     }
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
@@ -172,6 +212,9 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             {navItem('/dashboard/emergency', '⚡', 'Emergency Plans')}
             {navItem('/dashboard/insurance', '🛡', 'Insurance')}
             {navItem('/dashboard/damage', '⚠', 'Damage Reports')}
+            {navItem('/dashboard/collections-use', '⊞', 'Use of Collections')}
+            {navItem('/dashboard/disposal', '⊘', 'Disposal')}
+            {navItem('/dashboard/collections-review', '⊡', 'Collections Review')}
             {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
           </>
         )}
