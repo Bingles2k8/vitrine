@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 
@@ -60,9 +60,7 @@ export default function AccessionRegisterPage() {
 
   if (!getPlan(museum?.plan).compliance) {
     return (
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-        <Sidebar museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-        <main className="ml-56 flex-1 flex flex-col">
+      <DashboardShell museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Accession Register</span>
           </div>
@@ -79,8 +77,7 @@ export default function AccessionRegisterPage() {
               </button>
             </div>
           </div>
-        </main>
-      </div>
+      </DashboardShell>
     )
   }
 
@@ -97,10 +94,7 @@ export default function AccessionRegisterPage() {
   const confirmed = artifacts.filter(a => a.accession_register_confirmed).length
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-
-      <main className="ml-56 flex-1 flex flex-col">
+    <DashboardShell museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Accession Register</span>
           <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{confirmed} of {artifacts.length} register entries confirmed</span>
@@ -215,7 +209,6 @@ export default function AccessionRegisterPage() {
             Procedure 2: Acquisition & Accessioning. Each row that has been formally entered into your accession register should be marked confirmed. Click any row to open the acquisition record.
           </p>
         </div>
-      </main>
-    </div>
+    </DashboardShell>
   )
 }

@@ -13,9 +13,10 @@ interface SidebarProps {
   onSignOut: () => void
   isOwner?: boolean
   staffAccess?: string | null
+  onNavigate?: () => void
 }
 
-export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null }: SidebarProps) {
+export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null, onNavigate }: SidebarProps) {
   const router = useRouter()
   const supabase = createClient()
   const simple = museum?.ui_mode === 'simple'
@@ -80,7 +81,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     const active = activePath === path
     return (
       <div
-        onClick={() => router.push(path)}
+        onClick={() => { router.push(path); onNavigate?.() }}
         className={`flex items-center gap-2 px-3 py-2 rounded text-xs font-mono mb-1 cursor-pointer transition-colors ${
           active
             ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900'

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
-import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage } from '@/lib/image-compression'
 
@@ -221,24 +221,18 @@ export default function SiteBuilder() {
   const sampleEmojis = ['🏺','🖼️','💎','📜','🗿','🌿']
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
+    <DashboardShell
+      museum={{ ...museum, logo_emoji: form.logo_emoji, name: form.name }}
+      activePath="/dashboard/site"
+      onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }}
+      isOwner={isOwner}
+      staffAccess={staffAccess}
+    >
 
       {/* Preload all Google Fonts so the picker preview renders instantly */}
       {FONTS.map(f => (
         <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
       ))}
-
-      {/* Sidebar — pass live form values so name/emoji update as the user edits */}
-      <Sidebar
-        museum={{ ...museum, logo_emoji: form.logo_emoji, name: form.name }}
-        activePath="/dashboard/site"
-        onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }}
-        isOwner={isOwner}
-        staffAccess={staffAccess}
-      />
-
-      {/* Main */}
-      <main className="ml-56 flex-1 flex flex-col">
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
           <div className="flex items-center gap-3">
@@ -615,7 +609,6 @@ export default function SiteBuilder() {
           </div>
 
         </div>
-      </main>
-    </div>
+    </DashboardShell>
   )
 }

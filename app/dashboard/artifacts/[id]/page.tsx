@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { getMuseumForUser } from '@/lib/get-museum'
+import DashboardShell from '@/components/DashboardShell'
 
 import OverviewTab from '@/components/tabs/OverviewTab'
 import EntryTab from '@/components/tabs/EntryTab'
@@ -278,22 +279,7 @@ export default function ArtifactDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-
-      <aside className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
-        <div className="p-5 border-b border-stone-200 dark:border-stone-800">
-          <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
-        </div>
-        <nav className="p-3 flex-1">
-          <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
-          <div onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-2 rounded text-stone-500 dark:text-stone-400 text-xs font-mono mb-1 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800">
-            <span>⬡</span> Objects
-          </div>
-        </nav>
-      </aside>
-
-      <main className="ml-56 flex-1 flex flex-col">
+    <DashboardShell museum={museum} activePath="/dashboard" onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }} isOwner={isOwner} staffAccess={staffAccess}>
         {/* Top bar */}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
           <div className="flex items-center gap-3">
@@ -391,7 +377,6 @@ export default function ArtifactDetail() {
           )}
 
         </form>
-      </main>
-    </div>
+    </DashboardShell>
   )
 }

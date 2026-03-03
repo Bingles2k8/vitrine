@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 
@@ -414,9 +414,7 @@ export default function DocumentationPlanPage() {
 
   if (!getPlan(museum?.plan).compliance) {
     return (
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-        <Sidebar museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-        <main className="ml-56 flex-1 flex flex-col">
+      <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
           </div>
@@ -433,8 +431,7 @@ export default function DocumentationPlanPage() {
               </button>
             </div>
           </div>
-        </main>
-      </div>
+      </DashboardShell>
     )
   }
 
@@ -444,10 +441,7 @@ export default function DocumentationPlanPage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-
-      <main className="ml-56 flex-1 flex flex-col">
+    <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
         </div>
@@ -669,7 +663,6 @@ export default function DocumentationPlanPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </DashboardShell>
   )
 }

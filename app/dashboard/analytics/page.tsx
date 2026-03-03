@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 
@@ -139,9 +139,7 @@ export default function AnalyticsPage() {
 
   if (!getPlan(museum?.plan).analytics) {
     return (
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-        <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-        <main className="ml-56 flex-1 flex flex-col">
+      <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
           </div>
@@ -158,18 +156,14 @@ export default function AnalyticsPage() {
               </button>
             </div>
           </div>
-        </main>
-      </div>
+      </DashboardShell>
     )
   }
 
   const maxMonth = Math.max(...byMonth.map(([, v]) => v), 1)
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex">
-      <Sidebar museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess} />
-
-      <main className="ml-56 flex-1 flex flex-col">
+    <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
           <a href="/api/export/artifacts" download
@@ -270,7 +264,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </DashboardShell>
   )
 }
