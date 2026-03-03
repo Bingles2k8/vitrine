@@ -23,7 +23,15 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const communityLocked = planInfo ? !planInfo.fullMode : false
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
+
+  // Fetch user email
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setUserEmail(user.email)
+    })
+  }, [])
 
   // Initialise theme from localStorage
   useEffect(() => {
@@ -313,6 +321,11 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
               {/* Account */}
               <div>
                 <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Account</div>
+                {userEmail && (
+                  <div className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-2 truncate" title={userEmail}>
+                    {userEmail}
+                  </div>
+                )}
                 <button
                   onClick={onSignOut}
                   className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
