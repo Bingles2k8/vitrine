@@ -97,7 +97,7 @@ export default function AccessionRegisterPage() {
     <DashboardShell museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Accession Register</span>
-          <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{confirmed} of {artifacts.length} register entries confirmed</span>
+          <span className="text-xs font-mono text-stone-400 dark:text-stone-500 truncate min-w-0">{confirmed} of {artifacts.length} register entries confirmed</span>
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
@@ -118,7 +118,7 @@ export default function AccessionRegisterPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center flex-wrap">
             <select value={yearFilter} onChange={e => setYearFilter(e.target.value)}
               className="border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 text-xs font-mono bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 outline-none focus:border-stone-900 dark:focus:border-stone-400">
               <option value="">All years</option>

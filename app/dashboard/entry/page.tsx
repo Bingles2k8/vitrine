@@ -147,7 +147,7 @@ export default function EntryRegisterPage() {
                 {pct >= 80 && (
                   <button
                     onClick={() => router.push('/dashboard/plan')}
-                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors flex-shrink-0"
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
                   >
                     Upgrade →
                   </button>

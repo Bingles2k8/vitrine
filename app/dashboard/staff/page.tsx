@@ -250,7 +250,7 @@ export default function StaffPage() {
           </div>
 
           {/* Filter tabs */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             {depts.map(d => (
               <button
                 key={d}

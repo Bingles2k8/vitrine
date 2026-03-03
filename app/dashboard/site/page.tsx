@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
 import DashboardShell from '@/components/DashboardShell'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage } from '@/lib/image-compression'
 
@@ -55,6 +56,7 @@ function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number
 }
 
 export default function SiteBuilder() {
+  const isMobile = useIsMobile()
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
@@ -229,6 +231,21 @@ export default function SiteBuilder() {
       staffAccess={staffAccess}
     >
 
+      {isMobile ? (
+        <>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 sticky top-0 z-10">
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center max-w-xs">
+            <div className="text-4xl mb-4">🖥</div>
+            <h2 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-2">Desktop only</h2>
+            <p className="text-xs font-mono text-stone-400 dark:text-stone-500">The Site Builder requires a larger screen. Please switch to a desktop or laptop to edit your site.</p>
+          </div>
+        </div>
+        </>
+      ) : (
+      <>
       {/* Preload all Google Fonts so the picker preview renders instantly */}
       {FONTS.map(f => (
         <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
@@ -609,6 +626,8 @@ export default function SiteBuilder() {
           </div>
 
         </div>
+      </>
+      )}
     </DashboardShell>
   )
 }
