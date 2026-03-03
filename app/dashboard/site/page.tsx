@@ -233,7 +233,7 @@ export default function SiteBuilder() {
       {FONTS.map(f => (
         <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
       ))}
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0 z-10">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
           <div className="flex items-center gap-3">
             {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
@@ -249,7 +249,7 @@ export default function SiteBuilder() {
           </div>
         </div>
 
-        <div className="p-8 grid grid-cols-2 gap-8 items-start">
+        <div className="p-4 md:p-8 grid grid-cols-2 gap-8 items-start">
 
           {/* Left — settings */}
           <div className="space-y-6">

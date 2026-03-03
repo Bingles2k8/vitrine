@@ -96,7 +96,7 @@ export default function EmergencyPage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/emergency" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Emergency Plans</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -126,7 +126,7 @@ export default function EmergencyPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/emergency" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Emergency Plans</span>
           {canEdit && (
             <button onClick={() => setShowForm(s => !s)}
@@ -136,9 +136,9 @@ export default function EmergencyPage() {
           )}
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
               { label: 'Total Plans', value: plans.length, warn: plans.length === 0 },
               { label: 'Active Plans', value: activePlans.length, warn: activePlans.length === 0 },
@@ -155,7 +155,7 @@ export default function EmergencyPage() {
           {showForm && canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">New emergency plan</div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Plan Title *</label>
                   <input value={form.plan_title} onChange={e => setForm(f => ({ ...f, plan_title: e.target.value }))}
@@ -170,7 +170,7 @@ export default function EmergencyPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Responsible Person</label>
                   <input value={form.responsible_person} onChange={e => setForm(f => ({ ...f, responsible_person: e.target.value }))}
@@ -196,7 +196,7 @@ export default function EmergencyPage() {
                   rows={2} placeholder="Priority order for salvaging objects…"
                   className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Alternative Storage</label>
                   <input value={form.alternative_storage} onChange={e => setForm(f => ({ ...f, alternative_storage: e.target.value }))}
@@ -210,7 +210,7 @@ export default function EmergencyPage() {
                     className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Last Review Date</label>
                   <input type="date" value={form.last_review_date} onChange={e => setForm(f => ({ ...f, last_review_date: e.target.value }))}
@@ -255,7 +255,7 @@ export default function EmergencyPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500">Use the Add plan button to create your first emergency plan.</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">

@@ -97,11 +97,11 @@ export default function PlanPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/plan" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Plans &amp; Pricing</span>
         </div>
 
-        <div className="p-8 max-w-5xl">
+        <div className="p-4 md:p-8 max-w-5xl">
           {checkoutResult === 'success' && (
             <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
               <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">

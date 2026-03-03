@@ -91,12 +91,12 @@ export default function Dashboard() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-5 gap-4 mb-8">
+        <div className="p-4 md:p-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             {CARDS.map(card => {
               const active = filter === card.filterKey
               return (
@@ -131,7 +131,7 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {filter && (
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">

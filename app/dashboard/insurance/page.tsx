@@ -102,7 +102,7 @@ export default function InsurancePage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/insurance" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Insurance</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -143,7 +143,7 @@ export default function InsurancePage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/insurance" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Insurance & Indemnity</span>
           {canEdit && (
             <button onClick={() => setShowForm(s => !s)}
@@ -153,9 +153,9 @@ export default function InsurancePage() {
           )}
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Active Policies', value: String(activePolicies.length), warn: activePolicies.length === 0 },
               { label: 'Total Coverage', value: activePolicies.length > 0 ? formatCurrency(totalCoverage, activePolicies[0]?.currency || 'GBP') : '—', warn: false },
@@ -173,7 +173,7 @@ export default function InsurancePage() {
           {showForm && canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">New insurance policy</div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Policy Number *</label>
                   <input value={form.policy_number} onChange={e => setForm(f => ({ ...f, policy_number: e.target.value }))}
@@ -194,7 +194,7 @@ export default function InsurancePage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Coverage Amount</label>
                   <input type="number" value={form.coverage_amount} onChange={e => setForm(f => ({ ...f, coverage_amount: e.target.value }))}
@@ -215,7 +215,7 @@ export default function InsurancePage() {
                     className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Start Date *</label>
                   <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
@@ -249,7 +249,7 @@ export default function InsurancePage() {
                   Covers Exhibition
                 </label>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Contact Name</label>
                   <input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))}
@@ -314,7 +314,7 @@ export default function InsurancePage() {
               <p className="text-sm text-stone-400 dark:text-stone-500">Use the Add policy button to register your first insurance policy.</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">

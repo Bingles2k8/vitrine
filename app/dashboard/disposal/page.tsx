@@ -100,7 +100,7 @@ export default function DisposalPage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/disposal" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Disposal</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -121,17 +121,17 @@ export default function DisposalPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/disposal" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Disposal Register</span>
         </div>
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-5 py-3">
             <p className="text-xs text-amber-700 dark:text-amber-400">Spectrum requires that all disposals are authorised by the governing body and documented in full. A public notice period may be required.</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Records', value: records.length },
               { label: 'Proposed', value: proposed.length },
@@ -148,7 +148,7 @@ export default function DisposalPage() {
           {canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Propose Disposal</div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Object *</label>
                   <select value={form.artifact_id} onChange={e => setForm(f => ({ ...f, artifact_id: e.target.value }))} className={inputCls}>
@@ -172,7 +172,7 @@ export default function DisposalPage() {
                 <label className={labelCls}>Justification</label>
                 <textarea value={form.justification} onChange={e => setForm(f => ({ ...f, justification: e.target.value }))} rows={2} placeholder="Detailed justification for disposal..." className={`${inputCls} resize-none`} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Deaccession Date *</label>
                   <input type="date" value={form.deaccession_date} onChange={e => setForm(f => ({ ...f, deaccession_date: e.target.value }))} className={inputCls} />
@@ -182,7 +182,7 @@ export default function DisposalPage() {
                   <input value={form.authorised_by} onChange={e => setForm(f => ({ ...f, authorised_by: e.target.value }))} placeholder="Name and role" className={inputCls} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Recipient Name</label>
                   <input value={form.recipient_name} onChange={e => setForm(f => ({ ...f, recipient_name: e.target.value }))} className={inputCls} />
@@ -192,7 +192,7 @@ export default function DisposalPage() {
                   <input value={form.recipient_contact} onChange={e => setForm(f => ({ ...f, recipient_contact: e.target.value }))} className={inputCls} />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className={labelCls}>Proceeds Amount</label>
                   <input type="number" step="0.01" min="0" value={form.proceeds_amount} onChange={e => setForm(f => ({ ...f, proceeds_amount: e.target.value }))} placeholder="0.00" className={inputCls} />
@@ -220,7 +220,7 @@ export default function DisposalPage() {
                   Accession register annotated
                 </label>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Public Notice</label>
                   <textarea value={form.public_notice} onChange={e => setForm(f => ({ ...f, public_notice: e.target.value }))} rows={2} placeholder="Details of public notice given..." className={`${inputCls} resize-none`} />
@@ -248,7 +248,7 @@ export default function DisposalPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500">Disposal proposals and outcomes will appear here.</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">

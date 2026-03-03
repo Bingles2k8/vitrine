@@ -70,7 +70,7 @@ export default function CollectionsUsePage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/collections-use" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Use of Collections</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -172,7 +172,7 @@ export default function CollectionsUsePage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/collections-use" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Use of Collections</span>
           {canEdit && (
             <button
@@ -184,9 +184,9 @@ export default function CollectionsUsePage() {
           )}
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Requests', value: records.length },
               { label: 'Pending', value: pending.length },
@@ -210,7 +210,7 @@ export default function CollectionsUsePage() {
             <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-2">New Use of Collections Record</h3>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Use Type *</label>
                   <select
@@ -291,7 +291,7 @@ export default function CollectionsUsePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Approved By</label>
                   <input
@@ -333,7 +333,7 @@ export default function CollectionsUsePage() {
               <p className="text-sm text-stone-400 dark:text-stone-500">Create your first record to track research requests, loans, and other access.</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">

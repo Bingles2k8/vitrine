@@ -415,7 +415,7 @@ export default function DocumentationPlanPage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -442,11 +442,11 @@ export default function DocumentationPlanPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="p-4 md:p-8 space-y-8">
           {/* Overall compliance score */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-center gap-8">
             <div>
@@ -470,7 +470,7 @@ export default function DocumentationPlanPage() {
           </div>
 
           {/* Procedure-by-procedure breakdown */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
             <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Compliance by Procedure</div>
             </div>
@@ -525,7 +525,7 @@ export default function DocumentationPlanPage() {
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
             <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Procedure 9</div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Plan Reference</label>
                 <input type="text" value={planForm.plan_reference} onChange={e => setPlanForm(f => ({ ...f, plan_reference: e.target.value }))} className={inputCls} placeholder="e.g. DOC-2025-01" />
@@ -540,7 +540,7 @@ export default function DocumentationPlanPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Responsible Person</label>
                 <input type="text" value={planForm.responsible_person} onChange={e => setPlanForm(f => ({ ...f, responsible_person: e.target.value }))} className={inputCls} placeholder="Name or role" />
@@ -555,7 +555,7 @@ export default function DocumentationPlanPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Scope Documented (%)</label>
                 <input type="number" step="0.01" min="0" max="100" value={planForm.scope_documented_pct} onChange={e => setPlanForm(f => ({ ...f, scope_documented_pct: e.target.value }))} className={inputCls} placeholder="e.g. 65.50" />
@@ -570,7 +570,7 @@ export default function DocumentationPlanPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Target Completion Dates</label>
                 <textarea rows={2} value={planForm.target_completion_dates} onChange={e => setPlanForm(f => ({ ...f, target_completion_dates: e.target.value }))} className={inputCls} placeholder="Key milestones and target dates…" />
@@ -599,7 +599,7 @@ export default function DocumentationPlanPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Backlog by Procedure</div>
 
-              <div className="grid grid-cols-5 gap-4 items-end">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
                 <div>
                   <label className={labelCls}>Procedure</label>
                   <select value={backlogForm.procedure_name} onChange={e => setBacklogForm(f => ({ ...f, procedure_name: e.target.value }))} className={inputCls}>

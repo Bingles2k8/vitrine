@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
   if (!getPlan(museum?.plan).analytics) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
           <a href="/api/export/artifacts" download
             className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
@@ -180,8 +180,8 @@ export default function AnalyticsPage() {
             <button onClick={() => router.push('/dashboard/artifacts/new')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">+ Add your first object</button>
           </div>
         ) : (
-          <div className="p-8 space-y-6">
-            <div className="grid grid-cols-4 gap-4">
+          <div className="p-4 md:p-8 space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Total Objects', value: artifacts.length },
                 { label: 'On Display', value: artifacts.filter(a => a.status === 'On Display').length },
@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Recently Added</div>
               </div>

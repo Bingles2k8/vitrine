@@ -90,7 +90,7 @@ export default function CollectionsReviewPage() {
   if (!getPlan(museum?.plan).compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/collections-review" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collections Review</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
@@ -111,13 +111,13 @@ export default function CollectionsReviewPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/collections-review" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collections Review</span>
         </div>
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Reviews', value: reviews.length },
               { label: 'In Progress', value: inProgress.length },
@@ -138,7 +138,7 @@ export default function CollectionsReviewPage() {
           {canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Review</div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Review Title *</label>
                   <input value={form.review_title} onChange={e => setForm(f => ({ ...f, review_title: e.target.value }))} placeholder="e.g. Annual Collections Review 2026" className={inputCls} />
@@ -156,7 +156,7 @@ export default function CollectionsReviewPage() {
                 <label className={labelCls}>Criteria</label>
                 <textarea value={form.criteria} onChange={e => setForm(f => ({ ...f, criteria: e.target.value }))} rows={2} placeholder="Criteria used to assess objects..." className={`${inputCls} resize-none`} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Start Date *</label>
                   <input type="date" value={form.review_date_start} onChange={e => setForm(f => ({ ...f, review_date_start: e.target.value }))} className={inputCls} />
@@ -166,7 +166,7 @@ export default function CollectionsReviewPage() {
                   <input type="date" value={form.review_date_end} onChange={e => setForm(f => ({ ...f, review_date_end: e.target.value }))} className={inputCls} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Objects Reviewed</label>
                   <input type="number" min="0" value={form.objects_reviewed} onChange={e => setForm(f => ({ ...f, objects_reviewed: e.target.value }))} className={inputCls} />
@@ -210,7 +210,7 @@ export default function CollectionsReviewPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500">Start a collections review to assess your holdings.</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
