@@ -19,8 +19,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  console.log('[webhook] event type:', event.type)
-
   // Use service role — webhooks have no user session
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,20 +31,14 @@ export async function POST(request: Request) {
   ) {
     const subscription = event.data.object as Stripe.Subscription
     const museumId = subscription.metadata.museum_id
-    console.log('[webhook] museumId:', museumId, 'status:', subscription.status, 'metadata:', JSON.stringify(subscription.metadata))
-    if (!museumId) {
-      console.log('[webhook] no museumId, exiting early')
-      return NextResponse.json({ received: true })
-    }
+    if (!museumId) return NextResponse.json({ received: true })
 
     if (subscription.status === 'active' || subscription.status === 'trialing') {
       const priceId = subscription.items.data[0]?.price.id
       const planId = PRICE_TO_PLAN[priceId] ?? subscription.metadata.plan_id
 
-      console.log('[webhook] priceId:', priceId, 'planId:', planId, 'museumId:', museumId)
-
       if (planId && planId in PLANS) {
-        const { error, count } = await supabase
+        await supabase
           .from('museums')
           .update({
             plan: planId,
@@ -56,10 +48,6 @@ export async function POST(request: Request) {
             pending_downgrade_date: null,
           })
           .eq('id', museumId)
-
-        console.log('[webhook] update result — error:', error, 'count:', count)
-      } else {
-        console.log('[webhook] planId not valid, skipping update. planId:', planId, 'in PLANS:', planId ? planId in PLANS : false)
       }
     }
 
