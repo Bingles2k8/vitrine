@@ -37,8 +37,10 @@ export async function POST(request: Request) {
       const priceId = subscription.items.data[0]?.price.id
       const planId = PRICE_TO_PLAN[priceId] ?? subscription.metadata.plan_id
 
+      console.log('[webhook] priceId:', priceId, 'planId:', planId, 'museumId:', museumId)
+
       if (planId && planId in PLANS) {
-        await supabase
+        const { error, count } = await supabase
           .from('museums')
           .update({
             plan: planId,
@@ -48,6 +50,10 @@ export async function POST(request: Request) {
             pending_downgrade_date: null,
           })
           .eq('id', museumId)
+
+        console.log('[webhook] update result — error:', error, 'count:', count)
+      } else {
+        console.log('[webhook] planId not valid, skipping update. planId:', planId, 'in PLANS:', planId ? planId in PLANS : false)
       }
     }
 
