@@ -44,8 +44,53 @@ export async function POST(request: Request) {
             plan: planId,
             ui_mode: PLANS[planId as keyof typeof PLANS].fullMode ? 'full' : 'simple',
             stripe_subscription_id: subscription.id,
+            pending_downgrade_plan: null,
+            pending_downgrade_date: null,
           })
           .eq('id', museumId)
+      }
+    }
+
+    // Check if cancellation at period end is scheduled (downgrade to community)
+    if (subscription.cancel_at_period_end && museumId) {
+      const cancelDate = subscription.cancel_at
+        ?? subscription.items.data[0]?.current_period_end
+      await supabase
+        .from('museums')
+        .update({
+          pending_downgrade_plan: 'community',
+          pending_downgrade_date: cancelDate
+            ? new Date(cancelDate * 1000).toISOString()
+            : null,
+        })
+        .eq('id', museumId)
+    }
+
+    // Check if a subscription schedule exists (plan-to-plan downgrade)
+    if (subscription.schedule && museumId) {
+      try {
+        const schedule = await stripe.subscriptionSchedules.retrieve(
+          subscription.schedule as string
+        )
+        const phases = schedule.phases
+        if (phases.length > 1) {
+          const nextPhase = phases[phases.length - 1]
+          const nextPriceId = typeof nextPhase.items[0]?.price === 'string'
+            ? nextPhase.items[0].price
+            : (nextPhase.items[0]?.price as Stripe.Price)?.id
+          const targetPlan = nextPriceId ? PRICE_TO_PLAN[nextPriceId] : undefined
+          if (targetPlan) {
+            await supabase
+              .from('museums')
+              .update({
+                pending_downgrade_plan: targetPlan,
+                pending_downgrade_date: new Date(nextPhase.start_date * 1000).toISOString(),
+              })
+              .eq('id', museumId)
+          }
+        }
+      } catch {
+        console.error('Failed to retrieve subscription schedule')
       }
     }
   }
@@ -60,8 +105,30 @@ export async function POST(request: Request) {
           plan: 'community',
           ui_mode: 'simple',
           stripe_subscription_id: null,
+          pending_downgrade_plan: null,
+          pending_downgrade_date: null,
         })
         .eq('id', museumId)
+    }
+  }
+
+  // Handle subscription schedule cancellation/release (user cancelled a pending downgrade)
+  if (
+    event.type === 'subscription_schedule.canceled' ||
+    event.type === 'subscription_schedule.released'
+  ) {
+    const schedule = event.data.object as Stripe.SubscriptionSchedule
+    const subscriptionId = typeof schedule.subscription === 'string'
+      ? schedule.subscription
+      : schedule.subscription?.id
+    if (subscriptionId) {
+      await supabase
+        .from('museums')
+        .update({
+          pending_downgrade_plan: null,
+          pending_downgrade_date: null,
+        })
+        .eq('stripe_subscription_id', subscriptionId)
     }
   }
 

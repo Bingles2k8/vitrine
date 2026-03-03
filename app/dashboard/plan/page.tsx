@@ -119,6 +119,28 @@ export default function PlanPage() {
               </p>
             </div>
           )}
+          {museum?.pending_downgrade_plan && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-700 dark:text-amber-300 font-mono">
+                Your subscription is scheduled to be downgraded to{' '}
+                <span className="font-medium capitalize">
+                  {PLANS[museum.pending_downgrade_plan as PlanId]?.label ?? museum.pending_downgrade_plan}
+                </span>
+                {museum.pending_downgrade_date && (
+                  <> on {new Date(museum.pending_downgrade_date).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                  })}</>
+                )}
+                .{' '}You can cancel this change from{' '}
+                <button
+                  onClick={handleManageSubscription}
+                  className="underline hover:no-underline"
+                >
+                  your billing portal
+                </button>.
+              </p>
+            </div>
+          )}
 
           <div className="mb-8">
             <p className="text-sm text-stone-500 dark:text-stone-400">
@@ -136,6 +158,8 @@ export default function PlanPage() {
               const p = PLANS[id]
               const isCurrent = currentPlan === id
               const isEnterprise = id === 'enterprise'
+              const isPendingTarget = museum?.pending_downgrade_plan === id
+              const isDowngrade = PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan as PlanId)
 
               return (
                 <div
@@ -143,11 +167,16 @@ export default function PlanPage() {
                   className={`rounded-xl border-2 p-6 bg-white dark:bg-stone-900 transition-all ${
                     isCurrent
                       ? 'border-stone-900 dark:border-white shadow-lg'
-                      : 'border-stone-200 dark:border-stone-700'
+                      : isPendingTarget
+                        ? 'border-amber-400 dark:border-amber-600'
+                        : 'border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   {isCurrent && (
                     <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 mb-3">Current plan</div>
+                  )}
+                  {isPendingTarget && !isCurrent && (
+                    <div className="text-xs font-mono text-amber-600 dark:text-amber-400 mb-3">Pending downgrade</div>
                   )}
                   <div className="text-xs font-mono uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">{p.label}</div>
                   <div className="text-2xl font-serif text-stone-900 dark:text-stone-100 mb-4">{p.price}</div>
@@ -186,31 +215,50 @@ export default function PlanPage() {
                       </a>
                     ) : id === 'community' ? (
                       currentPlan !== 'community' && isOwner ? (
-                        <button
-                          onClick={handleManageSubscription}
-                          disabled={actionLoading !== null}
-                          className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === 'manage' ? 'Redirecting…' : 'Downgrade'}
-                        </button>
+                        <>
+                          <button
+                            onClick={handleManageSubscription}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === 'manage' ? 'Redirecting…' : 'Downgrade'}
+                          </button>
+                          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
+                            Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                          </p>
+                        </>
                       ) : null
                     ) : isOwner ? (
                       museum?.stripe_subscription_id ? (
-                        <button
-                          onClick={handleManageSubscription}
-                          disabled={actionLoading !== null}
-                          className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === 'manage' ? 'Redirecting…' : PLAN_ORDER.indexOf(id) > PLAN_ORDER.indexOf(currentPlan as PlanId) ? 'Upgrade →' : 'Downgrade'}
-                        </button>
+                        <>
+                          <button
+                            onClick={handleManageSubscription}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === 'manage' ? 'Redirecting…' : isDowngrade ? 'Downgrade' : 'Upgrade →'}
+                          </button>
+                          {isDowngrade && (
+                            <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
+                              Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                            </p>
+                          )}
+                        </>
                       ) : (
-                        <button
-                          onClick={() => handleUpgrade(id)}
-                          disabled={actionLoading !== null}
-                          className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === id ? 'Redirecting…' : PLAN_ORDER.indexOf(id) > PLAN_ORDER.indexOf(currentPlan as PlanId) ? 'Upgrade →' : 'Downgrade'}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleUpgrade(id)}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === id ? 'Redirecting…' : isDowngrade ? 'Downgrade' : 'Upgrade →'}
+                          </button>
+                          {isDowngrade && (
+                            <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
+                              Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                            </p>
+                          )}
+                        </>
                       )
                     ) : null}
                   </div>
