@@ -128,7 +128,7 @@ export default function DisposalPage() {
           {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-5 py-3">
-            <p className="text-xs text-amber-700 dark:text-amber-400">Spectrum requires that all disposals are authorised by the governing body and documented in full. A public notice period may be required.</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400">Best practice requires that all disposals are authorised by the governing body and documented in full. A public notice period may be required.</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

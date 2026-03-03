@@ -8,7 +8,7 @@ Vitrine is a specialised, all-in-one Collection Management System (CMS) and publ
 
     Status Tracking: Manage items by status (On Display, On Loan, Restoration, or Storage).
 
-    Spectrum Compliance: Built with industry-standard compliance in mind for museum documentation.
+    Standards Compliance: Built with industry-standard compliance in mind for museum documentation.
 
     Media Support: Easily upload and manage high-resolution images for every record.
 
@@ -48,8 +48,8 @@ Plaintext
 ├── lib/              # Shared utilities, hooks, and database schemas
 ├── public/           # Static assets and icons
 ├── supabase/         # Database migrations and configuration
-└── Spectrum_Compliance_Requirements.pdf  # Standard documentation reference
+└── Compliance_Requirements.pdf  # Standard documentation reference
 
 🏛️ Standards & Compliance
 
-Vitrine is designed to support Spectrum, the UK museum documentation standard. 
+Vitrine is designed to support the UK museum documentation standard.

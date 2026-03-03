@@ -454,7 +454,7 @@ export default function DocumentationPlanPage() {
               <div className={`font-serif text-6xl ${overall >= 80 ? 'text-emerald-700' : overall >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
                 {overall}%
               </div>
-              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">21 Spectrum 5.1 Procedures</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 mt-1 font-mono">21 Standard Procedures</div>
             </div>
             <div className="flex-1">
               <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">

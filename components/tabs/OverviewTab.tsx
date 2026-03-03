@@ -196,7 +196,7 @@ export default function OverviewTab({ form, set, canEdit, saving, saved, artifac
         </div>
       </div>
 
-      {/* Cataloguing (Spectrum Proc 5) */}
+      {/* Cataloguing */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Cataloguing</div>
 
