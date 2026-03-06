@@ -24,6 +24,13 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
 
   if (!artifact) notFound()
 
+  const { count: eventCount } = await supabase
+    .from('events')
+    .select('id', { count: 'exact', head: true })
+    .eq('museum_id', museum.id)
+    .eq('status', 'published')
+  const hasEvents = (eventCount ?? 0) > 0
+
   const { data: galleryImages } = await supabase
     .from('artifact_images')
     .select('url, caption, is_primary')
@@ -45,6 +52,11 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
             <Link href={`/museum/${slug}`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
               Collection
             </Link>
+            {hasEvents && (
+              <Link href={`/museum/${slug}/events`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
+                Events
+              </Link>
+            )}
             <Link href={`/museum/${slug}/visit`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
               Plan Your Visit
             </Link>

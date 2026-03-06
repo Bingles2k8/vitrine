@@ -16,6 +16,14 @@ export const stripeCheckoutSchema = z.object({
   planId: z.enum(['hobbyist', 'professional', 'institution']),
 })
 
+export const ticketCheckoutSchema = z.object({
+  eventId: z.string().uuid(),
+  slotId: z.string().uuid(),
+  quantity: z.number().int().min(1).max(10),
+  buyerName: z.string().min(1).max(200),
+  buyerEmail: z.string().email().max(320),
+})
+
 // --- Helper ---
 
 export function parseBody<T>(

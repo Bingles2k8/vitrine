@@ -230,6 +230,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder')}
+        {planInfo?.ticketing && navItem('/dashboard/events', '◎', 'Events')}
 
         {!simple && (isOwner || staffAccess === 'Admin') && (
           <>

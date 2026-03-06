@@ -34,6 +34,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const allArtifacts = artifacts || []
   const onDisplay = allArtifacts.filter(a => a.status === 'On Display').length
 
+  const { count: eventCount } = await supabase
+    .from('events')
+    .select('id', { count: 'exact', head: true })
+    .eq('museum_id', museum.id)
+    .eq('status', 'published')
+  const hasEvents = (eventCount ?? 0) > 0
+
   const tmpl = getTemplate(museum.template || 'minimal')
   const primary = museum.primary_color || tmpl.primary_color
   const accent = museum.accent_color || tmpl.accent_color
@@ -99,6 +106,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             <Link href={`/museum/${slug}`} className={`text-sm border-b pb-0.5 ${nav.text}`} style={{ borderColor: accent }}>
               Collection
             </Link>
+            {hasEvents && (
+              <Link href={`/museum/${slug}/events`} className={`text-sm transition-colors ${nav.link}`}>
+                Events
+              </Link>
+            )}
             <Link href={`/museum/${slug}/visit`} className={`text-sm transition-colors ${nav.link}`}>
               Plan Your Visit
             </Link>

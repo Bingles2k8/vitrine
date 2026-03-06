@@ -8,6 +8,7 @@ export const PLANS: Record<PlanId, {
   fullMode: boolean
   analytics: boolean
   compliance: boolean
+  ticketing: boolean
   features: string[]
 }> = {
   community: {
@@ -18,6 +19,7 @@ export const PLANS: Record<PlanId, {
     fullMode: false,
     analytics: false,
     compliance: false,
+    ticketing: false,
     features: ['Up to 100 collection items', 'Public collection website', 'Basic site customisation'],
   },
   hobbyist: {
@@ -28,6 +30,7 @@ export const PLANS: Record<PlanId, {
     fullMode: false,
     analytics: false,
     compliance: false,
+    ticketing: false,
     features: ['Up to 500 collection items', 'Public collection website', 'Full site customisation'],
   },
   professional: {
@@ -38,7 +41,8 @@ export const PLANS: Record<PlanId, {
     fullMode: true,
     analytics: true,
     compliance: true,
-    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics'],
+    ticketing: true,
+    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing'],
   },
   institution: {
     label: 'Institution',
@@ -48,7 +52,8 @@ export const PLANS: Record<PlanId, {
     fullMode: true,
     analytics: true,
     compliance: true,
-    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Priority support'],
+    ticketing: true,
+    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support'],
   },
   enterprise: {
     label: 'Enterprise',
@@ -58,7 +63,8 @@ export const PLANS: Record<PlanId, {
     fullMode: true,
     analytics: true,
     compliance: true,
-    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Dedicated support', 'Custom integrations'],
+    ticketing: true,
+    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations'],
   },
 }
 

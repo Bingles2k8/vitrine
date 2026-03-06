@@ -32,6 +32,7 @@ export default function DashboardShell({
     s: () => router.push('/dashboard/staff'),
     b: () => router.push('/dashboard/site'),
     p: () => router.push('/dashboard/plan'),
+    v: () => router.push('/dashboard/events'),
   })
 
   const openSidebar = useCallback(() => setSidebarOpen(true), [])

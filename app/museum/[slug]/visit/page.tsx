@@ -14,6 +14,35 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
 
   if (!museum) notFound()
 
+  // Fetch upcoming events for summary
+  const today = new Date().toISOString().split('T')[0]
+  const { data: upcomingEvents } = await supabase
+    .from('events')
+    .select('id, title, event_type, start_date, end_date, price_cents, currency')
+    .eq('museum_id', museum.id)
+    .eq('status', 'published')
+    .gte('end_date', today)
+    .order('start_date', { ascending: true })
+    .limit(4)
+
+  const hasEvents = (upcomingEvents?.length ?? 0) > 0
+
+  function formatDateRange(start: string, end: string) {
+    const s = new Date(start)
+    const e = new Date(end)
+    if (start === end) return s.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    return `${s.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} — ${e.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+  }
+
+  function formatPrice(cents: number, currency: string) {
+    if (cents === 0) return 'Free'
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(cents / 100)
+  }
+
+  const typeLabels: Record<string, string> = {
+    exhibition: 'Exhibition', workshop: 'Workshop', talk: 'Talk', tour: 'Tour',
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b border-stone-200 sticky top-0 bg-white/95 backdrop-blur z-50">
@@ -25,6 +54,11 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
             <Link href={`/museum/${slug}`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
               Collection
             </Link>
+            {hasEvents && (
+              <Link href={`/museum/${slug}/events`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
+                Events
+              </Link>
+            )}
             <Link href={`/museum/${slug}/visit`} className="text-sm text-stone-900 border-b border-stone-900 pb-0.5">
               Plan Your Visit
             </Link>
@@ -56,6 +90,27 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
             )}
           </div>
         </div>
+
+        {upcomingEvents && upcomingEvents.length > 0 && (
+          <div className="mb-12">
+            <h2 className="font-serif text-2xl italic text-stone-900 mb-6">Upcoming Events</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {upcomingEvents.map(event => (
+                <Link href={`/museum/${slug}/events/${event.id}`} key={event.id}
+                  className="border border-stone-200 rounded-lg p-6 hover:border-stone-400 transition-colors">
+                  <div className="text-xs uppercase tracking-widest text-amber-600 mb-2">{typeLabels[event.event_type] || event.event_type}</div>
+                  <h3 className="font-serif text-xl italic text-stone-900 mb-2">{event.title}</h3>
+                  <p className="text-sm text-stone-500">{formatDateRange(event.start_date, event.end_date)}</p>
+                  <p className="text-sm text-stone-400 mt-1">{formatPrice(event.price_cents, event.currency)}</p>
+                </Link>
+              ))}
+            </div>
+            <Link href={`/museum/${slug}/events`}
+              className="inline-block mt-4 text-sm font-mono text-stone-500 hover:text-stone-900 transition-colors">
+              View all events →
+            </Link>
+          </div>
+        )}
 
         <div className="border border-stone-200 rounded-lg p-8 text-center">
           <div className="text-4xl mb-4">{museum.logo_emoji}</div>

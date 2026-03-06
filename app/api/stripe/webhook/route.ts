@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { stripe, PRICE_TO_PLAN } from '@/lib/stripe'
 import { PLANS } from '@/lib/plans'
 import { createClient } from '@supabase/supabase-js'
+import { generateTicketCode } from '@/lib/ticket-utils'
 import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
@@ -110,6 +111,72 @@ export async function POST(request: Request) {
         })
         .eq('id', museumId)
     }
+  }
+
+  // Handle ticket purchase completion
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const orderId = session.metadata?.order_id
+    const museumId = session.metadata?.museum_id
+
+    if (orderId && museumId) {
+      // Update order status
+      await supabase
+        .from('ticket_orders')
+        .update({
+          status: 'completed',
+          stripe_payment_intent_id: typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null,
+        })
+        .eq('id', orderId)
+
+      // Fetch order details for ticket generation
+      const { data: order } = await supabase
+        .from('ticket_orders')
+        .select('id, quantity, slot_id, event_id, buyer_name')
+        .eq('id', orderId)
+        .single()
+
+      if (order) {
+        // Atomically increment slot bookings
+        await supabase.rpc('increment_slot_bookings', {
+          slot_uuid: order.slot_id,
+          qty: order.quantity,
+        })
+
+        // Generate ticket records
+        const tickets = Array.from({ length: order.quantity }, () => ({
+          order_id: order.id,
+          ticket_code: generateTicketCode(),
+          status: 'valid',
+        }))
+        await supabase.from('tickets').insert(tickets)
+
+        // Fetch event title for activity log
+        const { data: evt } = await supabase
+          .from('events')
+          .select('title')
+          .eq('id', order.event_id)
+          .single()
+
+        await supabase.from('activity_log').insert({
+          museum_id: museumId,
+          action_type: 'ticket_sold',
+          description: `${order.quantity} ticket(s) sold for "${evt?.title ?? 'event'}" — ${order.buyer_name}`,
+        })
+      }
+    }
+  }
+
+  // Handle Stripe Connect account status changes
+  if (event.type === 'account.updated') {
+    const account = event.data.object as Stripe.Account
+    const onboarded = !!(account.details_submitted && account.charges_enabled)
+    await supabase
+      .from('museums')
+      .update({ stripe_connect_onboarded: onboarded })
+      .eq('stripe_connect_id', account.id)
   }
 
   // Handle subscription schedule cancellation/release (user cancelled a pending downgrade)
