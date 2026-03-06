@@ -3,6 +3,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface LoansTabProps {
   form: Record<string, any>
@@ -22,7 +23,7 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
   const [loanLoaded, setLoanLoaded] = useState(false)
   const [loanForm, setLoanForm] = useState({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
   const [returnLocation, setReturnLocation] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
@@ -38,7 +39,7 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
     const year = new Date().getFullYear()
     const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
     const { error: loanErr } = await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null })
-    if (loanErr) { setError(loanErr.message); setSubmitting(false); return }
+    if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
     await supabase.from('artifacts').update({ status: 'On Loan' }).eq('id', artifact.id)
     set('status', 'On Loan')
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
@@ -84,7 +85,6 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
         </div>
       )}
 
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Add Loan Record (Procedures 4 &amp; 5)</div>

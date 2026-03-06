@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { TableSkeleton } from '@/components/Skeleton'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -102,7 +103,7 @@ export default function DocumentationPlanPage() {
         { data: reproductionRequests },
         { data: conservationTreatments },
       ] = await Promise.all([
-        supabase.from('artifacts').select('*').eq('museum_id', museum.id),
+        supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null),
         supabase.from('entry_records').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('location_history').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('condition_assessments').select('artifact_id').eq('museum_id', museum.id),
@@ -407,9 +408,12 @@ export default function DocumentationPlanPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
-    </div>
+    <DashboardShell museum={null} activePath="/dashboard/docs" onSignOut={() => {}}>
+      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+      <div className="p-8 space-y-6">
+        <TableSkeleton rows={5} cols={4} />
+      </div>
+    </DashboardShell>
   )
 
   if (!getPlan(museum?.plan).compliance) {

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { CardGridSkeleton } from '@/components/Skeleton'
 
 interface Artifact {
   id: string
@@ -83,7 +84,7 @@ export default function AnalyticsPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: artifacts } = await supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false })
+      const { data: artifacts } = await supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false })
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
@@ -132,9 +133,12 @@ export default function AnalyticsPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
-    </div>
+    <DashboardShell museum={null} activePath="/dashboard/analytics" onSignOut={() => {}}>
+      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+      <div className="p-8 space-y-6">
+        <CardGridSkeleton cards={4} />
+      </div>
+    </DashboardShell>
   )
 
   if (!getPlan(museum?.plan).analytics) {

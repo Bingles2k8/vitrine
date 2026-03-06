@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { getMuseumForUser } from '@/lib/get-museum'
 import DashboardShell from '@/components/DashboardShell'
+import { useToast } from '@/components/Toast'
+import { Skeleton, FormSkeleton } from '@/components/Skeleton'
 
 import OverviewTab from '@/components/tabs/OverviewTab'
 import EntryTab from '@/components/tabs/EntryTab'
@@ -46,8 +48,7 @@ export default function ArtifactDetail() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
+  const { toast } = useToast()
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
@@ -211,9 +212,8 @@ export default function ArtifactDetail() {
   async function handleSave(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!isOwner && staffAccess !== 'Admin' && staffAccess !== 'Editor') return
-    if (!form.title.trim()) { setError('Title is required'); return }
+    if (!form.title.trim()) { toast('Title is required', 'error'); return }
     setSaving(true)
-    setError('')
 
     const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
     const { error } = await supabase.from('artifacts').update({
@@ -235,10 +235,9 @@ export default function ArtifactDetail() {
       insured_value: formToSave.insured_value ? parseFloat(formToSave.insured_value) : null,
     }).eq('id', params.id)
 
-    if (error) { setError(error.message) } else {
-      setSaved(true)
+    if (error) { toast(error.message, 'error') } else {
+      toast('Changes saved')
       router.refresh()
-      setTimeout(() => setSaved(false), 2000)
       logActivity('saved', `Updated "${form.title}"`)
     }
     setSaving(false)
@@ -247,13 +246,16 @@ export default function ArtifactDetail() {
   async function handleDelete() {
     if (!artifact || !canEdit) return
     if (artifact.deaccession_protected || artifact.status === 'Deaccessioned') {
-      setError('Deaccessioned objects cannot be deleted. Use the Disposal register instead.')
+      toast('Deaccessioned objects cannot be deleted. Use the Disposal register instead.', 'error')
       return
     }
-    if (!confirm('Delete "' + artifact.title + '"? This cannot be undone.')) return
+    if (!confirm('Move "' + artifact.title + '" to trash?')) return
     setDeleting(true)
-    const { error } = await supabase.from('artifacts').delete().eq('id', params.id)
-    if (error) { setError(error.message); setDeleting(false) } else { router.push('/dashboard') }
+    const { error } = await supabase.from('artifacts').update({ deleted_at: new Date().toISOString() }).eq('id', params.id)
+    if (error) { toast(error.message, 'error'); setDeleting(false) } else {
+      toast('Moved to trash')
+      router.push('/dashboard')
+    }
   }
 
   async function logActivity(actionType: string, description: string) {
@@ -272,9 +274,19 @@ export default function ArtifactDetail() {
 
   if (loading || !artifact) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-        <p className="font-mono text-sm text-stone-400">Loading…</p>
-      </div>
+      <DashboardShell museum={null} activePath="/dashboard" onSignOut={() => {}}>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 gap-3">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-8 flex gap-1 py-3">
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-4 w-20" />)}
+        </div>
+        <div className="p-8 space-y-6">
+          <FormSkeleton fields={8} />
+          <FormSkeleton fields={4} />
+        </div>
+      </DashboardShell>
     )
   }
 
@@ -291,12 +303,10 @@ export default function ArtifactDetail() {
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{artifact.title}</span>
           </div>
           <div className="flex items-center gap-4">
-            {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
-            {error && <span className="text-xs font-mono text-red-500">{error}</span>}
             {canEdit && (
               <button onClick={handleDelete} disabled={deleting}
                 className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
-                {deleting ? 'Deleting…' : 'Delete object'}
+                {deleting ? 'Moving…' : 'Move to trash'}
               </button>
             )}
           </div>
@@ -325,19 +335,19 @@ export default function ArtifactDetail() {
           )}
 
           {activeTab === 'overview' && (
-            <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} saved={saved} artifact={artifact} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
+            <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
           )}
 
           {activeTab === 'entry' && (
-            <EntryTab artifact={artifact} museum={museum} canEdit={canEdit} supabase={supabase} saved={saved} setSaved={setSaved} setError={setError} />
+            <EntryTab artifact={artifact} museum={museum} canEdit={canEdit} supabase={supabase} />
           )}
 
           {activeTab === 'acquisition' && (
-            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} saved={saved} />
+            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} />
           )}
 
           {activeTab === 'location' && (
-            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} saved={saved} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} />
+            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} />
           )}
 
           {activeTab === 'condition' && (
@@ -353,7 +363,7 @@ export default function ArtifactDetail() {
           )}
 
           {activeTab === 'rights' && (
-            <RightsTab form={form} set={set} canEdit={canEdit} saving={saving} saved={saved} artifact={artifact} museum={museum} supabase={supabase} setError={setError} logActivity={logActivity} />
+            <RightsTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'audit' && (

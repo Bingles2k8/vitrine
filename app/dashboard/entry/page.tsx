@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { useToast } from '@/components/Toast'
+import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 
 const OUTCOME_STYLES: Record<string, string> = {
   'Pending':                 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
@@ -23,7 +25,7 @@ export default function EntryRegisterPage() {
   const [entries, setEntries] = useState<any[]>([])
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [promoteError, setPromoteError] = useState('')
+  const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
 
@@ -38,7 +40,7 @@ export default function EntryRegisterPage() {
       try {
         const [{ data: entries }, { data: artifacts }] = await Promise.all([
           supabase.from('entry_records').select('*, artifacts(title, accession_no)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
-          supabase.from('artifacts').select('id, title, accession_no').eq('museum_id', museum.id).order('title'),
+          supabase.from('artifacts').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
         setIsOwner(isOwner)
@@ -59,15 +61,15 @@ export default function EntryRegisterPage() {
   }
 
   async function handlePromote(entry: any) {
-    setPromoteError('')
-    const planInfo = getPlan(museum?.plan)
+        const planInfo = getPlan(museum?.plan)
     const limit = planInfo.artifacts
     if (limit !== null) {
       const { count } = await supabase
         .from('artifacts').select('*', { count: 'exact', head: true })
         .eq('museum_id', museum.id)
+        .is('deleted_at', null)
       if (count !== null && count >= limit) {
-        setPromoteError(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`)
+        toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
         return
       }
     }
@@ -81,19 +83,23 @@ export default function EntryRegisterPage() {
       emoji: '🖼️',
     }).select('id').single()
 
-    if (createError) { setPromoteError(createError.message); return }
+    if (createError) { toast(createError.message, 'error'); return }
 
     const { error: updateError } = await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', entry.id)
-    if (updateError) { setPromoteError(updateError.message); return }
+    if (updateError) { toast(updateError.message, 'error'); return }
 
     setEntries(entries.map(e => e.id === entry.id ? { ...e, artifact_id: newArtifact.id } : e))
     router.push(`/dashboard/artifacts/${newArtifact.id}?tab=entry`)
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-      <p className="font-mono text-sm text-stone-400">Loading…</p>
-    </div>
+    <DashboardShell museum={null} activePath="/dashboard/entry" onSignOut={() => {}}>
+      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+      <div className="p-8 space-y-6">
+        <CardGridSkeleton cards={4} />
+        <TableSkeleton rows={5} cols={4} />
+      </div>
+    </DashboardShell>
   )
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
@@ -156,17 +162,6 @@ export default function EntryRegisterPage() {
             )
           })()}
 
-          {promoteError && (
-            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-5 py-3 flex items-center justify-between">
-              <span className="text-xs font-mono text-red-600 dark:text-red-400">{promoteError}</span>
-              <button
-                onClick={() => router.push('/dashboard/plan')}
-                className="text-xs font-mono text-red-600 dark:text-red-400 underline ml-4 whitespace-nowrap"
-              >
-                View plans →
-              </button>
-            </div>
-          )}
 
           {/* Info banner */}
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">

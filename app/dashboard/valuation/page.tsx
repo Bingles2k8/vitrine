@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { TableSkeleton } from '@/components/Skeleton'
 
 export default function ValuationPage() {
   const [museum, setMuseum] = useState<any>(null)
@@ -51,9 +52,12 @@ export default function ValuationPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-      <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
-    </div>
+    <DashboardShell museum={null} activePath="/dashboard/valuation" onSignOut={() => {}}>
+      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+      <div className="p-8 space-y-6">
+        <TableSkeleton rows={5} cols={4} />
+      </div>
+    </DashboardShell>
   )
 
   if (!getPlan(museum?.plan).compliance) {

@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import CommandPalette from '@/components/CommandPalette'
+import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp'
+import { useGoShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface DashboardShellProps {
@@ -17,7 +21,18 @@ export default function DashboardShell({
   museum, activePath, onSignOut, isOwner, staffAccess, children
 }: DashboardShellProps) {
   const isMobile = useIsMobile()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // g+key navigation shortcuts
+  useGoShortcuts({
+    o: () => router.push('/dashboard'),
+    e: () => router.push('/dashboard/entry'),
+    l: () => router.push('/dashboard/loans'),
+    s: () => router.push('/dashboard/staff'),
+    b: () => router.push('/dashboard/site'),
+    p: () => router.push('/dashboard/plan'),
+  })
 
   const openSidebar = useCallback(() => setSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
@@ -96,6 +111,8 @@ export default function DashboardShell({
         )}
         {children}
       </main>
+      <CommandPalette museumId={museum?.id ?? null} />
+      <KeyboardShortcutsHelp />
     </div>
   )
 }

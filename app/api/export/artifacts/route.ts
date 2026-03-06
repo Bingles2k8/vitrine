@@ -41,6 +41,7 @@ export async function GET() {
       'provenance', 'inscription', 'marks', 'dimensions', 'description',
     ].join(', '))
     .eq('museum_id', museumId)
+    .is('deleted_at', null)
     .order('accession_no')
 
   const HEADERS = [

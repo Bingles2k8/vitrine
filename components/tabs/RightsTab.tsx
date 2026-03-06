@@ -3,21 +3,21 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, COPYRIGHT_OPTIONS, DISPOSAL_METHODS, RIGHTS_TYPES, RIGHTS_STATUSES, REPRODUCTION_TYPES, CURRENCIES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface RightsTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  saved: boolean
   artifact: any
   museum: any
   supabase: any
-  setError: (v: string) => void
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function RightsTab({ form, set, canEdit, saving, saved, artifact, museum, supabase, setError, logActivity }: RightsTabProps) {
+export default function RightsTab({ form, set, canEdit, saving, artifact, museum, supabase, logActivity }: RightsTabProps) {
+  const { toast } = useToast()
   const router = useRouter()
 
   // Rights records state (Proc 18)
@@ -66,7 +66,7 @@ export default function RightsTab({ form, set, canEdit, saving, saved, artifact,
       rights_in: rightsForm.rights_in || null, rights_out: rightsForm.rights_out || null,
       notes: rightsForm.notes || null,
     })
-    if (error) { setError(error.message); setSubmitting(false); return }
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setRightsForm({ rights_type: 'Copyright', rights_status: 'Active', rights_holder: '', expiry_date: '', licence_terms: '', restrictions: '', rights_in: '', rights_out: '', notes: '' })
     const { data } = await supabase.from('rights_records').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setRightsRecords(data || [])
@@ -94,7 +94,7 @@ export default function RightsTab({ form, set, canEdit, saving, saved, artifact,
       fee: reproductionForm.fee ? parseFloat(reproductionForm.fee) : null,
       fee_currency: reproductionForm.fee_currency,
     })
-    if (repErr) { setError(repErr.message); setSubmitting(false); return }
+    if (repErr) { toast(repErr.message, 'error'); setSubmitting(false); return }
     setReproductionForm({
       requester_name: '', requester_org: '', request_date: new Date().toISOString().slice(0, 10),
       purpose: '', status: 'Pending', decision_date: '', decision_by: '', notes: '',
@@ -110,7 +110,7 @@ export default function RightsTab({ form, set, canEdit, saving, saved, artifact,
 
   async function updateRequestStatus(id: string, status: string) {
     const { error } = await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
-    if (error) { setError(error.message); return }
+    if (error) { toast(error.message, 'error'); return }
     const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setReproductionRequests(data || [])
   }
@@ -372,7 +372,6 @@ export default function RightsTab({ form, set, canEdit, saving, saved, artifact,
             className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
             Cancel
           </button>
-          {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
         </div>
       )}
     </>

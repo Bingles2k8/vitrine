@@ -9,7 +9,6 @@ interface LocationTabProps {
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  saved: boolean
   artifact: any
   museum: any
   supabase: any
@@ -18,7 +17,7 @@ interface LocationTabProps {
   setLocations: (fn: (prev: any[]) => any[]) => void
 }
 
-function SaveBar({ saving, saved, onCancel }: { saving: boolean; saved: boolean; onCancel: () => void }) {
+function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }) {
   return (
     <div className="flex gap-3 items-center">
       <button type="submit" disabled={saving}
@@ -29,12 +28,11 @@ function SaveBar({ saving, saved, onCancel }: { saving: boolean; saved: boolean;
         className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
         Cancel
       </button>
-      {saved && <span className="text-xs font-mono text-emerald-600">{'\u2713'} Saved</span>}
     </div>
   )
 }
 
-export default function LocationTab({ form, set, canEdit, saving, saved, artifact, museum, supabase, logActivity, locations, setLocations }: LocationTabProps) {
+export default function LocationTab({ form, set, canEdit, saving, artifact, museum, supabase, logActivity, locations, setLocations }: LocationTabProps) {
   const router = useRouter()
 
   const [locationHistory, setLocationHistory] = useState<any[]>([])
@@ -369,7 +367,7 @@ export default function LocationTab({ form, set, canEdit, saving, saved, artifac
         </div>
       )}
 
-      {canEdit && <SaveBar saving={saving} saved={saved} onCancel={() => router.push('/dashboard')} />}
+      {canEdit && <SaveBar saving={saving} onCancel={() => router.push('/dashboard')} />}
     </>
   )
 }

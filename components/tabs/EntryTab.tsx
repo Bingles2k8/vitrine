@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 const ENTRY_METHODS = ['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer']
 
@@ -10,12 +11,10 @@ interface EntryTabProps {
   museum: any
   canEdit: boolean
   supabase: any
-  saved: boolean
-  setSaved: (v: boolean) => void
-  setError: (v: string) => void
 }
 
-export default function EntryTab({ artifact, museum, canEdit, supabase, saved, setSaved, setError }: EntryTabProps) {
+export default function EntryTab({ artifact, museum, canEdit, supabase }: EntryTabProps) {
+  const { toast } = useToast()
   const [entryRecord, setEntryRecord] = useState<any>(null)
   const [entryLoaded, setEntryLoaded] = useState(false)
   const [savingEntry, setSavingEntry] = useState(false)
@@ -47,7 +46,7 @@ export default function EntryTab({ artifact, museum, canEdit, supabase, saved, s
 
   const setE = (field: string, value: any) => {
     setEntryForm(prev => ({ ...prev, [field]: value }))
-    setSaved(false)
+    // field changed
   }
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export default function EntryTab({ artifact, museum, canEdit, supabase, saved, s
         .maybeSingle()
 
       if (error) {
-        setError(error.message)
+        toast(error.message, 'error')
       } else if (data) {
         setEntryRecord(data)
         setEntryForm({
@@ -107,9 +106,9 @@ export default function EntryTab({ artifact, museum, canEdit, supabase, saved, s
       .eq('id', entryRecord.id)
 
     if (error) {
-      setError(error.message)
+      toast(error.message, 'error')
     } else {
-      setSaved(true)
+      toast('Entry record saved')
     }
     setSavingEntry(false)
   }
@@ -289,7 +288,6 @@ export default function EntryTab({ artifact, museum, canEdit, supabase, saved, s
             className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {savingEntry ? 'Saving…' : 'Save entry record →'}
           </button>
-          {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
         </div>
       )}
     </>

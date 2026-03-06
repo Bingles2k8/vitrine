@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { checkSlugSchema } from '@/lib/validations'
+import { publicLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const slug = searchParams.get('slug')
+  const ip = request.headers.get('x-forwarded-for') ?? 'anonymous'
+  const limited = await rateLimit(publicLimiter, `slug:${ip}`)
+  if (limited) return limited
 
-  if (!slug || slug.length > 60 || !/^[a-z0-9-]+$/.test(slug)) {
+  const { searchParams } = new URL(request.url)
+  const parsed = checkSlugSchema.safeParse({ slug: searchParams.get('slug') })
+  if (!parsed.success) {
     return NextResponse.json({ available: false })
   }
+  const { slug } = parsed.data
 
   const supabase = await createServerSideClient()
 

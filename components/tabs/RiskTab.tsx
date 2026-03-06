@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, RISK_TYPES, RISK_SEVERITIES, RISK_LIKELIHOODS, RISK_SEVERITY_STYLES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface RiskTabProps {
   canEdit: boolean
@@ -16,7 +17,7 @@ export default function RiskTab({ canEdit, artifact, museum, supabase, logActivi
   const [riskLoaded, setRiskLoaded] = useState(false)
   const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
@@ -30,7 +31,7 @@ export default function RiskTab({ canEdit, artifact, museum, supabase, logActivi
       ...riskForm, review_date: riskForm.review_date || null,
       artifact_id: artifact.id, museum_id: museum.id,
     })
-    if (error) { setError(error.message); setSubmitting(false); return }
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setRiskForm({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
     const { data } = await supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setRiskHistory(data || [])
@@ -40,13 +41,12 @@ export default function RiskTab({ canEdit, artifact, museum, supabase, logActivi
 
   async function updateRiskStatus(id: string, status: string) {
     const { error } = await supabase.from('risk_register').update({ status }).eq('id', id)
-    if (error) { setError(error.message); return }
+    if (error) { toast(error.message, 'error'); return }
     setRiskHistory(h => h.map(r => r.id === id ? { ...r, status } : r))
   }
 
   return (
     <>
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">

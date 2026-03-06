@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, VALUATION_METHODS, VALUATION_PURPOSES, CURRENCIES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 const VALUATION_BASES = ['Fair market value', 'Replacement value', 'Insurance value', 'Salvage value', 'Nominal', 'Other']
 
@@ -19,7 +20,7 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
@@ -41,7 +42,7 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
       valuation_basis: valuationForm.valuation_basis || null,
       validity_date: valuationForm.validity_date || null,
     })
-    if (valErr) { setError(valErr.message); setSubmitting(false); return }
+    if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
     const lv = { value: valuationForm.value, currency: valuationForm.currency, valuation_date: valuationForm.valuation_date }
     setLatestValuation(lv)
     setValuationForm({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
@@ -53,7 +54,6 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
 
   return (
     <>
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">

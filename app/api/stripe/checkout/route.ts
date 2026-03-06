@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe, STRIPE_PRICE_MAP } from '@/lib/stripe'
-import type { PlanId } from '@/lib/plans'
+import { stripeCheckoutSchema, parseBody } from '@/lib/validations'
+import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { planId } = (await request.json()) as { planId: PlanId }
+  const limited = await rateLimit(apiLimiter, user.id)
+  if (limited) return limited
+
+  const parsed = parseBody(stripeCheckoutSchema, await request.json())
+  if (!parsed.success) return parsed.response
+  const { planId } = parsed.data
   const priceId = STRIPE_PRICE_MAP[planId]
   if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 

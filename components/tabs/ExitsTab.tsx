@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, EXIT_REASONS, TEMP_REASONS } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface ExitsTabProps {
   canEdit: boolean
@@ -19,7 +20,7 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
   const today = new Date().toISOString().slice(0, 10)
   const [exitForm, setExitForm] = useState({ exit_date: today, exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
@@ -46,7 +47,7 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
       exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
     })
-    if (error) { setError(error.message); setSubmitting(false); return }
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
     const { data } = await supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
     setExitHistory(data || [])
@@ -56,7 +57,6 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
 
   return (
     <>
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">

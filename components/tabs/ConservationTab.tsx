@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, TREATMENT_TYPES, CURRENCIES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface ConservationTabProps {
   form: Record<string, any>
@@ -17,7 +18,7 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
   const [conservationLoaded, setConservationLoaded] = useState(false)
   const [conservationForm, setConservationForm] = useState({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
@@ -31,7 +32,7 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
     const count = conservationHistory.filter(t => t.treatment_reference?.startsWith(`CT-${year}-`)).length
     const treatmentRef = `CT-${year}-${String(count + 1).padStart(3, '0')}`
     const { error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, artifact_id: artifact.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null })
-    if (consErr) { setError(consErr.message); setSubmitting(false); return }
+    if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
     setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
     const { data } = await supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setConservationHistory(data || [])
@@ -41,7 +42,7 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
 
   async function updateConservationStatus(id: string, status: string) {
     const { error } = await supabase.from('conservation_treatments').update({ status }).eq('id', id)
-    if (error) { setError(error.message); return }
+    if (error) { toast(error.message, 'error'); return }
     setConservationHistory(h => h.map(t => t.id === id ? { ...t, status } : t))
   }
 
@@ -53,7 +54,6 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
         </div>
       )}
 
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Add Conservation Treatment (Procedure 5)</div>

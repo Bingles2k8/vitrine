@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { CardGridSkeleton } from '@/components/Skeleton'
 
 const CHECK = '✓'
 const CROSS = '✕'
@@ -87,9 +88,12 @@ export default function PlanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-        <p className="font-mono text-sm text-stone-400">Loading…</p>
-      </div>
+      <DashboardShell museum={null} activePath="/dashboard/plan" onSignOut={() => {}}>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+        <div className="p-8 space-y-6">
+          <CardGridSkeleton cards={4} />
+        </div>
+      </DashboardShell>
     )
   }
 

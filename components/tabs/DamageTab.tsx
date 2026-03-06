@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, DAMAGE_TYPES, DAMAGE_SEVERITIES, DAMAGE_SEVERITY_STYLES, CURRENCIES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface DamageTabProps {
   canEdit: boolean
@@ -18,7 +19,7 @@ export default function DamageTab({ canEdit, artifact, museum, supabase, logActi
   const [damageLoaded, setDamageLoaded] = useState(false)
   const [damageForm, setDamageForm] = useState({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
@@ -39,7 +40,7 @@ export default function DamageTab({ canEdit, artifact, museum, supabase, logActi
       object_status_after_event: damageForm.object_status_after_event || null,
       artifact_id: artifact.id, museum_id: museum.id,
     })
-    if (error) { setError(error.message); setSubmitting(false); return }
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setDamageForm({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
     const { data } = await supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
     setDamageHistory(data || [])
@@ -49,13 +50,12 @@ export default function DamageTab({ canEdit, artifact, museum, supabase, logActi
 
   async function updateDamageStatus(id: string, status: string) {
     const { error } = await supabase.from('damage_reports').update({ status }).eq('id', id)
-    if (error) { setError(error.message); return }
+    if (error) { toast(error.message, 'error'); return }
     setDamageHistory(h => h.map(r => r.id === id ? { ...r, status } : r))
   }
 
   return (
     <>
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">

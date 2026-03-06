@@ -7,22 +7,20 @@ interface AcquisitionTabProps {
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  saved: boolean
 }
 
-function SaveBar({ saving, saved }: { saving: boolean; saved: boolean }) {
+function SaveBar({ saving }: { saving: boolean }) {
   return (
     <div className="flex gap-3 items-center">
       <button type="submit" disabled={saving}
         className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
         {saving ? 'Saving…' : 'Save changes →'}
       </button>
-      {saved && <span className="text-xs font-mono text-emerald-600">✓ Saved</span>}
     </div>
   )
 }
 
-export default function AcquisitionTab({ form, set, canEdit, saving, saved }: AcquisitionTabProps) {
+export default function AcquisitionTab({ form, set, canEdit, saving }: AcquisitionTabProps) {
   return (
     <>
       {/* Card 1 — Acquisition */}
@@ -157,7 +155,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, saved }: Ac
         </div>
       </div>
 
-      {canEdit && <SaveBar saving={saving} saved={saved} />}
+      {canEdit && <SaveBar saving={saving} />}
     </>
   )
 }

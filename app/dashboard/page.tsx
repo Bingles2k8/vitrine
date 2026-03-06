@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -38,7 +39,7 @@ export default function Dashboard() {
 
       try {
         const [{ data: artifacts }, { data: activeLoans }, { data: activity }] = await Promise.all([
-          supabase.from('artifacts').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+          supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
         ])
@@ -64,9 +65,13 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-        <p className="font-mono text-sm text-stone-400">Loading…</p>
-      </div>
+      <DashboardShell museum={null} activePath="/dashboard" onSignOut={() => {}}>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+        <div className="p-8 space-y-8">
+          <CardGridSkeleton cards={5} />
+          <TableSkeleton rows={8} cols={4} />
+        </div>
+      </DashboardShell>
     )
   }
 

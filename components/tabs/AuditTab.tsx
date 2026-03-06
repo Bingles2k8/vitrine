@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES, INVENTORY_OUTCOMES } from '@/components/tabs/shared'
+import { useToast } from '@/components/Toast'
 
 interface AuditTabProps {
   form: Record<string, any>
@@ -20,7 +21,7 @@ export default function AuditTab({ form, set, canEdit, artifact, museum, supabas
   const [exercisesLoaded, setExercisesLoaded] = useState(false)
   const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
@@ -38,7 +39,7 @@ export default function AuditTab({ form, set, canEdit, artifact, museum, supabas
       exercise_id: auditForm.exercise_id || null,
       action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
     })
-    if (auditErr) { setError(auditErr.message); setSubmitting(false); return }
+    if (auditErr) { toast(auditErr.message, 'error'); setSubmitting(false); return }
     await supabase.from('artifacts').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', artifact.id)
     set('last_inventoried', auditForm.inventoried_at)
     set('inventoried_by', auditForm.inventoried_by)
@@ -51,7 +52,6 @@ export default function AuditTab({ form, set, canEdit, artifact, museum, supabas
 
   return (
     <>
-      {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Record Inventory Check (Procedure 7)</div>

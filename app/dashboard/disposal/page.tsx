@@ -41,7 +41,7 @@ export default function DisposalPage() {
       const { museum, isOwner, staffAccess } = result
       const [{ data: recs }, { data: arts }] = await Promise.all([
         supabase.from('disposal_records').select('*, artifacts(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
-        supabase.from('artifacts').select('id, title, accession_no, emoji').eq('museum_id', museum.id).order('title'),
+        supabase.from('artifacts').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)

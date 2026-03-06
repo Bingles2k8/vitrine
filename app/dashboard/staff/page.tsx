@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { useToast } from '@/components/Toast'
+import { TableSkeleton } from '@/components/Skeleton'
 
 type AccessLevel = 'Admin' | 'Editor' | 'Viewer'
 
@@ -45,7 +47,7 @@ export default function StaffPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
   const [filterDept, setFilterDept] = useState('All')
   const [inviting, setInviting] = useState<string | null>(null)
   const router = useRouter()
@@ -88,8 +90,7 @@ export default function StaffPage() {
   function openAdd() {
     setEditingId(null)
     setForm({ name: '', email: '', role: '', department: 'Curatorial', access: 'Editor' })
-    setError('')
-    setModalOpen(true)
+        setModalOpen(true)
   }
 
   function openEdit(member: StaffMember) {
@@ -101,37 +102,35 @@ export default function StaffPage() {
       department: member.department,
       access: member.access,
     })
-    setError('')
-    setModalOpen(true)
+        setModalOpen(true)
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError('Name is required'); return }
-    if (!form.email.trim()) { setError('Email is required'); return }
-    if (!form.role.trim()) { setError('Job title is required'); return }
+    if (!form.name.trim()) { toast('Name is required', 'error'); return }
+    if (!form.email.trim()) { toast('Email is required', 'error'); return }
+    if (!form.role.trim()) { toast('Job title is required', 'error'); return }
 
     if (!editingId) {
       const planInfo = getPlan(museum?.plan)
       if (planInfo.staff !== null && staff.length >= planInfo.staff) {
-        setError(`Your ${planInfo.label} plan allows up to ${planInfo.staff} staff member${planInfo.staff === 1 ? '' : 's'}. Upgrade your plan to add more.`)
+        toast(`Your ${planInfo.label} plan allows up to ${planInfo.staff} staff member${planInfo.staff === 1 ? '' : 's'}. Upgrade your plan to add more.`, 'error')
         return
       }
     }
 
     setSaving(true)
-    setError('')
 
     if (editingId) {
       const { error } = await supabase
         .from('staff_members')
         .update(form)
         .eq('id', editingId)
-      if (error) { setError(error.message); setSaving(false); return }
+      if (error) { toast(error.message, 'error'); setSaving(false); return }
     } else {
       const { error } = await supabase
         .from('staff_members')
         .insert({ ...form, museum_id: museum.id })
-      if (error) { setError(error.message); setSaving(false); return }
+      if (error) { toast(error.message, 'error'); setSaving(false); return }
     }
 
     setSaving(false)
@@ -190,9 +189,12 @@ export default function StaffPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
-        <p className="font-mono text-sm text-stone-400 dark:text-stone-500">Loading…</p>
-      </div>
+      <DashboardShell museum={null} activePath="/dashboard/staff" onSignOut={() => {}}>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+        <div className="p-8 space-y-6">
+          <TableSkeleton rows={5} cols={4} />
+        </div>
+      </DashboardShell>
     )
   }
 
@@ -454,7 +456,6 @@ export default function StaffPage() {
                 <p className="text-xs text-stone-500 dark:text-stone-400">{ACCESS_DESCRIPTIONS[form.access]}</p>
               </div>
 
-              {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
             </div>
 
             <div className="px-6 py-4 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-3">

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
+import { authLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function POST() {
   const supabase = await createServerSideClient()
@@ -10,6 +11,9 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const limited = await rateLimit(authLimiter, user.id)
+  if (limited) return limited
 
   const { data: museum } = await supabase
     .from('museums')
