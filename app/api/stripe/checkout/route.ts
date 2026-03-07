@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     .from('museums')
     .select('id, stripe_customer_id, stripe_subscription_id, owner_id')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!museum) return NextResponse.json({ error: 'Museum not found' }, { status: 404 })
 

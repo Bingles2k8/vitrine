@@ -19,7 +19,7 @@ export async function POST() {
     .from('museums')
     .select('id, stripe_subscription_id')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (museum) {
     // Cancel Stripe subscription before deleting museum data

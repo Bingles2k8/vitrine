@@ -129,7 +129,7 @@ export async function POST(request: Request) {
         .from('ticket_orders')
         .select('id, quantity, slot_id, event_id, buyer_name, status')
         .eq('id', orderId)
-        .single()
+        .maybeSingle()
 
       if (order) {
         // Idempotency guard — skip if tickets were already generated (Stripe can retry webhooks)
@@ -151,11 +151,12 @@ export async function POST(request: Request) {
         // Atomically increment slot bookings — abort if slot is now full.
         // Do this BEFORE marking the order completed so the state transition is always
         // pending → completed or pending → cancelled (never completed → cancelled).
-        const { data: slotSuccess } = await supabase.rpc('increment_slot_bookings', {
+        const { data: slotSuccess, error: rpcError } = await supabase.rpc('increment_slot_bookings', {
           slot_uuid: order.slot_id,
           qty: order.quantity,
         })
 
+        if (rpcError) console.error('[webhook] RPC error on increment_slot_bookings:', rpcError)
         if (!slotSuccess) {
           await supabase
             .from('ticket_orders')
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
           .from('events')
           .select('title')
           .eq('id', order.event_id)
-          .single()
+          .maybeSingle()
 
         await supabase.from('activity_log').insert({
           museum_id: museumId,
@@ -229,7 +230,7 @@ export async function POST(request: Request) {
         .from('ticket_orders')
         .select('id, slot_id, quantity')
         .eq('stripe_payment_intent_id', paymentIntentId)
-        .single()
+        .maybeSingle()
 
       if (order) {
         await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)

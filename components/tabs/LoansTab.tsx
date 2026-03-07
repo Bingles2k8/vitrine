@@ -13,11 +13,9 @@ interface LoansTabProps {
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
-  locationLoaded: boolean
-  setLocationHistory: (fn: any) => void
 }
 
-export default function LoansTab({ form, set, canEdit, artifact, museum, supabase, logActivity, locationLoaded, setLocationHistory }: LoansTabProps) {
+export default function LoansTab({ form, set, canEdit, artifact, museum, supabase, logActivity }: LoansTabProps) {
   const router = useRouter()
   const [loanHistory, setLoanHistory] = useState<any[]>([])
   const [loanLoaded, setLoanLoaded] = useState(false)
@@ -65,10 +63,6 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
         artifact_id: artifact.id, museum_id: museum.id,
         location: returnLocation, reason: 'Loan', moved_by: '',
       })
-      if (locationLoaded) {
-        const { data } = await supabase.from('location_history').select('*').eq('artifact_id', artifact.id).order('moved_at', { ascending: false })
-        setLocationHistory(data || [])
-      }
     }
     set('status', 'Storage')
     set('current_location', returnLocation)

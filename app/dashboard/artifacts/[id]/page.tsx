@@ -359,7 +359,7 @@ export default function ArtifactDetail() {
           )}
 
           {activeTab === 'loans' && (
-            <LoansTab form={form} set={set} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} locationLoaded={false} setLocationHistory={() => {}} />
+            <LoansTab form={form} set={set} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'rights' && (

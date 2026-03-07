@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { TableSkeleton } from '@/components/Skeleton'
+import { useToast } from '@/components/Toast'
 
 interface Event {
   id: string
@@ -60,6 +61,7 @@ export default function EventDetailPage() {
   const [saving, setSaving] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const { toast } = useToast()
 
   // Slot form state
   const [slotDate, setSlotDate] = useState('')
@@ -129,6 +131,10 @@ export default function EventDetailPage() {
 
   async function handleSaveOverview() {
     if (!event) return
+    if (editEndDate && editStartDate && editEndDate < editStartDate) {
+      toast('End date must be on or after start date', 'error')
+      return
+    }
     setSaving(true)
     const priceCents = Math.round((parseFloat(editPricePounds) || 0) * 100)
     await supabase.from('events').update({

@@ -15,7 +15,7 @@ export async function POST() {
     .from('museums')
     .select('stripe_customer_id, owner_id')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!museum?.stripe_customer_id) {
     return NextResponse.json({ error: 'No billing account found' }, { status: 400 })

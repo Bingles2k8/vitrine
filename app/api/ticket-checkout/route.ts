@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     .select('id, museum_id, title, price_cents, currency, status')
     .eq('id', eventId)
     .eq('status', 'published')
-    .single()
+    .maybeSingle()
 
   if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     .select('id, event_id, capacity, booked_count, start_time')
     .eq('id', slotId)
     .eq('event_id', eventId)
-    .single()
+    .maybeSingle()
 
   if (!slot) return NextResponse.json({ error: 'Time slot not found' }, { status: 404 })
   if (new Date(slot.start_time) <= new Date()) {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     .from('museums')
     .select('id, slug, plan, stripe_connect_id, stripe_connect_onboarded')
     .eq('id', event.museum_id)
-    .single()
+    .maybeSingle()
 
   if (!museum) return NextResponse.json({ error: 'Museum not found' }, { status: 404 })
 
@@ -97,11 +97,12 @@ export async function POST(request: Request) {
   // Free event — complete immediately
   if (totalCents === 0) {
     // Atomically increment slot bookings
-    const { data: success } = await supabase.rpc('increment_slot_bookings', {
+    const { data: success, error: rpcError } = await supabase.rpc('increment_slot_bookings', {
       slot_uuid: slotId,
       qty: quantity,
     })
 
+    if (rpcError) console.error('[ticket-checkout] RPC error:', rpcError)
     if (!success) {
       await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
       return NextResponse.json({ error: 'Slot is now full' }, { status: 409 })

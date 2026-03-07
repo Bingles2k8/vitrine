@@ -57,7 +57,7 @@ export async function GET(
       )
     `)
     .eq('ticket_code', code)
-    .single()
+    .maybeSingle()
 
   if (!ticket) {
     return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
@@ -85,7 +85,7 @@ export async function GET(
       .select('id')
       .eq('id', museumId)
       .eq('owner_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (!museum) {
       return NextResponse.json({ error: 'Not authorised to mark tickets for this museum' }, { status: 403 })
