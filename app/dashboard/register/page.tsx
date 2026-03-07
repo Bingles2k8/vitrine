@@ -34,6 +34,7 @@ export default function AccessionRegisterPage() {
         .from('artifacts')
         .select('id, title, accession_no, acquisition_date, acquisition_method, acquisition_source, acquisition_authorised_by, accession_register_confirmed, emoji, status')
         .eq('museum_id', museum.id)
+        .is('deleted_at', null)
         .not('accession_no', 'is', null)
         .order('acquisition_date', { ascending: true, nullsFirst: false })
       setMuseum(museum)

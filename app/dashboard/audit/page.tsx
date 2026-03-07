@@ -28,6 +28,7 @@ export default function AuditPage() {
         .from('artifacts')
         .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by')
         .eq('museum_id', museum.id)
+        .is('deleted_at', null)
         .neq('status', 'Deaccessioned')
         .order('last_inventoried', { ascending: true, nullsFirst: true })
       setMuseum(museum)
