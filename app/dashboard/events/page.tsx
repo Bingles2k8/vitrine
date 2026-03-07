@@ -43,6 +43,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [connectLoading, setConnectLoading] = useState(false)
+  const [stripeConnectPending, setStripeConnectPending] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -52,7 +53,22 @@ export default function EventsPage() {
       if (!user) { router.push('/login'); return }
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
-      const { museum, isOwner, staffAccess } = result
+      const { museum: loadedMuseum, isOwner, staffAccess } = result
+      let museum = loadedMuseum
+
+      // Proactively check Stripe Connect status if connect_id exists but not yet onboarded
+      if (museum.stripe_connect_id && !museum.stripe_connect_onboarded) {
+        try {
+          const res = await fetch('/api/stripe/connect/callback', { method: 'POST' })
+          const cbData = await res.json()
+          if (cbData.onboarded) {
+            museum = { ...museum, stripe_connect_onboarded: true }
+          } else if (cbData.details_submitted) {
+            setStripeConnectPending(true)
+          }
+        } catch {}
+      }
+
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
@@ -91,20 +107,6 @@ export default function EventsPage() {
     }
     load()
   }, [])
-
-  // Check Connect onboarding status when returning from Stripe
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('connect') === 'success' && museum?.stripe_connect_id) {
-      fetch('/api/stripe/connect/callback', { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-          if (data.onboarded) {
-            setMuseum((m: any) => ({ ...m, stripe_connect_onboarded: true }))
-          }
-        })
-    }
-  }, [museum?.stripe_connect_id])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -179,7 +181,7 @@ export default function EventsPage() {
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Stripe Connect onboarding CTA */}
-        {!museum.stripe_connect_onboarded && (
+        {!museum.stripe_connect_onboarded && !stripeConnectPending && (
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
             <div className="flex items-start gap-4">
               <div className="text-2xl">💳</div>
@@ -193,6 +195,17 @@ export default function EventsPage() {
                 >
                   {connectLoading ? 'Redirecting...' : 'Connect Stripe account →'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {!museum.stripe_connect_onboarded && stripeConnectPending && (
+          <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="text-2xl">⏳</div>
+              <div className="flex-1">
+                <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Stripe account verification in progress</h3>
+                <p className="text-sm text-stone-500 dark:text-stone-400">Your Stripe account details have been submitted. Stripe is verifying your account — this usually completes within a few minutes. Refresh the page to check the status.</p>
               </div>
             </div>
           </div>

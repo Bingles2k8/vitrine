@@ -24,6 +24,7 @@ export async function POST() {
 
   const account = await stripe.accounts.retrieve(museum.stripe_connect_id)
   const onboarded = !!(account.details_submitted && account.charges_enabled)
+  const details_submitted = !!account.details_submitted
 
   if (onboarded && !museum.stripe_connect_onboarded) {
     await supabase
@@ -32,5 +33,5 @@ export async function POST() {
       .eq('id', museum.id)
   }
 
-  return NextResponse.json({ onboarded })
+  return NextResponse.json({ onboarded, details_submitted })
 }
