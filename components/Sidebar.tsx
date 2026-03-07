@@ -209,7 +209,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           </>
         ) : (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Compliance</div>
+            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Object Management</div>
             {navItem('/dashboard/entry', '🗂', 'Object Entry')}
             {navItem('/dashboard/register', '📋', 'Accession Register')}
             {navItem('/dashboard/loans', '⇄', 'Loans Register')}
@@ -225,6 +225,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             {navItem('/dashboard/disposal', '⊘', 'Disposal')}
             {navItem('/dashboard/collections-review', '⊡', 'Collections Review')}
             {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
+            {navItem('/dashboard/trash', '🗑', 'Deleted Objects')}
           </>
         )}
 
@@ -238,8 +239,6 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
           </>
         )}
-
-        {navItem('/dashboard/trash', '🗑', 'Trash')}
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '▦', 'Analytics')}
