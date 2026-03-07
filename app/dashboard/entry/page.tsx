@@ -39,7 +39,7 @@ export default function EntryRegisterPage() {
       const { museum, isOwner, staffAccess } = result
       try {
         const [{ data: entries }, { data: artifacts }] = await Promise.all([
-          supabase.from('entry_records').select('*, artifacts(title, accession_no)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
+          supabase.from('entry_records').select('*, artifacts(title, accession_no, deleted_at)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
           supabase.from('artifacts').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
@@ -224,7 +224,15 @@ export default function EntryRegisterPage() {
                         </td>
                       )}
                       <td className="px-4 py-3 text-right" onClick={ev => ev.stopPropagation()}>
-                        {e.artifact_id ? (
+                        {e.artifact_id && e.artifacts?.deleted_at ? (
+                          <button
+                            onClick={() => router.push('/dashboard/trash')}
+                            className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors"
+                            title="This object has been moved to trash"
+                          >
+                            Removed — view trash →
+                          </button>
+                        ) : e.artifact_id ? (
                           <button
                             onClick={() => router.push(`/dashboard/artifacts/${e.artifact_id}?tab=entry`)}
                             className="text-xs font-mono text-amber-600 hover:text-amber-700 transition-colors"
