@@ -44,6 +44,8 @@ export default function EventsPage() {
   const [filter, setFilter] = useState('all')
   const [connectLoading, setConnectLoading] = useState(false)
   const [stripeConnectPending, setStripeConnectPending] = useState(false)
+  const [disconnectLoading, setDisconnectLoading] = useState(false)
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -122,6 +124,17 @@ export default function EventsPage() {
       else setConnectLoading(false)
     } catch {
       setConnectLoading(false)
+    }
+  }
+
+  async function disconnectStripe() {
+    setDisconnectLoading(true)
+    try {
+      await fetch('/api/stripe/connect/disconnect', { method: 'POST' })
+      setMuseum((m: any) => ({ ...m, stripe_connect_id: null, stripe_connect_onboarded: false }))
+      setShowDisconnectConfirm(false)
+    } finally {
+      setDisconnectLoading(false)
     }
   }
 
@@ -207,6 +220,46 @@ export default function EventsPage() {
                 <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Stripe account verification in progress</h3>
                 <p className="text-sm text-stone-500 dark:text-stone-400">Your Stripe account details have been submitted. Stripe is verifying your account — this usually completes within a few minutes. Refresh the page to check the status.</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stripe connected status */}
+        {museum.stripe_connect_onboarded && isOwner && (
+          <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-lg">✓</div>
+                <div>
+                  <span className="text-sm font-mono text-emerald-700 dark:text-emerald-400">Stripe account connected</span>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Paid ticket revenue will be transferred to your Stripe account.</p>
+                </div>
+              </div>
+              {!showDisconnectConfirm ? (
+                <button
+                  onClick={() => setShowDisconnectConfirm(true)}
+                  className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors whitespace-nowrap"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-stone-500 dark:text-stone-400">Are you sure?</span>
+                  <button
+                    onClick={disconnectStripe}
+                    disabled={disconnectLoading}
+                    className="text-xs font-mono text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+                  >
+                    {disconnectLoading ? 'Disconnecting…' : 'Yes, disconnect'}
+                  </button>
+                  <button
+                    onClick={() => setShowDisconnectConfirm(false)}
+                    className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
