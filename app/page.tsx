@@ -66,7 +66,7 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-stone-900 flex">
-              <div className="w-44 border-r border-white/5 p-3 flex-shrink-0">
+              <div className="w-32 lg:w-44 border-r border-white/5 p-3 flex-shrink-0">
                 <div className="text-amber-500 font-serif italic text-base mb-4 px-2">Vitrine.</div>
                 <div className="text-xs text-stone-600 uppercase tracking-widest px-2 mb-2">Collections</div>
                 <div className="bg-white/10 text-white text-xs font-mono px-3 py-2 rounded mb-1">⬡ Objects</div>
@@ -74,19 +74,19 @@ export default function Home() {
                 <div className="text-stone-500 text-xs font-mono px-3 py-2 mb-1">◉ Staff & Roles</div>
                 <div className="text-stone-500 text-xs font-mono px-3 py-2">◈ Analytics</div>
               </div>
-              <div className="flex-1 p-5">
-                <div className="grid grid-cols-4 gap-3 mb-5">
+              <div className="flex-1 p-3 lg:p-5">
+                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3 mb-4 lg:mb-5">
                   {[['Total', '142'],['On Display','84'],['On Loan','12'],['Restoration','6']].map(([l,v]) => (
-                    <div key={l} className="bg-white/5 rounded-lg p-3 border border-white/5">
+                    <div key={l} className="bg-white/5 rounded-lg p-2 lg:p-3 border border-white/5">
                       <div className="text-xs text-stone-500 mb-1">{l}</div>
-                      <div className="font-serif text-2xl text-white">{v}</div>
+                      <div className="font-serif text-xl lg:text-2xl text-white">{v}</div>
                     </div>
                   ))}
                 </div>
                 <div className="bg-white/5 rounded-lg border border-white/5 overflow-hidden">
-                  <div className="grid grid-cols-4 gap-4 px-4 py-2 border-b border-white/5">
+                  <div className="grid grid-cols-3 gap-2 lg:grid-cols-4 lg:gap-4 px-3 lg:px-4 py-2 border-b border-white/5">
                     {['Object','Year','Medium','Status'].map(h => (
-                      <div key={h} className="text-xs text-stone-600 uppercase tracking-widest">{h}</div>
+                      <div key={h} className={`text-xs text-stone-600 uppercase tracking-widest${h === 'Medium' ? ' hidden lg:block' : ''}`}>{h}</div>
                     ))}
                   </div>
                   {[
@@ -94,13 +94,13 @@ export default function Home() {
                     ['🖼️','The Arnolfini Portrait','1434','Oil on canvas','On Display','emerald'],
                     ['💎',"Tippoo's Tiger",'1793','Wood & metal','On Loan','amber'],
                   ].map(([emoji, title, year, medium, status, color]) => (
-                    <div key={title} className="grid grid-cols-4 gap-4 px-4 py-2.5 border-b border-white/5 last:border-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{emoji}</span>
+                    <div key={title} className="grid grid-cols-3 gap-2 lg:grid-cols-4 lg:gap-4 px-3 lg:px-4 py-2.5 border-b border-white/5 last:border-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-sm flex-shrink-0">{emoji}</span>
                         <span className="text-xs text-stone-300 truncate">{title}</span>
                       </div>
                       <div className="text-xs font-mono text-stone-500">{year}</div>
-                      <div className="text-xs text-stone-500">{medium}</div>
+                      <div className="text-xs text-stone-500 hidden lg:block">{medium}</div>
                       <div>
                         <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
                           {status}
@@ -268,7 +268,7 @@ export default function Home() {
             <Link href="/privacy" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Privacy</Link>
             <Link href="/terms" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Terms</Link>
           </div>
-          <span className="text-xs text-stone-700 font-mono">© 2026 Vitrine Ltd.</span>
+          <span className="text-xs text-stone-700 font-mono">© 2026 Composition Limited.</span>
         </div>
       </footer>
 
