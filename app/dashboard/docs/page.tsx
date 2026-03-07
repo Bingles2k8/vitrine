@@ -108,7 +108,7 @@ export default function DocumentationPlanPage() {
         supabase.from('location_history').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('condition_assessments').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active'),
-        supabase.from('object_exits').select('id').eq('museum_id', museum.id),
+        supabase.from('object_exits').select('id, artifact_id').eq('museum_id', museum.id),
         supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).maybeSingle(),
         supabase.from('valuations').select('artifact_id').eq('museum_id', museum.id),
         supabase.from('artifact_images').select('artifact_id').eq('museum_id', museum.id),
@@ -128,6 +128,7 @@ export default function DocumentationPlanPage() {
       const all = artifacts || []
       const total = all.length
       const deacc = all.filter(a => a.status === 'Deaccessioned').length
+      const deaccIds = new Set(all.filter(a => a.status === 'Deaccessioned').map((a: any) => a.id))
       const twelveMonthsAgo = new Date(); twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
       const cutoff = twelveMonthsAgo.toISOString().slice(0, 10)
 
@@ -163,7 +164,7 @@ export default function DocumentationPlanPage() {
           metric: 'Ethics checks complete',
           numerator: all.filter(a => a.ethics_art_loss_register && a.ethics_cites && a.ethics_dealing_act && a.ethics_human_remains).length,
           denominator: total,
-          link: '/dashboard',
+          link: '/dashboard/register',
         },
         {
           procedure: '★2 Acquisition',
@@ -210,7 +211,7 @@ export default function DocumentationPlanPage() {
         {
           procedure: '★6 Object Exit',
           metric: 'Exit records for deaccessioned objects',
-          numerator: Math.min(exits?.length || 0, deacc),
+          numerator: (exits || []).filter((e: any) => deaccIds.has(e.artifact_id)).length,
           denominator: deacc,
           link: '/dashboard/exits',
         },
@@ -248,7 +249,7 @@ export default function DocumentationPlanPage() {
           metric: 'Objects with treatment record',
           numerator: all.filter(a => conservationIds.has(a.id)).length,
           denominator: total,
-          link: '/dashboard',
+          link: '/dashboard/conservation',
         },
         {
           procedure: '13 Valuation',

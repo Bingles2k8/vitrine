@@ -20,6 +20,7 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
     .eq('id', id)
     .eq('museum_id', museum.id)
     .eq('show_on_site', true)
+    .is('deleted_at', null)
     .single()
 
   if (!artifact) notFound()

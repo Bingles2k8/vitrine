@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
+import { useToast } from '@/components/Toast'
 
 const ACQ_METHODS = ['Purchase', 'Gift', 'Bequest', 'Transfer', 'Found', 'Fieldwork', 'Exchange', 'Unknown']
 
@@ -20,6 +21,7 @@ export default function AccessionRegisterPage() {
   const [methodFilter, setMethodFilter] = useState('All')
   const router = useRouter()
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     async function load() {
@@ -48,7 +50,18 @@ export default function AccessionRegisterPage() {
     router.push('/login')
   }
 
-  async function toggleConfirmed(id: string, current: boolean) {
+  async function toggleConfirmed(id: string, current: boolean, artifact: any) {
+    if (!current) {
+      const missing = []
+      if (!artifact.acquisition_date) missing.push('Acquisition Date')
+      if (!artifact.acquisition_method) missing.push('Acquisition Method')
+      if (!artifact.acquisition_source) missing.push('Source')
+      if (!artifact.acquisition_authorised_by) missing.push('Authorised By')
+      if (missing.length > 0) {
+        toast(`Missing fields: ${missing.join(', ')}. Complete the acquisition record before confirming.`, 'error')
+        return
+      }
+    }
     await supabase.from('artifacts').update({ accession_register_confirmed: !current }).eq('id', id)
     setArtifacts(prev => prev.map(a => a.id === id ? { ...a, accession_register_confirmed: !current } : a))
   }
@@ -187,7 +200,7 @@ export default function AccessionRegisterPage() {
                       <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_authorised_by || '—'}</td>
                       <td className="px-4 py-3" onClick={ev => ev.stopPropagation()}>
                         <button
-                          onClick={() => toggleConfirmed(a.id, a.accession_register_confirmed)}
+                          onClick={() => toggleConfirmed(a.id, a.accession_register_confirmed, a)}
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                             a.accession_register_confirmed
                               ? 'bg-emerald-600 border-emerald-600 text-white'

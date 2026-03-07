@@ -55,7 +55,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
 
         <div>
           <label className={labelCls}>Acquisition Notes</label>
-          <textarea value={form.acquisition_notes || ''} onChange={e => set('acquisition_notes', e.target.value)} rows={4}
+          <textarea value={form.acquisition_note || ''} onChange={e => set('acquisition_note', e.target.value)} rows={4}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
@@ -91,38 +91,38 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Source Contact Details</label>
-            <input value={form.source_contact || ''} onChange={e => set('source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} />
+            <input value={form.acquisition_source_contact || ''} onChange={e => set('acquisition_source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Authorised By</label>
-            <input value={form.authorised_by || ''} onChange={e => set('authorised_by', e.target.value)} placeholder="Name and role of authorising person or body" className={inputCls} />
+            <input value={form.acquisition_authorised_by || ''} onChange={e => set('acquisition_authorised_by', e.target.value)} placeholder="Name and role of authorising person or body" className={inputCls} />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className={labelCls}>Authority Date</label>
-            <input type="date" value={form.authority_date || ''} onChange={e => set('authority_date', e.target.value)} className={inputCls} />
+            <input type="date" value={form.acquisition_authority_date || ''} onChange={e => set('acquisition_authority_date', e.target.value)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Title / Legal Basis</label>
-            <select value={form.title_legal_basis || ''} onChange={e => set('title_legal_basis', e.target.value)} className={inputCls}>
+            <select value={form.acquisition_title_guarantee || ''} onChange={e => set('acquisition_title_guarantee', e.target.value)} className={inputCls}>
               <option value="">— Select —</option>
               {TITLE_GUARANTEE_OPTIONS.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className={labelCls}>Number of Objects</label>
-            <input type="number" min={1} value={form.acq_object_count || ''} onChange={e => set('acq_object_count', parseInt(e.target.value) || '')} className={inputCls} />
+            <input type="number" min={1} value={form.acquisition_object_count || ''} onChange={e => set('acquisition_object_count', parseInt(e.target.value) || '')} className={inputCls} />
           </div>
         </div>
 
         <div>
           <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
-            <input type="checkbox" checked={form.accession_register_entered || false} onChange={e => set('accession_register_entered', e.target.checked)} />
+            <input type="checkbox" checked={form.accession_register_confirmed || false} onChange={e => set('accession_register_confirmed', e.target.checked)} />
             Formally entered in accession register
           </label>
-          {form.accession_register_entered && <span className="text-xs font-mono text-emerald-600 ml-6">✓ Confirmed</span>}
+          {form.accession_register_confirmed && <span className="text-xs font-mono text-emerald-600 ml-6">✓ Confirmed</span>}
         </div>
       </div>
 
