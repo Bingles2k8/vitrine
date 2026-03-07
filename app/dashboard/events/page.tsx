@@ -132,6 +132,7 @@ export default function EventsPage() {
     try {
       await fetch('/api/stripe/connect/disconnect', { method: 'POST' })
       setMuseum((m: any) => ({ ...m, stripe_connect_id: null, stripe_connect_onboarded: false }))
+      setStripeConnectPending(false)
       setShowDisconnectConfirm(false)
     } finally {
       setDisconnectLoading(false)
@@ -218,7 +219,23 @@ export default function EventsPage() {
               <div className="text-2xl">⏳</div>
               <div className="flex-1">
                 <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Stripe account verification in progress</h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400">Your Stripe account details have been submitted. Stripe is verifying your account — this usually completes within a few minutes. Refresh the page to check the status.</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Your Stripe account details have been submitted. If verification is taking a while, Stripe may need additional information from you.</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={startConnectOnboarding}
+                    disabled={connectLoading}
+                    className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                  >
+                    {connectLoading ? 'Redirecting...' : 'Complete verification in Stripe →'}
+                  </button>
+                  <button
+                    onClick={disconnectStripe}
+                    disabled={disconnectLoading}
+                    className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors disabled:opacity-50"
+                  >
+                    {disconnectLoading ? 'Clearing…' : 'Start over'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
