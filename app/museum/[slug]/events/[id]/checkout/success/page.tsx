@@ -1,4 +1,5 @@
 import { createServerSideClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -30,20 +31,28 @@ export default async function CheckoutSuccessPage({
 
   if (!event) notFound()
 
-  // Find the order by Stripe session ID
+  // Find the order by Stripe session ID.
+  // Use service role — buyers are anonymous and RLS policies only allow museum owners to
+  // view ticket_orders/tickets. The lookup is scoped to session_id + event_id to prevent
+  // enumeration.
+  const serviceSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   let tickets: { ticket_code: string; status: string }[] = []
   let order: any = null
 
   if (session_id) {
-    const { data: o } = await supabase
+    const { data: o } = await serviceSupabase
       .from('ticket_orders')
       .select('id, buyer_name, quantity, status, slot_id')
       .eq('stripe_checkout_session_id', session_id)
+      .eq('event_id', event.id)
       .single()
 
     if (o) {
       order = o
-      const { data: t } = await supabase
+      const { data: t } = await serviceSupabase
         .from('tickets')
         .select('ticket_code, status')
         .eq('order_id', o.id)
@@ -54,7 +63,7 @@ export default async function CheckoutSuccessPage({
   // Get the slot info for calendar
   let slotInfo: { start_time: string; end_time: string } | null = null
   if (order?.slot_id) {
-    const { data: s } = await supabase
+    const { data: s } = await serviceSupabase
       .from('event_time_slots')
       .select('start_time, end_time')
       .eq('id', order.slot_id)

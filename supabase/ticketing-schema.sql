@@ -76,9 +76,11 @@ CREATE TABLE IF NOT EXISTS ticket_orders (
   created_at                  timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS orders_museum_idx ON ticket_orders (museum_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS orders_event_idx  ON ticket_orders (event_id);
-CREATE INDEX IF NOT EXISTS orders_slot_idx   ON ticket_orders (slot_id);
+CREATE INDEX IF NOT EXISTS orders_museum_idx   ON ticket_orders (museum_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS orders_event_idx    ON ticket_orders (event_id);
+CREATE INDEX IF NOT EXISTS orders_slot_idx     ON ticket_orders (slot_id);
+CREATE INDEX IF NOT EXISTS orders_session_idx  ON ticket_orders (stripe_checkout_session_id);
+CREATE INDEX IF NOT EXISTS orders_intent_idx   ON ticket_orders (stripe_payment_intent_id);
 
 
 -- -------------------------------------------------------------
@@ -98,6 +100,24 @@ CREATE INDEX IF NOT EXISTS tickets_code_idx  ON tickets (ticket_code);
 
 
 -- -------------------------------------------------------------
+-- CHECK CONSTRAINTS
+-- Enforce valid status values and non-negative numerics at the database level.
+-- -------------------------------------------------------------
+ALTER TABLE events
+  ADD CONSTRAINT events_status_check CHECK (status IN ('draft', 'published', 'cancelled')),
+  ADD CONSTRAINT events_price_check  CHECK (price_cents >= 0);
+
+ALTER TABLE event_time_slots
+  ADD CONSTRAINT slots_capacity_check CHECK (capacity > 0 AND booked_count >= 0 AND booked_count <= capacity);
+
+ALTER TABLE ticket_orders
+  ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'completed', 'cancelled'));
+
+ALTER TABLE tickets
+  ADD CONSTRAINT tickets_status_check CHECK (status IN ('valid', 'used', 'refunded'));
+
+
+-- -------------------------------------------------------------
 -- ATOMIC SLOT BOOKING FUNCTION
 -- Prevents overselling via database-level capacity check
 -- -------------------------------------------------------------
@@ -114,5 +134,21 @@ BEGIN
 
   GET DIAGNOSTICS rows_affected = ROW_COUNT;
   RETURN rows_affected > 0;
+END;
+$$;
+
+
+-- -------------------------------------------------------------
+-- ATOMIC SLOT RELEASE FUNCTION
+-- Used on refunds to safely decrement booked_count (floor 0)
+-- -------------------------------------------------------------
+CREATE OR REPLACE FUNCTION decrement_slot_bookings(slot_uuid uuid, qty integer)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE event_time_slots
+  SET booked_count = GREATEST(0, booked_count - qty)
+  WHERE id = slot_uuid;
 END;
 $$;

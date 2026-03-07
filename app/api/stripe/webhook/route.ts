@@ -120,30 +120,49 @@ export async function POST(request: Request) {
     const museumId = session.metadata?.museum_id
 
     if (orderId && museumId) {
-      // Update order status
-      await supabase
-        .from('ticket_orders')
-        .update({
-          status: 'completed',
-          stripe_payment_intent_id: typeof session.payment_intent === 'string'
-            ? session.payment_intent
-            : session.payment_intent?.id ?? null,
-        })
-        .eq('id', orderId)
+      const paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null
 
       // Fetch order details for ticket generation
       const { data: order } = await supabase
         .from('ticket_orders')
-        .select('id, quantity, slot_id, event_id, buyer_name')
+        .select('id, quantity, slot_id, event_id, buyer_name, status')
         .eq('id', orderId)
         .single()
 
       if (order) {
-        // Atomically increment slot bookings
-        await supabase.rpc('increment_slot_bookings', {
+        // Idempotency guard — skip if tickets were already generated (Stripe can retry webhooks)
+        const { count: existingCount } = await supabase
+          .from('tickets')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', order.id)
+
+        if (existingCount && existingCount > 0) {
+          // Ensure the order is marked completed even if a previous run completed tickets but
+          // crashed before updating the status
+          await supabase
+            .from('ticket_orders')
+            .update({ status: 'completed', stripe_payment_intent_id: paymentIntentId })
+            .eq('id', order.id)
+          return NextResponse.json({ received: true })
+        }
+
+        // Atomically increment slot bookings — abort if slot is now full.
+        // Do this BEFORE marking the order completed so the state transition is always
+        // pending → completed or pending → cancelled (never completed → cancelled).
+        const { data: slotSuccess } = await supabase.rpc('increment_slot_bookings', {
           slot_uuid: order.slot_id,
           qty: order.quantity,
         })
+
+        if (!slotSuccess) {
+          await supabase
+            .from('ticket_orders')
+            .update({ status: 'cancelled' })
+            .eq('id', order.id)
+          return NextResponse.json({ received: true })
+        }
 
         // Generate ticket records
         const tickets = Array.from({ length: order.quantity }, () => ({
@@ -151,7 +170,20 @@ export async function POST(request: Request) {
           ticket_code: generateTicketCode(),
           status: 'valid',
         }))
-        await supabase.from('tickets').insert(tickets)
+        const { error: ticketError } = await supabase.from('tickets').insert(tickets)
+
+        if (ticketError) {
+          // Release the capacity we just incremented before returning 500 for Stripe to retry
+          await supabase.rpc('decrement_slot_bookings', { slot_uuid: order.slot_id, qty: order.quantity })
+          console.error('[webhook] Failed to insert tickets for order', order.id, ticketError)
+          return NextResponse.json({ error: 'Ticket generation failed' }, { status: 500 })
+        }
+
+        // Tickets exist — now mark order completed
+        await supabase
+          .from('ticket_orders')
+          .update({ status: 'completed', stripe_payment_intent_id: paymentIntentId })
+          .eq('id', order.id)
 
         // Fetch event title for activity log
         const { data: evt } = await supabase
@@ -177,6 +209,38 @@ export async function POST(request: Request) {
       .from('museums')
       .update({ stripe_connect_onboarded: onboarded })
       .eq('stripe_connect_id', account.id)
+  }
+
+  // Handle refunds — only act on full refunds to avoid partial-refund complexity
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge
+
+    // Ignore partial refunds — only cancel order and release capacity on full refund
+    if (charge.amount_refunded < charge.amount) {
+      return NextResponse.json({ received: true })
+    }
+
+    const paymentIntentId = typeof charge.payment_intent === 'string'
+      ? charge.payment_intent
+      : charge.payment_intent?.id
+
+    if (paymentIntentId) {
+      const { data: order } = await supabase
+        .from('ticket_orders')
+        .select('id, slot_id, quantity')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .single()
+
+      if (order) {
+        await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
+        await supabase.from('tickets').update({ status: 'refunded' }).eq('order_id', order.id)
+        // Release the capacity — decrement booked_count, clamped to 0
+        await supabase.rpc('decrement_slot_bookings', {
+          slot_uuid: order.slot_id,
+          qty: order.quantity,
+        })
+      }
+    }
   }
 
   // Handle subscription schedule cancellation/release (user cancelled a pending downgrade)

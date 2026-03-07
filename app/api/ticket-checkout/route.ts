@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { ticketCheckoutSchema, parseBody } from '@/lib/validations'
 import { publicLimiter, rateLimit } from '@/lib/rate-limit'
 import { generateTicketCode } from '@/lib/ticket-utils'
+import { getPlan } from '@/lib/plans'
 import { headers } from 'next/headers'
 
 export async function POST(request: Request) {
@@ -36,29 +37,42 @@ export async function POST(request: Request) {
   // Fetch slot and verify capacity
   const { data: slot } = await supabase
     .from('event_time_slots')
-    .select('id, event_id, capacity, booked_count')
+    .select('id, event_id, capacity, booked_count, start_time')
     .eq('id', slotId)
     .eq('event_id', eventId)
     .single()
 
   if (!slot) return NextResponse.json({ error: 'Time slot not found' }, { status: 404 })
+  if (new Date(slot.start_time) <= new Date()) {
+    return NextResponse.json({ error: 'This time slot has already passed' }, { status: 409 })
+  }
   if (slot.booked_count + quantity > slot.capacity) {
     return NextResponse.json({ error: 'Not enough capacity' }, { status: 409 })
   }
 
-  // Fetch museum for Stripe Connect info
+  // Fetch museum for plan check and Stripe Connect info
   const { data: museum } = await supabase
     .from('museums')
-    .select('id, slug, stripe_connect_id, stripe_connect_onboarded')
+    .select('id, slug, plan, stripe_connect_id, stripe_connect_onboarded')
     .eq('id', event.museum_id)
     .single()
 
   if (!museum) return NextResponse.json({ error: 'Museum not found' }, { status: 404 })
 
+  if (!getPlan(museum.plan).ticketing) {
+    return NextResponse.json({ error: 'Ticketing not available' }, { status: 403 })
+  }
+
   const totalCents = event.price_cents * quantity
   const platformFeeCents = Math.round(totalCents * 0.02)
 
-  // Create pending order
+  // For paid events, verify Stripe Connect is set up before creating an order.
+  // This prevents orphaned cancelled orders accumulating when the museum isn't onboarded.
+  if (totalCents > 0 && (!museum.stripe_connect_id || !museum.stripe_connect_onboarded)) {
+    return NextResponse.json({ error: 'Museum not set up for payments' }, { status: 400 })
+  }
+
+  // Create pending order — always starts as pending, completed only after tickets generated
   const { data: order, error: orderError } = await supabase
     .from('ticket_orders')
     .insert({
@@ -71,7 +85,7 @@ export async function POST(request: Request) {
       amount_cents: totalCents,
       platform_fee_cents: platformFeeCents,
       currency: event.currency,
-      status: totalCents === 0 ? 'completed' : 'pending',
+      status: 'pending',
     })
     .select('id')
     .single()
@@ -99,9 +113,20 @@ export async function POST(request: Request) {
       ticket_code: generateTicketCode(),
       status: 'valid',
     }))
-    await supabase.from('tickets').insert(tickets)
+    const { error: ticketError } = await supabase.from('tickets').insert(tickets)
 
-    // Log activity
+    if (ticketError) {
+      // Rollback: release the slot and cancel the order
+      await supabase.rpc('decrement_slot_bookings', { slot_uuid: slotId, qty: quantity })
+      await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
+      console.error('[ticket-checkout] Failed to insert tickets:', ticketError)
+      return NextResponse.json({ error: 'Failed to generate tickets' }, { status: 500 })
+    }
+
+    // Mark order completed now that tickets exist
+    await supabase.from('ticket_orders').update({ status: 'completed' }).eq('id', order.id)
+
+    // Log activity (non-critical, ignore errors)
     await supabase.from('activity_log').insert({
       museum_id: museum.id,
       action_type: 'ticket_sold',
@@ -116,11 +141,6 @@ export async function POST(request: Request) {
   }
 
   // Paid event — create Stripe Checkout session
-  if (!museum.stripe_connect_id || !museum.stripe_connect_onboarded) {
-    await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
-    return NextResponse.json({ error: 'Museum not set up for payments' }, { status: 400 })
-  }
-
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',

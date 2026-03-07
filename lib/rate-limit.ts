@@ -44,9 +44,9 @@ export async function rateLimit(
         }
       )
     }
-  } catch {
-    // If Redis is unavailable, allow the request through
-    // rather than blocking all API access
+  } catch (e) {
+    // If Redis is unavailable, allow the request through rather than blocking all API access
+    console.error('[rate-limit] Redis unavailable — rate limiting disabled:', e)
   }
   return null
 }

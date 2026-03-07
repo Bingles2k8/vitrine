@@ -17,7 +17,12 @@ CREATE POLICY "Users can view events in their museums"
 
 CREATE POLICY "Users can create events in their museums"
   ON events FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM museums WHERE museums.id = events.museum_id AND museums.owner_id = auth.uid()));
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM museums
+    WHERE museums.id = events.museum_id
+      AND museums.owner_id = auth.uid()
+      AND museums.plan IN ('professional', 'institution', 'enterprise')
+  ));
 
 CREATE POLICY "Users can update events in their museums"
   ON events FOR UPDATE
@@ -50,7 +55,9 @@ CREATE POLICY "Users can create time slots in their museums"
   ON event_time_slots FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM events JOIN museums ON museums.id = events.museum_id
-    WHERE events.id = event_time_slots.event_id AND museums.owner_id = auth.uid()
+    WHERE events.id = event_time_slots.event_id
+      AND museums.owner_id = auth.uid()
+      AND museums.plan IN ('professional', 'institution', 'enterprise')
   ));
 
 CREATE POLICY "Users can update time slots in their museums"
@@ -66,10 +73,13 @@ CREATE POLICY "Users can update time slots in their museums"
 
 CREATE POLICY "Users can delete time slots in their museums"
   ON event_time_slots FOR DELETE
-  USING (EXISTS (
-    SELECT 1 FROM events JOIN museums ON museums.id = events.museum_id
-    WHERE events.id = event_time_slots.event_id AND museums.owner_id = auth.uid()
-  ));
+  USING (
+    booked_count = 0
+    AND EXISTS (
+      SELECT 1 FROM events JOIN museums ON museums.id = events.museum_id
+      WHERE events.id = event_time_slots.event_id AND museums.owner_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "Public can read slots for published events"
   ON event_time_slots FOR SELECT TO anon
@@ -119,6 +129,5 @@ CREATE POLICY "Users can update tickets in their museums"
     WHERE ticket_orders.id = tickets.order_id AND museums.owner_id = auth.uid()
   ));
 
-CREATE POLICY "Public can look up tickets by code"
-  ON tickets FOR SELECT TO anon
-  USING (true);
+-- Public ticket lookup is handled via the service-role API route (/api/tickets/[code]).
+-- No direct anon access — removing USING (true) prevents full-table enumeration.
