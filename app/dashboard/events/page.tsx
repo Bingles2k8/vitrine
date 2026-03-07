@@ -194,89 +194,101 @@ export default function EventsPage() {
       </div>
 
       <div className="p-4 md:p-8 space-y-6">
-        {/* Stripe Connect onboarding CTA */}
-        {!museum.stripe_connect_onboarded && !stripeConnectPending && (
-          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <div className="text-2xl">💳</div>
-              <div className="flex-1">
-                <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Set up payments to sell tickets</h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Connect your Stripe account to receive ticket revenue. Free events work without this. A 2% platform fee applies to paid tickets.</p>
-                <button
-                  onClick={startConnectOnboarding}
-                  disabled={connectLoading}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
-                >
-                  {connectLoading ? 'Redirecting...' : 'Connect Stripe account →'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {!museum.stripe_connect_onboarded && stripeConnectPending && (
-          <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <div className="text-2xl">⏳</div>
-              <div className="flex-1">
-                <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Stripe account verification in progress</h3>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Your Stripe account details have been submitted. If verification is taking a while, Stripe may need additional information from you.</p>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <button
-                    onClick={startConnectOnboarding}
-                    disabled={connectLoading}
-                    className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
-                  >
-                    {connectLoading ? 'Redirecting...' : 'Complete verification in Stripe →'}
-                  </button>
-                  <button
-                    onClick={disconnectStripe}
-                    disabled={disconnectLoading}
-                    className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors disabled:opacity-50"
-                  >
-                    {disconnectLoading ? 'Clearing…' : 'Start over'}
-                  </button>
+        {/* Stripe Connect — admin controls */}
+        {(isOwner || staffAccess === 'Admin') ? (
+          <>
+            {!museum.stripe_connect_onboarded && !stripeConnectPending && (
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="text-2xl">💳</div>
+                  <div className="flex-1">
+                    <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Set up payments to sell tickets</h3>
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Connect your Stripe account to receive ticket revenue. Free events work without this. A 2% platform fee applies to paid tickets.</p>
+                    <button
+                      onClick={startConnectOnboarding}
+                      disabled={connectLoading}
+                      className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                    >
+                      {connectLoading ? 'Redirecting...' : 'Connect Stripe account →'}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stripe connected status */}
-        {museum.stripe_connect_onboarded && isOwner && (
-          <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="text-lg">✓</div>
-                <div>
-                  <span className="text-sm font-mono text-emerald-700 dark:text-emerald-400">Stripe account connected</span>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Paid ticket revenue will be transferred to your Stripe account.</p>
+            )}
+            {!museum.stripe_connect_onboarded && stripeConnectPending && (
+              <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="text-2xl">⏳</div>
+                  <div className="flex-1">
+                    <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Stripe account verification in progress</h3>
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Your Stripe account details have been submitted. If verification is taking a while, Stripe may need additional information from you.</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={startConnectOnboarding}
+                        disabled={connectLoading}
+                        className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                      >
+                        {connectLoading ? 'Redirecting...' : 'Complete verification in Stripe →'}
+                      </button>
+                      <button
+                        onClick={disconnectStripe}
+                        disabled={disconnectLoading}
+                        className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors disabled:opacity-50"
+                      >
+                        {disconnectLoading ? 'Clearing…' : 'Start over'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {!showDisconnectConfirm ? (
-                <button
-                  onClick={() => setShowDisconnectConfirm(true)}
-                  className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors whitespace-nowrap"
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-stone-500 dark:text-stone-400">Are you sure?</span>
-                  <button
-                    onClick={disconnectStripe}
-                    disabled={disconnectLoading}
-                    className="text-xs font-mono text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
-                  >
-                    {disconnectLoading ? 'Disconnecting…' : 'Yes, disconnect'}
-                  </button>
-                  <button
-                    onClick={() => setShowDisconnectConfirm(false)}
-                    className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
-                  >
-                    Cancel
-                  </button>
+            )}
+            {museum.stripe_connect_onboarded && (
+              <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="text-lg">✓</div>
+                    <div>
+                      <span className="text-sm font-mono text-emerald-700 dark:text-emerald-400">Stripe account connected</span>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Paid ticket revenue will be transferred to your Stripe account.</p>
+                    </div>
+                  </div>
+                  {!showDisconnectConfirm ? (
+                    <button
+                      onClick={() => setShowDisconnectConfirm(true)}
+                      className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors whitespace-nowrap"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-stone-500 dark:text-stone-400">Are you sure?</span>
+                      <button
+                        onClick={disconnectStripe}
+                        disabled={disconnectLoading}
+                        className="text-xs font-mono text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+                      >
+                        {disconnectLoading ? 'Disconnecting…' : 'Yes, disconnect'}
+                      </button>
+                      <button
+                        onClick={() => setShowDisconnectConfirm(false)}
+                        className="text-xs font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg p-4 flex items-center gap-3">
+            <div className="text-lg">💳</div>
+            <div>
+              <span className="text-sm font-mono text-stone-600 dark:text-stone-400">
+                {museum.stripe_connect_onboarded ? 'Stripe account connected' : 'Stripe account not connected'}
+              </span>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Only admins can connect or manage the Stripe account.</p>
             </div>
           </div>
         )}

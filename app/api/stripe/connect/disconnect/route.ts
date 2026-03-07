@@ -10,12 +10,33 @@ export async function POST() {
   const limited = await rateLimit(apiLimiter, user.id)
   if (limited) return limited
 
-  // Only the museum owner can disconnect — use owner_id check
-  const { data: museum } = await supabase
+  // Resolve museum for owner or Admin staff
+  let museum: { id: string; stripe_connect_id: string | null } | null = null
+
+  const { data: owned } = await supabase
     .from('museums')
-    .select('id, stripe_connect_id, stripe_connect_onboarded')
+    .select('id, stripe_connect_id')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
+
+  if (owned) {
+    museum = owned
+  } else {
+    const { data: staffRecord } = await supabase
+      .from('staff_members')
+      .select('museum_id')
+      .eq('user_id', user.id)
+      .eq('access', 'Admin')
+      .maybeSingle()
+    if (staffRecord) {
+      const { data: staffMuseum } = await supabase
+        .from('museums')
+        .select('id, stripe_connect_id')
+        .eq('id', staffRecord.museum_id)
+        .maybeSingle()
+      museum = staffMuseum
+    }
+  }
 
   if (!museum) return NextResponse.json({ error: 'Museum not found' }, { status: 404 })
   if (!museum.stripe_connect_id) {
