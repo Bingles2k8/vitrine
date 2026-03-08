@@ -290,7 +290,7 @@ export default function EntryRegisterPage() {
                   <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
                   <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-4 items-end">
                   <div>
                     <label className={labelCls}>Object Count</label>
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
