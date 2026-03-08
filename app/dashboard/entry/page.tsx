@@ -38,6 +38,7 @@ export default function EntryRegisterPage() {
     received_by: '',
     entry_method: '',
     condition_on_entry: '',
+    accession_no: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
   const { toast } = useToast()
@@ -107,11 +108,21 @@ export default function EntryRegisterPage() {
     router.push(`/dashboard/artifacts/${newArtifact.id}?tab=entry`)
   }
 
-  async function handleCreateEntry() {
+  async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, depositor_name, entry_reason, object_description, received_by } = newEntry
     if (!entry_date || !depositor_name || !entry_reason || !object_description || !received_by) {
       toast('Please fill in all required fields.', 'error')
       return
+    }
+    // Check plan limits
+    const planInfo = getPlan(museum?.plan)
+    const limit = planInfo.artifacts
+    if (limit !== null) {
+      const { count } = await supabase.from('artifacts').select('*', { count: 'exact', head: true }).eq('museum_id', museum.id).is('deleted_at', null)
+      if (count !== null && count >= limit) {
+        toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
+        return
+      }
     }
     setSubmitting(true)
     const year = new Date(entry_date).getFullYear()
@@ -132,11 +143,28 @@ export default function EntryRegisterPage() {
       outcome: 'Pending',
     }).select('*').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
-    setEntries([created, ...entries])
-    setNewEntry(defaultEntry())
-    setShowForm(false)
-    setSubmitting(false)
-    toast(`Entry ${entryNumber} recorded.`, 'success')
+    // Create the artifact
+    const { data: newArtifact, error: artifactError } = await supabase.from('artifacts').insert({
+      museum_id: museum.id,
+      title: newEntry.object_description,
+      acquisition_source: newEntry.depositor_name,
+      acquisition_source_contact: newEntry.depositor_contact || null,
+      acquisition_object_count: newEntry.object_count,
+      accession_no: newEntry.accession_no || null,
+      status: 'Entry',
+      emoji: '🖼️',
+    }).select('id').single()
+    if (artifactError) { toast(artifactError.message, 'error'); setSubmitting(false); return }
+    await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', created.id)
+    if (mode === 'continue') {
+      router.push(`/dashboard/artifacts/${newArtifact.id}`)
+    } else {
+      setEntries([{ ...created, artifact_id: newArtifact.id, artifacts: { title: newEntry.object_description, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
+      setNewEntry(defaultEntry())
+      setShowForm(false)
+      setSubmitting(false)
+      toast(`Entry ${entryNumber} recorded.`, 'success')
+    }
   }
 
   if (loading) return (
@@ -262,7 +290,7 @@ export default function EntryRegisterPage() {
                   <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
                   <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className={labelCls}>Object Count</label>
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
@@ -271,15 +299,26 @@ export default function EntryRegisterPage() {
                     <label className={labelCls}>Condition on Entry</label>
                     <input type="text" className={inputCls} placeholder="e.g. Good" value={newEntry.condition_on_entry} onChange={e => setNewEntry(v => ({ ...v, condition_on_entry: e.target.value }))} />
                   </div>
+                  <div>
+                    <label className={labelCls}>Object Number</label>
+                    <input type="text" className={inputCls} placeholder="e.g. 2026.001" value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
+                  </div>
                 </div>
               </div>
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
-                  onClick={handleCreateEntry}
+                  onClick={() => handleCreateEntry('stay')}
+                  disabled={submitting}
+                  className="text-sm font-mono border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                >
+                  {submitting ? 'Recording…' : 'Record Entry'}
+                </button>
+                <button
+                  onClick={() => handleCreateEntry('continue')}
                   disabled={submitting}
                   className="text-sm font-mono bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? 'Recording…' : 'Record Entry →'}
+                  {submitting ? 'Recording…' : 'Record & Add Details →'}
                 </button>
               </div>
             </div>
@@ -319,9 +358,9 @@ export default function EntryRegisterPage() {
                 <tbody>
                   {entries.map(e => (
                     <tr key={e.id}
-                      className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer"
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.artifact_id && !e.artifacts?.deleted_at ? 'cursor-pointer' : 'cursor-default'}`}
                       onClick={() => {
-                        if (e.artifact_id) router.push(`/dashboard/artifacts/${e.artifact_id}?tab=entry`)
+                        if (e.artifact_id && !e.artifacts?.deleted_at) router.push(`/dashboard/artifacts/${e.artifact_id}`)
                       }}
                     >
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.entry_number}</td>
@@ -358,12 +397,14 @@ export default function EntryRegisterPage() {
                             Removed — view trash →
                           </button>
                         ) : e.artifact_id ? (
-                          <button
-                            onClick={() => router.push(`/dashboard/artifacts/${e.artifact_id}?tab=entry`)}
-                            className="text-xs font-mono text-amber-600 hover:text-amber-700 transition-colors"
-                          >
-                            View object →
-                          </button>
+                          (() => {
+                            const incomplete = e.outcome === 'Pending' && !e.artifacts?.accession_no
+                            return (
+                              <span className={`text-xs font-mono ${incomplete ? 'text-amber-600' : 'text-stone-400 dark:text-stone-500'}`}>
+                                {incomplete ? 'Incomplete →' : 'View object →'}
+                              </span>
+                            )
+                          })()
                         ) : (
                           e.outcome === 'Acquired' && canEdit ? (
                             <button
