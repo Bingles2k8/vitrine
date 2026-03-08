@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CONDITION_STYLES, MAKER_ROLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
 import ImageUpload from '@/components/ImageUpload'
 import ImageGallery from '@/components/ImageGallery'
+import { getPlan } from '@/lib/plans'
 
 interface OverviewTabProps {
   form: Record<string, any>
@@ -39,7 +40,7 @@ export default function OverviewTab({ form, set, canEdit, saving, artifact, muse
       {/* Image section */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
         <ImageUpload currentUrl={form.image_url} onUpload={(url: string) => set('image_url', url)} />
-        <ImageGallery artifactId={artifact.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} />
+        <ImageGallery artifactId={artifact.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerArtifact} />
       </div>
 
       {/* Icon selector */}

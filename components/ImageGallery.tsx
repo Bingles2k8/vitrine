@@ -9,9 +9,10 @@ interface Props {
   museumId: string
   onPrimaryChange: (url: string) => void
   canEdit: boolean
+  imageLimit: number
 }
 
-export default function ImageGallery({ artifactId, museumId, onPrimaryChange, canEdit }: Props) {
+export default function ImageGallery({ artifactId, museumId, onPrimaryChange, canEdit, imageLimit }: Props) {
   const [images, setImages] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const supabase = createClient()
@@ -107,12 +108,19 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
           </div>
         ))}
 
-        {canEdit && (
+        {canEdit && images.length < imageLimit && (
           <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-900">
             <div className="text-2xl mb-1">📷</div>
             <div className="text-xs text-stone-400 dark:text-stone-500">{uploading ? 'Uploading…' : '+ Add image'}</div>
             <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} className="hidden" />
           </label>
+        )}
+        {canEdit && images.length >= imageLimit && (
+          <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-3">
+            <div className="text-xs text-stone-400 dark:text-stone-500">
+              {imageLimit === 1 ? 'Image limit reached' : `${imageLimit} image limit reached`}
+            </div>
+          </div>
         )}
       </div>
     </div>

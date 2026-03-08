@@ -5,6 +5,7 @@ export const PLANS: Record<PlanId, {
   price: string
   artifacts: number | null  // null = unlimited
   staff: number | null       // null = unlimited
+  imagesPerArtifact: number
   fullMode: boolean
   analytics: boolean
   compliance: boolean
@@ -16,6 +17,7 @@ export const PLANS: Record<PlanId, {
     price: 'Free',
     artifacts: 100,
     staff: 1,
+    imagesPerArtifact: 1,
     fullMode: false,
     analytics: false,
     compliance: false,
@@ -27,6 +29,7 @@ export const PLANS: Record<PlanId, {
     price: '£5/mo',
     artifacts: 500,
     staff: 1,
+    imagesPerArtifact: 3,
     fullMode: false,
     analytics: false,
     compliance: false,
@@ -38,6 +41,7 @@ export const PLANS: Record<PlanId, {
     price: '£79/mo',
     artifacts: 5000,
     staff: 10,
+    imagesPerArtifact: 10,
     fullMode: true,
     analytics: true,
     compliance: true,
@@ -49,6 +53,7 @@ export const PLANS: Record<PlanId, {
     price: '£349/mo',
     artifacts: 100000,
     staff: null,
+    imagesPerArtifact: 10,
     fullMode: true,
     analytics: true,
     compliance: true,
@@ -60,6 +65,7 @@ export const PLANS: Record<PlanId, {
     price: 'Contact us',
     artifacts: null,
     staff: null,
+    imagesPerArtifact: 10,
     fullMode: true,
     analytics: true,
     compliance: true,
