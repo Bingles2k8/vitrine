@@ -10,6 +10,7 @@ export const PLANS: Record<PlanId, {
   analytics: boolean
   compliance: boolean
   ticketing: boolean
+  visitInfo: boolean         // Visit page & About/Facilities in site builder
   features: string[]
 }> = {
   community: {
@@ -22,6 +23,7 @@ export const PLANS: Record<PlanId, {
     analytics: false,
     compliance: false,
     ticketing: false,
+    visitInfo: false,
     features: ['Up to 100 collection items', 'Public collection website', 'Basic site customisation'],
   },
   hobbyist: {
@@ -34,7 +36,8 @@ export const PLANS: Record<PlanId, {
     analytics: false,
     compliance: false,
     ticketing: false,
-    features: ['Up to 500 collection items', 'Public collection website', 'Full site customisation'],
+    visitInfo: false,
+    features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation'],
   },
   professional: {
     label: 'Professional',
@@ -46,6 +49,7 @@ export const PLANS: Record<PlanId, {
     analytics: true,
     compliance: true,
     ticketing: true,
+    visitInfo: true,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing'],
   },
   institution: {
@@ -58,6 +62,7 @@ export const PLANS: Record<PlanId, {
     analytics: true,
     compliance: true,
     ticketing: true,
+    visitInfo: true,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support'],
   },
   enterprise: {
@@ -70,6 +75,7 @@ export const PLANS: Record<PlanId, {
     analytics: true,
     compliance: true,
     ticketing: true,
+    visitInfo: true,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations'],
   },
 }

@@ -8,6 +8,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage } from '@/lib/image-compression'
+import { getPlan } from '@/lib/plans'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -528,60 +529,74 @@ export default function SiteBuilder() {
               />
             </div>
 
-            {/* Visit info */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Visit Information</div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Address</label>
-                <textarea value={form.address} onChange={e => set('address', e.target.value)}
-                  placeholder="123 Museum Street, London W1 2AB" rows={2}
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Opening Hours</label>
-                <textarea value={form.opening_hours} onChange={e => set('opening_hours', e.target.value)}
-                  placeholder="Mon-Fri: 10:00-17:00, Sat-Sun: 10:00-18:00" rows={3}
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Phone Number</label>
-                <input value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)}
-                  placeholder="+44 20 7946 0958"
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Contact Email</label>
-                <input type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)}
-                  placeholder="hello@yourmuseum.org"
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Map Embed URL</label>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Paste the <code className="font-mono">src</code> URL from Google Maps → Share → Embed a map.</p>
-                <input value={form.maps_embed_url} onChange={e => set('maps_embed_url', e.target.value)}
-                  placeholder="https://www.google.com/maps/embed?pb=..."
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-              </div>
-            </div>
+            {/* Visit info — Professional+ only */}
+            {getPlan(museum?.plan).visitInfo ? (
+              <>
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Visit Information</div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Address</label>
+                    <textarea value={form.address} onChange={e => set('address', e.target.value)}
+                      placeholder="123 Museum Street, London W1 2AB" rows={2}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Opening Hours</label>
+                    <textarea value={form.opening_hours} onChange={e => set('opening_hours', e.target.value)}
+                      placeholder="Mon-Fri: 10:00-17:00, Sat-Sun: 10:00-18:00" rows={3}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Phone Number</label>
+                    <input value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)}
+                      placeholder="+44 20 7946 0958"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Contact Email</label>
+                    <input type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)}
+                      placeholder="hello@yourmuseum.org"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Map Embed URL</label>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Paste the <code className="font-mono">src</code> URL from Google Maps → Share → Embed a map.</p>
+                    <input value={form.maps_embed_url} onChange={e => set('maps_embed_url', e.target.value)}
+                      placeholder="https://www.google.com/maps/embed?pb=..."
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                </div>
 
-            {/* About & facilities */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">About & Facilities</div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About / Mission</label>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">A short description of your museum's history and purpose, shown on the Visit page.</p>
-                <textarea value={form.about_text} onChange={e => set('about_text', e.target.value)}
-                  placeholder="Founded in 1892, the Whitmore Collection preserves..." rows={4}
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">About & Facilities</div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About / Mission</label>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">A short description of your museum's history and purpose, shown on the Visit page.</p>
+                    <textarea value={form.about_text} onChange={e => set('about_text', e.target.value)}
+                      placeholder="Founded in 1892, the Whitmore Collection preserves..." rows={4}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facilities & Accessibility</label>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">e.g. wheelchair access, free parking, café on-site, hearing loop available.</p>
+                    <textarea value={form.facilities} onChange={e => set('facilities', e.target.value)}
+                      placeholder="Fully wheelchair accessible. Free parking on-site. Café open during museum hours." rows={3}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Visit Information & About</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Add your address, opening hours, contact details, and about text to your public site. Available on Professional and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facilities & Accessibility</label>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">e.g. wheelchair access, free parking, café on-site, hearing loop available.</p>
-                <textarea value={form.facilities} onChange={e => set('facilities', e.target.value)}
-                  placeholder="Fully wheelchair accessible. Free parking on-site. Café open during museum hours." rows={3}
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
-              </div>
-            </div>
+            )}
 
           </div>
 
