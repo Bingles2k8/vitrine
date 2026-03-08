@@ -13,7 +13,7 @@ export default function TermsPage() {
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl p-10 space-y-8">
           <div>
             <h1 className="font-serif text-3xl italic text-stone-900 dark:text-stone-100 mb-1">Terms of Service</h1>
-            <p className="text-xs font-mono text-stone-400 dark:text-stone-500">Last updated: February 2026</p>
+            <p className="text-xs font-mono text-stone-400 dark:text-stone-500">Last updated: March 2026</p>
           </div>
 
           <section className="space-y-3">
@@ -65,11 +65,7 @@ export default function TermsPage() {
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
               Vitrine offers free and paid subscription plans. Plan features and limits are described on our{' '}
               <Link href="/#pricing" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">pricing page</Link>.
-              Payment processing is not yet active — contact us at{' '}
-              <a href="mailto:hello@composition.agency" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
-                hello@composition.agency
-              </a>{' '}
-              to discuss paid plans. We reserve the right to change pricing with 30 days' notice.
+              Where museums use Vitrine&apos;s ticketing feature to sell tickets to visitors, <strong className="text-stone-900 dark:text-stone-100">Composition Limited, the company that owns and operates Vitrine, charges a platform fee of 2%</strong> of the gross ticket sale value (excluding any Stripe payment processing fees). This fee is deducted automatically at the point of sale via Stripe Connect. We reserve the right to change pricing with 30 days&apos; notice.
             </p>
           </section>
 
@@ -85,33 +81,43 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">6. Service availability</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              We aim to maintain high availability but do not guarantee uninterrupted access. We may carry out maintenance, introduce updates, or suspend the service in exceptional circumstances. We will provide reasonable notice where possible.
+              We make no guarantee of uptime, continuous availability, or uninterrupted access to the service. Vitrine may be unavailable at any time due to maintenance, technical failure, infrastructure outages, or circumstances outside our control. We will attempt to provide advance notice of planned downtime where reasonably practicable, but are under no obligation to do so. You should not rely on Vitrine as the sole record of your collection data.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">7. Limitation of liability</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">7. Beta and pre-release software</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              To the maximum extent permitted by law, <strong className="text-stone-900 dark:text-stone-100">Composition Limited</strong> is not liable for any indirect, incidental, or consequential loss arising from your use of the service — including loss of data, loss of revenue, or business interruption. Our total liability to you will not exceed the amount you paid us in the 12 months preceding the claim (or £100 if you are on the free plan).
+              Vitrine is currently in <strong className="text-stone-900 dark:text-stone-100">beta</strong>. The service is under active development and is provided on an as-is basis during this period. You may encounter bugs, unexpected behaviour, degraded performance, or temporary data unavailability. Features may be added, changed, or removed without notice. We strongly recommend maintaining your own backups of critical data. By using the service during beta, you acknowledge and accept these limitations.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">8. Termination</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">8. Limitation of liability</h2>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              The service is provided <strong className="text-stone-900 dark:text-stone-100">"as is"</strong> and <strong className="text-stone-900 dark:text-stone-100">"as available"</strong> without warranty of any kind, express or implied. We do not warrant that the service will be error-free, secure, or available at any particular time. We do not guarantee that data stored on Vitrine will be retained indefinitely — data may be lost, corrupted, or become inaccessible due to technical failure, account termination, or service discontinuation. You are solely responsible for maintaining independent backups of your collection data.
+            </p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              To the maximum extent permitted by law, <strong className="text-stone-900 dark:text-stone-100">Composition Limited</strong> accepts no liability for any loss or damage arising from your use of, or inability to use, the service — including but not limited to loss of data, loss of records, loss of revenue, reputational damage, or business interruption, whether arising in contract, tort, or otherwise. Our total aggregate liability to you will not exceed the amount you paid us in the 12 months preceding the claim, or £50, whichever is lower.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">9. Termination</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
               You may delete your account at any time from the Settings panel within the dashboard. We reserve the right to suspend or terminate accounts that violate these terms, with or without notice. On termination, all your data will be permanently deleted.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">9. Governing law</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">10. Governing law</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
               These terms are governed by the laws of England and Wales. Any disputes will be subject to the exclusive jurisdiction of the courts of England and Wales.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">10. Contact</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">11. Contact</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400">
               Questions about these terms:{' '}
               <a href="mailto:hello@composition.agency" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
