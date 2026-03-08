@@ -2,6 +2,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getMuseumStyles } from '@/lib/museum-styles'
 
 export default async function CheckoutSuccessPage({
   params,
@@ -16,7 +17,7 @@ export default async function CheckoutSuccessPage({
 
   const { data: museum } = await supabase
     .from('museums')
-    .select('id, slug, name, logo_emoji')
+    .select('*')
     .eq('slug', slug)
     .single()
 
@@ -31,10 +32,6 @@ export default async function CheckoutSuccessPage({
 
   if (!event) notFound()
 
-  // Find the order by Stripe session ID.
-  // Use service role — buyers are anonymous and RLS policies only allow museum owners to
-  // view ticket_orders/tickets. The lookup is scoped to session_id + event_id to prevent
-  // enumeration.
   const serviceSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -60,7 +57,6 @@ export default async function CheckoutSuccessPage({
     }
   }
 
-  // Get the slot info for calendar
   let slotInfo: { start_time: string; end_time: string } | null = null
   if (order?.slot_id) {
     const { data: s } = await serviceSupabase
@@ -78,109 +74,91 @@ export default async function CheckoutSuccessPage({
     return `${s.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} — ${e.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
   }
 
-  // Build .ics calendar data
   let icsUrl = ''
   if (slotInfo) {
     const start = new Date(slotInfo.start_time).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
     const end = new Date(slotInfo.end_time).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
     const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'BEGIN:VEVENT',
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${event.title}`,
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT',
+      `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${event.title}`,
       event.location ? `LOCATION:${event.location}` : '',
-      'END:VEVENT',
-      'END:VCALENDAR',
+      'END:VEVENT', 'END:VCALENDAR',
     ].filter(Boolean).join('\n')
     icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`
   }
 
   const processing = order?.status === 'pending' || (!order && session_id)
+  const { accent, content, headingStyle } = getMuseumStyles(museum)
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="border-b border-stone-200 sticky top-0 bg-white/95 backdrop-blur z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href={`/museum/${slug}`} className="font-serif text-2xl italic text-stone-900">
-            {museum.logo_emoji} {museum.name}
+    <div className="max-w-xl mx-auto px-6 py-16">
+      {processing ? (
+        <div className="text-center">
+          <div className="text-5xl mb-5">⏳</div>
+          <h1 className="text-3xl mb-3" style={{ ...headingStyle, color: content.heading }}>Processing your booking</h1>
+          <p className="text-sm mb-6" style={{ color: content.muted }}>Your payment is being confirmed. This usually takes a few seconds. Please refresh this page shortly.</p>
+          <Link href={`/museum/${slug}/events/${id}/checkout/success?session_id=${session_id}`}
+            className="text-sm font-mono transition-colors" style={{ color: content.muted }}>
+            Refresh →
           </Link>
-          <div className="flex items-center gap-8">
-            <Link href={`/museum/${slug}`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">Collection</Link>
-            <Link href={`/museum/${slug}/events`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">Events</Link>
-            <Link href={`/museum/${slug}/visit`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">Plan Your Visit</Link>
-          </div>
         </div>
-      </nav>
-
-      <div className="max-w-xl mx-auto px-6 py-16">
-        {processing ? (
-          <div className="text-center">
-            <div className="text-5xl mb-5">⏳</div>
-            <h1 className="font-serif text-3xl italic text-stone-900 mb-3">Processing your booking</h1>
-            <p className="text-sm text-stone-400 mb-6">Your payment is being confirmed. This usually takes a few seconds. Please refresh this page shortly.</p>
-            <Link href={`/museum/${slug}/events/${id}/checkout/success?session_id=${session_id}`}
-              className="text-sm font-mono text-stone-500 hover:text-stone-900 transition-colors">
-              Refresh →
-            </Link>
+      ) : tickets.length > 0 ? (
+        <>
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-5">✓</div>
+            <h1 className="text-3xl mb-3" style={{ ...headingStyle, color: content.heading }}>Booking Confirmed</h1>
+            <p className="text-sm" style={{ color: content.muted }}>Thank you for your booking! Here are your ticket details.</p>
           </div>
-        ) : tickets.length > 0 ? (
-          <>
-            <div className="text-center mb-8">
-              <div className="text-5xl mb-5">✓</div>
-              <h1 className="font-serif text-3xl italic text-stone-900 mb-3">Booking Confirmed</h1>
-              <p className="text-sm text-stone-400">Thank you for your booking! Here are your ticket details.</p>
-            </div>
 
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-6 mb-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">Event</div>
-              <h2 className="font-serif text-xl italic text-stone-900 mb-1">{event.title}</h2>
-              <p className="text-sm text-stone-500">{formatDateRange(event.start_date, event.end_date)}</p>
-              {event.location && <p className="text-sm text-stone-400 mt-1">{event.location}</p>}
-              {slotInfo && (
-                <p className="text-sm font-mono text-stone-500 mt-2">
-                  {new Date(slotInfo.start_time).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  {' — '}
-                  {new Date(slotInfo.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
+          <div className="border rounded-lg p-6 mb-6" style={{ borderColor: content.border, background: content.cardBg }}>
+            <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Event</div>
+            <h2 className="text-xl mb-1" style={{ ...headingStyle, color: content.heading }}>{event.title}</h2>
+            <p className="text-sm" style={{ color: content.body }}>{formatDateRange(event.start_date, event.end_date)}</p>
+            {event.location && <p className="text-sm mt-1" style={{ color: content.muted }}>{event.location}</p>}
+            {slotInfo && (
+              <p className="text-sm font-mono mt-2" style={{ color: content.body }}>
+                {new Date(slotInfo.start_time).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                {' — '}
+                {new Date(slotInfo.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
 
-            <div className="space-y-3 mb-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400">Your Tickets</div>
-              {tickets.map(t => (
-                <div key={t.ticket_code} className="bg-white border border-stone-200 rounded-lg px-5 py-4 flex items-center justify-between">
-                  <span className="font-mono text-lg text-stone-900">{t.ticket_code}</span>
-                  <span className="text-xs font-mono text-emerald-600 uppercase">{t.status}</span>
-                </div>
-              ))}
-            </div>
+          <div className="space-y-3 mb-6">
+            <div className="text-xs uppercase tracking-widest font-mono" style={{ color: content.muted }}>Your Tickets</div>
+            {tickets.map(t => (
+              <div key={t.ticket_code} className="border rounded-lg px-5 py-4 flex items-center justify-between" style={{ borderColor: content.border, background: content.cardBg }}>
+                <span className="font-mono text-lg" style={{ color: content.heading }}>{t.ticket_code}</span>
+                <span className="text-xs font-mono uppercase" style={{ color: 'rgb(52,211,153)' }}>{t.status}</span>
+              </div>
+            ))}
+          </div>
 
-            <div className="flex gap-3">
-              {icsUrl && (
-                <a href={icsUrl} download={`${event.title}.ics`}
-                  className="text-xs font-mono px-4 py-2.5 rounded border border-stone-200 text-stone-500 hover:bg-stone-50 transition-colors">
-                  Add to calendar
-                </a>
-              )}
-              <Link href={`/museum/${slug}/events`}
-                className="text-xs font-mono px-4 py-2.5 rounded bg-stone-900 text-white hover:bg-stone-700 transition-colors">
-                Back to events →
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div className="text-center">
-            <div className="text-5xl mb-5">◎</div>
-            <h1 className="font-serif text-3xl italic text-stone-900 mb-3">Booking not found</h1>
-            <p className="text-sm text-stone-400 mb-6">We couldn't find this booking. Please check your email for confirmation.</p>
-            <Link href={`/museum/${slug}/events`} className="text-sm font-mono text-stone-500 hover:text-stone-900 transition-colors">
+          <div className="flex gap-3">
+            {icsUrl && (
+              <a href={icsUrl} download={`${event.title}.ics`}
+                className="text-xs font-mono px-4 py-2.5 rounded border transition-colors"
+                style={{ borderColor: content.border, color: content.body }}>
+                Add to calendar
+              </a>
+            )}
+            <Link href={`/museum/${slug}/events`}
+              className="text-xs font-mono px-4 py-2.5 rounded transition-colors text-white"
+              style={{ background: accent }}>
               Back to events →
             </Link>
           </div>
-        )}
-      </div>
+        </>
+      ) : (
+        <div className="text-center">
+          <div className="text-5xl mb-5">◎</div>
+          <h1 className="text-3xl mb-3" style={{ ...headingStyle, color: content.heading }}>Booking not found</h1>
+          <p className="text-sm mb-6" style={{ color: content.muted }}>We couldn&apos;t find this booking. Please check your email for confirmation.</p>
+          <Link href={`/museum/${slug}/events`} className="text-sm font-mono transition-colors" style={{ color: content.muted }}>
+            Back to events →
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getMuseumStyles } from '@/lib/museum-styles'
 
 const TYPE_LABELS: Record<string, string> = {
   exhibition: 'Exhibition', workshop: 'Workshop', talk: 'Talk', tour: 'Tour',
@@ -43,82 +44,68 @@ export default async function PublicEventsPage({ params }: { params: Promise<{ s
   const upcoming = allEvents.filter(e => e.end_date >= today)
   const past = allEvents.filter(e => e.end_date < today)
 
+  const { accent, content, headingStyle } = getMuseumStyles(museum)
+
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="border-b border-stone-200 sticky top-0 bg-white/95 backdrop-blur z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href={`/museum/${slug}`} className="font-serif text-2xl italic text-stone-900">
-            {museum.logo_emoji} {museum.name}
-          </Link>
-          <div className="flex items-center gap-8">
-            <Link href={`/museum/${slug}`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
-              Collection
-            </Link>
-            <Link href={`/museum/${slug}/events`} className="text-sm text-stone-900 border-b border-stone-900 pb-0.5">
-              Events
-            </Link>
-            <Link href={`/museum/${slug}/visit`} className="text-sm text-stone-400 hover:text-stone-900 transition-colors">
-              Plan Your Visit
-            </Link>
+    <div className="max-w-4xl mx-auto px-6 py-16">
+      <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: accent }}>Events</div>
+      <h1 className="text-5xl mb-2" style={{ ...headingStyle, color: content.heading }}>What&apos;s On</h1>
+      <p className="font-light text-lg mb-12" style={{ color: content.muted }}>Discover our upcoming events and exhibitions.</p>
+
+      {upcoming.length > 0 && (
+        <div className="mb-16">
+          <h2 className="text-2xl mb-6" style={{ ...headingStyle, color: content.heading }}>Upcoming</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {upcoming.map(event => (
+              <Link
+                key={event.id}
+                href={`/museum/${slug}/events/${event.id}`}
+                className="border rounded-lg overflow-hidden transition-colors group block"
+                style={{ borderColor: content.border, background: content.cardBg }}
+              >
+                {event.image_url && (
+                  <div className="aspect-[16/9] overflow-hidden">
+                    <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="text-xs uppercase tracking-widest mb-2" style={{ color: accent }}>
+                    {TYPE_LABELS[event.event_type] || event.event_type}
+                  </div>
+                  <h3 className="text-xl mb-2" style={{ ...headingStyle, color: content.heading }}>{event.title}</h3>
+                  <p className="text-sm mb-1" style={{ color: content.body }}>{formatDateRange(event.start_date, event.end_date)}</p>
+                  {event.location && <p className="text-sm mb-2" style={{ color: content.muted }}>{event.location}</p>}
+                  <p className="text-sm font-mono mt-3" style={{ color: content.heading }}>{formatPrice(event.price_cents, event.currency)}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-      </nav>
+      )}
 
-      <div className="max-w-4xl mx-auto px-6 py-16">
-        <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Events</div>
-        <h1 className="font-serif text-5xl italic text-stone-900 mb-2">What's On</h1>
-        <p className="text-stone-400 font-light text-lg mb-12">Discover our upcoming events and exhibitions.</p>
+      {upcoming.length === 0 && (
+        <div className="text-center py-16 mb-16">
+          <div className="text-4xl mb-4">◎</div>
+          <p className="text-sm font-mono" style={{ color: content.muted }}>No upcoming events at the moment. Check back soon!</p>
+        </div>
+      )}
 
-        {upcoming.length > 0 && (
-          <div className="mb-16">
-            <h2 className="font-serif text-2xl italic text-stone-900 mb-6">Upcoming</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {upcoming.map(event => (
-                <Link
-                  key={event.id}
-                  href={`/museum/${slug}/events/${event.id}`}
-                  className="border border-stone-200 rounded-lg overflow-hidden hover:border-stone-400 transition-colors group"
-                >
-                  {event.image_url && (
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <div className="text-xs uppercase tracking-widest text-amber-600 mb-2">{TYPE_LABELS[event.event_type] || event.event_type}</div>
-                    <h3 className="font-serif text-xl italic text-stone-900 mb-2">{event.title}</h3>
-                    <p className="text-sm text-stone-500 mb-1">{formatDateRange(event.start_date, event.end_date)}</p>
-                    {event.location && <p className="text-sm text-stone-400 mb-2">{event.location}</p>}
-                    <p className="text-sm font-mono text-stone-900 mt-3">{formatPrice(event.price_cents, event.currency)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {upcoming.length === 0 && (
-          <div className="text-center py-16 mb-16">
-            <div className="text-4xl mb-4">◎</div>
-            <p className="text-sm text-stone-400 font-mono">No upcoming events at the moment. Check back soon!</p>
-          </div>
-        )}
-
-        {past.length > 0 && (
-          <div>
-            <h2 className="font-serif text-2xl italic text-stone-400 mb-6">Past Events</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60">
-              {past.map(event => (
-                <div key={event.id} className="border border-stone-200 rounded-lg p-6">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 mb-2">{TYPE_LABELS[event.event_type] || event.event_type}</div>
-                  <h3 className="font-serif text-xl italic text-stone-600 mb-2">{event.title}</h3>
-                  <p className="text-sm text-stone-400">{formatDateRange(event.start_date, event.end_date)}</p>
+      {past.length > 0 && (
+        <div>
+          <h2 className="text-2xl mb-6 opacity-50" style={{ ...headingStyle, color: content.heading }}>Past Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-50">
+            {past.map(event => (
+              <div key={event.id} className="border rounded-lg p-6" style={{ borderColor: content.border, background: content.cardBg }}>
+                <div className="text-xs uppercase tracking-widest mb-2" style={{ color: content.muted }}>
+                  {TYPE_LABELS[event.event_type] || event.event_type}
                 </div>
-              ))}
-            </div>
+                <h3 className="text-xl mb-2" style={{ ...headingStyle, color: content.body }}>{event.title}</h3>
+                <p className="text-sm" style={{ color: content.muted }}>{formatDateRange(event.start_date, event.end_date)}</p>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
