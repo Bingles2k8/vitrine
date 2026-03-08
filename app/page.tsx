@@ -171,6 +171,7 @@ export default function Home() {
                 missing: ['Collections compliance tools', 'Analytics', 'Staff management'],
                 cta: 'Start free →',
                 ctaHref: '/signup',
+                learnMoreHref: '/plans/community',
                 featured: false,
                 muted: true,
               },
@@ -183,6 +184,7 @@ export default function Home() {
                 missing: ['Visit & About pages', 'Collections compliance tools', 'Analytics', 'Staff management'],
                 cta: 'Get started →',
                 ctaHref: '/signup',
+                learnMoreHref: '/plans/hobbyist',
                 featured: false,
                 muted: false,
               },
@@ -195,6 +197,7 @@ export default function Home() {
                 missing: ['Priority support'],
                 cta: 'Get started →',
                 ctaHref: '/signup',
+                learnMoreHref: '/plans/professional',
                 featured: true,
                 muted: false,
               },
@@ -207,6 +210,7 @@ export default function Home() {
                 missing: [],
                 cta: 'Get started →',
                 ctaHref: '/signup',
+                learnMoreHref: '/plans/institution',
                 featured: false,
                 muted: false,
               },
@@ -219,6 +223,7 @@ export default function Home() {
                 missing: [],
                 cta: 'Contact us →',
                 ctaHref: 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry',
+                learnMoreHref: '/plans/enterprise',
                 featured: false,
                 muted: true,
               },
@@ -248,12 +253,20 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={p.ctaHref}
-                  className={`mt-auto block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
-                >
-                  {p.cta}
-                </Link>
+                <div className="mt-auto flex flex-col gap-2">
+                  <Link
+                    href={p.learnMoreHref}
+                    className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors"
+                  >
+                    Learn more
+                  </Link>
+                  <Link
+                    href={p.ctaHref}
+                    className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
+                  >
+                    {p.cta}
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

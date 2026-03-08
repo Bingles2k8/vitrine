@@ -277,10 +277,10 @@ export default function SiteBuilder() {
           </div>
         </div>
 
-        <div className="p-4 md:p-8 grid grid-cols-2 gap-8 items-start">
+        <div className="h-[calc(100vh-3.5rem)] grid grid-cols-2 gap-8 overflow-hidden">
 
           {/* Left — settings */}
-          <div className="space-y-6">
+          <div className="overflow-y-auto p-4 md:p-8 space-y-6">
 
             {/* Template picker */}
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
@@ -601,7 +601,7 @@ export default function SiteBuilder() {
           </div>
 
           {/* Right — live preview */}
-          <div className="sticky top-24">
+          <div className="overflow-y-auto p-4 md:p-8">
             <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Live Preview</div>
             <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden shadow-sm">
 
