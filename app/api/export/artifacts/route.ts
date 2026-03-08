@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,7 +29,15 @@ export async function GET() {
 
   if (!museumId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { data: artifacts } = await supabase
+  // Parse optional filter params
+  const { searchParams } = new URL(request.url)
+  const statusParam = searchParams.get('status')         // comma-separated statuses
+  const mediumParam = searchParams.get('medium')         // partial match
+  const acquiredFrom = searchParams.get('acquired_from') // YYYY-MM-DD
+  const acquiredTo   = searchParams.get('acquired_to')   // YYYY-MM-DD
+  const includeDeleted = searchParams.get('include_deleted') === 'true'
+
+  let query = supabase
     .from('artifacts')
     .select([
       'accession_no', 'title', 'artist', 'year', 'medium', 'culture', 'object_type',
@@ -41,8 +49,30 @@ export async function GET() {
       'provenance', 'inscription', 'marks', 'dimensions', 'description',
     ].join(', '))
     .eq('museum_id', museumId)
-    .is('deleted_at', null)
     .order('accession_no')
+
+  if (!includeDeleted) {
+    query = query.is('deleted_at', null)
+  }
+
+  if (statusParam) {
+    const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean)
+    if (statuses.length > 0) query = query.in('status', statuses)
+  }
+
+  if (mediumParam) {
+    query = query.ilike('medium', `%${mediumParam}%`)
+  }
+
+  if (acquiredFrom) {
+    query = query.gte('acquisition_date', acquiredFrom)
+  }
+
+  if (acquiredTo) {
+    query = query.lte('acquisition_date', acquiredTo)
+  }
+
+  const { data: artifacts } = await query
 
   const HEADERS = [
     'Accession No', 'Title', 'Artist', 'Year', 'Medium', 'Culture', 'Object Type',

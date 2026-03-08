@@ -81,6 +81,11 @@ export default function SiteBuilder() {
     accent_color: '#c8961e',
     address: '',
     opening_hours: '',
+    contact_phone: '',
+    contact_email: '',
+    about_text: '',
+    facilities: '',
+    maps_embed_url: '',
     template: 'minimal',
     card_radius: 8,
     hero_height: 'medium',
@@ -112,6 +117,11 @@ export default function SiteBuilder() {
         accent_color: museum.accent_color || '#c8961e',
         address: museum.address || '',
         opening_hours: museum.opening_hours || '',
+        contact_phone: museum.contact_phone || '',
+        contact_email: museum.contact_email || '',
+        about_text: museum.about_text || '',
+        facilities: museum.facilities || '',
+        maps_embed_url: museum.maps_embed_url || '',
         template: museum.template || 'minimal',
         card_radius: museum.card_radius ?? 8,
         hero_height: museum.hero_height || 'medium',
@@ -531,6 +541,44 @@ export default function SiteBuilder() {
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Opening Hours</label>
                 <textarea value={form.opening_hours} onChange={e => set('opening_hours', e.target.value)}
                   placeholder="Mon-Fri: 10:00-17:00, Sat-Sun: 10:00-18:00" rows={3}
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Phone Number</label>
+                <input value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)}
+                  placeholder="+44 20 7946 0958"
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Contact Email</label>
+                <input type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)}
+                  placeholder="hello@yourmuseum.org"
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Map Embed URL</label>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Paste the <code className="font-mono">src</code> URL from Google Maps → Share → Embed a map.</p>
+                <input value={form.maps_embed_url} onChange={e => set('maps_embed_url', e.target.value)}
+                  placeholder="https://www.google.com/maps/embed?pb=..."
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+              </div>
+            </div>
+
+            {/* About & facilities */}
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">About & Facilities</div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About / Mission</label>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">A short description of your museum's history and purpose, shown on the Visit page.</p>
+                <textarea value={form.about_text} onChange={e => set('about_text', e.target.value)}
+                  placeholder="Founded in 1892, the Whitmore Collection preserves..." rows={4}
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facilities & Accessibility</label>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">e.g. wheelchair access, free parking, café on-site, hearing loop available.</p>
+                <textarea value={form.facilities} onChange={e => set('facilities', e.target.value)}
+                  placeholder="Fully wheelchair accessible. Free parking on-site. Café open during museum hours." rows={3}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
               </div>
             </div>

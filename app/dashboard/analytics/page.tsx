@@ -68,12 +68,99 @@ function BreakdownCard({ title, data, color }: { title: string; data: [string, n
   )
 }
 
+const ALL_STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned']
+
+function ExportModal({ onClose }: { onClose: () => void }) {
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [medium, setMedium] = useState('')
+  const [acquiredFrom, setAcquiredFrom] = useState('')
+  const [acquiredTo, setAcquiredTo] = useState('')
+  const [includeDeleted, setIncludeDeleted] = useState(false)
+
+  function toggleStatus(s: string) {
+    setSelectedStatuses(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+  }
+
+  function buildUrl() {
+    const params = new URLSearchParams()
+    if (selectedStatuses.length > 0) params.set('status', selectedStatuses.join(','))
+    if (medium.trim()) params.set('medium', medium.trim())
+    if (acquiredFrom) params.set('acquired_from', acquiredFrom)
+    if (acquiredTo) params.set('acquired_to', acquiredTo)
+    if (includeDeleted) params.set('include_deleted', 'true')
+    const qs = params.toString()
+    return `/api/export/artifacts${qs ? '?' + qs : ''}`
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl w-full max-w-md p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Export Collection</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 text-xl leading-none">×</button>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Filter by Status</div>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Leave all unchecked to export every status.</p>
+          <div className="flex flex-wrap gap-2">
+            {ALL_STATUSES.map(s => (
+              <button key={s} type="button" onClick={() => toggleStatus(s)}
+                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${selectedStatuses.includes(s) ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Medium (partial match)</label>
+          <input value={medium} onChange={e => setMedium(e.target.value)} placeholder="e.g. Oil, Watercolour"
+            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Acquired from</label>
+            <input type="date" value={acquiredFrom} onChange={e => setAcquiredFrom(e.target.value)}
+              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+          </div>
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Acquired to</label>
+            <input type="date" value={acquiredTo} onChange={e => setAcquiredTo(e.target.value)}
+              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={includeDeleted} onChange={e => setIncludeDeleted(e.target.checked)}
+            className="rounded border-stone-300 dark:border-stone-600 accent-stone-900 dark:accent-white" />
+          <span className="text-xs text-stone-500 dark:text-stone-400">Include deleted / trashed objects</span>
+        </label>
+
+        <div className="flex gap-3 pt-1">
+          <button onClick={onClose}
+            className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+            Cancel
+          </button>
+          <a href={buildUrl()} download onClick={onClose}
+            className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2.5 rounded text-center hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors">
+            Download CSV ↓
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AnalyticsPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
   const [loading, setLoading] = useState(true)
+  const [showExport, setShowExport] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -168,12 +255,13 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
+      {showExport && <ExportModal onClose={() => setShowExport(false)} />}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
-          <a href="/api/export/artifacts" download
+          <button onClick={() => setShowExport(true)}
             className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
             Export CSV ↓
-          </a>
+          </button>
         </div>
 
         {artifacts.length === 0 ? (

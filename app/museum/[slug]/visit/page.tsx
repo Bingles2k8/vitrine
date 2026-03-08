@@ -66,16 +66,27 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-16">
-        <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Visit</div>
-        <h1 className="font-serif text-5xl italic text-stone-900 mb-2">Plan Your Visit</h1>
-        <p className="text-stone-400 font-light text-lg mb-12">We'd love to welcome you.</p>
+      <div className="max-w-3xl mx-auto px-6 py-16 space-y-12">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Visit</div>
+          <h1 className="font-serif text-5xl italic text-stone-900 mb-2">Plan Your Visit</h1>
+          <p className="text-stone-400 font-light text-lg">We'd love to welcome you.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* About */}
+        {museum.about_text && (
+          <div>
+            <h2 className="font-serif text-2xl italic text-stone-900 mb-4">About {museum.name}</h2>
+            <p className="text-stone-600 leading-relaxed">{museum.about_text}</p>
+          </div>
+        )}
+
+        {/* Hours & Getting Here */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-stone-200 rounded-lg p-6">
             <h2 className="font-serif text-xl italic text-stone-900 mb-4">Opening Hours</h2>
             {museum.opening_hours ? (
-              <p className="text-sm text-stone-500 leading-relaxed">{museum.opening_hours}</p>
+              <p className="text-sm text-stone-500 leading-relaxed whitespace-pre-line">{museum.opening_hours}</p>
             ) : (
               <p className="text-sm text-stone-400 italic">Opening hours not set yet.</p>
             )}
@@ -84,15 +95,69 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
           <div className="border border-stone-200 rounded-lg p-6">
             <h2 className="font-serif text-xl italic text-stone-900 mb-4">Getting Here</h2>
             {museum.address ? (
-              <p className="text-sm text-stone-500 leading-relaxed">{museum.address}</p>
+              <p className="text-sm text-stone-500 leading-relaxed whitespace-pre-line">{museum.address}</p>
             ) : (
               <p className="text-sm text-stone-400 italic">Address not set yet.</p>
             )}
           </div>
         </div>
 
+        {/* Map */}
+        {museum.maps_embed_url && (
+          <div>
+            <h2 className="font-serif text-2xl italic text-stone-900 mb-4">Location</h2>
+            <div className="rounded-lg overflow-hidden border border-stone-200">
+              <iframe
+                src={museum.maps_embed_url}
+                width="100%"
+                height="360"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Contact */}
+        {(museum.contact_phone || museum.contact_email) && (
+          <div>
+            <h2 className="font-serif text-2xl italic text-stone-900 mb-4">Contact</h2>
+            <div className="flex flex-col gap-3">
+              {museum.contact_phone && (
+                <a href={`tel:${museum.contact_phone}`}
+                  className="inline-flex items-center gap-3 text-stone-600 hover:text-stone-900 transition-colors group w-fit">
+                  <span className="w-8 h-8 rounded-full border border-stone-200 group-hover:border-stone-400 flex items-center justify-center text-sm transition-colors">
+                    📞
+                  </span>
+                  <span className="text-sm">{museum.contact_phone}</span>
+                </a>
+              )}
+              {museum.contact_email && (
+                <a href={`mailto:${museum.contact_email}`}
+                  className="inline-flex items-center gap-3 text-stone-600 hover:text-stone-900 transition-colors group w-fit">
+                  <span className="w-8 h-8 rounded-full border border-stone-200 group-hover:border-stone-400 flex items-center justify-center text-sm transition-colors">
+                    ✉️
+                  </span>
+                  <span className="text-sm">{museum.contact_email}</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Facilities */}
+        {museum.facilities && (
+          <div>
+            <h2 className="font-serif text-2xl italic text-stone-900 mb-4">Facilities & Accessibility</h2>
+            <p className="text-stone-600 leading-relaxed whitespace-pre-line">{museum.facilities}</p>
+          </div>
+        )}
+
+        {/* Upcoming Events */}
         {upcomingEvents && upcomingEvents.length > 0 && (
-          <div className="mb-12">
+          <div>
             <h2 className="font-serif text-2xl italic text-stone-900 mb-6">Upcoming Events</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {upcomingEvents.map(event => (
@@ -112,6 +177,7 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
           </div>
         )}
 
+        {/* CTA */}
         <div className="border border-stone-200 rounded-lg p-8 text-center">
           <div className="text-4xl mb-4">{museum.logo_emoji}</div>
           <h2 className="font-serif text-2xl italic text-stone-900 mb-2">{museum.name}</h2>
