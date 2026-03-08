@@ -19,7 +19,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">1. The service</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              Vitrine is a collection management system (CMS) for museums and cultural institutions, operated by <strong className="text-stone-900 dark:text-stone-100">Composition Limited</strong>, a company registered in England and Wales. By creating an account, you agree to these terms.
+              Vitrine is a collection management system (CMS) for museums and cultural institutions, operated by Composition Limited, a company registered in England and Wales. By creating an account, you agree to these terms.
             </p>
           </section>
 
@@ -65,7 +65,7 @@ export default function TermsPage() {
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
               Vitrine offers free and paid subscription plans. Plan features and limits are described on our{' '}
               <Link href="/#pricing" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">pricing page</Link>.
-              Where museums use Vitrine&apos;s ticketing feature to sell tickets to visitors, <strong className="text-stone-900 dark:text-stone-100">Composition Limited, the company that owns and operates Vitrine, charges a platform fee of 2%</strong> of the gross ticket sale value (excluding any Stripe payment processing fees). This fee is deducted automatically at the point of sale via Stripe Connect. We reserve the right to change pricing with 30 days&apos; notice.
+              Where museums use Vitrine&apos;s ticketing feature to sell tickets to visitors, Composition Limited, the company that owns and operates Vitrine, charges a platform fee of 2% of the gross ticket sale value (excluding any Stripe payment processing fees). This fee is deducted automatically at the point of sale via Stripe Connect. We reserve the right to change pricing with 30 days&apos; notice.
             </p>
           </section>
 
@@ -88,17 +88,20 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">7. Beta and pre-release software</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              Vitrine is currently in <strong className="text-stone-900 dark:text-stone-100">beta</strong>. The service is under active development and is provided on an as-is basis during this period. You may encounter bugs, unexpected behaviour, degraded performance, or temporary data unavailability. Features may be added, changed, or removed without notice. We strongly recommend maintaining your own backups of critical data. By using the service during beta, you acknowledge and accept these limitations.
+              Vitrine is currently in beta. The service is under active development and is provided on an as-is basis during this period. You may encounter bugs, unexpected behaviour, degraded performance, or temporary data unavailability. Features may be added, changed, or removed without notice. We strongly recommend maintaining your own backups of critical data. By using the service during beta, you acknowledge and accept these limitations.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">8. Limitation of liability</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">8. Disclaimer of warranties and limitation of liability</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              The service is provided <strong className="text-stone-900 dark:text-stone-100">"as is"</strong> and <strong className="text-stone-900 dark:text-stone-100">"as available"</strong> without warranty of any kind, express or implied. We do not warrant that the service will be error-free, secure, or available at any particular time. We do not guarantee that data stored on Vitrine will be retained indefinitely — data may be lost, corrupted, or become inaccessible due to technical failure, account termination, or service discontinuation. You are solely responsible for maintaining independent backups of your collection data.
+              The service is provided &quot;as is&quot; and &quot;as available&quot; without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. We expressly disclaim all such warranties to the fullest extent permitted by law.
             </p>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              To the maximum extent permitted by law, <strong className="text-stone-900 dark:text-stone-100">Composition Limited</strong> accepts no liability for any loss or damage arising from your use of, or inability to use, the service — including but not limited to loss of data, loss of records, loss of revenue, reputational damage, or business interruption, whether arising in contract, tort, or otherwise. Our total aggregate liability to you will not exceed the amount you paid us in the 12 months preceding the claim, or £50, whichever is lower.
+              Composition Limited shall not be liable for any damages whatsoever — whether direct, indirect, incidental, special, consequential, punitive, or exemplary — arising out of or in connection with your use of, or inability to use, the service. This includes, without limitation, loss of data, loss of collection records, loss of revenue, loss of profit, reputational harm, business interruption, or any other pecuniary or non-pecuniary loss, whether arising in contract, tort (including negligence), statute, or otherwise, even if we have been advised of the possibility of such damages.
+            </p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              We do not guarantee that data stored on Vitrine will be retained indefinitely. Data may be lost, corrupted, or become inaccessible due to technical failure, account termination, or service discontinuation. You are solely responsible for maintaining independent backups of your collection data. 
             </p>
           </section>
 
@@ -110,14 +113,30 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">10. Governing law</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">10. Dispute resolution and mandatory binding arbitration</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              These terms are governed by the laws of England and Wales. Any disputes will be subject to the exclusive jurisdiction of the courts of England and Wales.
+              Where permitted by applicable law, we require that any dispute, claim, or controversy arising out of or relating to these terms or the service — including questions of validity, interpretation, or breach — be resolved exclusively by final and binding arbitration, rather than in court. By using Vitrine, you agree to this requirement to the fullest extent allowed by law. Where a claim is not eligible for mandatory arbitration under applicable law, nothing in this clause prevents you from pursuing that claim through the courts.
+            </p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              Arbitration shall be conducted by a single arbitrator under the rules of the London Court of International Arbitration (LCIA), with the seat of arbitration in London, England. Proceedings shall be conducted in English. The arbitrator&apos;s decision shall be final and binding on both parties and may be enforced in any court of competent jurisdiction.
+            </p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              Nothing in this clause prevents either party from seeking urgent interim or injunctive relief from a court of competent jurisdiction where necessary to prevent irreparable harm pending the outcome of arbitration.
+            </p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              Nothing in this clause affects your statutory rights as a consumer under applicable law, including rights under the Consumer Rights Act 2015. 
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">11. Contact</h2>
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">11. Governing law</h2>
+            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+              These terms are governed by the laws of England and Wales. Subject to the arbitration clause above, any matters not subject to arbitration shall be subject to the exclusive jurisdiction of the courts of England and Wales.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">12. Contact</h2>
             <p className="text-sm text-stone-600 dark:text-stone-400">
               Questions about these terms:{' '}
               <a href="mailto:hello@composition.agency" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
