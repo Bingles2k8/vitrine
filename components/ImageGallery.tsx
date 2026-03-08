@@ -116,10 +116,15 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
           </label>
         )}
         {canEdit && images.length >= imageLimit && (
-          <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-3">
+          <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-3 gap-2">
             <div className="text-xs text-stone-400 dark:text-stone-500">
               {imageLimit === 1 ? 'Image limit reached' : `${imageLimit} image limit reached`}
             </div>
+            {imageLimit === 1 && (
+              <a href="/dashboard/plan" className="text-xs font-mono text-amber-600 dark:text-amber-400 hover:underline">
+                Upgrade for more images →
+              </a>
+            )}
           </div>
         )}
       </div>
