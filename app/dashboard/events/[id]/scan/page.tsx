@@ -22,6 +22,7 @@ export default function TicketScannerPage() {
   const [resultState, setResultState] = useState<'idle' | 'valid' | 'used' | 'invalid' | 'loading'>('idle')
   const [marking, setMarking] = useState(false)
   const [cameraMode, setCameraMode] = useState(false)
+  const [showCameraPrompt, setShowCameraPrompt] = useState(false)
   const [cameraError, setCameraError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -176,7 +177,7 @@ export default function TicketScannerPage() {
   const statusLabels = { idle: 'Ready to scan', loading: 'Looking up…', valid: 'Valid ticket', used: 'Already used', invalid: 'Invalid ticket' }
 
   return (
-    <div className="min-h-screen bg-stone-950 text-white flex flex-col">
+    <div className="relative min-h-screen bg-stone-950 text-white flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800">
         <button onClick={() => router.push(`/dashboard/events/${params.id}`)} className="text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors">
@@ -275,7 +276,7 @@ export default function TicketScannerPage() {
               </button>
             </div>
             <button
-              onClick={() => setCameraMode(true)}
+              onClick={() => setShowCameraPrompt(true)}
               className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-mono text-sm py-2.5 rounded-lg transition-colors"
             >
               <span>📷</span> Use camera
@@ -283,6 +284,33 @@ export default function TicketScannerPage() {
           </div>
         )}
       </div>
+      {/* Camera permission pre-prompt */}
+      {showCameraPrompt && (
+        <div className="absolute inset-0 bg-black/80 flex items-end justify-center z-50 pb-safe">
+          <div className="bg-stone-900 rounded-t-2xl w-full max-w-sm p-6 pb-8">
+            <div className="text-3xl mb-3 text-center">📷</div>
+            <h2 className="text-white font-serif text-xl italic text-center mb-2">Camera access needed</h2>
+            <p className="text-stone-400 text-sm text-center mb-1">
+              Vitrine needs access to your camera to scan ticket QR codes at entry.
+            </p>
+            <p className="text-stone-500 text-xs text-center mb-6">
+              Your camera is only used while the scanner is open. No images are stored.
+            </p>
+            <button
+              onClick={() => { setShowCameraPrompt(false); setCameraMode(true) }}
+              className="w-full bg-white text-stone-900 font-mono text-sm py-3 rounded-xl mb-3 hover:bg-stone-100 transition-colors"
+            >
+              Allow camera access
+            </button>
+            <button
+              onClick={() => setShowCameraPrompt(false)}
+              className="w-full bg-stone-800 text-stone-400 font-mono text-sm py-3 rounded-xl hover:bg-stone-700 transition-colors"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
