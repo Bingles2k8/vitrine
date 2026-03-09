@@ -1,6 +1,6 @@
 'use client'
 
-import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS, CURRENCIES } from '@/components/tabs/shared'
 
 interface AcquisitionTabProps {
   form: Record<string, any>
@@ -51,6 +51,21 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
             <input type="date" value={form.legal_transfer_date || ''} onChange={e => set('legal_transfer_date', e.target.value)} className={inputCls} />
             <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">The date legal title formally passed to the museum</p>
           </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Acquisition Justification <span className="text-red-400">*</span></label>
+          <textarea value={form.acquisition_justification || ''} onChange={e => set('acquisition_justification', e.target.value)} rows={3}
+            placeholder="How this object fits the collecting policy — rationale for acquisition…"
+            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Mandatory (Spectrum 5.1 Proc 2) — required for Accreditation</p>
+        </div>
+
+        <div>
+          <label className={labelCls}>Associated Documentation Reference</label>
+          <input value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
+            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…" className={inputCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Reference to deeds of gift, purchase receipts, correspondence (Mandatory per Spectrum)</p>
         </div>
 
         <div>
@@ -116,6 +131,22 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
             <input type="number" min={1} value={form.acquisition_object_count || ''} onChange={e => set('acquisition_object_count', parseInt(e.target.value) || '')} className={inputCls} />
           </div>
         </div>
+
+        {(form.acquisition_method === 'Purchase' || form.acquisition_method === 'Exchange' || form.acquisition_method === 'Bequest') && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Purchase Price / Agreed Value</label>
+              <input type="number" step="0.01" min="0" value={form.acquisition_value || ''} onChange={e => set('acquisition_value', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" className={inputCls} />
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for purchase, exchange, or bequest valuation (Spectrum Proc 2)</p>
+            </div>
+            <div>
+              <label className={labelCls}>Currency</label>
+              <select value={form.acquisition_currency || 'GBP'} onChange={e => set('acquisition_currency', e.target.value)} className={inputCls}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">

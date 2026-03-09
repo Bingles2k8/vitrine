@@ -40,7 +40,7 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
   const MOVE_TYPES = ['Permanent', 'Temporary']
   const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '', authorised_by: '', move_type: 'Permanent', expected_return_date: '', expected_return_location: '' })
   const [showAddLocation, setShowAddLocation] = useState(false)
-  const [newLocation, setNewLocation] = useState({ name: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
+  const [newLocation, setNewLocation] = useState({ name: '', location_code: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -98,6 +98,7 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
         .from('locations')
         .insert({
           name: newLocation.name,
+          location_code: newLocation.location_code || null,
           building: newLocation.building,
           floor: newLocation.floor,
           room: newLocation.room,
@@ -115,7 +116,7 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
         set('current_location', data.name)
       }
 
-      setNewLocation({ name: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
+      setNewLocation({ name: '', location_code: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
       setShowAddLocation(false)
     } finally {
       setSubmitting(false)
@@ -168,10 +169,16 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
 
         {showAddLocation && (
           <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-4 bg-stone-50 dark:bg-stone-800/50">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Name *</label>
                 <input value={newLocation.name} onChange={e => setNewLocation({ ...newLocation, name: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Location Code <span className="text-red-400">*</span></label>
+                <input value={newLocation.location_code} onChange={e => setNewLocation({ ...newLocation, location_code: e.target.value })}
+                  placeholder="e.g. STORE-A-BAY3-SHELF2" className={inputCls} />
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Unique code (Mandatory — Spectrum Proc 3)</p>
               </div>
               <div>
                 <label className={labelCls}>Type</label>
