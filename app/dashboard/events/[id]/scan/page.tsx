@@ -26,7 +26,10 @@ export default function TicketScannerPage() {
   const [cameraError, setCameraError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const scannerRef = useRef<any>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const scanningRef = useRef(false)
   const router = useRouter()
   const params = useParams()
   const supabase = createClient()
@@ -51,39 +54,58 @@ export default function TicketScannerPage() {
     load()
   }, [])
 
-  // Camera scanner lifecycle
+  // Camera scanner using getUserMedia + jsQR directly (no workers)
   useEffect(() => {
     if (!cameraMode) return
 
-    let cancelled = false
+    let stopped = false
 
-    async function startScanner() {
-      if (!videoRef.current) return
+    async function startCamera() {
       try {
-        const QrScanner = (await import('qr-scanner')).default
-        QrScanner.WORKER_PATH = '/qr-scanner-worker.min.js'
-        const scanner = new QrScanner(
-          videoRef.current,
-          (result: { data: string }) => {
-            if (cancelled) return
-            const extracted = extractCode(result.data)
-            scanner.stop()
-            handleLookup(extracted)
-          },
-          {
-            preferredCamera: 'environment',
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-          }
-        )
-        scannerRef.current = scanner
-        await scanner.start()
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        })
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
+        streamRef.current = stream
+
+        const video = videoRef.current
+        if (!video) { stream.getTracks().forEach(t => t.stop()); return }
+        video.srcObject = stream
+        await video.play()
+
+        const jsQR = (await import('jsqr')).default
+        if (stopped) return
+
+        const canvas = canvasRef.current!
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+
+        scanningRef.current = true
         setCameraError('')
+
+        function tick() {
+          if (!scanningRef.current || stopped) return
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+            if (found?.data) {
+              scanningRef.current = false
+              const extracted = extractCode(found.data)
+              handleLookup(extracted)
+              return
+            }
+          }
+          rafRef.current = requestAnimationFrame(tick)
+        }
+
+        rafRef.current = requestAnimationFrame(tick)
       } catch (err: any) {
-        if (cancelled) return
+        if (stopped) return
         const name = err?.name ?? ''
         if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-          setCameraError('Camera permission denied. To enable it, tap the lock icon in your browser address bar, allow Camera, then try again.')
+          setCameraError('Camera permission denied. Tap the lock icon in your browser address bar, allow Camera, then try again.')
         } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
           setCameraError('No camera found on this device.')
         } else if (name === 'NotReadableError') {
@@ -95,22 +117,16 @@ export default function TicketScannerPage() {
       }
     }
 
-    startScanner()
+    startCamera()
 
     return () => {
-      cancelled = true
-      scannerRef.current?.destroy()
-      scannerRef.current = null
+      stopped = true
+      scanningRef.current = false
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      streamRef.current = null
     }
   }, [cameraMode])
-
-  // Destroy scanner on unmount
-  useEffect(() => {
-    return () => {
-      scannerRef.current?.destroy()
-      scannerRef.current = null
-    }
-  }, [])
 
   const handleLookup = useCallback(async (overrideCode?: string) => {
     const trimmed = (overrideCode ?? code).trim().toUpperCase()
@@ -145,13 +161,40 @@ export default function TicketScannerPage() {
     setMarking(false)
   }
 
+  function resumeCamera() {
+    scanningRef.current = true
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    import('jsqr').then(m => {
+      const jsQR = m.default
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+      function tick() {
+        if (!scanningRef.current) return
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+          if (found?.data) {
+            scanningRef.current = false
+            handleLookup(extractCode(found.data))
+            return
+          }
+        }
+        rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    })
+  }
+
   function reset() {
     setCode('')
     setResult(null)
     setResultState('idle')
     if (cameraMode) {
-      // Restart the scanner for the next ticket
-      scannerRef.current?.start().catch(() => {})
+      resumeCamera()
     } else {
       setTimeout(() => inputRef.current?.focus(), 50)
     }
@@ -243,6 +286,8 @@ export default function TicketScannerPage() {
                 playsInline
                 muted
               />
+              {/* Hidden canvas used for jsQR frame analysis */}
+              <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="border-2 border-white/40 rounded-lg" style={{ width: '60%', aspectRatio: '1' }} />
               </div>
@@ -293,6 +338,7 @@ export default function TicketScannerPage() {
           </div>
         )}
       </div>
+
       {/* Camera permission pre-prompt */}
       {showCameraPrompt && (
         <div className="absolute inset-0 bg-black/80 flex items-end justify-center z-50 pb-safe">
