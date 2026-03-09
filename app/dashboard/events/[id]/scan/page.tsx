@@ -61,6 +61,7 @@ export default function TicketScannerPage() {
       if (!videoRef.current) return
       try {
         const QrScanner = (await import('qr-scanner')).default
+        QrScanner.WORKER_PATH = '/qr-scanner-worker.min.js'
         const scanner = new QrScanner(
           videoRef.current,
           (result: { data: string }) => {
@@ -78,11 +79,19 @@ export default function TicketScannerPage() {
         scannerRef.current = scanner
         await scanner.start()
         setCameraError('')
-      } catch {
-        if (!cancelled) {
-          setCameraError('Camera not available — check browser permissions or use manual entry.')
-          setCameraMode(false)
+      } catch (err: any) {
+        if (cancelled) return
+        const name = err?.name ?? ''
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+          setCameraError('Camera permission denied. To enable it, tap the lock icon in your browser address bar, allow Camera, then try again.')
+        } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+          setCameraError('No camera found on this device.')
+        } else if (name === 'NotReadableError') {
+          setCameraError('Camera is in use by another app. Close it and try again.')
+        } else {
+          setCameraError('Camera failed to start. Try refreshing the page, or use manual entry below.')
         }
+        setCameraMode(false)
       }
     }
 
