@@ -116,7 +116,7 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
             <textarea value={valuationForm.notes} onChange={e => setValuationForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
           </div>
           <button type="button" onClick={addValuation} disabled={!valuationForm.value || !valuationForm.valuation_date || submitting}
-            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
             {submitting ? 'Saving…' : 'Save valuation →'}
           </button>
         </div>

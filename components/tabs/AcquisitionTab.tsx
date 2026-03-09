@@ -158,7 +158,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
       </div>
 
       {/* Card 3 — Legal & Ethics Checks */}
-      <div className="bg-white border border-stone-200 rounded-lg p-6 space-y-4">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Legal &amp; Ethics Checks (Procedure 2 — Mandatory)</div>
 
         <p className="text-xs text-stone-400 dark:text-stone-500">Tick each check once completed. All must be considered for acquisitions made after 2005.</p>

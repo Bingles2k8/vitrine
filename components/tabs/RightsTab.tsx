@@ -270,19 +270,14 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
               <div><label className={labelCls}>Image / File Reference</label><input value={reproductionForm.image_file_reference} onChange={e => setReproductionForm(f => ({ ...f, image_file_reference: e.target.value }))} placeholder="e.g. IMG-2025-001.tiff" className={inputCls} /></div>
               <div><label className={labelCls}>Credit Line</label><input value={reproductionForm.credit_line} onChange={e => setReproductionForm(f => ({ ...f, credit_line: e.target.value }))} placeholder="Required attribution text" className={inputCls} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div><label className={labelCls}>Licence Terms</label><input value={reproductionForm.licence_terms} onChange={e => setReproductionForm(f => ({ ...f, licence_terms: e.target.value }))} placeholder="e.g. One-time use, CC BY" className={inputCls} /></div>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className={labelCls}>Fee</label>
-                  <input type="number" step="0.01" value={reproductionForm.fee} onChange={e => setReproductionForm(f => ({ ...f, fee: e.target.value }))} placeholder="0.00" className={inputCls} />
-                </div>
-                <div className="w-24">
-                  <label className={labelCls}>Currency</label>
-                  <select value={reproductionForm.fee_currency} onChange={e => setReproductionForm(f => ({ ...f, fee_currency: e.target.value }))} className={inputCls}>
-                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
+              <div><label className={labelCls}>Fee</label><input type="number" step="0.01" value={reproductionForm.fee} onChange={e => setReproductionForm(f => ({ ...f, fee: e.target.value }))} placeholder="0.00" className={inputCls} /></div>
+              <div>
+                <label className={labelCls}>Currency</label>
+                <select value={reproductionForm.fee_currency} onChange={e => setReproductionForm(f => ({ ...f, fee_currency: e.target.value }))} className={inputCls}>
+                  {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                </select>
               </div>
               <div><label className={labelCls}>Decision By</label><input value={reproductionForm.decision_by} onChange={e => setReproductionForm(f => ({ ...f, decision_by: e.target.value }))} placeholder="Staff member name" className={inputCls} /></div>
             </div>

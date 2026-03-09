@@ -237,7 +237,7 @@ export default function OverviewTab({ form, set, canEdit, saving, artifact, muse
         {/* Structured dimensions */}
         <div>
           <label className={labelCls}>Structured Dimensions</label>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-6 gap-3">
             <div><input type="number" step="0.1" min="0" value={form.dimension_height} onChange={e => set('dimension_height', e.target.value)} placeholder="H" className={inputCls} /></div>
             <div><input type="number" step="0.1" min="0" value={form.dimension_width} onChange={e => set('dimension_width', e.target.value)} placeholder="W" className={inputCls} /></div>
             <div><input type="number" step="0.1" min="0" value={form.dimension_depth} onChange={e => set('dimension_depth', e.target.value)} placeholder="D" className={inputCls} /></div>
@@ -246,9 +246,9 @@ export default function OverviewTab({ form, set, canEdit, saving, artifact, muse
                 {DIMENSION_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
-            <div className="flex gap-2">
-              <input type="number" step="0.01" min="0" value={form.dimension_weight} onChange={e => set('dimension_weight', e.target.value)} placeholder="Weight" className={inputCls} />
-              <select value={form.dimension_weight_unit} onChange={e => set('dimension_weight_unit', e.target.value)} className={`${inputCls} w-20 flex-shrink-0`}>
+            <div><input type="number" step="0.01" min="0" value={form.dimension_weight} onChange={e => set('dimension_weight', e.target.value)} placeholder="Weight" className={inputCls} /></div>
+            <div>
+              <select value={form.dimension_weight_unit} onChange={e => set('dimension_weight_unit', e.target.value)} className={inputCls}>
                 {WEIGHT_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>

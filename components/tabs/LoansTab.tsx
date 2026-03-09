@@ -100,13 +100,11 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Contact Email</label><input type="email" value={loanForm.contact_email} onChange={e => setLoanForm(f => ({ ...f, contact_email: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls}>Insurance Value (£)</label><input type="number" value={loanForm.insurance_value} onChange={e => setLoanForm(f => ({ ...f, insurance_value: e.target.value }))} className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Borrower Address</label><textarea value={loanForm.borrower_address} onChange={e => setLoanForm(f => ({ ...f, borrower_address: e.target.value }))} rows={2} placeholder="Full postal address" className={`${inputCls} resize-none`} /></div>
           <div><label className={labelCls}>Borrower Phone</label><input value={loanForm.borrower_phone} onChange={e => setLoanForm(f => ({ ...f, borrower_phone: e.target.value }))} placeholder="Phone number" className={inputCls} /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Insurance Value (£)</label><input type="number" value={loanForm.insurance_value} onChange={e => setLoanForm(f => ({ ...f, insurance_value: e.target.value }))} className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Loan Start</label><input type="date" value={loanForm.loan_start_date} onChange={e => setLoanForm(f => ({ ...f, loan_start_date: e.target.value }))} className={inputCls} /></div>
@@ -146,7 +144,7 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
         <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
         <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
         <button type="button" onClick={addLoan} disabled={submitting}
-          className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
           {submitting ? 'Saving…' : 'Save loan record →'}
         </button>
       </div>
@@ -187,7 +185,7 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
                     </td>
                   </tr>
                   {endingLoanId === l.id && (
-                    <tr className="border-b border-stone-200 bg-stone-50">
+                    <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                       <td colSpan={6} className="px-6 py-4 space-y-3">
                         <div className="text-xs uppercase tracking-widest text-stone-400">Confirm Return</div>
                         <div className="grid grid-cols-2 gap-3">
@@ -216,7 +214,7 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
                           <button
                             type="button"
                             onClick={() => confirmEndLoan(l.id)}
-                            className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded whitespace-nowrap"
+                            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded whitespace-nowrap"
                           >
                             Confirm return
                           </button>
