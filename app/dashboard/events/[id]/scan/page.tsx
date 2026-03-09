@@ -84,10 +84,12 @@ export default function TicketScannerPage() {
 
         function tick() {
           if (!scanningRef.current || stopped) return
-          if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            canvas.width = video.videoWidth
-            canvas.height = video.videoHeight
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          const v = videoRef.current
+          if (!v) return
+          if (v.readyState === v.HAVE_ENOUGH_DATA) {
+            canvas.width = v.videoWidth
+            canvas.height = v.videoHeight
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
             const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
             if (found?.data) {
@@ -171,10 +173,12 @@ export default function TicketScannerPage() {
       const ctx = canvas.getContext('2d', { willReadFrequently: true })!
       function tick() {
         if (!scanningRef.current) return
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth
-          canvas.height = video.videoHeight
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const v = videoRef.current
+        if (!v) return
+        if (v.readyState === v.HAVE_ENOUGH_DATA) {
+          canvas.width = v.videoWidth
+          canvas.height = v.videoHeight
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
           const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
           if (found?.data) {
