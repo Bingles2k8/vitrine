@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+
+function extractCode(raw: string): string {
+  const match = raw.match(/VIT-[0-9A-F]{32}/i)
+  return match ? match[0].toUpperCase() : raw.trim().toUpperCase()
+}
 
 export default function TicketScannerPage() {
   const [museum, setMuseum] = useState<any>(null)
@@ -16,7 +21,11 @@ export default function TicketScannerPage() {
   const [result, setResult] = useState<any>(null)
   const [resultState, setResultState] = useState<'idle' | 'valid' | 'used' | 'invalid' | 'loading'>('idle')
   const [marking, setMarking] = useState(false)
+  const [cameraMode, setCameraMode] = useState(false)
+  const [cameraError, setCameraError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const scannerRef = useRef<any>(null)
   const router = useRouter()
   const params = useParams()
   const supabase = createClient()
@@ -41,8 +50,60 @@ export default function TicketScannerPage() {
     load()
   }, [])
 
-  async function handleLookup() {
-    const trimmed = code.trim().toUpperCase()
+  // Camera scanner lifecycle
+  useEffect(() => {
+    if (!cameraMode) return
+
+    let cancelled = false
+
+    async function startScanner() {
+      if (!videoRef.current) return
+      try {
+        const QrScanner = (await import('qr-scanner')).default
+        const scanner = new QrScanner(
+          videoRef.current,
+          (result: { data: string }) => {
+            if (cancelled) return
+            const extracted = extractCode(result.data)
+            scanner.stop()
+            handleLookup(extracted)
+          },
+          {
+            preferredCamera: 'environment',
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
+          }
+        )
+        scannerRef.current = scanner
+        await scanner.start()
+        setCameraError('')
+      } catch {
+        if (!cancelled) {
+          setCameraError('Camera not available — check browser permissions or use manual entry.')
+          setCameraMode(false)
+        }
+      }
+    }
+
+    startScanner()
+
+    return () => {
+      cancelled = true
+      scannerRef.current?.destroy()
+      scannerRef.current = null
+    }
+  }, [cameraMode])
+
+  // Destroy scanner on unmount
+  useEffect(() => {
+    return () => {
+      scannerRef.current?.destroy()
+      scannerRef.current = null
+    }
+  }, [])
+
+  const handleLookup = useCallback(async (overrideCode?: string) => {
+    const trimmed = (overrideCode ?? code).trim().toUpperCase()
     if (!trimmed) return
     setResultState('loading')
     setResult(null)
@@ -57,7 +118,7 @@ export default function TicketScannerPage() {
     } catch {
       setResultState('invalid')
     }
-  }
+  }, [code])
 
   async function handleMarkUsed() {
     if (!result) return
@@ -78,7 +139,17 @@ export default function TicketScannerPage() {
     setCode('')
     setResult(null)
     setResultState('idle')
-    setTimeout(() => inputRef.current?.focus(), 50)
+    if (cameraMode) {
+      // Restart the scanner for the next ticket
+      scannerRef.current?.start().catch(() => {})
+    } else {
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+  }
+
+  function stopCamera() {
+    setCameraMode(false)
+    setTimeout(() => inputRef.current?.focus(), 100)
   }
 
   if (loading) {
@@ -151,29 +222,66 @@ export default function TicketScannerPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-stone-800 p-4 bg-stone-950">
-        <div className="text-xs font-mono text-stone-500 mb-2 text-center">
-          Enter ticket code manually, or use a USB barcode scanner
-        </div>
-        <div className="flex gap-2 max-w-sm mx-auto">
-          <input
-            ref={inputRef}
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleLookup() }}
-            placeholder="VIT-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 font-mono text-sm text-white placeholder-stone-600 outline-none focus:border-stone-500"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <button
-            onClick={handleLookup}
-            disabled={resultState === 'loading' || !code.trim()}
-            className="bg-white text-stone-900 font-mono text-sm px-4 py-2.5 rounded-lg disabled:opacity-50 transition-colors hover:bg-stone-100"
-          >
-            Look up
-          </button>
-        </div>
+      <div className="border-t border-stone-800 bg-stone-950">
+        {cameraMode ? (
+          <div className="p-4">
+            {/* Video feed */}
+            <div className="relative rounded-xl overflow-hidden bg-black mb-3" style={{ aspectRatio: '4/3' }}>
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                playsInline
+                muted
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="border-2 border-white/40 rounded-lg" style={{ width: '60%', aspectRatio: '1' }} />
+              </div>
+            </div>
+            <div className="text-xs font-mono text-stone-500 text-center mb-3">
+              Point camera at the QR code on the ticket
+            </div>
+            <button
+              onClick={stopCamera}
+              className="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-mono text-sm py-2.5 rounded-lg transition-colors"
+            >
+              Stop camera
+            </button>
+          </div>
+        ) : (
+          <div className="p-4">
+            {cameraError && (
+              <div className="text-xs font-mono text-red-400 mb-2 text-center">{cameraError}</div>
+            )}
+            <div className="text-xs font-mono text-stone-500 mb-2 text-center">
+              Enter ticket code manually, or use a USB barcode scanner
+            </div>
+            <div className="flex gap-2 max-w-sm mx-auto mb-3">
+              <input
+                ref={inputRef}
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleLookup() }}
+                placeholder="VIT-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 font-mono text-sm text-white placeholder-stone-600 outline-none focus:border-stone-500"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button
+                onClick={() => handleLookup()}
+                disabled={resultState === 'loading' || !code.trim()}
+                className="bg-white text-stone-900 font-mono text-sm px-4 py-2.5 rounded-lg disabled:opacity-50 transition-colors hover:bg-stone-100"
+              >
+                Look up
+              </button>
+            </div>
+            <button
+              onClick={() => setCameraMode(true)}
+              className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-mono text-sm py-2.5 rounded-lg transition-colors"
+            >
+              <span>📷</span> Use camera
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
