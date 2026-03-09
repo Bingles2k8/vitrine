@@ -9,6 +9,7 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { useToast } from '@/components/Toast'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import { inputCls, labelCls, ENTRY_REASONS } from '@/components/tabs/shared'
+import CSVImportModal from '@/components/CSVImportModal'
 
 const OUTCOME_STYLES: Record<string, string> = {
   'Pending':                 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
@@ -27,6 +28,7 @@ export default function EntryRegisterPage() {
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const defaultEntry = () => ({
     entry_date: new Date().toISOString().slice(0, 10),
@@ -178,6 +180,7 @@ export default function EntryRegisterPage() {
   )
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+  const fullMode = getPlan(museum?.plan).fullMode
   const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
@@ -188,12 +191,22 @@ export default function EntryRegisterPage() {
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Entry Register</span>
           {canEdit && (
-            <button
-              onClick={() => setShowForm(v => !v)}
-              className="text-sm font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-            >
-              {showForm ? 'Cancel' : '+ New Entry'}
-            </button>
+            <div className="flex gap-2">
+              {fullMode && (
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="text-sm font-mono text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                >
+                  Import CSV
+                </button>
+              )}
+              <button
+                onClick={() => setShowForm(v => !v)}
+                className="text-sm font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+              >
+                {showForm ? 'Cancel' : '+ New Entry'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -358,9 +371,11 @@ export default function EntryRegisterPage() {
                 <tbody>
                   {entries.map(e => (
                     <tr key={e.id}
-                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.artifact_id && !e.artifacts?.deleted_at ? 'cursor-pointer' : 'cursor-default'}`}
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.artifacts?.deleted_at ? 'cursor-default' : 'cursor-pointer'}`}
                       onClick={() => {
-                        if (e.artifact_id && !e.artifacts?.deleted_at) router.push(`/dashboard/artifacts/${e.artifact_id}`)
+                        if (e.artifacts?.deleted_at) return
+                        if (e.artifact_id) { router.push(`/dashboard/artifacts/${e.artifact_id}`); return }
+                        if (canEdit) handlePromote(e)
                       }}
                     >
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.entry_number}</td>
@@ -425,6 +440,12 @@ export default function EntryRegisterPage() {
             </div>
           )}
         </div>
+      {showImport && museum && (
+        <CSVImportModal
+          onClose={() => setShowImport(false)}
+          onSuccess={() => { setShowImport(false); window.location.reload() }}
+        />
+      )}
     </DashboardShell>
   )
 }

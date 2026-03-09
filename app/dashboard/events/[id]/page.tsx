@@ -237,6 +237,9 @@ export default function EventDetailPage() {
           </span>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+            Scan tickets →
+          </button>
           {event.status === 'draft' && (
             <button onClick={() => handleStatusChange('published')} className="bg-emerald-600 text-white text-xs font-mono px-4 py-2 rounded hover:bg-emerald-700 transition-colors">
               Publish
@@ -349,10 +352,16 @@ export default function EventDetailPage() {
                 </select>
               </div>
             </div>
-            <button onClick={handleSaveOverview} disabled={saving}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={handleSaveOverview} disabled={saving}
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)}
+                className="border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                Scan tickets →
+              </button>
+            </div>
           </div>
         )}
 

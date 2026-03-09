@@ -2,6 +2,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import PageViewTracker from '@/components/PageViewTracker'
 
 export default async function PublicArtifact({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const { slug, id } = await params
@@ -40,6 +41,7 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
+      <PageViewTracker museumId={museum.id} pageType="artifact" artifactId={artifact.id} />
       <Link
         href={`/museum/${slug}`}
         className="text-xs font-mono transition-colors mb-10 inline-block"

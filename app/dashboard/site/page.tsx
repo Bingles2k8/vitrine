@@ -598,6 +598,46 @@ export default function SiteBuilder() {
               </div>
             )}
 
+            {/* Embed — Professional+ only */}
+            {getPlan(museum?.plan).fullMode ? (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Embed on your website</div>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Add your collection to any existing website using this iframe snippet.</p>
+                <div className="space-y-3">
+                  <textarea
+                    readOnly
+                    value={`<iframe\n  src="${typeof window !== 'undefined' ? window.location.origin : 'https://vitrine.app'}/museum/${museum.slug}/embed"\n  width="100%"\n  height="600"\n  frameborder="0"\n  style="border:none;border-radius:8px"\n></iframe>`}
+                    rows={7}
+                    className="w-full font-mono text-xs bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-stone-600 dark:text-stone-400 resize-none outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const code = `<iframe\n  src="${window.location.origin}/museum/${museum.slug}/embed"\n  width="100%"\n  height="600"\n  frameborder="0"\n  style="border:none;border-radius:8px"\n></iframe>`
+                      navigator.clipboard.writeText(code).then(() => {
+                        const btn = document.getElementById('copy-embed-btn')
+                        if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy embed code' }, 2000) }
+                      })
+                    }}
+                    id="copy-embed-btn"
+                    className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                  >
+                    Copy embed code
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Embed on your website</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Embed your collection as an iframe on any website. Available on Professional and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
+              </div>
+            )}
+
           </div>
 
           {/* Right — live preview */}

@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { getPlan } from '@/lib/plans'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
+import CSVImportModal from '@/components/CSVImportModal'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -25,8 +27,61 @@ export default function Dashboard() {
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
+  const [showImport, setShowImport] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState('')
+  const [bulking, setBulking] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === visibleArtifacts.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(visibleArtifacts.map(a => a.id)))
+    }
+  }
+
+  async function bulkUpdateStatus(status: string) {
+    if (!selectedIds.size || !canEdit) return
+    setBulking(true)
+    const ids = Array.from(selectedIds)
+    await supabase.from('artifacts').update({ status }).in('id', ids)
+    setArtifacts(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, status } : a))
+    setSelectedIds(new Set())
+    setBulking(false)
+  }
+
+  async function bulkSetVisibility(show: boolean) {
+    if (!selectedIds.size || !canEdit) return
+    setBulking(true)
+    const ids = Array.from(selectedIds)
+    await supabase.from('artifacts').update({ show_on_site: show }).in('id', ids)
+    setArtifacts(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, show_on_site: show } : a))
+    setSelectedIds(new Set())
+    setBulking(false)
+  }
+
+  async function bulkDelete() {
+    if (!selectedIds.size || !canEdit) return
+    if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to trash?`)) return
+    setBulking(true)
+    const ids = Array.from(selectedIds)
+    await supabase.from('artifacts').update({ deleted_at: new Date().toISOString() }).in('id', ids)
+    setArtifacts(prev => prev.filter(a => !selectedIds.has(a.id)))
+    setSelectedIds(new Set())
+    setBulking(false)
+  }
 
   useEffect(() => {
     async function load() {
@@ -93,11 +148,27 @@ export default function Dashboard() {
   ]
 
   const visibleArtifacts = filter ? artifacts.filter(a => a.status === filter) : artifacts
+  const fullMode = getPlan(museum?.plan).fullMode
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
+        {showImport && (
+          <CSVImportModal
+            onClose={() => setShowImport(false)}
+            onSuccess={(count) => {
+              setShowImport(false)
+              // Reload artifacts after import
+              window.location.reload()
+            }}
+          />
+        )}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
+          {canEdit && fullMode && (
+            <button onClick={() => setShowImport(true)} className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">
+              Import CSV
+            </button>
+          )}
         </div>
 
         <div className="p-4 md:p-8">
@@ -137,22 +208,50 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
-              {filter && (
+              {/* Filter bar */}
+              {filter && selectedIds.size === 0 && (
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
                     Showing {visibleArtifacts.length} {visibleArtifacts.length === 1 ? 'object' : 'objects'} — {filter}
                   </span>
-                  <button
-                    onClick={() => setFilter(null)}
-                    className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-                  >
+                  <button onClick={() => setFilter(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                     Show all objects ×
                   </button>
+                </div>
+              )}
+              {/* Bulk action bar */}
+              {canEdit && fullMode && selectedIds.size > 0 && (
+                <div className="px-4 py-2.5 border-b border-stone-200 dark:border-stone-700 bg-stone-900 dark:bg-white flex items-center gap-3 flex-wrap">
+                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{selectedIds.size} selected</span>
+                  <span className="text-stone-600 dark:text-stone-400">|</span>
+                  <select
+                    value={bulkStatus}
+                    onChange={e => { if (e.target.value) { bulkUpdateStatus(e.target.value); setBulkStatus('') } }}
+                    disabled={bulking}
+                    className="text-xs font-mono bg-stone-800 dark:bg-stone-100 text-stone-200 dark:text-stone-700 border border-stone-700 dark:border-stone-300 rounded px-2 py-1 outline-none disabled:opacity-50"
+                  >
+                    <option value="">Change status…</option>
+                    {['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <button onClick={() => bulkSetVisibility(true)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Show on site</button>
+                  <button onClick={() => bulkSetVisibility(false)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Hide from site</button>
+                  <button onClick={bulkDelete} disabled={bulking} className="text-xs font-mono text-red-400 hover:text-red-300 dark:hover:text-red-600 transition-colors disabled:opacity-50">Move to trash</button>
+                  <button onClick={() => setSelectedIds(new Set())} className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-300 dark:hover:text-stone-600 transition-colors ml-auto">Clear ×</button>
                 </div>
               )}
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    {canEdit && fullMode && (
+                      <th className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={visibleArtifacts.length > 0 && selectedIds.size === visibleArtifacts.length}
+                          onChange={toggleSelectAll}
+                          className="rounded border-stone-300 dark:border-stone-600"
+                        />
+                      </th>
+                    )}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Year</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Medium</th>
@@ -163,9 +262,19 @@ export default function Dashboard() {
                   {visibleArtifacts.map(a => (
                     <tr
                       key={a.id}
-                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''}`}
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''} ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800' : ''}`}
                       onClick={() => router.push(`/dashboard/artifacts/${a.id}`)}
                     >
+                      {canEdit && fullMode && (
+                        <td className="px-4 py-3 w-10" onClick={e => { e.stopPropagation(); toggleSelect(a.id) }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(a.id)}
+                            onChange={() => toggleSelect(a.id)}
+                            className="rounded border-stone-300 dark:border-stone-600"
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">{a.emoji}</div>
@@ -211,7 +320,7 @@ export default function Dashboard() {
                   ))}
                   {visibleArtifacts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
+                      <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
                         No objects with status "{filter}"
                       </td>
                     </tr>

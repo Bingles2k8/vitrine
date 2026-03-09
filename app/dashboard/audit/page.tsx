@@ -88,8 +88,23 @@ export default function AuditPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Audit & Inventory</span>
+          <button
+            onClick={() => {
+              const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+              const rows = [['Accession No', 'Title', 'Status', 'Location', 'Last Inventoried', 'Inventoried By'].join(',')]
+              artifacts.forEach(a => rows.push([esc(a.accession_no), esc(a.title), esc(a.status), esc(a.current_location), esc(a.last_inventoried ? new Date(a.last_inventoried).toLocaleDateString('en-GB') : ''), esc(a.inventoried_by)].join(',')))
+              const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+              const url = URL.createObjectURL(blob)
+              const el = document.createElement('a')
+              el.href = url; el.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`; el.click()
+              URL.revokeObjectURL(url)
+            }}
+            className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded"
+          >
+            Export CSV
+          </button>
         </div>
 
         <div className="p-4 md:p-8 space-y-6">

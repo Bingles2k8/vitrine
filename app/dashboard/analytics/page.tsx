@@ -159,6 +159,7 @@ export default function AnalyticsPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
+  const [pageViews, setPageViews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showExport, setShowExport] = useState(false)
   const router = useRouter()
@@ -171,11 +172,16 @@ export default function AnalyticsPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: artifacts } = await supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false })
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const [{ data: artifacts }, { data: views }] = await Promise.all([
+        supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('page_views').select('page_type, artifact_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
+      ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setArtifacts(artifacts || [])
+      setPageViews(views || [])
       setLoading(false)
     }
     load()
@@ -213,6 +219,38 @@ export default function AnalyticsPage() {
     const [y, m] = ym.split('-')
     return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]} ${y.slice(2)}`
   }
+
+  // Visitor analytics computed values
+  const viewsByDay = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const today = new Date()
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i)
+      counts[d.toISOString().slice(0, 10)] = 0
+    }
+    pageViews.forEach(v => {
+      const day = v.viewed_at.slice(0, 10)
+      if (day in counts) counts[day] = (counts[day] || 0) + 1
+    })
+    return Object.entries(counts)
+  }, [pageViews])
+
+  const topArtifacts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    pageViews.filter(v => v.artifact_id).forEach(v => { counts[v.artifact_id] = (counts[v.artifact_id] || 0) + 1 })
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({
+      artifact: artifacts.find(a => a.id === id),
+      count,
+    })).filter(x => x.artifact)
+  }, [pageViews, artifacts])
+
+  const pageTypeBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {}
+    pageViews.forEach(v => { counts[v.page_type] = (counts[v.page_type] || 0) + 1 })
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])
+  }, [pageViews])
+
+  const maxDayViews = Math.max(...viewsByDay.map(([, v]) => v), 1)
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -324,6 +362,78 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
+
+            {/* Visitor analytics */}
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Public Site Visitors</div>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mb-5">Last 30 days. New visits start tracking once this section is live.</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {[
+                  { label: 'Total Views', value: pageViews.length },
+                  { label: 'Today', value: viewsByDay.find(([d]) => d === new Date().toISOString().slice(0, 10))?.[1] ?? 0 },
+                  { label: 'Artifact Views', value: pageViews.filter(v => v.page_type === 'artifact').length },
+                  { label: 'Page Types', value: pageTypeBreakdown.length },
+                ].map(s => (
+                  <div key={s.label}>
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">{s.label}</div>
+                    <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {pageViews.length === 0 ? (
+                <p className="text-xs text-stone-300 dark:text-stone-600 font-mono">No visitor data yet — views start tracking once your public site is visited.</p>
+              ) : (
+                <>
+                  {/* Views per day chart */}
+                  <div className="mb-6">
+                    <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mb-3">Views per day (last 14 days)</div>
+                    <div className="flex items-end gap-1 h-16">
+                      {viewsByDay.map(([day, count]) => (
+                        <div key={day} className="flex-1 flex flex-col items-center gap-1" title={`${day}: ${count} views`}>
+                          <div className="w-full rounded-t bg-stone-900 dark:bg-stone-100" style={{ height: `${Math.round((count / maxDayViews) * 48)}px`, minHeight: count > 0 ? '3px' : '0' }} />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{viewsByDay[0]?.[0]?.slice(5)}</span>
+                      <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{viewsByDay[viewsByDay.length - 1]?.[0]?.slice(5)}</span>
+                    </div>
+                  </div>
+
+                  {/* Top artifacts + page types */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {topArtifacts.length > 0 && (
+                      <div>
+                        <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mb-3">Top artifacts</div>
+                        <div className="space-y-2">
+                          {topArtifacts.map(({ artifact, count }) => artifact && (
+                            <div key={artifact.id} className="flex items-center gap-2">
+                              <span className="text-base">{artifact.emoji}</span>
+                              <span className="flex-1 text-xs text-stone-600 dark:text-stone-400 truncate">{artifact.title}</span>
+                              <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {pageTypeBreakdown.length > 0 && (
+                      <div>
+                        <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mb-3">By page type</div>
+                        <div className="space-y-2">
+                          {pageTypeBreakdown.map(([type, count]) => (
+                            <div key={type} className="flex items-center gap-2">
+                              <span className="flex-1 text-xs text-stone-600 dark:text-stone-400 capitalize">{type}</span>
+                              <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
 
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">

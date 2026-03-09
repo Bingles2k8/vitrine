@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { compressImage } from '@/lib/image-compression'
 
+const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
+
 interface Props {
   artifactId: string
   museumId: string
@@ -15,6 +17,7 @@ interface Props {
 export default function ImageGallery({ artifactId, museumId, onPrimaryChange, canEdit, imageLimit }: Props) {
   const [images, setImages] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -26,6 +29,7 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
+    setUploadError(null)
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -33,18 +37,21 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
     if (error) { setUploading(false); return }
     const { data: { publicUrl } } = supabase.storage.from('artifact-images').getPublicUrl(data.path)
     const isPrimary = images.length === 0
-    const { data: newImage } = await supabase.from('artifact_images').insert({
-      artifact_id: artifactId,
-      museum_id: museumId,
-      url: publicUrl,
-      is_primary: isPrimary,
-      sort_order: images.length,
-    }).select().single()
-    if (isPrimary) {
-      await supabase.from('artifacts').update({ image_url: publicUrl }).eq('id', artifactId)
-      onPrimaryChange(publicUrl)
+    const res = await fetch(`/api/artifacts/${artifactId}/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: images.length }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setUploadError(body.error === PLAN_LIMIT_ERROR ? PLAN_LIMIT_ERROR : 'Upload failed')
+      setUploading(false)
+      e.target.value = ''
+      return
     }
-    if (newImage) setImages(imgs => [...imgs, newImage])
+    const newImage = await res.json()
+    if (isPrimary) onPrimaryChange(publicUrl)
+    setImages(imgs => [...imgs, newImage])
     setUploading(false)
     // Reset input
     e.target.value = ''
@@ -112,6 +119,9 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
           <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-900">
             <div className="text-2xl mb-1">📷</div>
             <div className="text-xs text-stone-400 dark:text-stone-500">{uploading ? 'Uploading…' : '+ Add image'}</div>
+            {uploadError && (
+              <div className="text-xs text-red-500 mt-1 text-center px-1">{uploadError}</div>
+            )}
             <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} className="hidden" />
           </label>
         )}

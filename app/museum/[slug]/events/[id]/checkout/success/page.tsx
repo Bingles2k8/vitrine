@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import TicketQRCodes from './TicketQRCodes'
 
 export default async function CheckoutSuccessPage({
   params,
@@ -127,9 +128,12 @@ export default async function CheckoutSuccessPage({
           <div className="space-y-3 mb-6">
             <div className="text-xs uppercase tracking-widest font-mono" style={{ color: content.muted }}>Your Tickets</div>
             {tickets.map(t => (
-              <div key={t.ticket_code} className="border rounded-lg px-5 py-4 flex items-center justify-between" style={{ borderColor: content.border, background: content.cardBg }}>
-                <span className="font-mono text-lg" style={{ color: content.heading }}>{t.ticket_code}</span>
-                <span className="text-xs font-mono uppercase" style={{ color: 'rgb(52,211,153)' }}>{t.status}</span>
+              <div key={t.ticket_code} className="border rounded-lg px-5 py-4" style={{ borderColor: content.border, background: content.cardBg }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-lg" style={{ color: content.heading }}>{t.ticket_code}</span>
+                  <span className="text-xs font-mono uppercase" style={{ color: 'rgb(52,211,153)' }}>{t.status}</span>
+                </div>
+                <TicketQRCodes tickets={[t]} />
               </div>
             ))}
           </div>

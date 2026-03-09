@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { getPlan } from '@/lib/plans'
 import DashboardShell from '@/components/DashboardShell'
 import { useToast } from '@/components/Toast'
 import { Skeleton, FormSkeleton } from '@/components/Skeleton'
 
+import QRLabelModal from '@/components/QRLabelModal'
 import OverviewTab from '@/components/tabs/OverviewTab'
 import EntryTab from '@/components/tabs/EntryTab'
 import AcquisitionTab from '@/components/tabs/AcquisitionTab'
@@ -48,6 +50,8 @@ export default function ArtifactDetail() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
   const params = useParams()
@@ -258,6 +262,41 @@ export default function ArtifactDetail() {
     }
   }
 
+  async function handleDuplicate() {
+    if (!canEdit || !artifact) return
+    setDuplicating(true)
+    const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
+    const { data: newArtifact, error } = await supabase.from('artifacts').insert({
+      ...formToSave,
+      museum_id: museum.id,
+      owner_id: museum.owner_id,
+      created_by: currentUserId,
+      updated_by: currentUserId,
+      title: `${form.title} (copy)`,
+      accession_no: null,
+      accession_register_confirmed: false,
+      show_on_site: false,
+      image_url: null,
+      acquisition_date: formToSave.acquisition_date || null,
+      legal_transfer_date: formToSave.legal_transfer_date || null,
+      acquisition_authority_date: formToSave.acquisition_authority_date || null,
+      acquisition_object_count: formToSave.acquisition_object_count ? parseInt(formToSave.acquisition_object_count, 10) || 1 : 1,
+      accession_date: formToSave.accession_date || null,
+      disposal_date: formToSave.disposal_date || null,
+      last_inventoried: null,
+      number_of_parts: formToSave.number_of_parts ? parseInt(formToSave.number_of_parts, 10) || 1 : 1,
+      dimension_height: formToSave.dimension_height ? parseFloat(formToSave.dimension_height) : null,
+      dimension_width: formToSave.dimension_width ? parseFloat(formToSave.dimension_width) : null,
+      dimension_depth: formToSave.dimension_depth ? parseFloat(formToSave.dimension_depth) : null,
+      dimension_weight: formToSave.dimension_weight ? parseFloat(formToSave.dimension_weight) : null,
+      insured_value: formToSave.insured_value ? parseFloat(formToSave.insured_value) : null,
+    }).select('id').single()
+    if (error) { toast(error.message, 'error'); setDuplicating(false) } else {
+      toast('Object duplicated')
+      router.push(`/dashboard/artifacts/${newArtifact.id}`)
+    }
+  }
+
   async function logActivity(actionType: string, description: string) {
     if (!museum || !artifact) return
     await supabase.from('activity_log').insert({
@@ -271,6 +310,7 @@ export default function ArtifactDetail() {
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+  const fullMode = getPlan(museum?.plan).fullMode
 
   if (loading || !artifact) {
     return (
@@ -303,6 +343,24 @@ export default function ArtifactDetail() {
             <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{artifact.title}</span>
           </div>
           <div className="flex items-center gap-4">
+            {fullMode && museum?.slug && (
+              <button onClick={() => setQrModalOpen(true)}
+                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                QR label
+              </button>
+            )}
+            {fullMode && (
+              <button onClick={() => window.open(`/print/artifact/${params.id}`, '_blank')}
+                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                Print record
+              </button>
+            )}
+            {canEdit && fullMode && (
+              <button onClick={handleDuplicate} disabled={duplicating}
+                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors disabled:opacity-50">
+                {duplicating ? 'Duplicating…' : 'Duplicate'}
+              </button>
+            )}
             {canEdit && (
               <button onClick={handleDelete} disabled={deleting}
                 className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
@@ -387,6 +445,13 @@ export default function ArtifactDetail() {
           )}
 
         </form>
+        {qrModalOpen && museum && (
+          <QRLabelModal
+            artifact={{ id: params.id as string, title: form.title, accession_no: form.accession_no, show_on_site: form.show_on_site }}
+            museum={{ slug: museum.slug, name: museum.name }}
+            onClose={() => setQrModalOpen(false)}
+          />
+        )}
     </DashboardShell>
   )
 }

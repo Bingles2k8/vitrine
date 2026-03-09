@@ -2,6 +2,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import CollectionSearch from '@/components/CollectionSearch'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import PageViewTracker from '@/components/PageViewTracker'
 
 export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -54,6 +55,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   return (
     <>
+      <PageViewTracker museumId={museum.id} pageType="home" />
       {showHero && (
         <div className={`px-6 ${heroPad} relative`} style={{
           background: heroBg,

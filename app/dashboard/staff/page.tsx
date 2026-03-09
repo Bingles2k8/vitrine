@@ -177,12 +177,34 @@ export default function StaffPage() {
     Operations: '#2d3a4a', Finance: '#4a2d6a', Marketing: '#6a2d2d',
   }
 
+  function relativeTime(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    const days = Math.floor(hrs / 24)
+    return `${days}d ago`
+  }
+
   function InviteStatusBadge({ member }: { member: StaffMember }) {
     if (member.user_id) {
       return <span className="text-xs font-mono px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">Active</span>
     }
     if (member.invited_at) {
-      return <span className="text-xs font-mono px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">Invited</span>
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span
+            className="text-xs font-mono px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 w-fit"
+            title="Invitation links expire after 24 hours. Resend if the member hasn't accepted."
+          >
+            Pending
+          </span>
+          <span className="text-xs font-mono text-stone-400 dark:text-stone-500 px-2">
+            Sent {relativeTime(member.invited_at)}
+          </span>
+        </div>
+      )
     }
     return <span className="text-xs font-mono px-2 py-1 rounded-full bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500">Not invited</span>
   }
