@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import TicketQRCodes from './checkout/success/TicketQRCodes'
 
 interface Event {
   id: string
@@ -184,10 +185,11 @@ export default function PublicEventDetailPage() {
           <div className="text-2xl mb-3">✓</div>
           <h2 className="text-2xl mb-2" style={{ ...headingStyle, color: content.heading }}>Booking Confirmed</h2>
           <p className="text-sm mb-4" style={{ color: content.body }}>Your tickets have been booked. Please save your ticket codes:</p>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {bookingResult.tickets.map(code => (
-              <div key={code} className="border rounded px-4 py-3 font-mono text-lg" style={{ borderColor: 'rgba(52,211,153,0.3)', background: content.cardBg, color: content.heading }}>
-                {code}
+              <div key={code} className="border rounded px-4 py-4" style={{ borderColor: 'rgba(52,211,153,0.3)', background: content.cardBg }}>
+                <div className="font-mono text-sm mb-3" style={{ color: content.heading }}>{code}</div>
+                <TicketQRCodes tickets={[{ ticket_code: code, status: 'valid' }]} />
               </div>
             ))}
           </div>
