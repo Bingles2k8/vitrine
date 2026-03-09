@@ -71,7 +71,7 @@ export default function TicketScannerPage() {
         const video = videoRef.current
         if (!video) { stream.getTracks().forEach(t => t.stop()); return }
         video.srcObject = stream
-        await video.play()
+        video.play().catch(() => {/* autoplay attribute handles playback */})
 
         const jsQR = (await import('jsqr')).default
         if (stopped) return
@@ -113,7 +113,7 @@ export default function TicketScannerPage() {
         } else if (name === 'NotReadableError') {
           setCameraError('Camera is in use by another app. Close it and try again.')
         } else {
-          setCameraError('Camera failed to start. Try refreshing the page, or use manual entry below.')
+          setCameraError(`Camera failed to start (${name || err?.message || 'unknown'}). Try refreshing the page, or use manual entry below.`)
         }
         setCameraMode(false)
       }
@@ -289,6 +289,7 @@ export default function TicketScannerPage() {
                 ref={videoRef}
                 className="w-full h-full object-cover"
                 playsInline
+                autoPlay
                 muted
               />
               {/* Hidden canvas used for jsQR frame analysis */}
