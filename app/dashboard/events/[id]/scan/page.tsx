@@ -54,72 +54,72 @@ export default function TicketScannerPage() {
     load()
   }, [])
 
-  // Camera scanner using getUserMedia + jsQR directly (no workers)
+  // getUserMedia called directly from click handler to preserve user gesture on iOS Safari
+  async function startCamera() {
+    try {
+      setCameraError('')
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      })
+      streamRef.current = stream
+      setCameraMode(true) // triggers render to show <video> — useEffect below attaches stream
+    } catch (err: any) {
+      const name = err?.name ?? ''
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setCameraError('Camera permission denied. Tap the lock icon in your browser address bar, allow Camera, then try again.')
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setCameraError('No camera found on this device.')
+      } else if (name === 'NotReadableError') {
+        setCameraError('Camera is in use by another app. Close it and try again.')
+      } else {
+        setCameraError(`Camera failed to start (${name || err?.message || 'unknown'}). Try refreshing the page, or use manual entry below.`)
+      }
+    }
+  }
+
+  // Once cameraMode flips on and the <video> element renders, wire up the stream + QR scanning
   useEffect(() => {
-    if (!cameraMode) return
+    if (!cameraMode || !streamRef.current) return
 
     let stopped = false
 
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        })
-        if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
-        streamRef.current = stream
+    async function attachStream() {
+      const video = videoRef.current
+      if (!video || !streamRef.current) return
+      video.srcObject = streamRef.current
+      video.play().catch(() => {/* autoplay attribute handles playback */})
 
-        const video = videoRef.current
-        if (!video) { stream.getTracks().forEach(t => t.stop()); return }
-        video.srcObject = stream
-        video.play().catch(() => {/* autoplay attribute handles playback */})
+      const jsQR = (await import('jsqr')).default
+      if (stopped) return
 
-        const jsQR = (await import('jsqr')).default
-        if (stopped) return
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+      scanningRef.current = true
 
-        const canvas = canvasRef.current!
-        const ctx = canvas.getContext('2d', { willReadFrequently: true })!
-
-        scanningRef.current = true
-        setCameraError('')
-
-        function tick() {
-          if (!scanningRef.current || stopped) return
-          const v = videoRef.current
-          if (!v) return
-          if (v.readyState === v.HAVE_ENOUGH_DATA) {
-            canvas.width = v.videoWidth
-            canvas.height = v.videoHeight
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-            const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
-            if (found?.data) {
-              scanningRef.current = false
-              const extracted = extractCode(found.data)
-              handleLookup(extracted)
-              return
-            }
+      function tick() {
+        if (!scanningRef.current || stopped) return
+        const v = videoRef.current
+        if (!v) return
+        if (v.readyState === v.HAVE_ENOUGH_DATA) {
+          canvas.width = v.videoWidth
+          canvas.height = v.videoHeight
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const found = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+          if (found?.data) {
+            scanningRef.current = false
+            const extracted = extractCode(found.data)
+            handleLookup(extracted)
+            return
           }
-          rafRef.current = requestAnimationFrame(tick)
         }
-
         rafRef.current = requestAnimationFrame(tick)
-      } catch (err: any) {
-        if (stopped) return
-        const name = err?.name ?? ''
-        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-          setCameraError('Camera permission denied. Tap the lock icon in your browser address bar, allow Camera, then try again.')
-        } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-          setCameraError('No camera found on this device.')
-        } else if (name === 'NotReadableError') {
-          setCameraError('Camera is in use by another app. Close it and try again.')
-        } else {
-          setCameraError(`Camera failed to start (${name || err?.message || 'unknown'}). Try refreshing the page, or use manual entry below.`)
-        }
-        setCameraMode(false)
       }
+
+      rafRef.current = requestAnimationFrame(tick)
     }
 
-    startCamera()
+    attachStream()
 
     return () => {
       stopped = true
@@ -358,7 +358,7 @@ export default function TicketScannerPage() {
               Your camera is only used while the scanner is open. No images are stored.
             </p>
             <button
-              onClick={() => { setShowCameraPrompt(false); setCameraMode(true) }}
+              onClick={() => { setShowCameraPrompt(false); startCamera() }}
               className="w-full bg-white text-stone-900 font-mono text-sm py-3 rounded-xl mb-3 hover:bg-stone-100 transition-colors"
             >
               Allow camera access
