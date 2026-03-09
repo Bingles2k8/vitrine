@@ -40,8 +40,8 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
       <div className="px-4 py-4">
         <CollectionSearch
           artifacts={artifacts || []}
-          museum={museum}
-          styleSettings={styleSettings}
+          slug={slug}
+          settings={styleSettings}
         />
       </div>
       <div className="text-center pb-4 pt-2">
