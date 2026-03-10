@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
@@ -27,8 +27,7 @@ export default function EntryRegisterPage() {
   const [entries, setEntries] = useState<any[]>([])
   const [artifacts, setArtifacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const searchParams = useSearchParams()
-  const [showForm, setShowForm] = useState(searchParams.get('newEntry') === 'true')
+  const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const defaultEntry = () => ({
@@ -47,6 +46,12 @@ export default function EntryRegisterPage() {
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('newEntry') === 'true') {
+      setShowForm(true)
+    }
+  }, [])
 
   useEffect(() => {
     async function load() {
