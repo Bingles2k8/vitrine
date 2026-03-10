@@ -79,7 +79,8 @@ export async function GET(
     const order = Array.isArray(ticket.ticket_orders) ? ticket.ticket_orders[0] : ticket.ticket_orders
     const museumId = order?.museum_id
 
-    // Verify the authenticated user owns the museum this ticket belongs to
+    // Verify the authenticated user owns the museum this ticket belongs to,
+    // or is a staff member with Admin or Editor access
     const { data: museum } = await supabase
       .from('museums')
       .select('id')
@@ -88,7 +89,18 @@ export async function GET(
       .maybeSingle()
 
     if (!museum) {
-      return NextResponse.json({ error: 'Not authorised to mark tickets for this museum' }, { status: 403 })
+      // Check if user is staff with Admin or Editor access
+      const { data: staffMember } = await supabase
+        .from('staff_members')
+        .select('id')
+        .eq('museum_id', museumId)
+        .eq('user_id', user.id)
+        .in('access', ['Admin', 'Editor'])
+        .maybeSingle()
+
+      if (!staffMember) {
+        return NextResponse.json({ error: 'Not authorised to mark tickets for this museum' }, { status: 403 })
+      }
     }
 
     if (ticket.status !== 'valid') {
@@ -98,7 +110,10 @@ export async function GET(
       )
     }
 
-    await supabase.from('tickets').update({ status: 'used' }).eq('id', ticket.id)
+    const { error: updateError } = await supabase.from('tickets').update({ status: 'used' }).eq('id', ticket.id)
+    if (updateError) {
+      return NextResponse.json({ error: 'Failed to update ticket status' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true, ticket: { ...ticket, status: 'used' } })
   }

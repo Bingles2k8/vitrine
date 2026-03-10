@@ -19,7 +19,7 @@ export default function TicketScannerPage() {
   const [loading, setLoading] = useState(true)
   const [code, setCode] = useState('')
   const [result, setResult] = useState<any>(null)
-  const [resultState, setResultState] = useState<'idle' | 'valid' | 'used' | 'invalid' | 'loading'>('idle')
+  const [resultState, setResultState] = useState<'idle' | 'valid' | 'used' | 'invalid' | 'loading' | 'error'>('idle')
   const [marking, setMarking] = useState(false)
   const [cameraMode, setCameraMode] = useState(false)
   const [showCameraPrompt, setShowCameraPrompt] = useState(false)
@@ -156,9 +156,11 @@ export default function TicketScannerPage() {
       if (res.ok) {
         setResult((r: any) => ({ ...r, status: 'used' }))
         setResultState('used')
+      } else {
+        setResultState('error')
       }
     } catch {
-      // ignore
+      setResultState('error')
     }
     setMarking(false)
   }
@@ -228,10 +230,11 @@ export default function TicketScannerPage() {
     valid: 'bg-emerald-900',
     used: 'bg-amber-900',
     invalid: 'bg-red-900',
+    error: 'bg-red-900',
   }
 
-  const statusIcons = { idle: '◎', loading: '…', valid: '✓', used: '◎', invalid: '✗' }
-  const statusLabels = { idle: 'Ready to scan', loading: 'Looking up…', valid: 'Valid ticket', used: 'Already used', invalid: 'Invalid ticket' }
+  const statusIcons = { idle: '◎', loading: '…', valid: '✓', used: '◎', invalid: '✗', error: '✗' }
+  const statusLabels = { idle: 'Ready to scan', loading: 'Looking up…', valid: 'Valid ticket', used: 'Already used', invalid: 'Invalid ticket', error: 'Failed to mark — try again' }
 
   return (
     <div className="relative min-h-screen bg-stone-950 text-white flex flex-col">
@@ -272,7 +275,7 @@ export default function TicketScannerPage() {
           </button>
         )}
 
-        {(resultState === 'used' || resultState === 'invalid') && (
+        {(resultState === 'used' || resultState === 'invalid' || resultState === 'error') && (
           <button onClick={reset} className="mt-6 bg-stone-700 hover:bg-stone-600 text-white font-mono text-sm px-8 py-3 rounded-xl transition-colors">
             Scan another →
           </button>

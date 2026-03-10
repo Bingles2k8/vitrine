@@ -176,16 +176,8 @@ export default function CollectionsUsePage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/collections-use" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Use of Collections</span>
-          {canEdit && (
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
-            >
-              {showForm ? 'Cancel' : '+ New record'}
-            </button>
-          )}
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
@@ -203,6 +195,17 @@ export default function CollectionsUsePage() {
               </div>
             ))}
           </div>
+
+          {canEdit && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm font-mono px-5 py-2.5 rounded border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+              >
+                {showForm ? 'Cancel' : '+ New record'}
+              </button>
+            </div>
+          )}
 
           {/* Info banner */}
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">

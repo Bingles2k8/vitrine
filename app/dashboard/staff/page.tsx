@@ -245,22 +245,14 @@ export default function StaffPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff & Roles</span>
-          {(isOwner || staffAccess === 'Admin') && (
-            <button
-              onClick={openAdd}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded"
-            >
-              + Invite staff
-            </button>
-          )}
         </div>
 
         <div className="p-4 md:p-8">
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             {[
               { label: 'Total Staff', value: staff.length },
               { label: 'Admins', value: staff.filter(s => s.access === 'Admin').length },
@@ -272,6 +264,17 @@ export default function StaffPage() {
               </div>
             ))}
           </div>
+
+          {(isOwner || staffAccess === 'Admin') && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={openAdd}
+                className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm font-mono px-5 py-2.5 rounded border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+              >
+                + Invite staff
+              </button>
+            </div>
+          )}
 
           {/* Filter tabs */}
           <div className="flex items-center gap-2 mb-4 flex-wrap">

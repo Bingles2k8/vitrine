@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -16,6 +16,7 @@ export default function ObjectExitsPage() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [exits, setExits] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -84,6 +85,16 @@ export default function ObjectExitsPage() {
   const permanent = exits.filter(e => !e.expected_return_date)
   const overdue = temporary.filter(e => e.expected_return_date < todayStr)
 
+  const displayedExits = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return exits
+    return exits.filter(e =>
+      e.artifacts?.title?.toLowerCase().includes(q) ||
+      e.artifacts?.accession_no?.toLowerCase().includes(q) ||
+      e.recipient_name?.toLowerCase().includes(q)
+    )
+  }, [exits, searchQuery])
+
   function exitStatus(e: any) {
     if (!e.expected_return_date) return { label: 'Permanent', cls: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' }
     if (e.expected_return_date < todayStr) return { label: 'Overdue', cls: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' }
@@ -117,6 +128,19 @@ export default function ObjectExitsPage() {
             <p className="text-xs text-stone-500 dark:text-stone-400">Exit records are created and edited on each object&apos;s page under the Exits tab. Click a row below to view the object.</p>
           </div>
 
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name, accession number, or recipient…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
+          </div>
+
           {/* Table */}
           {exits.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
@@ -140,7 +164,7 @@ export default function ObjectExitsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {exits.map(e => {
+                  {displayedExits.map(e => {
                     const status = exitStatus(e)
                     return (
                       <tr key={e.id}

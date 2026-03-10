@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Fragment } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 
@@ -17,9 +17,10 @@ interface LoansTabProps {
 
 export default function LoansTab({ form, set, canEdit, artifact, museum, supabase, logActivity }: LoansTabProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loanHistory, setLoanHistory] = useState<any[]>([])
   const [loanLoaded, setLoanLoaded] = useState(false)
-  const [loanForm, setLoanForm] = useState({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
+  const [loanForm, setLoanForm] = useState({ direction: searchParams.get('direction') === 'In' ? 'In' : 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)

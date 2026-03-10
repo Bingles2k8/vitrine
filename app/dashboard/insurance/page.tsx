@@ -147,14 +147,8 @@ export default function InsurancePage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/insurance" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Insurance & Indemnity</span>
-          {canEdit && (
-            <button onClick={() => setShowForm(s => !s)}
-              className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-              {showForm ? 'Cancel' : '+ Add policy'}
-            </button>
-          )}
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
@@ -172,6 +166,15 @@ export default function InsurancePage() {
               </div>
             ))}
           </div>
+
+          {canEdit && (
+            <div className="flex justify-end">
+              <button onClick={() => setShowForm(s => !s)}
+                className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm font-mono px-5 py-2.5 rounded border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                {showForm ? 'Cancel' : '+ Add policy'}
+              </button>
+            </div>
+          )}
 
           {/* Add form */}
           {showForm && canEdit && (

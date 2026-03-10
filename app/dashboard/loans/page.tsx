@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -15,6 +15,7 @@ export default function LoansPage() {
   const [loans, setLoans] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Out' | 'In' | 'Overdue'>('All')
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -85,12 +86,20 @@ export default function LoansPage() {
   const overdue = active.filter(isOverdue)
   const returnedThisYear = loans.filter(l => l.status === 'Returned' && l.loan_end_date?.startsWith(new Date().getFullYear().toString()))
 
-  const filtered = loans.filter(l => {
-    if (filter === 'Out') return l.direction === 'Out' && l.status === 'Active'
-    if (filter === 'In') return l.direction === 'In' && l.status === 'Active'
-    if (filter === 'Overdue') return isOverdue(l)
-    return true
-  })
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return loans.filter(l => {
+      if (filter === 'Out' && !(l.direction === 'Out' && l.status === 'Active')) return false
+      if (filter === 'In' && !(l.direction === 'In' && l.status === 'Active')) return false
+      if (filter === 'Overdue' && !isOverdue(l)) return false
+      if (!q) return true
+      return (
+        l.artifacts?.title?.toLowerCase().includes(q) ||
+        l.artifacts?.accession_no?.toLowerCase().includes(q) ||
+        l.borrowing_institution?.toLowerCase().includes(q)
+      )
+    })
+  }, [loans, filter, searchQuery])
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/loans" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -114,14 +123,35 @@ export default function LoansPage() {
             ))}
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-2 flex-wrap">
-            {(['All', 'Out', 'In', 'Overdue'] as const).map(f => (
-              <button key={f} onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${filter === f ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                {f === 'All' ? 'All Loans' : f === 'Out' ? 'Loans Out' : f === 'In' ? 'Loans In' : 'Overdue'}
-              </button>
-            ))}
+          {/* Filters + New loan in */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
+              {(['All', 'Out', 'In', 'Overdue'] as const).map(f => (
+                <button key={f} onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${filter === f ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                  {f === 'All' ? 'All Loans' : f === 'Out' ? 'Loans Out' : f === 'In' ? 'Loans In' : 'Overdue'}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/artifacts/new?tab=loans&direction=In')}
+              className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm font-mono px-5 py-2.5 rounded border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+            >
+              + New loan in
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name, accession number, or institution…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
           </div>
 
           {/* Table */}

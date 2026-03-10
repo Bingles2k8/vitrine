@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -34,6 +34,7 @@ export default function DamagePage() {
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('All')
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -101,7 +102,18 @@ export default function DamagePage() {
   // Use the most common currency for the summary, defaulting to GBP
   const summaryCurrency = reports.find(r => r.repair_estimate)?.repair_currency || 'GBP'
 
-  const filtered = reports.filter(r => filter === 'All' || r.status === filter)
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return reports.filter(r => {
+      if (filter !== 'All' && r.status !== filter) return false
+      if (!q) return true
+      return (
+        r.artifacts?.title?.toLowerCase().includes(q) ||
+        r.artifacts?.accession_no?.toLowerCase().includes(q) ||
+        r.report_number?.toLowerCase().includes(q)
+      )
+    })
+  }, [reports, filter, searchQuery])
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/damage" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -127,6 +139,19 @@ export default function DamagePage() {
           {/* Info banner */}
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">
             <p className="text-xs text-stone-500 dark:text-stone-400">Damage reports are created and managed on each object&apos;s page under the Damage tab. Click an object-linked report below to view it.</p>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name, accession number, or report number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
           </div>
 
           {/* Filters */}
