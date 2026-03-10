@@ -200,7 +200,7 @@ export default function CollectionsUsePage() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm font-mono px-5 py-2.5 rounded border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 {showForm ? 'Cancel' : '+ New record'}
               </button>
