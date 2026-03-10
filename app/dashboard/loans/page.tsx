@@ -7,6 +7,21 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
+import { useToast } from '@/components/Toast'
+import { inputCls, labelCls, ENTRY_REASONS } from '@/components/tabs/shared'
+
+const defaultEntry = () => ({
+  entry_date: new Date().toISOString().slice(0, 10),
+  depositor_name: '',
+  depositor_contact: '',
+  entry_reason: '',
+  object_description: '',
+  object_count: 1,
+  received_by: '',
+  entry_method: '',
+  condition_on_entry: '',
+  accession_no: '',
+})
 
 export default function LoansPage() {
   const [museum, setMuseum] = useState<any>(null)
@@ -16,6 +31,10 @@ export default function LoansPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Out' | 'In' | 'Overdue'>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [newEntry, setNewEntry] = useState(defaultEntry)
+  const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
 
@@ -43,6 +62,50 @@ export default function LoansPage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function handleCreateEntry() {
+    const { entry_date, depositor_name, entry_reason, object_description, received_by } = newEntry
+    if (!entry_date || !depositor_name || !entry_reason || !object_description || !received_by) {
+      toast('Please fill in all required fields.', 'error')
+      return
+    }
+    setSubmitting(true)
+    const year = new Date(entry_date).getFullYear()
+    const { count } = await supabase
+      .from('entry_records')
+      .select('*', { count: 'exact', head: true })
+      .eq('museum_id', museum.id)
+      .ilike('entry_number', `EN-${year}-%`)
+    const entryNumber = `EN-${year}-${String((count || 0) + 1).padStart(3, '0')}`
+    const { data: created, error } = await supabase.from('entry_records').insert({
+      museum_id: museum.id,
+      entry_number: entryNumber,
+      entry_date: newEntry.entry_date,
+      depositor_name: newEntry.depositor_name,
+      depositor_contact: newEntry.depositor_contact || null,
+      entry_reason: newEntry.entry_reason,
+      object_description: newEntry.object_description,
+      object_count: newEntry.object_count,
+      received_by: newEntry.received_by,
+      entry_method: newEntry.entry_method || null,
+      condition_on_entry: newEntry.condition_on_entry || null,
+      outcome: 'Pending',
+    }).select('id').single()
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    const { data: newArtifact, error: artifactError } = await supabase.from('artifacts').insert({
+      museum_id: museum.id,
+      title: newEntry.object_description,
+      acquisition_source: newEntry.depositor_name,
+      acquisition_source_contact: newEntry.depositor_contact || null,
+      acquisition_object_count: newEntry.object_count,
+      accession_no: newEntry.accession_no || null,
+      status: 'Entry',
+      emoji: '🖼️',
+    }).select('id').single()
+    if (artifactError) { toast(artifactError.message, 'error'); setSubmitting(false); return }
+    await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', created.id)
+    router.push(`/dashboard/artifacts/${newArtifact.id}?tab=loans&direction=In`)
   }
 
   if (loading) return (
@@ -99,6 +162,8 @@ export default function LoansPage() {
     )
   })
 
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+
   return (
     <DashboardShell museum={museum} activePath="/dashboard/loans" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -131,13 +196,81 @@ export default function LoansPage() {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => router.push('/dashboard/entry?newEntry=true')}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
-            >
-              + New loan in
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => { setShowForm(v => !v); setNewEntry(defaultEntry()) }}
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+              >
+                {showForm ? 'Cancel' : '+ New loan in'}
+              </button>
+            )}
           </div>
+
+          {/* New Loan In Form */}
+          {showForm && (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record — Loan In</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
+                  <input type="date" className={inputCls} value={newEntry.entry_date} onChange={e => setNewEntry(v => ({ ...v, entry_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>Depositor Name <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder="Name of depositor" value={newEntry.depositor_name} onChange={e => setNewEntry(v => ({ ...v, depositor_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>Depositor Contact</label>
+                  <input type="text" className={inputCls} placeholder="Email or phone" value={newEntry.depositor_contact} onChange={e => setNewEntry(v => ({ ...v, depositor_contact: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>Entry Reason <span className="text-red-400">*</span></label>
+                  <select className={inputCls} value={newEntry.entry_reason} onChange={e => setNewEntry(v => ({ ...v, entry_reason: e.target.value }))}>
+                    <option value="">Select reason…</option>
+                    {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Entry Method</label>
+                  <select className={inputCls} value={newEntry.entry_method} onChange={e => setNewEntry(v => ({ ...v, entry_method: e.target.value }))}>
+                    <option value="">Select method…</option>
+                    {['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer'].map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Received By <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder="Staff member name" value={newEntry.received_by} onChange={e => setNewEntry(v => ({ ...v, received_by: e.target.value }))} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
+                  <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className={labelCls}>Object Count</label>
+                    <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Condition on Entry</label>
+                    <input type="text" className={inputCls} placeholder="e.g. Good" value={newEntry.condition_on_entry} onChange={e => setNewEntry(v => ({ ...v, condition_on_entry: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Object Number</label>
+                    <input type="text" className={inputCls} placeholder="e.g. 2026.001" value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handleCreateEntry}
+                  disabled={submitting}
+                  className="text-sm font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                >
+                  {submitting ? 'Recording…' : 'Record & add loan details →'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Search */}
           <div className="relative">
