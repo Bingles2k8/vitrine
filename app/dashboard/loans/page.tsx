@@ -132,7 +132,7 @@ export default function LoansPage() {
               ))}
             </div>
             <button
-              onClick={() => router.push('/dashboard/artifacts/new?tab=loans&direction=In')}
+              onClick={() => router.push('/dashboard/entry?newEntry=true')}
               className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
             >
               + New loan in
