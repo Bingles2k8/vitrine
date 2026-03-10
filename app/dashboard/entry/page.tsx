@@ -180,7 +180,6 @@ export default function EntryRegisterPage() {
   )
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
-  const fullMode = getPlan(museum?.plan).fullMode
   const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
@@ -188,26 +187,8 @@ export default function EntryRegisterPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/entry" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Entry Register</span>
-          {canEdit && (
-            <div className="flex gap-2">
-              {fullMode && (
-                <button
-                  onClick={() => setShowImport(true)}
-                  className="text-sm font-mono text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                >
-                  Import CSV
-                </button>
-              )}
-              <button
-                onClick={() => setShowForm(v => !v)}
-                className="text-sm font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-              >
-                {showForm ? 'Cancel' : '+ New Entry'}
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
@@ -226,37 +207,57 @@ export default function EntryRegisterPage() {
             ))}
           </div>
 
-          {/* Artifact usage bar */}
-          {(() => {
-            const planInfo = getPlan(museum?.plan)
-            const limit = planInfo.artifacts
-            if (limit === null) return null
-            const count = artifacts.length
-            const pct = Math.min(100, Math.round((count / limit) * 100))
-            const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
-            const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
-            return (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
-                    <span className={`text-xs font-mono ${textColor}`}>{count.toLocaleString()} / {limit.toLocaleString()} objects</span>
+          {/* Artifact usage bar + action buttons */}
+          <div className="flex items-center gap-3">
+            {(() => {
+              const planInfo = getPlan(museum?.plan)
+              const limit = planInfo.artifacts
+              if (limit === null) return <div className="flex-1" />
+              const count = artifacts.length
+              const pct = Math.min(100, Math.round((count / limit) * 100))
+              const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
+              const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
+              return (
+                <div className="flex-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
+                      <span className={`text-xs font-mono ${textColor}`}>{count.toLocaleString()} / {limit.toLocaleString()} objects</span>
+                    </div>
+                    <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
-                  </div>
+                  {pct >= 80 && (
+                    <button
+                      onClick={() => router.push('/dashboard/plan')}
+                      className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
+                    >
+                      Upgrade →
+                    </button>
+                  )}
                 </div>
-                {pct >= 80 && (
+              )
+            })()}
+            {canEdit && (
+              <div className="flex gap-2 shrink-0">
+                {getPlan(museum?.plan).fullMode && (
                   <button
-                    onClick={() => router.push('/dashboard/plan')}
-                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
+                    onClick={() => setShowImport(true)}
+                    className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
                   >
-                    Upgrade →
+                    Import CSV
                   </button>
                 )}
+                <button
+                  onClick={() => setShowForm(v => !v)}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                >
+                  {showForm ? 'Cancel' : '+ New Entry'}
+                </button>
               </div>
-            )
-          })()}
+            )}
+          </div>
 
 
           {/* Info banner */}
