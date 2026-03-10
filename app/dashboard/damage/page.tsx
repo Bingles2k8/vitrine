@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -102,18 +102,16 @@ export default function DamagePage() {
   // Use the most common currency for the summary, defaulting to GBP
   const summaryCurrency = reports.find(r => r.repair_estimate)?.repair_currency || 'GBP'
 
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    return reports.filter(r => {
-      if (filter !== 'All' && r.status !== filter) return false
-      if (!q) return true
-      return (
-        r.artifacts?.title?.toLowerCase().includes(q) ||
-        r.artifacts?.accession_no?.toLowerCase().includes(q) ||
-        r.report_number?.toLowerCase().includes(q)
-      )
-    })
-  }, [reports, filter, searchQuery])
+  const damageQ = searchQuery.trim().toLowerCase()
+  const filtered = reports.filter(r => {
+    if (filter !== 'All' && r.status !== filter) return false
+    if (!damageQ) return true
+    return (
+      r.artifacts?.title?.toLowerCase().includes(damageQ) ||
+      r.artifacts?.accession_no?.toLowerCase().includes(damageQ) ||
+      r.report_number?.toLowerCase().includes(damageQ)
+    )
+  })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/damage" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>

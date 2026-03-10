@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -86,20 +86,18 @@ export default function LoansPage() {
   const overdue = active.filter(isOverdue)
   const returnedThisYear = loans.filter(l => l.status === 'Returned' && l.loan_end_date?.startsWith(new Date().getFullYear().toString()))
 
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    return loans.filter(l => {
-      if (filter === 'Out' && !(l.direction === 'Out' && l.status === 'Active')) return false
-      if (filter === 'In' && !(l.direction === 'In' && l.status === 'Active')) return false
-      if (filter === 'Overdue' && !isOverdue(l)) return false
-      if (!q) return true
-      return (
-        l.artifacts?.title?.toLowerCase().includes(q) ||
-        l.artifacts?.accession_no?.toLowerCase().includes(q) ||
-        l.borrowing_institution?.toLowerCase().includes(q)
-      )
-    })
-  }, [loans, filter, searchQuery])
+  const q = searchQuery.trim().toLowerCase()
+  const filtered = loans.filter(l => {
+    if (filter === 'Out' && !(l.direction === 'Out' && l.status === 'Active')) return false
+    if (filter === 'In' && !(l.direction === 'In' && l.status === 'Active')) return false
+    if (filter === 'Overdue' && !isOverdue(l)) return false
+    if (!q) return true
+    return (
+      l.artifacts?.title?.toLowerCase().includes(q) ||
+      l.artifacts?.accession_no?.toLowerCase().includes(q) ||
+      l.borrowing_institution?.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/loans" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>

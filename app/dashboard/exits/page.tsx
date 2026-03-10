@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -85,15 +85,14 @@ export default function ObjectExitsPage() {
   const permanent = exits.filter(e => !e.expected_return_date)
   const overdue = temporary.filter(e => e.expected_return_date < todayStr)
 
-  const displayedExits = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return exits
-    return exits.filter(e =>
-      e.artifacts?.title?.toLowerCase().includes(q) ||
-      e.artifacts?.accession_no?.toLowerCase().includes(q) ||
-      e.recipient_name?.toLowerCase().includes(q)
-    )
-  }, [exits, searchQuery])
+  const exitQ = searchQuery.trim().toLowerCase()
+  const displayedExits = exitQ
+    ? exits.filter(e =>
+        e.artifacts?.title?.toLowerCase().includes(exitQ) ||
+        e.artifacts?.accession_no?.toLowerCase().includes(exitQ) ||
+        e.recipient_name?.toLowerCase().includes(exitQ)
+      )
+    : exits
 
   function exitStatus(e: any) {
     if (!e.expected_return_date) return { label: 'Permanent', cls: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' }
