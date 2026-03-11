@@ -10,7 +10,7 @@
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS valuations (
   id             uuid          PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id    uuid          NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id    uuid          NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id      uuid          NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   value          numeric(12,2) NOT NULL,
   currency       text          NOT NULL DEFAULT 'GBP',
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS valuations (
   created_at     timestamptz   NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS valuations_artifact_idx ON valuations (artifact_id, valuation_date DESC);
+CREATE INDEX IF NOT EXISTS valuations_artifact_idx ON valuations (object_id, valuation_date DESC);
 CREATE INDEX IF NOT EXISTS valuations_museum_idx   ON valuations (museum_id);
 
 

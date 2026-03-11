@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { path: '/dashboard/plan', icon: '◇', label: 'Plan & Billing' },
 ]
 
-type Result = { type: 'nav'; path: string; icon: string; label: string } | { type: 'artifact'; id: string; title: string; emoji: string; accession_no: string; status: string }
+type Result = { type: 'nav'; path: string; icon: string; label: string } | { type: 'object'; id: string; title: string; emoji: string; accession_no: string; status: string }
 
 interface CommandPaletteProps {
   museumId: string | null
@@ -78,7 +78,7 @@ export default function CommandPalette({ museumId }: CommandPaletteProps) {
       .filter(n => n.label.toLowerCase().includes(q))
       .map(n => ({ ...n, type: 'nav' as const }))
 
-    // Search artifacts with debounce
+    // Search objects with debounce
     if (!museumId) {
       setResults(navResults)
       setSelectedIndex(0)
@@ -87,14 +87,14 @@ export default function CommandPalette({ museumId }: CommandPaletteProps) {
 
     const timer = setTimeout(async () => {
       const { data } = await supabase
-        .from('artifacts')
+        .from('objects')
         .select('id, title, emoji, accession_no, status')
         .eq('museum_id', museumId)
         .or(`title.ilike.%${q}%,artist.ilike.%${q}%,accession_no.ilike.%${q}%`)
         .limit(8)
 
-      const artifactResults: Result[] = (data || []).map(a => ({
-        type: 'artifact' as const,
+      const objectResults: Result[] = (data || []).map(a => ({
+        type: 'object' as const,
         id: a.id,
         title: a.title,
         emoji: a.emoji || '🖼️',
@@ -102,7 +102,7 @@ export default function CommandPalette({ museumId }: CommandPaletteProps) {
         status: a.status || '',
       }))
 
-      setResults([...navResults, ...artifactResults])
+      setResults([...navResults, ...objectResults])
       setSelectedIndex(0)
     }, 200)
 
@@ -114,7 +114,7 @@ export default function CommandPalette({ museumId }: CommandPaletteProps) {
     if (result.type === 'nav') {
       router.push(result.path)
     } else {
-      router.push(`/dashboard/artifacts/${result.id}`)
+      router.push(`/dashboard/objects/${result.id}`)
     }
   }, [router])
 
@@ -178,7 +178,7 @@ export default function CommandPalette({ museumId }: CommandPaletteProps) {
                 <div className="text-sm text-stone-900 dark:text-stone-100 truncate">
                   {r.type === 'nav' ? r.label : r.title}
                 </div>
-                {r.type === 'artifact' && r.accession_no && (
+                {r.type === 'object' && r.accession_no && (
                   <div className="text-xs text-stone-400 truncate">{r.accession_no}</div>
                 )}
               </div>

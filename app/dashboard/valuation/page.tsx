@@ -13,7 +13,7 @@ export default function ValuationPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [valuations, setValuations] = useState<any[]>([])
-  const [artifactCount, setArtifactCount] = useState(0)
+  const [objectCount, setObjectCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -28,11 +28,11 @@ export default function ValuationPage() {
       const [{ data: vals }, { count }] = await Promise.all([
         supabase
           .from('valuations')
-          .select('*, artifacts(title, accession_no, emoji)')
+          .select('*, objects(title, accession_no, emoji)')
           .eq('museum_id', museum.id)
           .order('valuation_date', { ascending: false }),
         supabase
-          .from('artifacts')
+          .from('objects')
           .select('*', { count: 'exact', head: true })
           .eq('museum_id', museum.id),
       ])
@@ -40,7 +40,7 @@ export default function ValuationPage() {
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setValuations(vals || [])
-      setArtifactCount(count ?? 0)
+      setObjectCount(count ?? 0)
       setLoading(false)
     }
     load()
@@ -83,14 +83,14 @@ export default function ValuationPage() {
     )
   }
 
-  // Compute per-object latest valuation (first occurrence per artifact_id since ordered desc)
-  const latestByArtifact = new Map<string, any>()
+  // Compute per-object latest valuation (first occurrence per object_id since ordered desc)
+  const latestByObject = new Map<string, any>()
   for (const v of valuations) {
-    if (!latestByArtifact.has(v.artifact_id)) latestByArtifact.set(v.artifact_id, v)
+    if (!latestByObject.has(v.object_id)) latestByObject.set(v.object_id, v)
   }
-  const objectsValued = latestByArtifact.size
-  const objectsWithoutValuation = Math.max(0, artifactCount - objectsValued)
-  const totalValue = Array.from(latestByArtifact.values()).reduce((sum, v) => sum + parseFloat(v.value || 0), 0)
+  const objectsValued = latestByObject.size
+  const objectsWithoutValuation = Math.max(0, objectCount - objectsValued)
+  const totalValue = Array.from(latestByObject.values()).reduce((sum, v) => sum + parseFloat(v.value || 0), 0)
 
   const formatCurrency = (value: number, currency: string) =>
     new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency || 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
@@ -141,14 +141,14 @@ export default function ValuationPage() {
                 <tbody>
                   {valuations.map(v => (
                     <tr key={v.id}
-                      onClick={() => router.push(`/dashboard/artifacts/${v.artifact_id}?tab=valuation`)}
+                      onClick={() => router.push(`/dashboard/objects/${v.object_id}?tab=valuation`)}
                       className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{v.artifacts?.emoji}</div>
+                          <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{v.objects?.emoji}</div>
                           <div>
-                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.artifacts?.title}</div>
-                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{v.artifacts?.accession_no}</div>
+                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.objects?.title}</div>
+                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{v.objects?.accession_no}</div>
                           </div>
                         </div>
                       </td>

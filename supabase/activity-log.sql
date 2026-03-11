@@ -11,7 +11,7 @@
 CREATE TABLE IF NOT EXISTS activity_log (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id   uuid        NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
-  artifact_id uuid                 REFERENCES artifacts(id) ON DELETE SET NULL,
+  object_id uuid                 REFERENCES objects(id) ON DELETE SET NULL,
   user_id     uuid,
   user_name   text,
   action_type text        NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS activity_log (
 );
 
 CREATE INDEX IF NOT EXISTS activity_log_museum_idx   ON activity_log (museum_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS activity_log_artifact_idx ON activity_log (artifact_id);
+CREATE INDEX IF NOT EXISTS activity_log_artifact_idx ON activity_log (object_id);
 
 
 -- -------------------------------------------------------------

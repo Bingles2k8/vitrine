@@ -12,7 +12,7 @@ export default function TrashPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
@@ -27,13 +27,13 @@ export default function TrashPage() {
       setStaffAccess(result.staffAccess)
 
       const { data } = await supabase
-        .from('artifacts')
+        .from('objects')
         .select('id, title, emoji, accession_no, status, deleted_at')
         .eq('museum_id', result.museum.id)
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false })
 
-      setArtifacts(data || [])
+      setObjects(data || [])
       setLoading(false)
     }
     load()
@@ -41,7 +41,7 @@ export default function TrashPage() {
 
   async function handleRestore(id: string) {
     const { error } = await supabase
-      .from('artifacts')
+      .from('objects')
       .update({ deleted_at: null })
       .eq('id', id)
 
@@ -49,7 +49,7 @@ export default function TrashPage() {
       toast(error.message, 'error')
     } else {
       toast('Object restored')
-      setArtifacts(artifacts.filter(a => a.id !== id))
+      setObjects(objects.filter(a => a.id !== id))
     }
   }
 
@@ -57,7 +57,7 @@ export default function TrashPage() {
     if (!confirm(`Permanently delete "${title}"? This cannot be undone.`)) return
 
     const { error } = await supabase
-      .from('artifacts')
+      .from('objects')
       .delete()
       .eq('id', id)
 
@@ -65,7 +65,7 @@ export default function TrashPage() {
       toast(error.message, 'error')
     } else {
       toast('Permanently deleted')
-      setArtifacts(artifacts.filter(a => a.id !== id))
+      setObjects(objects.filter(a => a.id !== id))
     }
   }
 
@@ -86,12 +86,12 @@ export default function TrashPage() {
       <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8">
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono text-stone-400 uppercase tracking-widest">Trash</span>
-          <span className="text-xs font-mono text-stone-300 dark:text-stone-600">{artifacts.length} item{artifacts.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs font-mono text-stone-300 dark:text-stone-600">{objects.length} item{objects.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
       <div className="p-8">
-        {artifacts.length === 0 ? (
+        {objects.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-sm text-stone-400 dark:text-stone-500 font-mono">Trash is empty</p>
             <p className="text-xs text-stone-300 dark:text-stone-600 mt-1">Deleted objects will appear here</p>
@@ -108,7 +108,7 @@ export default function TrashPage() {
                 </tr>
               </thead>
               <tbody>
-                {artifacts.map(a => (
+                {objects.map(a => (
                   <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">

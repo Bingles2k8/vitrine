@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { publicLimiter, rateLimit } from '@/lib/rate-limit'
 import { headers } from 'next/headers'
 
-const VALID_PAGE_TYPES = ['home', 'artifact', 'events', 'visit', 'embed'] as const
+const VALID_PAGE_TYPES = ['home', 'object', 'events', 'visit', 'embed'] as const
 
 export async function POST(request: Request) {
   // Rate limit by IP — allow 60/min per IP (fire-and-forget, generous limit)
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({}, { status: 200 })
   }
 
-  const { museum_id, artifact_id, page_type } = body
+  const { museum_id, object_id, page_type } = body
 
   if (!museum_id || typeof museum_id !== 'string') return NextResponse.json({}, { status: 200 })
   if (!VALID_PAGE_TYPES.includes(page_type)) return NextResponse.json({}, { status: 200 })
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   await supabase.from('page_views').insert({
     museum_id,
-    artifact_id: artifact_id || null,
+    object_id: object_id || null,
     page_type,
   })
 

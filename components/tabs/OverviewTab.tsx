@@ -11,7 +11,7 @@ interface OverviewTabProps {
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  artifact: any
+  object: any
   museum: any
   latestValuation: any
   setActiveTab: (tab: string) => void
@@ -32,7 +32,7 @@ function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }
   )
 }
 
-export default function OverviewTab({ form, set, canEdit, saving, artifact, museum, latestValuation, setActiveTab }: OverviewTabProps) {
+export default function OverviewTab({ form, set, canEdit, saving, object, museum, latestValuation, setActiveTab }: OverviewTabProps) {
   const router = useRouter()
 
   return (
@@ -40,7 +40,7 @@ export default function OverviewTab({ form, set, canEdit, saving, artifact, muse
       {/* Image section */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
         <ImageUpload currentUrl={form.image_url} onUpload={(url: string) => set('image_url', url)} />
-        <ImageGallery artifactId={artifact.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerArtifact} />
+        <ImageGallery objectId={object.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerObject} />
       </div>
 
       {/* Icon selector */}

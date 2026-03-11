@@ -8,7 +8,7 @@ import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
 
-interface Artifact {
+interface ObjectItem {
   id: string
   title: string
   artist: string
@@ -89,7 +89,7 @@ function ExportModal({ onClose }: { onClose: () => void }) {
     if (acquiredTo) params.set('acquired_to', acquiredTo)
     if (includeDeleted) params.set('include_deleted', 'true')
     const qs = params.toString()
-    return `/api/export/artifacts${qs ? '?' + qs : ''}`
+    return `/api/export/objects${qs ? '?' + qs : ''}`
   }
 
   return (
@@ -158,7 +158,7 @@ export default function AnalyticsPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [artifacts, setArtifacts] = useState<Artifact[]>([])
+  const [objects, setObjects] = useState<ObjectItem[]>([])
   const [pageViews, setPageViews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showExport, setShowExport] = useState(false)
@@ -173,14 +173,14 @@ export default function AnalyticsPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const [{ data: artifacts }, { data: views }] = await Promise.all([
-        supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
-        supabase.from('page_views').select('page_type, artifact_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
+      const [{ data: objects }, { data: views }] = await Promise.all([
+        supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
-      setArtifacts(artifacts || [])
+      setObjects(objects || [])
       setPageViews(views || [])
       setLoading(false)
     }
@@ -190,30 +190,30 @@ export default function AnalyticsPage() {
   const byStatus = useMemo(() => {
     const order = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned']
     const counts: Record<string, number> = {}
-    artifacts.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1 })
+    objects.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1 })
     return order.filter(s => counts[s]).map(s => [s, counts[s]] as [string, number])
-  }, [artifacts])
+  }, [objects])
 
   const byMedium = useMemo(() => {
     const counts: Record<string, number> = {}
-    artifacts.forEach(a => { if (a.medium) counts[a.medium] = (counts[a.medium] || 0) + 1 })
+    objects.forEach(a => { if (a.medium) counts[a.medium] = (counts[a.medium] || 0) + 1 })
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [artifacts])
+  }, [objects])
 
   const byCulture = useMemo(() => {
     const counts: Record<string, number> = {}
-    artifacts.forEach(a => { if (a.culture) counts[a.culture] = (counts[a.culture] || 0) + 1 })
+    objects.forEach(a => { if (a.culture) counts[a.culture] = (counts[a.culture] || 0) + 1 })
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [artifacts])
+  }, [objects])
 
   const byMonth = useMemo(() => {
     const counts: Record<string, number> = {}
-    artifacts.forEach(a => {
+    objects.forEach(a => {
       const month = a.created_at?.slice(0, 7)
       if (month) counts[month] = (counts[month] || 0) + 1
     })
     return Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0])).slice(-6)
-  }, [artifacts])
+  }, [objects])
 
   function formatMonth(ym: string) {
     const [y, m] = ym.split('-')
@@ -235,14 +235,14 @@ export default function AnalyticsPage() {
     return Object.entries(counts)
   }, [pageViews])
 
-  const topArtifacts = useMemo(() => {
+  const topObjects = useMemo(() => {
     const counts: Record<string, number> = {}
-    pageViews.filter(v => v.artifact_id).forEach(v => { counts[v.artifact_id] = (counts[v.artifact_id] || 0) + 1 })
+    pageViews.filter(v => v.object_id).forEach(v => { counts[v.object_id] = (counts[v.object_id] || 0) + 1 })
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({
-      artifact: artifacts.find(a => a.id === id),
+      object: objects.find(a => a.id === id),
       count,
-    })).filter(x => x.artifact)
-  }, [pageViews, artifacts])
+    })).filter(x => x.object)
+  }, [pageViews, objects])
 
   const pageTypeBreakdown = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -302,21 +302,21 @@ export default function AnalyticsPage() {
           </button>
         </div>
 
-        {artifacts.length === 0 ? (
+        {objects.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="text-5xl mb-4">📊</div>
             <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No data yet</div>
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Add objects to your collection to see analytics.</p>
-            <button onClick={() => router.push('/dashboard/artifacts/new')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">+ Add your first object</button>
+            <button onClick={() => router.push('/dashboard/objects/new')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">+ Add your first object</button>
           </div>
         ) : (
           <div className="p-4 md:p-8 space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Total Objects', value: artifacts.length },
-                { label: 'On Display', value: artifacts.filter(a => a.status === 'On Display').length },
-                { label: 'Mediums', value: new Set(artifacts.map(a => a.medium).filter(Boolean)).size },
-                { label: 'Cultures', value: new Set(artifacts.map(a => a.culture).filter(Boolean)).size },
+                { label: 'Total Objects', value: objects.length },
+                { label: 'On Display', value: objects.filter(a => a.status === 'On Display').length },
+                { label: 'Mediums', value: new Set(objects.map(a => a.medium).filter(Boolean)).size },
+                { label: 'Cultures', value: new Set(objects.map(a => a.culture).filter(Boolean)).size },
               ].map(s => (
                 <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
@@ -333,10 +333,10 @@ export default function AnalyticsPage() {
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[label] || '#a8a29e' }} />
                     <div className="flex-1 text-xs text-stone-500 dark:text-stone-400">{label}</div>
                     <div className="flex-1 bg-stone-100 dark:bg-stone-800 rounded-full h-2 overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((value / artifacts.length) * 100)}%`, background: STATUS_COLORS[label] || '#a8a29e' }} />
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((value / objects.length) * 100)}%`, background: STATUS_COLORS[label] || '#a8a29e' }} />
                     </div>
                     <div className="text-xs font-mono text-stone-400 dark:text-stone-500 w-12 text-right flex-shrink-0">
-                      {value} <span className="text-stone-300 dark:text-stone-600">({Math.round((value / artifacts.length) * 100)}%)</span>
+                      {value} <span className="text-stone-300 dark:text-stone-600">({Math.round((value / objects.length) * 100)}%)</span>
                     </div>
                   </div>
                 ))}
@@ -371,7 +371,7 @@ export default function AnalyticsPage() {
                 {[
                   { label: 'Total Views', value: pageViews.length },
                   { label: 'Today', value: viewsByDay.find(([d]) => d === new Date().toISOString().slice(0, 10))?.[1] ?? 0 },
-                  { label: 'Artifact Views', value: pageViews.filter(v => v.page_type === 'artifact').length },
+                  { label: 'Object Views', value: pageViews.filter(v => v.page_type === 'object').length },
                   { label: 'Page Types', value: pageTypeBreakdown.length },
                 ].map(s => (
                   <div key={s.label}>
@@ -401,16 +401,16 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
 
-                  {/* Top artifacts + page types */}
+                  {/* Top objects + page types */}
                   <div className="grid grid-cols-2 gap-6">
-                    {topArtifacts.length > 0 && (
+                    {topObjects.length > 0 && (
                       <div>
-                        <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mb-3">Top artifacts</div>
+                        <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mb-3">Top objects</div>
                         <div className="space-y-2">
-                          {topArtifacts.map(({ artifact, count }) => artifact && (
-                            <div key={artifact.id} className="flex items-center gap-2">
-                              <span className="text-base">{artifact.emoji}</span>
-                              <span className="flex-1 text-xs text-stone-600 dark:text-stone-400 truncate">{artifact.title}</span>
+                          {topObjects.map(({ object, count }) => object && (
+                            <div key={object.id} className="flex items-center gap-2">
+                              <span className="text-base">{object.emoji}</span>
+                              <span className="flex-1 text-xs text-stone-600 dark:text-stone-400 truncate">{object.title}</span>
                               <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{count}</span>
                             </div>
                           ))}
@@ -441,8 +441,8 @@ export default function AnalyticsPage() {
               </div>
               <table className="w-full">
                 <tbody>
-                  {artifacts.slice(0, 5).map(a => (
-                    <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer" onClick={() => router.push(`/dashboard/artifacts/${a.id}`)}>
+                  {objects.slice(0, 5).map(a => (
+                    <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer" onClick={() => router.push(`/dashboard/objects/${a.id}`)}>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base flex-shrink-0">{a.emoji}</div>

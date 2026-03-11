@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   const includeDeleted = searchParams.get('include_deleted') === 'true'
 
   let query = supabase
-    .from('artifacts')
+    .from('objects')
     .select([
       'accession_no', 'title', 'artist', 'year', 'medium', 'culture', 'object_type',
       'status', 'current_location', 'acquisition_date', 'acquisition_method',
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     query = query.lte('acquisition_date', acquiredTo)
   }
 
-  const { data: artifacts } = await query
+  const { data: objects } = await query
 
   const HEADERS = [
     'Accession No', 'Title', 'Artist', 'Year', 'Medium', 'Culture', 'Object Type',
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
 
   const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
-  const rows = (artifacts || []).map(a =>
+  const rows = (objects || []).map(a =>
     FIELDS.map(f => escape((a as any)[f])).join(',')
   )
 

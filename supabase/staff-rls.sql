@@ -53,36 +53,36 @@ CREATE POLICY "Staff can view other staff in their museum"
 -- -------------------------------------------------------------
 -- ARTIFACTS
 -- -------------------------------------------------------------
-DROP POLICY IF EXISTS "Staff can view artifacts in their museums" ON artifacts;
-CREATE POLICY "Staff can view artifacts in their museums"
-  ON artifacts FOR SELECT
+DROP POLICY IF EXISTS "Staff can view objects in their museums" ON objects;
+CREATE POLICY "Staff can view objects in their museums"
+  ON objects FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM staff_members
-      WHERE staff_members.museum_id = artifacts.museum_id
+      WHERE staff_members.museum_id = objects.museum_id
         AND staff_members.user_id = auth.uid()
     )
   );
 
-DROP POLICY IF EXISTS "Staff editors can create artifacts in their museums" ON artifacts;
-CREATE POLICY "Staff editors can create artifacts in their museums"
-  ON artifacts FOR INSERT
+DROP POLICY IF EXISTS "Staff editors can create objects in their museums" ON objects;
+CREATE POLICY "Staff editors can create objects in their museums"
+  ON objects FOR INSERT
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM staff_members
-      WHERE staff_members.museum_id = artifacts.museum_id
+      WHERE staff_members.museum_id = objects.museum_id
         AND staff_members.user_id = auth.uid()
         AND staff_members.access IN ('Admin', 'Editor')
     )
   );
 
-DROP POLICY IF EXISTS "Staff editors can update artifacts in their museums" ON artifacts;
-CREATE POLICY "Staff editors can update artifacts in their museums"
-  ON artifacts FOR UPDATE
+DROP POLICY IF EXISTS "Staff editors can update objects in their museums" ON objects;
+CREATE POLICY "Staff editors can update objects in their museums"
+  ON objects FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM staff_members
-      WHERE staff_members.museum_id = artifacts.museum_id
+      WHERE staff_members.museum_id = objects.museum_id
         AND staff_members.user_id = auth.uid()
         AND staff_members.access IN ('Admin', 'Editor')
     )
@@ -90,19 +90,19 @@ CREATE POLICY "Staff editors can update artifacts in their museums"
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM staff_members
-      WHERE staff_members.museum_id = artifacts.museum_id
+      WHERE staff_members.museum_id = objects.museum_id
         AND staff_members.user_id = auth.uid()
         AND staff_members.access IN ('Admin', 'Editor')
     )
   );
 
-DROP POLICY IF EXISTS "Staff admins can delete artifacts in their museums" ON artifacts;
-CREATE POLICY "Staff admins can delete artifacts in their museums"
-  ON artifacts FOR DELETE
+DROP POLICY IF EXISTS "Staff admins can delete objects in their museums" ON objects;
+CREATE POLICY "Staff admins can delete objects in their museums"
+  ON objects FOR DELETE
   USING (
     EXISTS (
       SELECT 1 FROM staff_members
-      WHERE staff_members.museum_id = artifacts.museum_id
+      WHERE staff_members.museum_id = objects.museum_id
         AND staff_members.user_id = auth.uid()
         AND staff_members.access = 'Admin'
     )
@@ -376,23 +376,23 @@ CREATE POLICY "Staff can create activity_log in their museums"
 -- -------------------------------------------------------------
 -- ARTIFACT IMAGES
 -- -------------------------------------------------------------
-DROP POLICY IF EXISTS "Staff can view artifact_images in their museums" ON artifact_images;
-CREATE POLICY "Staff can view artifact_images in their museums"
-  ON artifact_images FOR SELECT
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid()));
+DROP POLICY IF EXISTS "Staff can view object_images in their museums" ON object_images;
+CREATE POLICY "Staff can view object_images in their museums"
+  ON object_images FOR SELECT
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_images.museum_id AND staff_members.user_id = auth.uid()));
 
-DROP POLICY IF EXISTS "Staff editors can create artifact_images in their museums" ON artifact_images;
-CREATE POLICY "Staff editors can create artifact_images in their museums"
-  ON artifact_images FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
+DROP POLICY IF EXISTS "Staff editors can create object_images in their museums" ON object_images;
+CREATE POLICY "Staff editors can create object_images in their museums"
+  ON object_images FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
-DROP POLICY IF EXISTS "Staff editors can update artifact_images in their museums" ON artifact_images;
-CREATE POLICY "Staff editors can update artifact_images in their museums"
-  ON artifact_images FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
-  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
+DROP POLICY IF EXISTS "Staff editors can update object_images in their museums" ON object_images;
+CREATE POLICY "Staff editors can update object_images in their museums"
+  ON object_images FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access IN ('Admin', 'Editor')));
 
-DROP POLICY IF EXISTS "Staff admins can delete artifact_images in their museums" ON artifact_images;
-CREATE POLICY "Staff admins can delete artifact_images in their museums"
-  ON artifact_images FOR DELETE
-  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = artifact_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));
+DROP POLICY IF EXISTS "Staff admins can delete object_images in their museums" ON object_images;
+CREATE POLICY "Staff admins can delete object_images in their museums"
+  ON object_images FOR DELETE
+  USING (EXISTS (SELECT 1 FROM staff_members WHERE staff_members.museum_id = object_images.museum_id AND staff_members.user_id = auth.uid() AND staff_members.access = 'Admin'));

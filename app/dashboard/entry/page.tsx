@@ -25,7 +25,7 @@ export default function EntryRegisterPage() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [entries, setEntries] = useState<any[]>([])
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -62,15 +62,15 @@ export default function EntryRegisterPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       try {
-        const [{ data: entries }, { data: artifacts }] = await Promise.all([
-          supabase.from('entry_records').select('*, artifacts(title, accession_no, deleted_at)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
-          supabase.from('artifacts').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
+        const [{ data: entries }, { data: objects }] = await Promise.all([
+          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
+          supabase.from('objects').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
         setEntries(entries || [])
-        setArtifacts(artifacts || [])
+        setObjects(objects || [])
       } catch {
         // Queries failed — show empty state rather than infinite loading
       }
@@ -86,10 +86,10 @@ export default function EntryRegisterPage() {
 
   async function handlePromote(entry: any) {
         const planInfo = getPlan(museum?.plan)
-    const limit = planInfo.artifacts
+    const limit = planInfo.objects
     if (limit !== null) {
       const { count } = await supabase
-        .from('artifacts').select('*', { count: 'exact', head: true })
+        .from('objects').select('*', { count: 'exact', head: true })
         .eq('museum_id', museum.id)
         .is('deleted_at', null)
       if (count !== null && count >= limit) {
@@ -97,7 +97,7 @@ export default function EntryRegisterPage() {
         return
       }
     }
-    const { data: newArtifact, error: createError } = await supabase.from('artifacts').insert({
+    const { data: newObject, error: createError } = await supabase.from('objects').insert({
       museum_id: museum.id,
       title: entry.object_description,
       acquisition_source: entry.depositor_name,
@@ -109,11 +109,11 @@ export default function EntryRegisterPage() {
 
     if (createError) { toast(createError.message, 'error'); return }
 
-    const { error: updateError } = await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', entry.id)
+    const { error: updateError } = await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', entry.id)
     if (updateError) { toast(updateError.message, 'error'); return }
 
-    setEntries(entries.map(e => e.id === entry.id ? { ...e, artifact_id: newArtifact.id } : e))
-    router.push(`/dashboard/artifacts/${newArtifact.id}?tab=entry`)
+    setEntries(entries.map(e => e.id === entry.id ? { ...e, object_id: newObject.id } : e))
+    router.push(`/dashboard/objects/${newObject.id}?tab=entry`)
   }
 
   async function handleCreateEntry(mode: 'stay' | 'continue') {
@@ -124,9 +124,9 @@ export default function EntryRegisterPage() {
     }
     // Check plan limits
     const planInfo = getPlan(museum?.plan)
-    const limit = planInfo.artifacts
+    const limit = planInfo.objects
     if (limit !== null) {
-      const { count } = await supabase.from('artifacts').select('*', { count: 'exact', head: true }).eq('museum_id', museum.id).is('deleted_at', null)
+      const { count } = await supabase.from('objects').select('*', { count: 'exact', head: true }).eq('museum_id', museum.id).is('deleted_at', null)
       if (count !== null && count >= limit) {
         toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
         return
@@ -151,8 +151,8 @@ export default function EntryRegisterPage() {
       outcome: 'Pending',
     }).select('*').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
-    // Create the artifact
-    const { data: newArtifact, error: artifactError } = await supabase.from('artifacts').insert({
+    // Create the object
+    const { data: newObject, error: objectError } = await supabase.from('objects').insert({
       museum_id: museum.id,
       title: newEntry.object_description,
       acquisition_source: newEntry.depositor_name,
@@ -162,12 +162,12 @@ export default function EntryRegisterPage() {
       status: 'Entry',
       emoji: '🖼️',
     }).select('id').single()
-    if (artifactError) { toast(artifactError.message, 'error'); setSubmitting(false); return }
-    await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', created.id)
+    if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
+    await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     if (mode === 'continue') {
-      router.push(`/dashboard/artifacts/${newArtifact.id}`)
+      router.push(`/dashboard/objects/${newObject.id}`)
     } else {
-      setEntries([{ ...created, artifact_id: newArtifact.id, artifacts: { title: newEntry.object_description, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
+      setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_description, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
       setNewEntry(defaultEntry())
       setShowForm(false)
       setSubmitting(false)
@@ -213,13 +213,13 @@ export default function EntryRegisterPage() {
             ))}
           </div>
 
-          {/* Artifact usage bar + action buttons */}
+          {/* Object usage bar + action buttons */}
           <div className="flex items-center gap-3">
             {(() => {
               const planInfo = getPlan(museum?.plan)
-              const limit = planInfo.artifacts
+              const limit = planInfo.objects
               if (limit === null) return <div className="flex-1" />
-              const count = artifacts.length
+              const count = objects.length
               const pct = Math.min(100, Math.round((count / limit) * 100))
               const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
               const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
@@ -378,10 +378,10 @@ export default function EntryRegisterPage() {
                 <tbody>
                   {entries.map(e => (
                     <tr key={e.id}
-                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.artifacts?.deleted_at ? 'cursor-default' : 'cursor-pointer'}`}
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.objects?.deleted_at ? 'cursor-default' : 'cursor-pointer'}`}
                       onClick={() => {
-                        if (e.artifacts?.deleted_at) return
-                        if (e.artifact_id) { router.push(`/dashboard/artifacts/${e.artifact_id}`); return }
+                        if (e.objects?.deleted_at) return
+                        if (e.object_id) { router.push(`/dashboard/objects/${e.object_id}`); return }
                         if (canEdit) handlePromote(e)
                       }}
                     >
@@ -391,7 +391,7 @@ export default function EntryRegisterPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.depositor_name}</div>
-                        {e.artifacts && <div className="text-xs text-stone-400 dark:text-stone-500">{e.artifacts.accession_no || e.artifacts.title}</div>}
+                        {e.objects && <div className="text-xs text-stone-400 dark:text-stone-500">{e.objects.accession_no || e.objects.title}</div>}
                       </td>
                       <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.entry_reason}</td>
                       <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.object_count}</td>
@@ -410,7 +410,7 @@ export default function EntryRegisterPage() {
                         </td>
                       )}
                       <td className="px-4 py-3 text-right" onClick={ev => ev.stopPropagation()}>
-                        {e.artifact_id && e.artifacts?.deleted_at ? (
+                        {e.object_id && e.objects?.deleted_at ? (
                           <button
                             onClick={() => router.push('/dashboard/trash')}
                             className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors"
@@ -418,9 +418,9 @@ export default function EntryRegisterPage() {
                           >
                             Removed — view trash →
                           </button>
-                        ) : e.artifact_id ? (
+                        ) : e.object_id ? (
                           (() => {
-                            const incomplete = e.outcome === 'Pending' && !e.artifacts?.accession_no
+                            const incomplete = e.outcome === 'Pending' && !e.objects?.accession_no
                             return (
                               <span className={`text-xs font-mono ${incomplete ? 'text-amber-600' : 'text-stone-400 dark:text-stone-500'}`}>
                                 {incomplete ? 'Incomplete →' : 'View object →'}

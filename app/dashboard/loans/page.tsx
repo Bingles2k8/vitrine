@@ -47,7 +47,7 @@ export default function LoansPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: loans } = await supabase
         .from('loans')
-        .select('*, artifacts(title, accession_no, emoji)')
+        .select('*, objects(title, accession_no, emoji)')
         .eq('museum_id', museum.id)
         .order('loan_end_date', { ascending: true, nullsFirst: false })
       setMuseum(museum)
@@ -93,7 +93,7 @@ export default function LoansPage() {
       outcome: 'Pending',
     }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
-    const { data: newArtifact, error: artifactError } = await supabase.from('artifacts').insert({
+    const { data: newObject, error: objectError } = await supabase.from('objects').insert({
       museum_id: museum.id,
       title: newEntry.object_description,
       acquisition_source: newEntry.depositor_name,
@@ -103,9 +103,9 @@ export default function LoansPage() {
       status: 'Entry',
       emoji: '🖼️',
     }).select('id').single()
-    if (artifactError) { toast(artifactError.message, 'error'); setSubmitting(false); return }
-    await supabase.from('entry_records').update({ artifact_id: newArtifact.id }).eq('id', created.id)
-    router.push(`/dashboard/artifacts/${newArtifact.id}?tab=loans&direction=In`)
+    if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
+    await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
+    router.push(`/dashboard/objects/${newObject.id}?tab=loans&direction=In`)
   }
 
   if (loading) return (
@@ -156,8 +156,8 @@ export default function LoansPage() {
     if (filter === 'Overdue' && !isOverdue(l)) return false
     if (!q) return true
     return (
-      l.artifacts?.title?.toLowerCase().includes(q) ||
-      l.artifacts?.accession_no?.toLowerCase().includes(q) ||
+      l.objects?.title?.toLowerCase().includes(q) ||
+      l.objects?.accession_no?.toLowerCase().includes(q) ||
       l.borrowing_institution?.toLowerCase().includes(q)
     )
   })
@@ -313,10 +313,10 @@ export default function LoansPage() {
                       <tr key={l.id} className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${overdueLoan ? 'bg-amber-50/30' : ''}`}>
                         <td className="px-6 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{l.artifacts?.emoji}</div>
+                            <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{l.objects?.emoji}</div>
                             <div>
-                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{l.artifacts?.title}</div>
-                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{l.artifacts?.accession_no}</div>
+                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{l.objects?.title}</div>
+                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{l.objects?.accession_no}</div>
                             </div>
                           </div>
                         </td>
@@ -344,7 +344,7 @@ export default function LoansPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
-                            onClick={() => router.push(`/dashboard/artifacts/${l.artifact_id}?tab=loans`)}
+                            onClick={() => router.push(`/dashboard/objects/${l.object_id}?tab=loans`)}
                             className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                           >
                             View →

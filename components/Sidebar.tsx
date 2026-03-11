@@ -100,13 +100,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     if (!museumData) return
     const mid = museumData.id
     const [
-      artifacts, staff, entries, loans, conservation, audits, exits,
+      objects, staff, entries, loans, conservation, audits, exits,
       locations, locationHistory, conditions, valuations, risks,
       emergencyPlans, insurance, damage, reproductions,
       collectionUse, disposals, collectionReviews, auditExercises,
       inventoryExercises, rightsRecords, docPlans, docBacklogs,
     ] = await Promise.all([
-      supabase.from('artifacts').select('*').eq('museum_id', mid),
+      supabase.from('objects').select('*').eq('museum_id', mid),
       supabase.from('staff_members').select('*').eq('museum_id', mid),
       supabase.from('entry_records').select('*').eq('museum_id', mid),
       supabase.from('loans').select('*').eq('museum_id', mid),
@@ -134,7 +134,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     const exportData = {
       exported_at: new Date().toISOString(),
       museum: museumData,
-      artifacts: artifacts.data,
+      objects: objects.data,
       staff: staff.data,
       entry_records: entries.data,
       loans: loans.data,

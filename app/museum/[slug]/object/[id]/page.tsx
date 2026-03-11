@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import PageViewTracker from '@/components/PageViewTracker'
 
-export default async function PublicArtifact({ params }: { params: Promise<{ slug: string, id: string }> }) {
+export default async function PublicObject({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const { slug, id } = await params
   const supabase = await createServerSideClient()
 
@@ -16,8 +16,8 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
 
   if (!museum) notFound()
 
-  const { data: artifact } = await supabase
-    .from('artifacts')
+  const { data: object } = await supabase
+    .from('objects')
     .select('*')
     .eq('id', id)
     .eq('museum_id', museum.id)
@@ -25,23 +25,23 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
     .is('deleted_at', null)
     .single()
 
-  if (!artifact) notFound()
+  if (!object) notFound()
 
   const { data: galleryImages } = await supabase
-    .from('artifact_images')
+    .from('object_images')
     .select('url, caption, is_primary')
-    .eq('artifact_id', artifact.id)
+    .eq('object_id', object.id)
     .order('sort_order', { ascending: true })
 
   const images = galleryImages || []
-  const primaryImage = images.find(img => img.is_primary)?.url || images[0]?.url || artifact.image_url
+  const primaryImage = images.find(img => img.is_primary)?.url || images[0]?.url || object.image_url
   const additionalImages = images.length > 1 ? images.filter(img => img.url !== primaryImage) : []
 
   const { accent, content, headingStyle } = getMuseumStyles(museum)
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
-      <PageViewTracker museumId={museum.id} pageType="artifact" artifactId={artifact.id} />
+      <PageViewTracker museumId={museum.id} pageType="object" objectId={object.id} />
       <Link
         href={`/museum/${slug}`}
         className="text-xs font-mono transition-colors mb-10 inline-block"
@@ -58,16 +58,16 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
             style={{ background: content.cardBg, borderColor: content.border }}
           >
             {primaryImage ? (
-              <img src={primaryImage} alt={artifact.title} className="w-full h-full object-cover" />
+              <img src={primaryImage} alt={object.title} className="w-full h-full object-cover" />
             ) : (
-              <span>{artifact.emoji}</span>
+              <span>{object.emoji}</span>
             )}
           </div>
           {additionalImages.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {additionalImages.map((img, i) => (
                 <div key={i} className="flex-shrink-0 w-16 h-16 rounded-lg border overflow-hidden" style={{ borderColor: content.border, background: content.cardBg }}>
-                  <img src={img.url} alt={img.caption || `${artifact.title} — image ${i + 2}`} className="w-full h-full object-cover" title={img.caption || undefined} />
+                  <img src={img.url} alt={img.caption || `${object.title} — image ${i + 2}`} className="w-full h-full object-cover" title={img.caption || undefined} />
                 </div>
               ))}
             </div>
@@ -75,20 +75,20 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>{artifact.culture}</div>
+          <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>{object.culture}</div>
           <h1 className="text-4xl font-normal leading-tight mb-2" style={{ ...headingStyle, color: content.heading }}>
-            {artifact.title}
+            {object.title}
           </h1>
-          <p className="text-xl mb-8" style={{ ...headingStyle, color: content.muted }}>{artifact.artist}</p>
+          <p className="text-xl mb-8" style={{ ...headingStyle, color: content.muted }}>{object.artist}</p>
 
           <div className="grid grid-cols-2 border rounded-lg overflow-hidden mb-8" style={{ borderColor: content.border }}>
             {[
-              { label: 'Date', value: artifact.year },
-              { label: 'Medium', value: artifact.medium },
-              { label: 'Culture', value: artifact.culture },
-              { label: 'Accession', value: artifact.accession_no },
-              { label: 'Dimensions', value: artifact.dimensions },
-              { label: 'Status', value: artifact.status },
+              { label: 'Date', value: object.year },
+              { label: 'Medium', value: object.medium },
+              { label: 'Culture', value: object.culture },
+              { label: 'Accession', value: object.accession_no },
+              { label: 'Dimensions', value: object.dimensions },
+              { label: 'Status', value: object.status },
             ].map((row, i) => (
               <div
                 key={row.label}
@@ -101,8 +101,8 @@ export default async function PublicArtifact({ params }: { params: Promise<{ slu
             ))}
           </div>
 
-          {artifact.description && (
-            <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{artifact.description}</p>
+          {object.description && (
+            <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{object.description}</p>
           )}
 
           <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>

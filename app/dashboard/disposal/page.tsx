@@ -17,7 +17,7 @@ export default function DisposalPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [records, setRecords] = useState<any[]>([])
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +25,7 @@ export default function DisposalPage() {
   const supabase = createClient()
 
   const [form, setForm] = useState({
-    artifact_id: '', disposal_method: '', disposal_reason: '', justification: '',
+    object_id: '', disposal_method: '', disposal_reason: '', justification: '',
     deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '',
     proceeds_amount: '', proceeds_currency: 'GBP',
     governing_body_approval: false, governing_body_date: '',
@@ -40,14 +40,14 @@ export default function DisposalPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const [{ data: recs }, { data: arts }] = await Promise.all([
-        supabase.from('disposal_records').select('*, artifacts(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
-        supabase.from('artifacts').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
+        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setRecords(recs || [])
-      setArtifacts(arts || [])
+      setObjects(arts || [])
       setLoading(false)
     }
     load()
@@ -58,14 +58,14 @@ export default function DisposalPage() {
   async function handleSignOut() { await supabase.auth.signOut(); router.push('/login') }
 
   async function addRecord() {
-    if (!form.artifact_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting) return
+    if (!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
     const count = records.filter(r => r.disposal_reference?.startsWith(`DS-${year}-`)).length
     const ref = `DS-${year}-${String(count + 1).padStart(3, '0')}`
     const { error: err } = await supabase.from('disposal_records').insert({
       disposal_reference: ref, museum_id: museum.id,
-      artifact_id: form.artifact_id, disposal_method: form.disposal_method,
+      object_id: form.object_id, disposal_method: form.disposal_method,
       disposal_reason: form.disposal_reason, justification: form.justification || null,
       deaccession_date: form.deaccession_date, authorised_by: form.authorised_by,
       recipient_name: form.recipient_name || null, recipient_contact: form.recipient_contact || null,
@@ -79,8 +79,8 @@ export default function DisposalPage() {
       notes: form.notes || null,
     })
     if (err) { setError(err.message); setSubmitting(false); return }
-    setForm({ artifact_id: '', disposal_method: '', disposal_reason: '', justification: '', deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '', proceeds_amount: '', proceeds_currency: 'GBP', governing_body_approval: false, governing_body_date: '', register_annotated: false, public_notice: '', public_notice_date: '', notes: '' })
-    const { data } = await supabase.from('disposal_records').select('*, artifacts(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false })
+    setForm({ object_id: '', disposal_method: '', disposal_reason: '', justification: '', deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '', proceeds_amount: '', proceeds_currency: 'GBP', governing_body_approval: false, governing_body_date: '', register_annotated: false, public_notice: '', public_notice_date: '', notes: '' })
+    const { data } = await supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false })
     setRecords(data || [])
     setSubmitting(false)
   }
@@ -151,9 +151,9 @@ export default function DisposalPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Object *</label>
-                  <select value={form.artifact_id} onChange={e => setForm(f => ({ ...f, artifact_id: e.target.value }))} className={inputCls}>
+                  <select value={form.object_id} onChange={e => setForm(f => ({ ...f, object_id: e.target.value }))} className={inputCls}>
                     <option value="">-- Select object --</option>
-                    {artifacts.map(a => <option key={a.id} value={a.id}>{a.emoji} {a.title}{a.accession_no ? ` (${a.accession_no})` : ''}</option>)}
+                    {objects.map(a => <option key={a.id} value={a.id}>{a.emoji} {a.title}{a.accession_no ? ` (${a.accession_no})` : ''}</option>)}
                   </select>
                 </div>
                 <div>
@@ -234,7 +234,7 @@ export default function DisposalPage() {
                 <label className={labelCls}>Notes</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
-              <button type="button" onClick={addRecord} disabled={!form.artifact_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting}
+              <button type="button" onClick={addRecord} disabled={!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting}
                 className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
                 {submitting ? 'Saving...' : 'Propose disposal \u2192'}
               </button>
@@ -266,10 +266,10 @@ export default function DisposalPage() {
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.disposal_reference}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-base">{r.artifacts?.emoji}</span>
+                          <span className="text-base">{r.objects?.emoji}</span>
                           <div>
-                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.artifacts?.title}</div>
-                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{r.artifacts?.accession_no}</div>
+                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.objects?.title}</div>
+                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{r.objects?.accession_no}</div>
                           </div>
                         </div>
                       </td>

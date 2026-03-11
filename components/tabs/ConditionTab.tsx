@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES } from '@/components/tabs/shared'
+import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface ConditionTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
@@ -16,24 +17,25 @@ interface ConditionTabProps {
 const REASONS_FOR_CHECK = ['Acquisition', 'Loan out', 'Loan return', 'Display change', 'Routine', 'Damage suspected', 'Conservation', 'Insurance', 'Other']
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
 
-export default function ConditionTab({ form, set, canEdit, artifact, museum, supabase, logActivity }: ConditionTabProps) {
+export default function ConditionTab({ form, set, canEdit, object, museum, supabase, logActivity }: ConditionTabProps) {
   const [conditionHistory, setConditionHistory] = useState<any[]>([])
   const [conditionLoaded, setConditionLoaded] = useState(false)
   const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!artifact.id) return
+    if (!object.id) return
     supabase
       .from('condition_assessments')
       .select('*')
-      .eq('artifact_id', artifact.id)
+      .eq('object_id', object.id)
       .order('assessed_at', { ascending: false })
       .then(({ data }: any) => {
         setConditionHistory(data || [])
         setConditionLoaded(true)
       })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addCondition() {
     if (!conditionForm.grade || !conditionForm.assessed_at) return
@@ -57,15 +59,15 @@ export default function ConditionTab({ form, set, canEdit, artifact, museum, sup
         recommendations: conditionForm.recommendations || null,
         priority: conditionForm.priority || null,
         next_check_date: conditionForm.next_check_date || null,
-        artifact_id: artifact.id,
+        object_id: object.id,
         museum_id: museum.id,
       })
 
-      await supabase.from('artifacts').update({
+      await supabase.from('objects').update({
         condition_grade: conditionForm.grade,
         condition_date: conditionForm.assessed_at,
         condition_assessor: conditionForm.assessor,
-      }).eq('id', artifact.id)
+      }).eq('id', object.id)
 
       set('condition_grade', conditionForm.grade)
       set('condition_date', conditionForm.assessed_at)
@@ -76,7 +78,7 @@ export default function ConditionTab({ form, set, canEdit, artifact, museum, sup
       const { data } = await supabase
         .from('condition_assessments')
         .select('*')
-        .eq('artifact_id', artifact.id)
+        .eq('object_id', object.id)
         .order('assessed_at', { ascending: false })
       setConditionHistory(data || [])
 
@@ -234,23 +236,48 @@ export default function ConditionTab({ form, set, canEdit, artifact, museum, sup
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Grade</th>
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Assessor</th>
-                  <th className="text-left py-2 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Notes</th>
+                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Notes</th>
+                  <th className="py-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {conditionHistory.map((h: any) => (
-                  <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
-                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">
-                      {new Date(h.assessed_at).toLocaleDateString('en-GB')}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${CONDITION_STYLES[h.grade] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
-                        {h.grade}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.assessor}</td>
-                    <td className="py-2 text-stone-500 dark:text-stone-400">{h.notes}</td>
-                  </tr>
+                  <Fragment key={h.id}>
+                    <tr className="border-b border-stone-100 dark:border-stone-800">
+                      <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">
+                        {new Date(h.assessed_at).toLocaleDateString('en-GB')}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${CONDITION_STYLES[h.grade] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
+                          {h.grade}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.assessor}</td>
+                      <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.notes}</td>
+                      <td className="py-2">
+                        <button
+                          type="button"
+                          onClick={() => setDocsAssessmentId(docsAssessmentId === h.id ? null : h.id)}
+                          className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 whitespace-nowrap"
+                        >
+                          {docsAssessmentId === h.id ? 'Hide docs' : 'Documents'}
+                        </button>
+                      </td>
+                    </tr>
+                    {docsAssessmentId === h.id && (
+                      <tr className="border-b border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50">
+                        <td colSpan={5} className="py-3 px-2">
+                          <DocumentAttachments
+                            objectId={object.id}
+                            museumId={museum.id}
+                            relatedToType="condition_assessment"
+                            relatedToId={h.id}
+                            canEdit={canEdit}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

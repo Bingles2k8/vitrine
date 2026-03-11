@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPlan } from '@/lib/plans'
 import PrintButtons from './PrintButtons'
 
-export default async function PrintArtifactPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PrintObjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,15 +15,15 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: artifact } = await serviceClient
-    .from('artifacts')
+  const { data: object } = await serviceClient
+    .from('objects')
     .select('*, museums!inner(name, slug, owner_id, plan)')
     .eq('id', id)
     .single()
 
-  if (!artifact) redirect('/dashboard')
+  if (!object) redirect('/dashboard')
 
-  const museum = artifact.museums as any
+  const museum = object.museums as any
   if (!getPlan(museum.plan).fullMode) redirect('/dashboard/plan')
 
   const isOwner = museum.owner_id === user.id
@@ -31,7 +31,7 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
     const { data: staffMember } = await serviceClient
       .from('staff_members')
       .select('access')
-      .eq('museum_id', artifact.museum_id)
+      .eq('museum_id', object.museum_id)
       .eq('user_id', user.id)
       .maybeSingle()
     if (!staffMember) redirect('/dashboard')
@@ -44,11 +44,11 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
     { data: loans },
     { data: conservation },
   ] = await Promise.all([
-    serviceClient.from('valuations').select('*').eq('artifact_id', id).order('valuation_date', { ascending: false }),
-    serviceClient.from('condition_assessments').select('*').eq('artifact_id', id).order('assessment_date', { ascending: false }),
-    serviceClient.from('location_history').select('*').eq('artifact_id', id).order('moved_at', { ascending: false }),
-    serviceClient.from('loans').select('*').eq('artifact_id', id).order('loan_start', { ascending: false }),
-    serviceClient.from('conservation_treatments').select('*').eq('artifact_id', id).order('treatment_date', { ascending: false }),
+    serviceClient.from('valuations').select('*').eq('object_id', id).order('valuation_date', { ascending: false }),
+    serviceClient.from('condition_assessments').select('*').eq('object_id', id).order('assessment_date', { ascending: false }),
+    serviceClient.from('location_history').select('*').eq('object_id', id).order('moved_at', { ascending: false }),
+    serviceClient.from('loans').select('*').eq('object_id', id).order('loan_start', { ascending: false }),
+    serviceClient.from('conservation_treatments').select('*').eq('object_id', id).order('treatment_date', { ascending: false }),
   ])
 
   const fmt = (d: string | null | undefined) => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB') : '—'
@@ -79,8 +79,8 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16pt', paddingBottom: '12pt', borderBottom: '2px solid #1a1a1a' }}>
         <div>
-          <div style={{ fontFamily: 'monospace', fontSize: '9pt', color: '#666', marginBottom: '2pt' }}>{val(artifact.accession_no)}</div>
-          <h1 style={{ fontSize: '20pt', fontStyle: 'italic', fontWeight: 'normal', marginBottom: '4pt' }}>{artifact.emoji} {artifact.title}</h1>
+          <div style={{ fontFamily: 'monospace', fontSize: '9pt', color: '#666', marginBottom: '2pt' }}>{val(object.accession_no)}</div>
+          <h1 style={{ fontSize: '20pt', fontStyle: 'italic', fontWeight: 'normal', marginBottom: '4pt' }}>{object.emoji} {object.title}</h1>
           <div style={{ fontFamily: 'monospace', fontSize: '9pt', color: '#999' }}>Generated {new Date().toLocaleDateString('en-GB')}</div>
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: '9pt', color: '#666', textAlign: 'right' }}>
@@ -91,26 +91,26 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
       {/* Object Information */}
       <div className="pr-h2">Object Information</div>
       <div className="pr-grid">
-        <div><span className="pr-label">Artist / Maker</span><span className="pr-value">{val(artifact.artist)}</span></div>
-        <div><span className="pr-label">Year</span><span className="pr-value">{val(artifact.year)}</span></div>
-        <div><span className="pr-label">Medium</span><span className="pr-value">{val(artifact.medium)}</span></div>
-        <div><span className="pr-label">Object Type</span><span className="pr-value">{val(artifact.object_type)}</span></div>
-        <div><span className="pr-label">Culture / Origin</span><span className="pr-value">{val(artifact.culture)}</span></div>
-        <div><span className="pr-label">Status</span><span className="pr-value"><span className="pr-tag">{artifact.status}</span></span></div>
-        <div><span className="pr-label">Dimensions</span><span className="pr-value">{val(artifact.dimensions)}</span></div>
-        <div><span className="pr-label">Current Location</span><span className="pr-value">{val(artifact.current_location)}</span></div>
+        <div><span className="pr-label">Artist / Maker</span><span className="pr-value">{val(object.artist)}</span></div>
+        <div><span className="pr-label">Year</span><span className="pr-value">{val(object.year)}</span></div>
+        <div><span className="pr-label">Medium</span><span className="pr-value">{val(object.medium)}</span></div>
+        <div><span className="pr-label">Object Type</span><span className="pr-value">{val(object.object_type)}</span></div>
+        <div><span className="pr-label">Culture / Origin</span><span className="pr-value">{val(object.culture)}</span></div>
+        <div><span className="pr-label">Status</span><span className="pr-value"><span className="pr-tag">{object.status}</span></span></div>
+        <div><span className="pr-label">Dimensions</span><span className="pr-value">{val(object.dimensions)}</span></div>
+        <div><span className="pr-label">Current Location</span><span className="pr-value">{val(object.current_location)}</span></div>
       </div>
-      {artifact.description && <div style={{ marginTop: '6pt' }}><span className="pr-label">Description</span><p className="pr-value">{artifact.description}</p></div>}
+      {object.description && <div style={{ marginTop: '6pt' }}><span className="pr-label">Description</span><p className="pr-value">{object.description}</p></div>}
 
       {/* Acquisition */}
       <div className="pr-h2">Acquisition</div>
       <div className="pr-grid">
-        <div><span className="pr-label">Method</span><span className="pr-value">{val(artifact.acquisition_method)}</span></div>
-        <div><span className="pr-label">Date</span><span className="pr-value">{fmt(artifact.acquisition_date)}</span></div>
-        <div><span className="pr-label">Source</span><span className="pr-value">{val(artifact.acquisition_source)}</span></div>
-        <div><span className="pr-label">Authorised By</span><span className="pr-value">{val(artifact.acquisition_authorised_by)}</span></div>
-        <div><span className="pr-label">Legal Transfer</span><span className="pr-value">{fmt(artifact.legal_transfer_date)}</span></div>
-        <div><span className="pr-label">Register Confirmed</span><span className="pr-value">{artifact.accession_register_confirmed ? 'Yes' : 'No'}</span></div>
+        <div><span className="pr-label">Method</span><span className="pr-value">{val(object.acquisition_method)}</span></div>
+        <div><span className="pr-label">Date</span><span className="pr-value">{fmt(object.acquisition_date)}</span></div>
+        <div><span className="pr-label">Source</span><span className="pr-value">{val(object.acquisition_source)}</span></div>
+        <div><span className="pr-label">Authorised By</span><span className="pr-value">{val(object.acquisition_authorised_by)}</span></div>
+        <div><span className="pr-label">Legal Transfer</span><span className="pr-value">{fmt(object.legal_transfer_date)}</span></div>
+        <div><span className="pr-label">Register Confirmed</span><span className="pr-value">{object.accession_register_confirmed ? 'Yes' : 'No'}</span></div>
       </div>
 
       {/* Condition History */}
@@ -191,10 +191,10 @@ export default async function PrintArtifactPage({ params }: { params: Promise<{ 
       {/* Rights */}
       <div className="pr-h2">Rights & Legal</div>
       <div className="pr-grid">
-        <div><span className="pr-label">Copyright Status</span><span className="pr-value">{val(artifact.copyright_status)}</span></div>
-        <div><span className="pr-label">Rights Holder</span><span className="pr-value">{val(artifact.rights_holder)}</span></div>
+        <div><span className="pr-label">Copyright Status</span><span className="pr-value">{val(object.copyright_status)}</span></div>
+        <div><span className="pr-label">Rights Holder</span><span className="pr-value">{val(object.rights_holder)}</span></div>
       </div>
-      {artifact.rights_notes && <div><span className="pr-label">Notes</span><p className="pr-value">{artifact.rights_notes}</p></div>}
+      {object.rights_notes && <div><span className="pr-label">Notes</span><p className="pr-value">{object.rights_notes}</p></div>}
 
       <div style={{ marginTop: '24pt', paddingTop: '8pt', borderTop: '1px solid #eee', fontSize: '8pt', color: '#aaa', fontFamily: 'monospace' }}>
         Printed from Vitrine Collection Management — {museum.name} — {new Date().toLocaleDateString('en-GB')}

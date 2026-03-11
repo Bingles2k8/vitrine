@@ -7,23 +7,23 @@ import { compressImage } from '@/lib/image-compression'
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
 interface Props {
-  artifactId: string
+  objectId: string
   museumId: string
   onPrimaryChange: (url: string) => void
   canEdit: boolean
   imageLimit: number
 }
 
-export default function ImageGallery({ artifactId, museumId, onPrimaryChange, canEdit, imageLimit }: Props) {
+export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit }: Props) {
   const [images, setImages] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.from('artifact_images').select('*').eq('artifact_id', artifactId).eq('museum_id', museumId).order('sort_order').order('created_at')
+    supabase.from('object_images').select('*').eq('object_id', objectId).eq('museum_id', museumId).order('sort_order').order('created_at')
       .then(({ data, error }) => { if (!error) setImages(data || []) })
-  }, [artifactId])
+  }, [objectId])
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -33,11 +33,11 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('artifact-images').upload(filename, compressed, { upsert: true })
+    const { data, error } = await supabase.storage.from('object-images').upload(filename, compressed, { upsert: true })
     if (error) { setUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('artifact-images').getPublicUrl(data.path)
+    const { data: { publicUrl } } = supabase.storage.from('object-images').getPublicUrl(data.path)
     const isPrimary = images.length === 0
-    const res = await fetch(`/api/artifacts/${artifactId}/images`, {
+    const res = await fetch(`/api/objects/${objectId}/images`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: images.length }),
@@ -58,17 +58,17 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
   }
 
   async function setPrimary(image: any) {
-    const { error: e1 } = await supabase.from('artifact_images').update({ is_primary: false }).eq('artifact_id', artifactId)
+    const { error: e1 } = await supabase.from('object_images').update({ is_primary: false }).eq('object_id', objectId)
     if (e1) return
-    const { error: e2 } = await supabase.from('artifact_images').update({ is_primary: true }).eq('id', image.id)
+    const { error: e2 } = await supabase.from('object_images').update({ is_primary: true }).eq('id', image.id)
     if (e2) return
-    await supabase.from('artifacts').update({ image_url: image.url }).eq('id', artifactId)
+    await supabase.from('objects').update({ image_url: image.url }).eq('id', objectId)
     setImages(imgs => imgs.map(i => ({ ...i, is_primary: i.id === image.id })))
     onPrimaryChange(image.url)
   }
 
   async function deleteImage(image: any) {
-    const { error } = await supabase.from('artifact_images').delete().eq('id', image.id)
+    const { error } = await supabase.from('object_images').delete().eq('id', image.id)
     if (error) return
     const remaining = images.filter(i => i.id !== image.id)
     setImages(remaining)
@@ -76,7 +76,7 @@ export default function ImageGallery({ artifactId, museumId, onPrimaryChange, ca
     if (image.is_primary && remaining.length > 0) {
       await setPrimary(remaining[0])
     } else if (image.is_primary && remaining.length === 0) {
-      await supabase.from('artifacts').update({ image_url: null }).eq('id', artifactId)
+      await supabase.from('objects').update({ image_url: null }).eq('id', objectId)
       onPrimaryChange('')
     }
   }

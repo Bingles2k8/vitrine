@@ -36,7 +36,7 @@ export async function POST() {
     // Delete in dependency order (children before parents)
     for (const table of [
       'activity_log',
-      'artifact_images',
+      'object_images',
       'reproduction_requests',
       'valuations',
       'risk_register',
@@ -52,7 +52,7 @@ export async function POST() {
       'emergency_plans',
       'documentation_plans',
       'staff_members',
-      'artifacts',
+      'objects',
     ]) {
       await supabase.from(table).delete().eq('museum_id', mid)
     }

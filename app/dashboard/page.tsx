@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,10 +45,10 @@ export default function Dashboard() {
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === visibleArtifacts.length) {
+    if (selectedIds.size === visibleObjects.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(visibleArtifacts.map(a => a.id)))
+      setSelectedIds(new Set(visibleObjects.map(a => a.id)))
     }
   }
 
@@ -56,8 +56,8 @@ export default function Dashboard() {
     if (!selectedIds.size || !canEdit) return
     setBulking(true)
     const ids = Array.from(selectedIds)
-    await supabase.from('artifacts').update({ status }).in('id', ids)
-    setArtifacts(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, status } : a))
+    await supabase.from('objects').update({ status }).in('id', ids)
+    setObjects(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, status } : a))
     setSelectedIds(new Set())
     setBulking(false)
   }
@@ -66,8 +66,8 @@ export default function Dashboard() {
     if (!selectedIds.size || !canEdit) return
     setBulking(true)
     const ids = Array.from(selectedIds)
-    await supabase.from('artifacts').update({ show_on_site: show }).in('id', ids)
-    setArtifacts(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, show_on_site: show } : a))
+    await supabase.from('objects').update({ show_on_site: show }).in('id', ids)
+    setObjects(prev => prev.map(a => selectedIds.has(a.id) ? { ...a, show_on_site: show } : a))
     setSelectedIds(new Set())
     setBulking(false)
   }
@@ -77,8 +77,8 @@ export default function Dashboard() {
     if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to trash?`)) return
     setBulking(true)
     const ids = Array.from(selectedIds)
-    await supabase.from('artifacts').update({ deleted_at: new Date().toISOString() }).in('id', ids)
-    setArtifacts(prev => prev.filter(a => !selectedIds.has(a.id)))
+    await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).in('id', ids)
+    setObjects(prev => prev.filter(a => !selectedIds.has(a.id)))
     setSelectedIds(new Set())
     setBulking(false)
   }
@@ -93,8 +93,8 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: artifacts }, { data: activeLoans }, { data: activity }] = await Promise.all([
-          supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        const [{ data: objects }, { data: activeLoans }, { data: activity }] = await Promise.all([
+          supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
         ])
@@ -102,7 +102,7 @@ export default function Dashboard() {
         setMuseum(museum)
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
-        setArtifacts(artifacts || [])
+        setObjects(objects || [])
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
       } catch {
@@ -130,24 +130,24 @@ export default function Dashboard() {
     )
   }
 
-  const statusCount = (s: string) => artifacts.filter(a => a.status === s).length
+  const statusCount = (s: string) => objects.filter(a => a.status === s).length
 
   const today = new Date().toISOString().slice(0, 10)
-  const loanByArtifact: Record<string, any> = Object.fromEntries(loans.map(l => [l.artifact_id, l]))
+  const loanByObject: Record<string, any> = Object.fromEntries(loans.map(l => [l.object_id, l]))
   const overdueDays = (loan: any) => loan?.loan_end_date && loan.loan_end_date < today
     ? Math.floor((new Date(today).getTime() - new Date(loan.loan_end_date).getTime()) / 86400000)
     : 0
 
   // null = show all; a status string = show only that status
   const CARDS = [
-    { label: 'Total Objects', filterKey: null,           value: artifacts.length,             sub: artifacts.length === 0 ? 'Add your first item' : `${artifacts.length} in collection` },
-    { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: artifacts.length ? `${Math.round(statusCount('On Display')/artifacts.length*100)}% of collection` : '—' },
+    { label: 'Total Objects', filterKey: null,           value: objects.length,             sub: objects.length === 0 ? 'Add your first item' : `${objects.length} in collection` },
+    { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: objects.length ? `${Math.round(statusCount('On Display')/objects.length*100)}% of collection` : '—' },
     { label: 'On Loan',       filterKey: 'On Loan',      value: statusCount('On Loan'),       sub: '—' },
     { label: 'In Restoration',filterKey: 'Restoration',  value: statusCount('Restoration'),   sub: '—' },
     { label: 'Deaccessioned', filterKey: 'Deaccessioned',value: statusCount('Deaccessioned'), sub: '—' },
   ]
 
-  const visibleArtifacts = filter ? artifacts.filter(a => a.status === filter) : artifacts
+  const visibleObjects = filter ? objects.filter(a => a.status === filter) : objects
   const fullMode = getPlan(museum?.plan).fullMode
 
   return (
@@ -157,7 +157,7 @@ export default function Dashboard() {
             onClose={() => setShowImport(false)}
             onSuccess={(count) => {
               setShowImport(false)
-              // Reload artifacts after import
+              // Reload objects after import
               window.location.reload()
             }}
           />
@@ -194,7 +194,7 @@ export default function Dashboard() {
             })}
           </div>
 
-          {artifacts.length === 0 ? (
+          {objects.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">🏛️</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">Your collection is empty</div>
@@ -212,7 +212,7 @@ export default function Dashboard() {
               {filter && selectedIds.size === 0 && (
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
-                    Showing {visibleArtifacts.length} {visibleArtifacts.length === 1 ? 'object' : 'objects'} — {filter}
+                    Showing {visibleObjects.length} {visibleObjects.length === 1 ? 'object' : 'objects'} — {filter}
                   </span>
                   <button onClick={() => setFilter(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                     Show all objects ×
@@ -246,7 +246,7 @@ export default function Dashboard() {
                       <th className="px-4 py-3 w-10">
                         <input
                           type="checkbox"
-                          checked={visibleArtifacts.length > 0 && selectedIds.size === visibleArtifacts.length}
+                          checked={visibleObjects.length > 0 && selectedIds.size === visibleObjects.length}
                           onChange={toggleSelectAll}
                           className="rounded border-stone-300 dark:border-stone-600"
                         />
@@ -259,11 +259,11 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleArtifacts.map(a => (
+                  {visibleObjects.map(a => (
                     <tr
                       key={a.id}
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''} ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800' : ''}`}
-                      onClick={() => router.push(`/dashboard/artifacts/${a.id}`)}
+                      onClick={() => router.push(`/dashboard/objects/${a.id}`)}
                     >
                       {canEdit && fullMode && (
                         <td className="px-4 py-3 w-10" onClick={e => { e.stopPropagation(); toggleSelect(a.id) }}>
@@ -288,7 +288,7 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
                       <td className="px-4 py-3">
                         {(() => {
-                          const loan = loanByArtifact[a.id]
+                          const loan = loanByObject[a.id]
                           const days = a.status === 'On Loan' ? overdueDays(loan) : 0
                           if (days > 0) {
                             return (
@@ -318,7 +318,7 @@ export default function Dashboard() {
                       </td>
                     </tr>
                   ))}
-                  {visibleArtifacts.length === 0 && (
+                  {visibleObjects.length === 0 && (
                     <tr>
                       <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
                         No objects with status "{filter}"

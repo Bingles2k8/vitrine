@@ -508,8 +508,8 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
             title="Your entire collection, beautifully catalogued."
             desc="Every object gets its own rich record — images, provenance, medium, dimensions, acquisition history, and custom fields. Search and filter across your whole catalogue in an instant."
             bullets={[
-              `Up to ${plan.artifacts === null ? 'unlimited' : plan.artifacts.toLocaleString()} collection objects`,
-              `${plan.imagesPerArtifact} ${plan.imagesPerArtifact === 1 ? 'image' : 'images'} per object`,
+              `Up to ${plan.objects === null ? 'unlimited' : plan.objects.toLocaleString()} collection objects`,
+              `${plan.imagesPerObject} ${plan.imagesPerObject === 1 ? 'image' : 'images'} per object`,
               'Full text search and filtering',
               'Custom fields and categories',
               'Bulk import via CSV',

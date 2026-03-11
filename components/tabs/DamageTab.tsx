@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast'
 
 interface DamageTabProps {
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
@@ -14,7 +14,7 @@ interface DamageTabProps {
 
 const OBJECT_STATUSES_AFTER = ['Intact — no treatment needed', 'Awaiting conservation', 'Under conservation', 'Repaired', 'Irreparable — retained', 'Write-off']
 
-export default function DamageTab({ canEdit, artifact, museum, supabase, logActivity }: DamageTabProps) {
+export default function DamageTab({ canEdit, object, museum, supabase, logActivity }: DamageTabProps) {
   const [damageHistory, setDamageHistory] = useState<any[]>([])
   const [damageLoaded, setDamageLoaded] = useState(false)
   const [damageForm, setDamageForm] = useState({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
@@ -22,9 +22,9 @@ export default function DamageTab({ canEdit, artifact, museum, supabase, logActi
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    supabase.from('damage_reports').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: any) => { setDamageHistory(data || []); setDamageLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addDamage() {
     if (!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting) return
@@ -38,13 +38,13 @@ export default function DamageTab({ canEdit, artifact, museum, supabase, logActi
       police_report_ref: damageForm.police_report_ref || null,
       insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
       object_status_after_event: damageForm.object_status_after_event || null,
-      artifact_id: artifact.id, museum_id: museum.id,
+      object_id: object.id, museum_id: museum.id,
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setDamageForm({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
-    const { data } = await supabase.from('damage_reports').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('damage_reports').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setDamageHistory(data || [])
-    logActivity('damage_reported', `Reported ${damageForm.damage_type} damage to "${artifact.title}"`)
+    logActivity('damage_reported', `Reported ${damageForm.damage_type} damage to "${object.title}"`)
     setSubmitting(false)
   }
 

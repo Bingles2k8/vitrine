@@ -3,7 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 // ── Shared props interface ───────────────────────────────────────────────
 export interface TabProps {
   museum: any
-  artifact: any
+  object: any
   canEdit: boolean
   supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>

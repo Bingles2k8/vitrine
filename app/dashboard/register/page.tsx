@@ -15,7 +15,7 @@ export default function AccessionRegisterPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [yearFilter, setYearFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState('All')
@@ -30,8 +30,8 @@ export default function AccessionRegisterPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: artifacts } = await supabase
-        .from('artifacts')
+      const { data: objects } = await supabase
+        .from('objects')
         .select('id, title, accession_no, acquisition_date, acquisition_method, acquisition_source, acquisition_authorised_by, accession_register_confirmed, emoji, status')
         .eq('museum_id', museum.id)
         .is('deleted_at', null)
@@ -40,7 +40,7 @@ export default function AccessionRegisterPage() {
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
-      setArtifacts(artifacts || [])
+      setObjects(objects || [])
       setLoading(false)
     }
     load()
@@ -51,20 +51,20 @@ export default function AccessionRegisterPage() {
     router.push('/login')
   }
 
-  async function toggleConfirmed(id: string, current: boolean, artifact: any) {
+  async function toggleConfirmed(id: string, current: boolean, object: any) {
     if (!current) {
       const missing = []
-      if (!artifact.acquisition_date) missing.push('Acquisition Date')
-      if (!artifact.acquisition_method) missing.push('Acquisition Method')
-      if (!artifact.acquisition_source) missing.push('Source')
-      if (!artifact.acquisition_authorised_by) missing.push('Authorised By')
+      if (!object.acquisition_date) missing.push('Acquisition Date')
+      if (!object.acquisition_method) missing.push('Acquisition Method')
+      if (!object.acquisition_source) missing.push('Source')
+      if (!object.acquisition_authorised_by) missing.push('Authorised By')
       if (missing.length > 0) {
         toast(`Missing fields: ${missing.join(', ')}. Complete the acquisition record before confirming.`, 'error')
         return
       }
     }
-    await supabase.from('artifacts').update({ accession_register_confirmed: !current }).eq('id', id)
-    setArtifacts(prev => prev.map(a => a.id === id ? { ...a, accession_register_confirmed: !current } : a))
+    await supabase.from('objects').update({ accession_register_confirmed: !current }).eq('id', id)
+    setObjects(prev => prev.map(a => a.id === id ? { ...a, accession_register_confirmed: !current } : a))
   }
 
   if (loading) return (
@@ -100,22 +100,22 @@ export default function AccessionRegisterPage() {
   }
 
   const years = Array.from(new Set(
-    artifacts.map(a => a.acquisition_date?.slice(0, 4)).filter(Boolean)
+    objects.map(a => a.acquisition_date?.slice(0, 4)).filter(Boolean)
   )).sort((a, b) => b.localeCompare(a))
 
-  const filtered = artifacts.filter(a => {
+  const filtered = objects.filter(a => {
     const matchYear = !yearFilter || a.acquisition_date?.startsWith(yearFilter)
     const matchMethod = methodFilter === 'All' || a.acquisition_method === methodFilter
     return matchYear && matchMethod
   })
 
-  const confirmed = artifacts.filter(a => a.accession_register_confirmed).length
+  const confirmed = objects.filter(a => a.accession_register_confirmed).length
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Accession Register</span>
-          <span className="text-xs font-mono text-stone-400 dark:text-stone-500 truncate min-w-0">{confirmed} of {artifacts.length} register entries confirmed</span>
+          <span className="text-xs font-mono text-stone-400 dark:text-stone-500 truncate min-w-0">{confirmed} of {objects.length} register entries confirmed</span>
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
@@ -123,15 +123,15 @@ export default function AccessionRegisterPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Accessions</div>
-              <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{artifacts.length}</div>
+              <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{objects.length}</div>
             </div>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Register Confirmed</div>
-              <div className={`font-serif text-4xl ${confirmed < artifacts.length ? 'text-amber-600' : 'text-emerald-700'}`}>{confirmed}</div>
+              <div className={`font-serif text-4xl ${confirmed < objects.length ? 'text-amber-600' : 'text-emerald-700'}`}>{confirmed}</div>
             </div>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Unconfirmed</div>
-              <div className={`font-serif text-4xl ${artifacts.length - confirmed > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{artifacts.length - confirmed}</div>
+              <div className={`font-serif text-4xl ${objects.length - confirmed > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{objects.length - confirmed}</div>
             </div>
           </div>
 
@@ -159,7 +159,7 @@ export default function AccessionRegisterPage() {
           </div>
 
           {/* Register table */}
-          {artifacts.length === 0 ? (
+          {objects.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">📋</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No accession numbers assigned</div>
@@ -185,7 +185,7 @@ export default function AccessionRegisterPage() {
                 <tbody>
                   {filtered.map(a => (
                     <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer"
-                      onClick={() => router.push(`/dashboard/artifacts/${a.id}?tab=acquisition`)}>
+                      onClick={() => router.push(`/dashboard/objects/${a.id}?tab=acquisition`)}>
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{a.accession_no}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

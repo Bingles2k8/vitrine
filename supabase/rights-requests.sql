@@ -5,14 +5,14 @@
 -- =============================================================
 
 
--- Add rights_notes field to artifacts for general use restrictions
-ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS rights_notes text;
+-- Add rights_notes field to objects for general use restrictions
+ALTER TABLE objects ADD COLUMN IF NOT EXISTS rights_notes text;
 
 
 -- Reproduction requests log
 CREATE TABLE IF NOT EXISTS reproduction_requests (
   id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id    uuid        NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id    uuid        NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id      uuid        NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   requester_name text        NOT NULL,
   requester_org  text,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS reproduction_requests (
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS reproduction_requests_artifact_idx ON reproduction_requests (artifact_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS reproduction_requests_artifact_idx ON reproduction_requests (object_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS reproduction_requests_museum_idx   ON reproduction_requests (museum_id);
 
 

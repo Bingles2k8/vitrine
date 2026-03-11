@@ -10,13 +10,13 @@ interface RightsTabProps {
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function RightsTab({ form, set, canEdit, saving, artifact, museum, supabase, logActivity }: RightsTabProps) {
+export default function RightsTab({ form, set, canEdit, saving, object, museum, supabase, logActivity }: RightsTabProps) {
   const { toast } = useToast()
   const router = useRouter()
 
@@ -42,15 +42,15 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
 
   useEffect(() => {
     Promise.all([
-      supabase.from('rights_records').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false }),
-      supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false }),
+      supabase.from('rights_records').select('*').eq('object_id', object.id).order('created_at', { ascending: false }),
+      supabase.from('reproduction_requests').select('*').eq('object_id', object.id).order('created_at', { ascending: false }),
     ]).then(([rightsRes, reproRes]: any) => {
       setRightsRecords(rightsRes.data || [])
       setRightsLoaded(true)
       setReproductionRequests(reproRes.data || [])
       setReproductionRequestsLoaded(true)
     })
-  }, [artifact.id])
+  }, [object.id])
 
   // ── Rights records CRUD ──────────────────────────────────────────────
   async function addRightsRecord() {
@@ -59,7 +59,7 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
     const year = new Date().getFullYear()
     const rightsReference = `RR-${year}-${String(rightsRecords.length + 1).padStart(3, '0')}`
     const { error } = await supabase.from('rights_records').insert({
-      museum_id: museum.id, artifact_id: artifact.id, rights_reference: rightsReference,
+      museum_id: museum.id, object_id: object.id, rights_reference: rightsReference,
       rights_type: rightsForm.rights_type, rights_status: rightsForm.rights_status,
       rights_holder: rightsForm.rights_holder || null, expiry_date: rightsForm.expiry_date || null,
       licence_terms: rightsForm.licence_terms || null, restrictions: rightsForm.restrictions || null,
@@ -68,9 +68,9 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setRightsForm({ rights_type: 'Copyright', rights_status: 'Active', rights_holder: '', expiry_date: '', licence_terms: '', restrictions: '', rights_in: '', rights_out: '', notes: '' })
-    const { data } = await supabase.from('rights_records').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('rights_records').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setRightsRecords(data || [])
-    logActivity('rights_created', `Rights record ${rightsReference} created for "${artifact.title}"`)
+    logActivity('rights_created', `Rights record ${rightsReference} created for "${object.title}"`)
     setSubmitting(false)
   }
 
@@ -79,7 +79,7 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
     if (!reproductionForm.requester_name || !reproductionForm.request_date || submitting) return
     setSubmitting(true)
     const { error: repErr } = await supabase.from('reproduction_requests').insert({
-      artifact_id: artifact.id, museum_id: museum.id,
+      object_id: object.id, museum_id: museum.id,
       requester_name: reproductionForm.requester_name, requester_org: reproductionForm.requester_org || null,
       request_date: reproductionForm.request_date, purpose: reproductionForm.purpose || null,
       status: reproductionForm.status, decision_date: reproductionForm.decision_date || null,
@@ -102,16 +102,16 @@ export default function RightsTab({ form, set, canEdit, saving, artifact, museum
       rights_clearance_confirmed: false, licence_terms: '', image_file_reference: '',
       credit_line: '', fee: '', fee_currency: 'GBP',
     })
-    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('reproduction_requests').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setReproductionRequests(data || [])
-    logActivity('reproduction_request', `Reproduction request logged for "${artifact.title}"`)
+    logActivity('reproduction_request', `Reproduction request logged for "${object.title}"`)
     setSubmitting(false)
   }
 
   async function updateRequestStatus(id: string, status: string) {
     const { error } = await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
     if (error) { toast(error.message, 'error'); return }
-    const { data } = await supabase.from('reproduction_requests').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('reproduction_requests').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setReproductionRequests(data || [])
   }
 

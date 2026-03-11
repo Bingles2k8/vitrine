@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast'
 
 interface ExitsTabProps {
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
@@ -14,7 +14,7 @@ interface ExitsTabProps {
 
 const TRANSPORT_METHODS = ['Hand carry', 'Courier', 'Post / carrier', 'Museum transport', 'Third-party transport']
 
-export default function ExitsTab({ canEdit, artifact, museum, supabase, logActivity }: ExitsTabProps) {
+export default function ExitsTab({ canEdit, object, museum, supabase, logActivity }: ExitsTabProps) {
   const [exitHistory, setExitHistory] = useState<any[]>([])
   const [exitLoaded, setExitLoaded] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
@@ -23,9 +23,9 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
+    supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
       .then(({ data }: any) => { setExitHistory(data || []); setExitLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addExit() {
     if (!exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
@@ -34,7 +34,7 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
     const exitNumber = `EX-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
     const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
     const { error } = await supabase.from('object_exits').insert({
-      museum_id: museum.id, artifact_id: artifact.id, exit_number: exitNumber,
+      museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
       exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
       recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
       destination_address: exitForm.destination_address || null,
@@ -49,9 +49,9 @@ export default function ExitsTab({ canEdit, artifact, museum, supabase, logActiv
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
-    const { data } = await supabase.from('object_exits').select('*').eq('artifact_id', artifact.id).order('exit_date', { ascending: false })
+    const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
     setExitHistory(data || [])
-    logActivity('exit_created', `Exit record ${exitNumber} created for "${artifact.title}" (${exitForm.exit_reason})`)
+    logActivity('exit_created', `Exit record ${exitNumber} created for "${object.title}" (${exitForm.exit_reason})`)
     setSubmitting(false)
   }
 

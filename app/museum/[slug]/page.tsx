@@ -16,16 +16,16 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   if (!museum) notFound()
 
-  const { data: artifacts } = await supabase
-    .from('artifacts')
+  const { data: objects } = await supabase
+    .from('objects')
     .select('*')
     .eq('museum_id', museum.id)
     .eq('show_on_site', true)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  const allArtifacts = artifacts || []
-  const onDisplay = allArtifacts.filter(a => a.status === 'On Display').length
+  const allObjects = objects || []
+  const onDisplay = allObjects.filter(a => a.status === 'On Display').length
 
   const { tmpl, accent, primary, headingStyle } = getMuseumStyles(museum)
 
@@ -95,13 +95,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         </div>
       )}
 
-      {allArtifacts.length === 0 ? (
+      {allObjects.length === 0 ? (
         <div className="text-center py-32" style={{ color: 'rgba(128,128,128,0.5)' }}>
           <div className="text-6xl mb-4">🏛️</div>
           <div className="font-serif text-2xl italic">Collection coming soon</div>
         </div>
       ) : (
-        <CollectionSearch artifacts={allArtifacts} slug={slug} settings={styleSettings} />
+        <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} />
       )}
     </>
   )

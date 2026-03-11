@@ -42,8 +42,8 @@ const TABS = [
 
 const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition']
 
-export default function ArtifactDetail() {
-  const [artifact, setArtifact] = useState<any>(null)
+export default function ObjectDetail() {
+  const [object, setObject] = useState<any>(null)
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
@@ -107,99 +107,99 @@ export default function ArtifactDetail() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
 
-      const { data: artifact } = await supabase
-        .from('artifacts').select('*')
+      const { data: object } = await supabase
+        .from('objects').select('*')
         .eq('id', params.id).eq('museum_id', museum.id).single()
 
-      if (!artifact) { router.push('/dashboard'); return }
+      if (!object) { router.push('/dashboard'); return }
 
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
-      setArtifact(artifact)
+      setObject(object)
       setForm({
-        title: artifact.title || '',
-        artist: artifact.artist || '',
-        year: artifact.year || '',
-        medium: artifact.medium || 'Oil on canvas',
-        culture: artifact.culture || '',
-        accession_no: artifact.accession_no || '',
-        dimensions: artifact.dimensions || '',
-        description: artifact.description || '',
-        emoji: artifact.emoji || '🖼️',
-        status: artifact.status || 'On Display',
-        image_url: artifact.image_url || '',
-        object_type: artifact.object_type || '',
-        inscription: artifact.inscription || '',
-        marks: artifact.marks || '',
-        provenance: artifact.provenance || '',
-        acquisition_method: artifact.acquisition_method || '',
-        acquisition_date: artifact.acquisition_date || '',
-        acquisition_source: artifact.acquisition_source || '',
-        acquisition_note: artifact.acquisition_note || '',
-        legal_transfer_date: artifact.legal_transfer_date || '',
-        acquisition_source_contact: artifact.acquisition_source_contact || '',
-        acquisition_authorised_by: artifact.acquisition_authorised_by || '',
-        acquisition_authority_date: artifact.acquisition_authority_date || '',
-        acquisition_title_guarantee: artifact.acquisition_title_guarantee || '',
-        acquisition_object_count: artifact.acquisition_object_count ?? 1,
-        accession_register_confirmed: artifact.accession_register_confirmed ?? false,
-        accession_date: artifact.accession_date || '',
-        conditions_attached_to_acquisition: artifact.conditions_attached_to_acquisition || '',
-        location_after_accessioning: artifact.location_after_accessioning || '',
-        acknowledgement_sent_to_donor: artifact.acknowledgement_sent_to_donor ?? false,
-        ethics_art_loss_register: artifact.ethics_art_loss_register ?? false,
-        ethics_cites: artifact.ethics_cites ?? false,
-        ethics_dealing_act: artifact.ethics_dealing_act ?? false,
-        ethics_human_remains: artifact.ethics_human_remains ?? false,
-        current_location: artifact.current_location || '',
-        location_note: artifact.location_note || '',
-        condition_grade: artifact.condition_grade || '',
-        condition_date: artifact.condition_date || '',
-        condition_assessor: artifact.condition_assessor || '',
-        copyright_status: artifact.copyright_status || '',
-        rights_holder: artifact.rights_holder || '',
-        rights_notes: artifact.rights_notes || '',
-        disposal_method: artifact.disposal_method || '',
-        disposal_date: artifact.disposal_date || '',
-        disposal_note: artifact.disposal_note || '',
-        disposal_authorization: artifact.disposal_authorization || '',
-        disposal_recipient: artifact.disposal_recipient || '',
-        last_inventoried: artifact.last_inventoried || '',
-        inventoried_by: artifact.inventoried_by || '',
-        show_on_site: artifact.show_on_site ?? true,
-        insured_value: artifact.insured_value ?? '',
-        insured_value_currency: artifact.insured_value_currency || 'GBP',
+        title: object.title || '',
+        artist: object.artist || '',
+        year: object.year || '',
+        medium: object.medium || 'Oil on canvas',
+        culture: object.culture || '',
+        accession_no: object.accession_no || '',
+        dimensions: object.dimensions || '',
+        description: object.description || '',
+        emoji: object.emoji || '🖼️',
+        status: object.status || 'On Display',
+        image_url: object.image_url || '',
+        object_type: object.object_type || '',
+        inscription: object.inscription || '',
+        marks: object.marks || '',
+        provenance: object.provenance || '',
+        acquisition_method: object.acquisition_method || '',
+        acquisition_date: object.acquisition_date || '',
+        acquisition_source: object.acquisition_source || '',
+        acquisition_note: object.acquisition_note || '',
+        legal_transfer_date: object.legal_transfer_date || '',
+        acquisition_source_contact: object.acquisition_source_contact || '',
+        acquisition_authorised_by: object.acquisition_authorised_by || '',
+        acquisition_authority_date: object.acquisition_authority_date || '',
+        acquisition_title_guarantee: object.acquisition_title_guarantee || '',
+        acquisition_object_count: object.acquisition_object_count ?? 1,
+        accession_register_confirmed: object.accession_register_confirmed ?? false,
+        accession_date: object.accession_date || '',
+        conditions_attached_to_acquisition: object.conditions_attached_to_acquisition || '',
+        location_after_accessioning: object.location_after_accessioning || '',
+        acknowledgement_sent_to_donor: object.acknowledgement_sent_to_donor ?? false,
+        ethics_art_loss_register: object.ethics_art_loss_register ?? false,
+        ethics_cites: object.ethics_cites ?? false,
+        ethics_dealing_act: object.ethics_dealing_act ?? false,
+        ethics_human_remains: object.ethics_human_remains ?? false,
+        current_location: object.current_location || '',
+        location_note: object.location_note || '',
+        condition_grade: object.condition_grade || '',
+        condition_date: object.condition_date || '',
+        condition_assessor: object.condition_assessor || '',
+        copyright_status: object.copyright_status || '',
+        rights_holder: object.rights_holder || '',
+        rights_notes: object.rights_notes || '',
+        disposal_method: object.disposal_method || '',
+        disposal_date: object.disposal_date || '',
+        disposal_note: object.disposal_note || '',
+        disposal_authorization: object.disposal_authorization || '',
+        disposal_recipient: object.disposal_recipient || '',
+        last_inventoried: object.last_inventoried || '',
+        inventoried_by: object.inventoried_by || '',
+        show_on_site: object.show_on_site ?? true,
+        insured_value: object.insured_value ?? '',
+        insured_value_currency: object.insured_value_currency || 'GBP',
         // Cataloguing (Proc 5)
-        maker_name: artifact.maker_name || '',
-        maker_role: artifact.maker_role || '',
-        production_date_early: artifact.production_date_early || '',
-        production_date_late: artifact.production_date_late || '',
-        production_date_qualifier: artifact.production_date_qualifier || '',
-        production_place: artifact.production_place || '',
-        physical_materials: artifact.physical_materials || '',
-        technique: artifact.technique || '',
-        school_style_period: artifact.school_style_period || '',
-        subject_depicted: artifact.subject_depicted || '',
-        number_of_parts: artifact.number_of_parts ?? 1,
-        distinguishing_features: artifact.distinguishing_features || '',
-        full_description: artifact.full_description || '',
-        associated_concept: artifact.associated_concept || '',
-        associated_event: artifact.associated_event || '',
-        associated_person: artifact.associated_person || '',
-        associated_place: artifact.associated_place || '',
-        associated_organisation: artifact.associated_organisation || '',
-        dimension_height: artifact.dimension_height ?? '',
-        dimension_width: artifact.dimension_width ?? '',
-        dimension_depth: artifact.dimension_depth ?? '',
-        dimension_weight: artifact.dimension_weight ?? '',
-        dimension_unit: artifact.dimension_unit || 'cm',
-        dimension_weight_unit: artifact.dimension_weight_unit || 'kg',
-        dimension_notes: artifact.dimension_notes || '',
+        maker_name: object.maker_name || '',
+        maker_role: object.maker_role || '',
+        production_date_early: object.production_date_early || '',
+        production_date_late: object.production_date_late || '',
+        production_date_qualifier: object.production_date_qualifier || '',
+        production_place: object.production_place || '',
+        physical_materials: object.physical_materials || '',
+        technique: object.technique || '',
+        school_style_period: object.school_style_period || '',
+        subject_depicted: object.subject_depicted || '',
+        number_of_parts: object.number_of_parts ?? 1,
+        distinguishing_features: object.distinguishing_features || '',
+        full_description: object.full_description || '',
+        associated_concept: object.associated_concept || '',
+        associated_event: object.associated_event || '',
+        associated_person: object.associated_person || '',
+        associated_place: object.associated_place || '',
+        associated_organisation: object.associated_organisation || '',
+        dimension_height: object.dimension_height ?? '',
+        dimension_width: object.dimension_width ?? '',
+        dimension_depth: object.dimension_depth ?? '',
+        dimension_weight: object.dimension_weight ?? '',
+        dimension_unit: object.dimension_unit || 'cm',
+        dimension_weight_unit: object.dimension_weight_unit || 'kg',
+        dimension_notes: object.dimension_notes || '',
       })
       const [{ data: lv }, { data: locs }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
-          .eq('artifact_id', artifact.id).order('valuation_date', { ascending: false }).limit(1).maybeSingle(),
+          .eq('object_id', object.id).order('valuation_date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('locations').select('*').eq('museum_id', museum.id).eq('status', 'Active').order('name'),
       ])
       setLatestValuation(lv || null)
@@ -220,7 +220,7 @@ export default function ArtifactDetail() {
     setSaving(true)
 
     const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
-    const { error } = await supabase.from('artifacts').update({
+    const { error } = await supabase.from('objects').update({
       ...formToSave,
       acquisition_date: formToSave.acquisition_date || null,
       legal_transfer_date: formToSave.legal_transfer_date || null,
@@ -248,14 +248,14 @@ export default function ArtifactDetail() {
   }
 
   async function handleDelete() {
-    if (!artifact || !canEdit) return
-    if (artifact.deaccession_protected || artifact.status === 'Deaccessioned') {
+    if (!object || !canEdit) return
+    if (object.deaccession_protected || object.status === 'Deaccessioned') {
       toast('Deaccessioned objects cannot be deleted. Use the Disposal register instead.', 'error')
       return
     }
-    if (!confirm('Move "' + artifact.title + '" to trash?')) return
+    if (!confirm('Move "' + object.title + '" to trash?')) return
     setDeleting(true)
-    const { error } = await supabase.from('artifacts').update({ deleted_at: new Date().toISOString() }).eq('id', params.id)
+    const { error } = await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).eq('id', params.id)
     if (error) { toast(error.message, 'error'); setDeleting(false) } else {
       toast('Moved to trash')
       router.push('/dashboard')
@@ -263,10 +263,10 @@ export default function ArtifactDetail() {
   }
 
   async function handleDuplicate() {
-    if (!canEdit || !artifact) return
+    if (!canEdit || !object) return
     setDuplicating(true)
     const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
-    const { data: newArtifact, error } = await supabase.from('artifacts').insert({
+    const { data: newObject, error } = await supabase.from('objects').insert({
       ...formToSave,
       museum_id: museum.id,
       owner_id: museum.owner_id,
@@ -293,15 +293,15 @@ export default function ArtifactDetail() {
     }).select('id').single()
     if (error) { toast(error.message, 'error'); setDuplicating(false) } else {
       toast('Object duplicated')
-      router.push(`/dashboard/artifacts/${newArtifact.id}`)
+      router.push(`/dashboard/objects/${newObject.id}`)
     }
   }
 
   async function logActivity(actionType: string, description: string) {
-    if (!museum || !artifact) return
+    if (!museum || !object) return
     await supabase.from('activity_log').insert({
       museum_id: museum.id,
-      artifact_id: artifact.id,
+      object_id: object.id,
       user_id: currentUserId,
       user_name: isOwner ? 'Owner' : staffAccess || 'Staff',
       action_type: actionType,
@@ -312,7 +312,7 @@ export default function ArtifactDetail() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const fullMode = getPlan(museum?.plan).fullMode
 
-  if (loading || !artifact) {
+  if (loading || !object) {
     return (
       <DashboardShell museum={null} activePath="/dashboard" onSignOut={() => {}}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-8 gap-3">
@@ -340,7 +340,7 @@ export default function ArtifactDetail() {
               ← Collection
             </button>
             <span className="text-stone-200 dark:text-stone-700">/</span>
-            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{artifact.title}</span>
+            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{object.title}</span>
           </div>
           <div className="flex items-center gap-4">
             {fullMode && museum?.slug && (
@@ -350,7 +350,7 @@ export default function ArtifactDetail() {
               </button>
             )}
             {fullMode && (
-              <button onClick={() => window.open(`/print/artifact/${params.id}`, '_blank')}
+              <button onClick={() => window.open(`/print/object/${params.id}`, '_blank')}
                 className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
                 Print record
               </button>
@@ -393,61 +393,61 @@ export default function ArtifactDetail() {
           )}
 
           {activeTab === 'overview' && (
-            <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
+            <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
           )}
 
           {activeTab === 'entry' && (
-            <EntryTab artifact={artifact} museum={museum} canEdit={canEdit} supabase={supabase} />
+            <EntryTab object={object} museum={museum} canEdit={canEdit} supabase={supabase} />
           )}
 
           {activeTab === 'acquisition' && (
-            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} />
+            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} objectId={object?.id} museumId={museum?.id} />
           )}
 
           {activeTab === 'location' && (
-            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} />
+            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} />
           )}
 
           {activeTab === 'condition' && (
-            <ConditionTab form={form} set={set} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <ConditionTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'conservation' && (
-            <ConservationTab form={form} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <ConservationTab form={form} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'loans' && (
-            <LoansTab form={form} set={set} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <LoansTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'rights' && (
-            <RightsTab form={form} set={set} canEdit={canEdit} saving={saving} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <RightsTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'audit' && (
-            <AuditTab form={form} set={set} canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <AuditTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'valuation' && (
-            <ValuationTab canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} setLatestValuation={setLatestValuation} />
+            <ValuationTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} setLatestValuation={setLatestValuation} />
           )}
 
           {activeTab === 'risk' && (
-            <RiskTab canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <RiskTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'damage' && (
-            <DamageTab canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <DamageTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'exits' && (
-            <ExitsTab canEdit={canEdit} artifact={artifact} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <ExitsTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
         </form>
         {qrModalOpen && museum && (
           <QRLabelModal
-            artifact={{ id: params.id as string, title: form.title, accession_no: form.accession_no, show_on_site: form.show_on_site }}
+            object={{ id: params.id as string, title: form.title, accession_no: form.accession_no, show_on_site: form.show_on_site }}
             museum={{ slug: museum.slug, name: museum.name }}
             onClose={() => setQrModalOpen(false)}
           />

@@ -18,10 +18,10 @@ CREATE POLICY "Public can read museums"
   USING (true);
 
 
--- Allow anyone to read artifacts that are publicly visible
+-- Allow anyone to read objects that are publicly visible
 -- (On Display or On Loan). Objects in Storage, Restoration, or
 -- Deaccessioned remain private.
-CREATE POLICY "Public can read on-display and on-loan artifacts"
-  ON artifacts FOR SELECT
+CREATE POLICY "Public can read on-display and on-loan objects"
+  ON objects FOR SELECT
   TO anon
   USING (status IN ('On Display', 'On Loan'));

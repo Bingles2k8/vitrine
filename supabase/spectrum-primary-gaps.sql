@@ -8,7 +8,7 @@ ALTER TABLE entry_records
   ADD COLUMN IF NOT EXISTS entry_method           text;
 
 -- ── Proc 2: Acquisition ──────────────────────────────────────────────────
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS accession_date                      date,
   ADD COLUMN IF NOT EXISTS conditions_attached_to_acquisition  text,
   ADD COLUMN IF NOT EXISTS location_after_accessioning         text,

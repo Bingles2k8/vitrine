@@ -40,7 +40,7 @@ export default function RiskPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: risks } = await supabase
         .from('risk_register')
-        .select('*, artifacts(title, accession_no, emoji)')
+        .select('*, objects(title, accession_no, emoji)')
         .eq('museum_id', museum.id)
         .order('created_at', { ascending: false })
       setMuseum(museum)
@@ -158,20 +158,20 @@ export default function RiskPage() {
                     const overdue = r.review_date && r.review_date <= today && r.status === 'Open'
                     return (
                       <tr key={r.id}
-                        className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${r.artifact_id ? 'cursor-pointer' : ''} ${overdue ? 'bg-amber-50/20' : ''}`}
-                        onClick={() => r.artifact_id && router.push(`/dashboard/artifacts/${r.artifact_id}?tab=risk`)}
+                        className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${r.object_id ? 'cursor-pointer' : ''} ${overdue ? 'bg-amber-50/20' : ''}`}
+                        onClick={() => r.object_id && router.push(`/dashboard/objects/${r.object_id}?tab=risk`)}
                       >
                         <td className="px-6 py-3">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.risk_type}</div>
                           <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{r.description}</div>
                         </td>
                         <td className="px-4 py-3">
-                          {r.artifacts ? (
+                          {r.objects ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-base">{r.artifacts.emoji}</span>
+                              <span className="text-base">{r.objects.emoji}</span>
                               <div>
-                                <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{r.artifacts.title}</div>
-                                <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{r.artifacts.accession_no}</div>
+                                <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{r.objects.title}</div>
+                                <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{r.objects.accession_no}</div>
                               </div>
                             </div>
                           ) : (

@@ -32,7 +32,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
     const { data, error } = await supabase.storage
-      .from('artifact-images')
+      .from('object-images')
       .upload(filename, compressed, { upsert: true })
 
     if (error) {
@@ -43,7 +43,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
 
     // Get the public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('artifact-images')
+      .from('object-images')
       .getPublicUrl(data.path)
 
     onUpload(publicUrl)
@@ -62,7 +62,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
           <div className="relative group">
             <img
               src={preview}
-              alt="Artifact"
+              alt="Object"
               className="w-full aspect-square object-cover rounded-lg border border-stone-200 dark:border-stone-700"
             />
             <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer">

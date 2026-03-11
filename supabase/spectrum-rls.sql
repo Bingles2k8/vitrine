@@ -3,7 +3,7 @@
 -- =============================================================
 -- Run this in Supabase Dashboard → SQL Editor
 -- This adds RLS policies for the 5 new compliance tables.
--- The existing policies for museums/artifacts/staff_members
+-- The existing policies for museums/objects/staff_members
 -- were already applied separately and are NOT repeated here.
 -- =============================================================
 

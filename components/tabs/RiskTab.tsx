@@ -6,13 +6,13 @@ import { useToast } from '@/components/Toast'
 
 interface RiskTabProps {
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function RiskTab({ canEdit, artifact, museum, supabase, logActivity }: RiskTabProps) {
+export default function RiskTab({ canEdit, object, museum, supabase, logActivity }: RiskTabProps) {
   const [riskHistory, setRiskHistory] = useState<any[]>([])
   const [riskLoaded, setRiskLoaded] = useState(false)
   const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
@@ -20,22 +20,22 @@ export default function RiskTab({ canEdit, artifact, museum, supabase, logActivi
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    supabase.from('risk_register').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: any) => { setRiskHistory(data || []); setRiskLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addRisk() {
     if (!riskForm.risk_type || !riskForm.description || submitting) return
     setSubmitting(true)
     const { error } = await supabase.from('risk_register').insert({
       ...riskForm, review_date: riskForm.review_date || null,
-      artifact_id: artifact.id, museum_id: museum.id,
+      object_id: object.id, museum_id: museum.id,
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     setRiskForm({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
-    const { data } = await supabase.from('risk_register').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('risk_register').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setRiskHistory(data || [])
-    logActivity('risk_added', `Recorded ${riskForm.risk_type} risk for "${artifact.title}"`)
+    logActivity('risk_added', `Recorded ${riskForm.risk_type} risk for "${object.title}"`)
     setSubmitting(false)
   }
 

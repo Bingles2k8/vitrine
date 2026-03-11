@@ -3,13 +3,13 @@
 import QRCode from 'react-qr-code'
 
 interface QRLabelModalProps {
-  artifact: { id: string; title: string; accession_no?: string; show_on_site?: boolean }
+  object: { id: string; title: string; accession_no?: string; show_on_site?: boolean }
   museum: { slug: string; name: string }
   onClose: () => void
 }
 
-export default function QRLabelModal({ artifact, museum, onClose }: QRLabelModalProps) {
-  const url = `${window.location.origin}/museum/${museum.slug}/artifact/${artifact.id}`
+export default function QRLabelModal({ object, museum, onClose }: QRLabelModalProps) {
+  const url = `${window.location.origin}/museum/${museum.slug}/object/${object.id}`
 
   function downloadQR() {
     const svg = document.getElementById('qr-label-svg')
@@ -29,14 +29,14 @@ export default function QRLabelModal({ artifact, museum, onClose }: QRLabelModal
       ctx.fillStyle = '#1a1a1a'
       ctx.font = 'bold 16px monospace'
       ctx.textAlign = 'center'
-      ctx.fillText(artifact.title.length > 40 ? artifact.title.slice(0, 40) + '…' : artifact.title, size / 2, size + 24)
-      if (artifact.accession_no) {
+      ctx.fillText(object.title.length > 40 ? object.title.slice(0, 40) + '…' : object.title, size / 2, size + 24)
+      if (object.accession_no) {
         ctx.font = '12px monospace'
         ctx.fillStyle = '#666'
-        ctx.fillText(artifact.accession_no, size / 2, size + 48)
+        ctx.fillText(object.accession_no, size / 2, size + 48)
       }
       const link = document.createElement('a')
-      link.download = `qr-${artifact.accession_no || artifact.id}.png`
+      link.download = `qr-${object.accession_no || object.id}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     }
@@ -52,7 +52,7 @@ export default function QRLabelModal({ artifact, museum, onClose }: QRLabelModal
         </div>
 
         <div className="p-6 flex flex-col items-center gap-4">
-          {!artifact.show_on_site && (
+          {!object.show_on_site && (
             <div className="w-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
               This object is not published — the QR code will show a 404 until it is published on your site.
             </div>
@@ -63,8 +63,8 @@ export default function QRLabelModal({ artifact, museum, onClose }: QRLabelModal
           </div>
 
           <div className="text-center">
-            <div className="font-medium text-stone-900 dark:text-stone-100 text-sm">{artifact.title}</div>
-            {artifact.accession_no && <div className="font-mono text-xs text-stone-400 mt-0.5">{artifact.accession_no}</div>}
+            <div className="font-medium text-stone-900 dark:text-stone-100 text-sm">{object.title}</div>
+            {object.accession_no && <div className="font-mono text-xs text-stone-400 mt-0.5">{object.accession_no}</div>}
           </div>
 
           <div className="text-xs font-mono text-stone-400 dark:text-stone-500 text-center break-all">{url}</div>

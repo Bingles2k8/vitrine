@@ -9,7 +9,7 @@
 -- =============================================================
 
 -- ── Proc 2: Acquisition & Accessioning ───────────────────────
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS acquisition_justification      text,          -- How the object fits the collecting policy
   ADD COLUMN IF NOT EXISTS acquisition_documentation_ref  text,          -- Reference to deed of gift, bill of sale, etc.
   ADD COLUMN IF NOT EXISTS acquisition_value              numeric(12,2), -- Purchase price or agreed value (if applicable)

@@ -3,17 +3,18 @@
 import { useState, useEffect } from 'react'
 import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import DocumentAttachments from '@/components/DocumentAttachments'
 
 const ENTRY_METHODS = ['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer']
 
 interface EntryTabProps {
-  artifact: any
+  object: any
   museum: any
   canEdit: boolean
   supabase: any
 }
 
-export default function EntryTab({ artifact, museum, canEdit, supabase }: EntryTabProps) {
+export default function EntryTab({ object, museum, canEdit, supabase }: EntryTabProps) {
   const { toast } = useToast()
   const [entryRecord, setEntryRecord] = useState<any>(null)
   const [entryLoaded, setEntryLoaded] = useState(false)
@@ -54,7 +55,7 @@ export default function EntryTab({ artifact, museum, canEdit, supabase }: EntryT
       const { data, error } = await supabase
         .from('entry_records')
         .select('*')
-        .eq('artifact_id', artifact.id)
+        .eq('object_id', object.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -90,7 +91,7 @@ export default function EntryTab({ artifact, museum, canEdit, supabase }: EntryT
       setEntryLoaded(true)
     }
     load()
-  }, [artifact.id])
+  }, [object.id])
 
   async function saveEntry() {
     if (!entryRecord) return
@@ -279,6 +280,18 @@ export default function EntryTab({ artifact, museum, canEdit, supabase }: EntryT
           <textarea value={entryForm.notes} onChange={e => setE('notes', e.target.value)} rows={2}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
+      </div>
+
+      {/* Card 5 — Supporting Documents */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+        <div className={sectionTitle}>Supporting Documents</div>
+        <DocumentAttachments
+          objectId={object.id}
+          museumId={museum.id}
+          relatedToType="entry_record"
+          relatedToId={entryRecord.id}
+          canEdit={canEdit}
+        />
       </div>
 
       {/* Save button */}

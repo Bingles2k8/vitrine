@@ -11,7 +11,7 @@
 CREATE TABLE IF NOT EXISTS damage_reports (
   id                   uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id            uuid        NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
-  artifact_id          uuid                 REFERENCES artifacts(id) ON DELETE SET NULL,
+  object_id          uuid                 REFERENCES objects(id) ON DELETE SET NULL,
   report_number        text        NOT NULL,                          -- DR-YYYY-###
   incident_date        date        NOT NULL,
   discovered_date      date        NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS damage_reports (
 );
 
 CREATE INDEX IF NOT EXISTS damage_reports_museum_idx   ON damage_reports (museum_id);
-CREATE INDEX IF NOT EXISTS damage_reports_artifact_idx ON damage_reports (artifact_id);
+CREATE INDEX IF NOT EXISTS damage_reports_artifact_idx ON damage_reports (object_id);
 
 
 -- -------------------------------------------------------------

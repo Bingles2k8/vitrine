@@ -1,7 +1,7 @@
 -- Spectrum 5.1 Phase 1: Cataloguing Deep Dive (Procedure 5)
 -- Adds structured fields for maker, production, materials, dimensions, and associations.
 
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS maker_name              text,
   ADD COLUMN IF NOT EXISTS maker_role               text,
   ADD COLUMN IF NOT EXISTS production_date_early     text,

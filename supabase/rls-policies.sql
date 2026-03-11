@@ -32,53 +32,53 @@ CREATE POLICY "Users can delete their own museums"
 
 -- -------------------------------------------------------------
 -- ARTIFACTS
--- Each artifact belongs to a museum, which belongs to a user.
+-- Each object belongs to a museum, which belongs to a user.
 -- -------------------------------------------------------------
-ALTER TABLE artifacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE objects ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view artifacts in their museums"
-  ON artifacts FOR SELECT
+CREATE POLICY "Users can view objects in their museums"
+  ON objects FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM museums
-      WHERE museums.id = artifacts.museum_id
+      WHERE museums.id = objects.museum_id
         AND museums.owner_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can create artifacts in their museums"
-  ON artifacts FOR INSERT
+CREATE POLICY "Users can create objects in their museums"
+  ON objects FOR INSERT
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM museums
-      WHERE museums.id = artifacts.museum_id
+      WHERE museums.id = objects.museum_id
         AND museums.owner_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can update artifacts in their museums"
-  ON artifacts FOR UPDATE
+CREATE POLICY "Users can update objects in their museums"
+  ON objects FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM museums
-      WHERE museums.id = artifacts.museum_id
+      WHERE museums.id = objects.museum_id
         AND museums.owner_id = auth.uid()
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM museums
-      WHERE museums.id = artifacts.museum_id
+      WHERE museums.id = objects.museum_id
         AND museums.owner_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can delete artifacts in their museums"
-  ON artifacts FOR DELETE
+CREATE POLICY "Users can delete objects in their museums"
+  ON objects FOR DELETE
   USING (
     EXISTS (
       SELECT 1 FROM museums
-      WHERE museums.id = artifacts.museum_id
+      WHERE museums.id = objects.museum_id
         AND museums.owner_id = auth.uid()
     )
   );

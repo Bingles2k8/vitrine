@@ -2,14 +2,14 @@
 CREATE TABLE IF NOT EXISTS page_views (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   museum_id uuid REFERENCES museums(id) ON DELETE CASCADE NOT NULL,
-  artifact_id uuid REFERENCES artifacts(id) ON DELETE SET NULL,
-  page_type text NOT NULL CHECK (page_type IN ('home', 'artifact', 'events', 'visit', 'embed')),
+  object_id uuid REFERENCES objects(id) ON DELETE SET NULL,
+  page_type text NOT NULL CHECK (page_type IN ('home', 'object', 'events', 'visit', 'embed')),
   viewed_at timestamptz DEFAULT now() NOT NULL
 );
 
 -- Index for fast per-museum queries sorted by date
 CREATE INDEX IF NOT EXISTS page_views_museum_viewed ON page_views (museum_id, viewed_at DESC);
-CREATE INDEX IF NOT EXISTS page_views_artifact ON page_views (artifact_id) WHERE artifact_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS page_views_artifact ON page_views (object_id) WHERE object_id IS NOT NULL;
 
 -- RLS: museum owners and staff can read their own views. Anyone can insert (public tracking).
 ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;

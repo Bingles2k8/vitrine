@@ -31,7 +31,7 @@ export default function ObjectExitsPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: exits } = await supabase
         .from('object_exits')
-        .select('*, artifacts(title, accession_no, emoji)')
+        .select('*, objects(title, accession_no, emoji)')
         .eq('museum_id', museum.id)
         .order('exit_date', { ascending: false })
       setMuseum(museum)
@@ -88,8 +88,8 @@ export default function ObjectExitsPage() {
   const exitQ = searchQuery.trim().toLowerCase()
   const displayedExits = exitQ
     ? exits.filter(e =>
-        e.artifacts?.title?.toLowerCase().includes(exitQ) ||
-        e.artifacts?.accession_no?.toLowerCase().includes(exitQ) ||
+        e.objects?.title?.toLowerCase().includes(exitQ) ||
+        e.objects?.accession_no?.toLowerCase().includes(exitQ) ||
         e.recipient_name?.toLowerCase().includes(exitQ)
       )
     : exits
@@ -168,7 +168,7 @@ export default function ObjectExitsPage() {
                     return (
                       <tr key={e.id}
                         className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${status.label === 'Overdue' ? 'bg-red-50/20' : ''}`}
-                        onClick={() => e.artifact_id && router.push(`/dashboard/artifacts/${e.artifact_id}?tab=exits`)}
+                        onClick={() => e.object_id && router.push(`/dashboard/objects/${e.object_id}?tab=exits`)}
                       >
                         <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
                         <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
@@ -176,10 +176,10 @@ export default function ObjectExitsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{e.artifacts?.emoji}</span>
+                            <span className="text-base">{e.objects?.emoji}</span>
                             <div>
-                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.artifacts?.title}</div>
-                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{e.artifacts?.accession_no}</div>
+                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.objects?.title}</div>
+                              <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{e.objects?.accession_no}</div>
                             </div>
                           </div>
                         </td>

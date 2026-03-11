@@ -30,7 +30,7 @@ ALTER TABLE valuations
   ADD COLUMN IF NOT EXISTS validity_date       date;
 
 -- ── Proc 14: Insurance ──────────────────────────────────────────────────
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS insured_value          numeric(12,2),
   ADD COLUMN IF NOT EXISTS insured_value_currency text DEFAULT 'GBP';
 
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS emergency_salvage_priorities (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id     uuid NOT NULL REFERENCES museums(id) ON DELETE CASCADE,
   plan_id       uuid NOT NULL REFERENCES emergency_plans(id) ON DELETE CASCADE,
-  artifact_id   uuid NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id   uuid NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   priority_rank integer NOT NULL,
   salvage_notes text,
   created_at    timestamptz NOT NULL DEFAULT now()

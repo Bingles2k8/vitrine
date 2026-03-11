@@ -15,8 +15,8 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
 
   if (!museum) notFound()
 
-  const { data: artifacts } = await supabase
-    .from('artifacts')
+  const { data: objects } = await supabase
+    .from('objects')
     .select('*')
     .eq('museum_id', museum.id)
     .eq('show_on_site', true)
@@ -39,7 +39,7 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
     <div style={{ fontFamily: 'system-ui, sans-serif', background: 'white', minHeight: '100%' }}>
       <div className="px-4 py-4">
         <CollectionSearch
-          artifacts={artifacts || []}
+          objects={objects || []}
           slug={slug}
           settings={styleSettings}
         />

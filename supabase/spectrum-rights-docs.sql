@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS rights_records (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id        uuid NOT NULL REFERENCES museums(id) ON DELETE CASCADE,
-  artifact_id      uuid REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id      uuid REFERENCES objects(id) ON DELETE CASCADE,
   rights_reference text NOT NULL,
   rights_type      text NOT NULL,
   rights_status    text NOT NULL,

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 
-interface Artifact {
+interface ObjectItem {
   id: string
   title: string
   artist: string
@@ -26,12 +26,12 @@ interface StyleSettings {
 }
 
 interface Props {
-  artifacts: Artifact[]
+  objects: ObjectItem[]
   slug: string
   settings: StyleSettings
 }
 
-export default function CollectionSearch({ artifacts, slug, settings }: Props) {
+export default function CollectionSearch({ objects, slug, settings }: Props) {
   const [query, setQuery] = useState('')
   const [activeMedium, setActiveMedium] = useState('All')
   const [activeStatus, setActiveStatus] = useState('All')
@@ -39,20 +39,20 @@ export default function CollectionSearch({ artifacts, slug, settings }: Props) {
   const { template, accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata } = settings
 
   const mediums = useMemo(() => {
-    const all = artifacts.map(a => a.medium).filter(Boolean)
+    const all = objects.map(a => a.medium).filter(Boolean)
     return ['All', ...Array.from(new Set(all)).sort()]
-  }, [artifacts])
+  }, [objects])
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
-    return artifacts.filter(a => {
+    return objects.filter(a => {
       const matchesQuery = !q || [a.title, a.artist, a.medium, a.culture, a.year]
         .some(field => field?.toLowerCase().includes(q))
       const matchesMedium = activeMedium === 'All' || a.medium === activeMedium
       const matchesStatus = activeStatus === 'All' || a.status === activeStatus
       return matchesQuery && matchesMedium && matchesStatus
     })
-  }, [artifacts, query, activeMedium, activeStatus])
+  }, [objects, query, activeMedium, activeStatus])
 
   const hasActiveFilters = query || activeMedium !== 'All' || activeStatus !== 'All'
 
@@ -169,7 +169,7 @@ export default function CollectionSearch({ artifacts, slug, settings }: Props) {
             </button>
           )}
           <span className="text-xs font-mono text-stone-400">
-            <span className="text-stone-900 font-medium">{filtered.length}</span> of {artifacts.length} works
+            <span className="text-stone-900 font-medium">{filtered.length}</span> of {objects.length} works
           </span>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function CollectionSearch({ artifacts, slug, settings }: Props) {
       ) : (
         <div className={`grid ${gridCols} gap-6`}>
           {filtered.map(a => (
-            <Link key={a.id} href={`/museum/${slug}/artifact/${a.id}`}
+            <Link key={a.id} href={`/museum/${slug}/object/${a.id}`}
               className={`group overflow-hidden transition-all duration-200 hover:-translate-y-1 ${cardBg}`}
               style={{ borderRadius: radius }}>
               <div className={`${imageAspect} ${imageBg} relative flex items-center justify-center overflow-hidden`}>

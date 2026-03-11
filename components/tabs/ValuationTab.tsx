@@ -8,14 +8,14 @@ const VALUATION_BASES = ['Fair market value', 'Replacement value', 'Insurance va
 
 interface ValuationTabProps {
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
   setLatestValuation: (v: any) => void
 }
 
-export default function ValuationTab({ canEdit, artifact, museum, supabase, logActivity, setLatestValuation }: ValuationTabProps) {
+export default function ValuationTab({ canEdit, object, museum, supabase, logActivity, setLatestValuation }: ValuationTabProps) {
   const [valuations, setValuations] = useState<any[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
@@ -23,9 +23,9 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
+    supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
       .then(({ data }: any) => { setValuations(data || []); setValuationsLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addValuation() {
     if (!valuationForm.value || !valuationForm.valuation_date || submitting) return
@@ -36,7 +36,7 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
     const { error: valErr } = await supabase.from('valuations').insert({
       ...valuationForm,
       value: parseFloat(valuationForm.value),
-      artifact_id: artifact.id,
+      object_id: object.id,
       museum_id: museum.id,
       valuation_reference: valRef,
       valuation_basis: valuationForm.valuation_basis || null,
@@ -46,9 +46,9 @@ export default function ValuationTab({ canEdit, artifact, museum, supabase, logA
     const lv = { value: valuationForm.value, currency: valuationForm.currency, valuation_date: valuationForm.valuation_date }
     setLatestValuation(lv)
     setValuationForm({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
-    const { data } = await supabase.from('valuations').select('*').eq('artifact_id', artifact.id).order('valuation_date', { ascending: false })
+    const { data } = await supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
     setValuations(data || [])
-    logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${artifact.title}"`)
+    logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${object.title}"`)
     setSubmitting(false)
   }
 

@@ -8,13 +8,13 @@ interface AuditTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function AuditTab({ form, set, canEdit, artifact, museum, supabase, logActivity }: AuditTabProps) {
+export default function AuditTab({ form, set, canEdit, object, museum, supabase, logActivity }: AuditTabProps) {
   const [auditHistory, setAuditHistory] = useState<any[]>([])
   const [auditLoaded, setAuditLoaded] = useState(false)
   const [exercises, setExercises] = useState<any[]>([])
@@ -24,29 +24,29 @@ export default function AuditTab({ form, set, canEdit, artifact, museum, supabas
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
+    supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
       .then(({ data }: any) => { setAuditHistory(data || []); setAuditLoaded(true) })
     supabase.from('inventory_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
       .then(({ data }: any) => { setExercises(data || []); setExercisesLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addAudit() {
     if (!auditForm.inventoried_at || submitting) return
     setSubmitting(true)
     const { error: auditErr } = await supabase.from('audit_records').insert({
       ...auditForm,
-      artifact_id: artifact.id, museum_id: museum.id,
+      object_id: object.id, museum_id: museum.id,
       exercise_id: auditForm.exercise_id || null,
       action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
     })
     if (auditErr) { toast(auditErr.message, 'error'); setSubmitting(false); return }
-    await supabase.from('artifacts').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', artifact.id)
+    await supabase.from('objects').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', object.id)
     set('last_inventoried', auditForm.inventoried_at)
     set('inventoried_by', auditForm.inventoried_by)
     setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
-    const { data } = await supabase.from('audit_records').select('*').eq('artifact_id', artifact.id).order('inventoried_at', { ascending: false })
+    const { data } = await supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
     setAuditHistory(data || [])
-    logActivity('audit_recorded', `Audited "${artifact.title}"${auditForm.inventory_outcome ? ` — ${auditForm.inventory_outcome}` : ''}`)
+    logActivity('audit_recorded', `Audited "${object.title}"${auditForm.inventory_outcome ? ` — ${auditForm.inventory_outcome}` : ''}`)
     setSubmitting(false)
   }
 

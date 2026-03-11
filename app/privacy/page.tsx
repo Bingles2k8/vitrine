@@ -38,7 +38,7 @@ export default function PrivacyPage() {
               {[
                 'Your email address — used to identify your account',
                 'Museum name, slug, and branding settings — your organisation\'s profile',
-                'Collection data — artifact titles, descriptions, images, and associated records you enter',
+                'Collection data — object titles, descriptions, images, and associated records you enter',
                 'Staff names and email addresses — members of your team added to Vitrine',
                 'Depositor names and contact information — entered during object entry procedures',
                 'Loan institution contacts — names and emails of partner organisations for loans',

@@ -8,18 +8,18 @@
 
 
 -- -------------------------------------------------------------
--- STEP 1: New columns on the artifacts table
+-- STEP 1: New columns on the objects table
 -- -------------------------------------------------------------
 
 -- Cataloguing additions (Procedure 1)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS object_type text,
   ADD COLUMN IF NOT EXISTS inscription text,
   ADD COLUMN IF NOT EXISTS marks       text,
   ADD COLUMN IF NOT EXISTS provenance  text;
 
 -- Acquisition (Procedure 2)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS acquisition_method    text,
   ADD COLUMN IF NOT EXISTS acquisition_date      date,
   ADD COLUMN IF NOT EXISTS acquisition_source    text,
@@ -27,23 +27,23 @@ ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS legal_transfer_date   date;
 
 -- Location snapshot (Procedure 3)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS current_location text,
   ADD COLUMN IF NOT EXISTS location_note    text;
 
 -- Condition snapshot (Procedure 4)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS condition_grade    text,
   ADD COLUMN IF NOT EXISTS condition_date     date,
   ADD COLUMN IF NOT EXISTS condition_assessor text;
 
 -- Rights Management (Procedure 9)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS copyright_status text,
   ADD COLUMN IF NOT EXISTS rights_holder    text;
 
 -- Deaccession & Disposal (Procedure 8)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS disposal_method        text,
   ADD COLUMN IF NOT EXISTS disposal_date          date,
   ADD COLUMN IF NOT EXISTS disposal_note          text,
@@ -51,7 +51,7 @@ ALTER TABLE artifacts
   ADD COLUMN IF NOT EXISTS disposal_recipient     text;
 
 -- Audit & Inventory (Procedure 7)
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS last_inventoried date,
   ADD COLUMN IF NOT EXISTS inventoried_by   text;
 
@@ -62,7 +62,7 @@ ALTER TABLE artifacts
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS location_history (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id uuid        NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id uuid        NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id   uuid        NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   location    text        NOT NULL,
   moved_at    timestamptz NOT NULL DEFAULT now(),
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS location_history (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS location_history_artifact_idx ON location_history (artifact_id, moved_at DESC);
+CREATE INDEX IF NOT EXISTS location_history_artifact_idx ON location_history (object_id, moved_at DESC);
 CREATE INDEX IF NOT EXISTS location_history_museum_idx   ON location_history (museum_id);
 
 
@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS location_history_museum_idx   ON location_history (mu
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS condition_assessments (
   id          uuid  PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id uuid  NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id uuid  NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id   uuid  NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   grade       text  NOT NULL,   -- Excellent | Good | Fair | Poor | Critical
   assessed_at date  NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS condition_assessments (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS condition_assessments_artifact_idx ON condition_assessments (artifact_id, assessed_at DESC);
+CREATE INDEX IF NOT EXISTS condition_assessments_artifact_idx ON condition_assessments (object_id, assessed_at DESC);
 CREATE INDEX IF NOT EXISTS condition_assessments_museum_idx   ON condition_assessments (museum_id);
 
 
@@ -100,7 +100,7 @@ CREATE INDEX IF NOT EXISTS condition_assessments_museum_idx   ON condition_asses
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS conservation_treatments (
   id             uuid  PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id    uuid  NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id    uuid  NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id      uuid  NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   treatment_type text  NOT NULL,  -- Cleaning|Stabilisation|Restoration|Rehousing|Examination|Other
   conservator    text,
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS conservation_treatments (
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS conservation_treatments_artifact_idx ON conservation_treatments (artifact_id);
+CREATE INDEX IF NOT EXISTS conservation_treatments_artifact_idx ON conservation_treatments (object_id);
 CREATE INDEX IF NOT EXISTS conservation_treatments_museum_idx   ON conservation_treatments (museum_id, status);
 
 
@@ -122,7 +122,7 @@ CREATE INDEX IF NOT EXISTS conservation_treatments_museum_idx   ON conservation_
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS loans (
   id                    uuid    PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id           uuid    NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id           uuid    NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id             uuid    NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   direction             text    NOT NULL,   -- 'Out' (we lend) | 'In' (we borrow)
   borrowing_institution text,
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS loans (
   created_at            timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS loans_artifact_idx ON loans (artifact_id);
+CREATE INDEX IF NOT EXISTS loans_artifact_idx ON loans (object_id);
 CREATE INDEX IF NOT EXISTS loans_museum_idx   ON loans (museum_id, status);
 
 
@@ -149,7 +149,7 @@ CREATE INDEX IF NOT EXISTS loans_museum_idx   ON loans (museum_id, status);
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_records (
   id                  uuid  PRIMARY KEY DEFAULT gen_random_uuid(),
-  artifact_id         uuid  NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id         uuid  NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   museum_id           uuid  NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
   inventoried_at      date  NOT NULL,
   inventoried_by      text,
@@ -160,5 +160,5 @@ CREATE TABLE IF NOT EXISTS audit_records (
   created_at          timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS audit_records_artifact_idx ON audit_records (artifact_id);
+CREATE INDEX IF NOT EXISTS audit_records_artifact_idx ON audit_records (object_id);
 CREATE INDEX IF NOT EXISTS audit_records_museum_idx   ON audit_records (museum_id, inventoried_at DESC);

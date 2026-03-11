@@ -56,7 +56,7 @@ export default function CSVImportModal({ onClose, onSuccess }: CSVImportModalPro
     setImporting(true)
     setError('')
     try {
-      const res = await fetch('/api/import/artifacts', {
+      const res = await fetch('/api/import/objects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rows }),

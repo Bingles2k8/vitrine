@@ -1,29 +1,31 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, TREATMENT_TYPES, CURRENCIES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface ConservationTabProps {
   form: Record<string, any>
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function ConservationTab({ form, canEdit, artifact, museum, supabase, logActivity }: ConservationTabProps) {
+export default function ConservationTab({ form, canEdit, object, museum, supabase, logActivity }: ConservationTabProps) {
   const [conservationHistory, setConservationHistory] = useState<any[]>([])
   const [conservationLoaded, setConservationLoaded] = useState(false)
   const [conservationForm, setConservationForm] = useState({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [docsTreatmentId, setDocsTreatmentId] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
-    supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: any) => { setConservationHistory(data || []); setConservationLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addConservation() {
     if (!conservationForm.treatment_type || submitting) return
@@ -31,12 +33,12 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
     const year = new Date().getFullYear()
     const count = conservationHistory.filter(t => t.treatment_reference?.startsWith(`CT-${year}-`)).length
     const treatmentRef = `CT-${year}-${String(count + 1).padStart(3, '0')}`
-    const { error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, artifact_id: artifact.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null })
+    const { error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, object_id: object.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null })
     if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
     setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
-    const { data } = await supabase.from('conservation_treatments').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setConservationHistory(data || [])
-    logActivity('conservation_added', `Added ${conservationForm.treatment_type} treatment for "${artifact.title}"`)
+    logActivity('conservation_added', `Added ${conservationForm.treatment_type} treatment for "${object.title}"`)
     setSubmitting(false)
   }
 
@@ -125,26 +127,50 @@ export default function ConservationTab({ form, canEdit, artifact, museum, supab
             </tr></thead>
             <tbody>
               {conservationHistory.map(t => (
-                <tr key={t.id} className="border-b border-stone-100 dark:border-stone-800">
-                  <td className="px-6 py-3 text-sm text-stone-900 dark:text-stone-100">{t.treatment_type}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{t.conservator}</td>
-                  <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
-                    {t.start_date ? new Date(t.start_date).toLocaleDateString('en-GB') : '—'}
-                    {' → '}
-                    {t.end_date ? new Date(t.end_date).toLocaleDateString('en-GB') : <span className="text-amber-600">Ongoing</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-mono px-2 py-1 rounded-full ${t.status === 'Active' ? 'bg-amber-50 text-amber-700' : t.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{t.status}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {t.status === 'Active' && (
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => updateConservationStatus(t.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-emerald-700">Complete</button>
-                        <button type="button" onClick={() => updateConservationStatus(t.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-red-500">Cancel</button>
+                <Fragment key={t.id}>
+                  <tr className="border-b border-stone-100 dark:border-stone-800">
+                    <td className="px-6 py-3 text-sm text-stone-900 dark:text-stone-100">{t.treatment_type}</td>
+                    <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{t.conservator}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      {t.start_date ? new Date(t.start_date).toLocaleDateString('en-GB') : '—'}
+                      {' → '}
+                      {t.end_date ? new Date(t.end_date).toLocaleDateString('en-GB') : <span className="text-amber-600">Ongoing</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-mono px-2 py-1 rounded-full ${t.status === 'Active' ? 'bg-amber-50 text-amber-700' : t.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{t.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 items-center">
+                        {t.status === 'Active' && (
+                          <>
+                            <button type="button" onClick={() => updateConservationStatus(t.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-emerald-700">Complete</button>
+                            <button type="button" onClick={() => updateConservationStatus(t.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-red-500">Cancel</button>
+                          </>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDocsTreatmentId(docsTreatmentId === t.id ? null : t.id)}
+                          className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100"
+                        >
+                          {docsTreatmentId === t.id ? 'Hide docs' : 'Documents'}
+                        </button>
                       </div>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  {docsTreatmentId === t.id && (
+                    <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                      <td colSpan={5} className="px-6 py-4">
+                        <DocumentAttachments
+                          objectId={object.id}
+                          museumId={museum.id}
+                          relatedToType="conservation_treatment"
+                          relatedToId={t.id}
+                          canEdit={canEdit}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -9,7 +9,7 @@ interface LocationTabProps {
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
@@ -32,7 +32,7 @@ function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }
   )
 }
 
-export default function LocationTab({ form, set, canEdit, saving, artifact, museum, supabase, logActivity, locations, setLocations }: LocationTabProps) {
+export default function LocationTab({ form, set, canEdit, saving, object, museum, supabase, logActivity, locations, setLocations }: LocationTabProps) {
   const router = useRouter()
 
   const [locationHistory, setLocationHistory] = useState<any[]>([])
@@ -44,17 +44,17 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!artifact.id) return
+    if (!object.id) return
     supabase
       .from('location_history')
       .select('*')
-      .eq('artifact_id', artifact.id)
+      .eq('object_id', object.id)
       .order('moved_at', { ascending: false })
       .then(({ data }: any) => {
         setLocationHistory(data || [])
         setLocationLoaded(true)
       })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addLocation() {
     if (!locationForm.location) return
@@ -68,11 +68,11 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
         move_type: locationForm.move_type,
         expected_return_date: locationForm.move_type === 'Temporary' && locationForm.expected_return_date ? locationForm.expected_return_date : null,
         expected_return_location: locationForm.move_type === 'Temporary' ? (locationForm.expected_return_location || null) : null,
-        artifact_id: artifact.id,
+        object_id: object.id,
         museum_id: museum.id,
       })
 
-      await supabase.from('artifacts').update({ current_location: locationForm.location }).eq('id', artifact.id)
+      await supabase.from('objects').update({ current_location: locationForm.location }).eq('id', object.id)
 
       set('current_location', locationForm.location)
       setLocationForm({ location: '', reason: '', moved_by: '', authorised_by: '', move_type: 'Permanent', expected_return_date: '', expected_return_location: '' })
@@ -80,7 +80,7 @@ export default function LocationTab({ form, set, canEdit, saving, artifact, muse
       const { data } = await supabase
         .from('location_history')
         .select('*')
-        .eq('artifact_id', artifact.id)
+        .eq('object_id', object.id)
         .order('moved_at', { ascending: false })
       setLocationHistory(data || [])
 

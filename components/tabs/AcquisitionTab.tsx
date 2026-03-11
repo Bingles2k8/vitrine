@@ -1,12 +1,15 @@
 'use client'
 
 import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS, CURRENCIES } from '@/components/tabs/shared'
+import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface AcquisitionTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
   canEdit: boolean
   saving: boolean
+  objectId?: string
+  museumId?: string
 }
 
 function SaveBar({ saving }: { saving: boolean }) {
@@ -20,7 +23,7 @@ function SaveBar({ saving }: { saving: boolean }) {
   )
 }
 
-export default function AcquisitionTab({ form, set, canEdit, saving }: AcquisitionTabProps) {
+export default function AcquisitionTab({ form, set, canEdit, saving, objectId, museumId }: AcquisitionTabProps) {
   return (
     <>
       {/* Card 1 — Acquisition */}
@@ -185,6 +188,20 @@ export default function AcquisitionTab({ form, set, canEdit, saving }: Acquisiti
           </label>
         </div>
       </div>
+
+      {/* Card 4 — Supporting Documents */}
+      {objectId && museumId && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+          <div className={sectionTitle}>Supporting Documents</div>
+          <DocumentAttachments
+            objectId={objectId}
+            museumId={museumId}
+            relatedToType="acquisition"
+            relatedToId={null}
+            canEdit={canEdit}
+          />
+        </div>
+      )}
 
       {canEdit && <SaveBar saving={saving} />}
     </>

@@ -63,22 +63,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Bulk CSV import requires a Professional plan or above. Upgrade to use this feature.' }, { status: 403 })
   }
 
-  // Check plan artifact limit
-  if (planInfo.artifacts !== null) {
+  // Check plan object limit
+  if (planInfo.objects !== null) {
     const serviceClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     const { count } = await serviceClient
-      .from('artifacts')
+      .from('objects')
       .select('*', { count: 'exact', head: true })
       .eq('museum_id', museumId)
       .is('deleted_at', null)
 
     const existing = count ?? 0
-    if (existing + rows.length > planInfo.artifacts) {
+    if (existing + rows.length > planInfo.objects) {
       return NextResponse.json({
-        error: `Import would exceed your plan limit of ${planInfo.artifacts} objects. You have ${existing} objects and are trying to import ${rows.length}. Upgrade your plan or import fewer rows.`
+        error: `Import would exceed your plan limit of ${planInfo.objects} objects. You have ${existing} objects and are trying to import ${rows.length}. Upgrade your plan or import fewer rows.`
       }, { status: 400 })
     }
   }
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
   )
 
   const { data: inserted, error } = await serviceClient
-    .from('artifacts')
+    .from('objects')
     .insert(insertRows)
     .select('id')
 

@@ -8,9 +8,9 @@
 
 
 -- -------------------------------------------------------------
--- 1a. New columns on artifacts (Procedure 2 — Acquisition)
+-- 1a. New columns on objects (Procedure 2 — Acquisition)
 -- -------------------------------------------------------------
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS acquisition_source_contact   text,
   ADD COLUMN IF NOT EXISTS acquisition_authorised_by    text,
   ADD COLUMN IF NOT EXISTS acquisition_authority_date   date,
@@ -63,7 +63,7 @@ ALTER TABLE loans
 CREATE TABLE IF NOT EXISTS entry_records (
   id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id           uuid        NOT NULL REFERENCES museums(id)    ON DELETE CASCADE,
-  artifact_id         uuid                 REFERENCES artifacts(id)  ON DELETE SET NULL,
+  object_id         uuid                 REFERENCES objects(id)  ON DELETE SET NULL,
   entry_number        text        NOT NULL,
   entry_date          date        NOT NULL,
   depositor_name      text        NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS entry_records (
 );
 
 CREATE INDEX IF NOT EXISTS entry_records_museum_idx   ON entry_records (museum_id, entry_date DESC);
-CREATE INDEX IF NOT EXISTS entry_records_artifact_idx ON entry_records (artifact_id);
+CREATE INDEX IF NOT EXISTS entry_records_artifact_idx ON entry_records (object_id);
 
 
 -- -------------------------------------------------------------
@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS entry_records_artifact_idx ON entry_records (artifact
 CREATE TABLE IF NOT EXISTS object_exits (
   id                   uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id            uuid        NOT NULL REFERENCES museums(id)   ON DELETE CASCADE,
-  artifact_id          uuid        NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  object_id          uuid        NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
   exit_number          text        NOT NULL,
   exit_date            date        NOT NULL,
   exit_reason          text        NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS object_exits (
 );
 
 CREATE INDEX IF NOT EXISTS object_exits_museum_idx   ON object_exits (museum_id, exit_date DESC);
-CREATE INDEX IF NOT EXISTS object_exits_artifact_idx ON object_exits (artifact_id);
+CREATE INDEX IF NOT EXISTS object_exits_artifact_idx ON object_exits (object_id);
 
 
 -- -------------------------------------------------------------

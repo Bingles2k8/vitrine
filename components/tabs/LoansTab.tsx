@@ -4,18 +4,19 @@ import { useEffect, useState, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface LoansTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
   canEdit: boolean
-  artifact: any
+  object: any
   museum: any
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
-export default function LoansTab({ form, set, canEdit, artifact, museum, supabase, logActivity }: LoansTabProps) {
+export default function LoansTab({ form, set, canEdit, object, museum, supabase, logActivity }: LoansTabProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loanHistory, setLoanHistory] = useState<any[]>([])
@@ -26,26 +27,27 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
   const [returnLocation, setReturnLocation] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
+  const [docsLoanId, setDocsLoanId] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: any) => { setLoanHistory(data || []); setLoanLoaded(true) })
-  }, [artifact.id])
+  }, [object.id])
 
   async function addLoan() {
     if (!loanForm.borrowing_institution || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
     const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
-    const { error: loanErr } = await supabase.from('loans').insert({ ...loanForm, artifact_id: artifact.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null })
+    const { error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null })
     if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
-    await supabase.from('artifacts').update({ status: 'On Loan' }).eq('id', artifact.id)
+    await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
     set('status', 'On Loan')
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
-    const { data } = await supabase.from('loans').select('*').eq('artifact_id', artifact.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setLoanHistory(data || [])
     router.refresh()
-    logActivity('loan_added', `Recorded loan for "${artifact.title}" to ${loanForm.borrowing_institution}`)
+    logActivity('loan_added', `Recorded loan for "${object.title}" to ${loanForm.borrowing_institution}`)
     setSubmitting(false)
   }
 
@@ -58,10 +60,10 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
   async function confirmEndLoan(loanId: string) {
     const today = new Date().toISOString().slice(0, 10)
     await supabase.from('loans').update({ status: 'Returned', condition_return: returnCondition || null, return_confirmed: true, return_confirmed_date: today }).eq('id', loanId)
-    await supabase.from('artifacts').update({ status: 'Storage', current_location: returnLocation }).eq('id', artifact.id)
+    await supabase.from('objects').update({ status: 'Storage', current_location: returnLocation }).eq('id', object.id)
     if (returnLocation) {
       await supabase.from('location_history').insert({
-        artifact_id: artifact.id, museum_id: museum.id,
+        object_id: object.id, museum_id: museum.id,
         location: returnLocation, reason: 'Loan', moved_by: '',
       })
     }
@@ -178,11 +180,20 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
                       <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{l.status}</span>
                     </td>
                     <td className="px-4 py-3">
-                      {l.status === 'Active' && (
-                        endingLoanId === l.id
-                          ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
-                          : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">End loan →</button>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {l.status === 'Active' && (
+                          endingLoanId === l.id
+                            ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
+                            : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">End loan →</button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDocsLoanId(docsLoanId === l.id ? null : l.id)}
+                          className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100"
+                        >
+                          {docsLoanId === l.id ? 'Hide docs' : 'Documents'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {endingLoanId === l.id && (
@@ -221,6 +232,19 @@ export default function LoansTab({ form, set, canEdit, artifact, museum, supabas
                           </button>
                           <p className="text-xs text-stone-400">Marks the loan returned, sets status to Storage, and logs a location change.</p>
                         </div>
+                      </td>
+                    </tr>
+                  )}
+                  {docsLoanId === l.id && (
+                    <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                      <td colSpan={6} className="px-6 py-4">
+                        <DocumentAttachments
+                          objectId={object.id}
+                          museumId={museum.id}
+                          relatedToType="loan"
+                          relatedToId={l.id}
+                          canEdit={canEdit}
+                        />
                       </td>
                     </tr>
                   )}

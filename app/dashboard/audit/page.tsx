@@ -12,7 +12,7 @@ export default function AuditPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [artifacts, setArtifacts] = useState<any[]>([])
+  const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -24,8 +24,8 @@ export default function AuditPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: artifacts } = await supabase
-        .from('artifacts')
+      const { data: objects } = await supabase
+        .from('objects')
         .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by')
         .eq('museum_id', museum.id)
         .is('deleted_at', null)
@@ -34,7 +34,7 @@ export default function AuditPage() {
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
-      setArtifacts(artifacts || [])
+      setObjects(objects || [])
       setLoading(false)
     }
     load()
@@ -82,9 +82,9 @@ export default function AuditPage() {
   const oneYearAgoStr = oneYearAgo.toISOString().slice(0, 10)
   const thisYearStr = today.getFullYear().toString()
 
-  const neverInventoried = artifacts.filter(a => !a.last_inventoried)
-  const inventoriedThisYear = artifacts.filter(a => a.last_inventoried?.startsWith(thisYearStr))
-  const overdue = artifacts.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
+  const neverInventoried = objects.filter(a => !a.last_inventoried)
+  const inventoriedThisYear = objects.filter(a => a.last_inventoried?.startsWith(thisYearStr))
+  const overdue = objects.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -94,7 +94,7 @@ export default function AuditPage() {
             onClick={() => {
               const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
               const rows = [['Accession No', 'Title', 'Status', 'Location', 'Last Inventoried', 'Inventoried By'].join(',')]
-              artifacts.forEach(a => rows.push([esc(a.accession_no), esc(a.title), esc(a.status), esc(a.current_location), esc(a.last_inventoried ? new Date(a.last_inventoried).toLocaleDateString('en-GB') : ''), esc(a.inventoried_by)].join(',')))
+              objects.forEach(a => rows.push([esc(a.accession_no), esc(a.title), esc(a.status), esc(a.current_location), esc(a.last_inventoried ? new Date(a.last_inventoried).toLocaleDateString('en-GB') : ''), esc(a.inventoried_by)].join(',')))
               const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
               const url = URL.createObjectURL(blob)
               const el = document.createElement('a')
@@ -137,12 +137,12 @@ export default function AuditPage() {
                 </tr>
               </thead>
               <tbody>
-                {artifacts.map(a => {
+                {objects.map(a => {
                   const isNever = !a.last_inventoried
                   const isOld = a.last_inventoried && a.last_inventoried < oneYearAgoStr
 
                   return (
-                    <tr key={a.id} onClick={() => router.push(`/dashboard/artifacts/${a.id}?tab=audit`)}
+                    <tr key={a.id} onClick={() => router.push(`/dashboard/objects/${a.id}?tab=audit`)}
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${isNever || isOld ? 'bg-amber-50/20' : ''}`}>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">

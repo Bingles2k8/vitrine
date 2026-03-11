@@ -6,7 +6,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: artifactId } = await params
+  const { id: objectId } = await params
   const supabase = await createServerSideClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,22 +42,22 @@ export async function POST(
 
   if (!museum) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Verify artifact belongs to this museum
-  const { data: artifact } = await supabase
-    .from('artifacts')
+  // Verify object belongs to this museum
+  const { data: object } = await supabase
+    .from('objects')
     .select('id')
-    .eq('id', artifactId)
+    .eq('id', objectId)
     .eq('museum_id', museum.id)
     .maybeSingle()
 
-  if (!artifact) return NextResponse.json({ error: 'Artifact not found' }, { status: 404 })
+  if (!object) return NextResponse.json({ error: 'Object not found' }, { status: 404 })
 
   // Check image count against plan limit
-  const limit = getPlan(museum.plan).imagesPerArtifact
+  const limit = getPlan(museum.plan).imagesPerObject
   const { count } = await supabase
-    .from('artifact_images')
+    .from('object_images')
     .select('id', { count: 'exact', head: true })
-    .eq('artifact_id', artifactId)
+    .eq('object_id', objectId)
 
   if ((count ?? 0) >= limit) {
     return NextResponse.json({ error: 'Image limit reached for your plan' }, { status: 403 })
@@ -68,9 +68,9 @@ export async function POST(
   const { url, is_primary, sort_order, caption } = body
 
   const { data: newImage, error } = await supabase
-    .from('artifact_images')
+    .from('object_images')
     .insert({
-      artifact_id: artifactId,
+      object_id: objectId,
       museum_id: museum.id,
       url,
       is_primary: is_primary ?? false,
@@ -82,9 +82,9 @@ export async function POST(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // If primary, update artifacts.image_url
+  // If primary, update objects.image_url
   if (is_primary) {
-    await supabase.from('artifacts').update({ image_url: url }).eq('id', artifactId)
+    await supabase.from('objects').update({ image_url: url }).eq('id', objectId)
   }
 
   return NextResponse.json(newImage)

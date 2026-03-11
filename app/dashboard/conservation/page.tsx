@@ -27,7 +27,7 @@ export default function ConservationPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: treatments } = await supabase
         .from('conservation_treatments')
-        .select('*, artifacts(title, accession_no, emoji, status)')
+        .select('*, objects(title, accession_no, emoji, status)')
         .eq('museum_id', museum.id)
         .order('start_date', { ascending: false })
       setMuseum(museum)
@@ -79,7 +79,7 @@ export default function ConservationPage() {
   const thisYear = new Date().getFullYear().toString()
   const active = treatments.filter(t => t.status === 'Active')
   const completedThisYear = treatments.filter(t => t.status === 'Completed' && t.end_date?.startsWith(thisYear))
-  const inRestoration = treatments.filter(t => t.status === 'Active' && t.artifacts?.status === 'Restoration')
+  const inRestoration = treatments.filter(t => t.status === 'Active' && t.objects?.status === 'Restoration')
 
   const filtered = treatments.filter(t => filter === 'All' || t.status === filter)
 
@@ -136,14 +136,14 @@ export default function ConservationPage() {
                 </thead>
                 <tbody>
                   {filtered.map(t => (
-                    <tr key={t.id} onClick={() => router.push(`/dashboard/artifacts/${t.artifact_id}?tab=conservation`)}
+                    <tr key={t.id} onClick={() => router.push(`/dashboard/objects/${t.object_id}?tab=conservation`)}
                       className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{t.artifacts?.emoji}</div>
+                          <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{t.objects?.emoji}</div>
                           <div>
-                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{t.artifacts?.title}</div>
-                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{t.artifacts?.accession_no}</div>
+                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{t.objects?.title}</div>
+                            <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{t.objects?.accession_no}</div>
                           </div>
                         </div>
                       </td>

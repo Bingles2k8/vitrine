@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS collection_use_records (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id      uuid NOT NULL REFERENCES museums(id) ON DELETE CASCADE,
-  artifact_id    uuid REFERENCES artifacts(id) ON DELETE SET NULL,
+  object_id    uuid REFERENCES objects(id) ON DELETE SET NULL,
   use_reference  text NOT NULL,
   use_type       text NOT NULL,
   requester_name text,
@@ -53,7 +53,7 @@ CREATE POLICY "Users can delete own museum collection use records"
 CREATE TABLE IF NOT EXISTS disposal_records (
   id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   museum_id               uuid NOT NULL REFERENCES museums(id) ON DELETE CASCADE,
-  artifact_id             uuid NOT NULL REFERENCES artifacts(id) ON DELETE RESTRICT,
+  object_id             uuid NOT NULL REFERENCES objects(id) ON DELETE RESTRICT,
   disposal_reference      text NOT NULL,
   disposal_method         text NOT NULL,
   disposal_reason         text NOT NULL,
@@ -200,5 +200,5 @@ CREATE POLICY "Users can delete own museum audit exercises"
   ));
 
 -- ── Deaccession Protection ───────────────────────────────────────────────
-ALTER TABLE artifacts
+ALTER TABLE objects
   ADD COLUMN IF NOT EXISTS deaccession_protected boolean DEFAULT false;

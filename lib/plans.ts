@@ -3,9 +3,9 @@ export type PlanId = 'community' | 'hobbyist' | 'professional' | 'institution' |
 export const PLANS: Record<PlanId, {
   label: string
   price: string
-  artifacts: number | null  // null = unlimited
+  objects: number | null  // null = unlimited
   staff: number | null       // null = unlimited
-  imagesPerArtifact: number
+  imagesPerObject: number
   fullMode: boolean
   analytics: boolean
   compliance: boolean
@@ -16,9 +16,9 @@ export const PLANS: Record<PlanId, {
   community: {
     label: 'Community',
     price: 'Free',
-    artifacts: 100,
+    objects: 100,
     staff: 1,
-    imagesPerArtifact: 1,
+    imagesPerObject: 1,
     fullMode: false,
     analytics: false,
     compliance: false,
@@ -29,9 +29,9 @@ export const PLANS: Record<PlanId, {
   hobbyist: {
     label: 'Hobbyist',
     price: '£5/mo',
-    artifacts: 500,
+    objects: 500,
     staff: 1,
-    imagesPerArtifact: 3,
+    imagesPerObject: 3,
     fullMode: false,
     analytics: false,
     compliance: false,
@@ -42,9 +42,9 @@ export const PLANS: Record<PlanId, {
   professional: {
     label: 'Professional',
     price: '£79/mo',
-    artifacts: 5000,
+    objects: 5000,
     staff: 10,
-    imagesPerArtifact: 10,
+    imagesPerObject: 10,
     fullMode: true,
     analytics: true,
     compliance: true,
@@ -55,9 +55,9 @@ export const PLANS: Record<PlanId, {
   institution: {
     label: 'Institution',
     price: '£349/mo',
-    artifacts: 100000,
+    objects: 100000,
     staff: null,
-    imagesPerArtifact: 10,
+    imagesPerObject: 10,
     fullMode: true,
     analytics: true,
     compliance: true,
@@ -68,9 +68,9 @@ export const PLANS: Record<PlanId, {
   enterprise: {
     label: 'Enterprise',
     price: 'Contact us',
-    artifacts: null,
+    objects: null,
     staff: null,
-    imagesPerArtifact: 10,
+    imagesPerObject: 10,
     fullMode: true,
     analytics: true,
     compliance: true,

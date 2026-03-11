@@ -82,15 +82,15 @@ export default function DocumentationPlanPage() {
       const { museum, isOwner, staffAccess } = result
 
       const [
-        { data: artifacts },
+        { data: objects },
         { data: entryRecords },
         { data: locationHistory },
         { data: conditionAssessments },
         { data: activeLoans },
         { data: exits },
         { data: docPlan },
-        { data: valuationArtifacts },
-        { data: artifactImageIds },
+        { data: valuationObjects },
+        { data: objectImageIds },
         { data: openRisks },
         { data: emergencyPlans },
         { data: insurancePolicies },
@@ -103,15 +103,15 @@ export default function DocumentationPlanPage() {
         { data: reproductionRequests },
         { data: conservationTreatments },
       ] = await Promise.all([
-        supabase.from('artifacts').select('*').eq('museum_id', museum.id).is('deleted_at', null),
-        supabase.from('entry_records').select('artifact_id').eq('museum_id', museum.id),
-        supabase.from('location_history').select('artifact_id').eq('museum_id', museum.id),
-        supabase.from('condition_assessments').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null),
+        supabase.from('entry_records').select('object_id').eq('museum_id', museum.id),
+        supabase.from('location_history').select('object_id').eq('museum_id', museum.id),
+        supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id),
         supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active'),
-        supabase.from('object_exits').select('id, artifact_id').eq('museum_id', museum.id),
+        supabase.from('object_exits').select('id, object_id').eq('museum_id', museum.id),
         supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).maybeSingle(),
-        supabase.from('valuations').select('artifact_id').eq('museum_id', museum.id),
-        supabase.from('artifact_images').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('valuations').select('object_id').eq('museum_id', museum.id),
+        supabase.from('object_images').select('object_id').eq('museum_id', museum.id),
         supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open'),
         supabase.from('emergency_plans').select('id, status').eq('museum_id', museum.id),
         supabase.from('insurance_policies').select('id, status').eq('museum_id', museum.id),
@@ -120,28 +120,28 @@ export default function DocumentationPlanPage() {
         supabase.from('disposal_records').select('id, status').eq('museum_id', museum.id),
         supabase.from('collection_reviews').select('id, status').eq('museum_id', museum.id),
         supabase.from('audit_exercises').select('id, status').eq('museum_id', museum.id),
-        supabase.from('rights_records').select('artifact_id').eq('museum_id', museum.id),
-        supabase.from('reproduction_requests').select('artifact_id').eq('museum_id', museum.id),
-        supabase.from('conservation_treatments').select('artifact_id').eq('museum_id', museum.id),
+        supabase.from('rights_records').select('object_id').eq('museum_id', museum.id),
+        supabase.from('reproduction_requests').select('object_id').eq('museum_id', museum.id),
+        supabase.from('conservation_treatments').select('object_id').eq('museum_id', museum.id),
       ])
 
-      const all = artifacts || []
+      const all = objects || []
       const total = all.length
       const deacc = all.filter(a => a.status === 'Deaccessioned').length
       const deaccIds = new Set(all.filter(a => a.status === 'Deaccessioned').map((a: any) => a.id))
       const twelveMonthsAgo = new Date(); twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
       const cutoff = twelveMonthsAgo.toISOString().slice(0, 10)
 
-      const entryIds = new Set((entryRecords || []).map((e: any) => e.artifact_id).filter(Boolean))
-      const locationIds = new Set((locationHistory || []).map((l: any) => l.artifact_id))
-      const conditionIds = new Set((conditionAssessments || []).map((c: any) => c.artifact_id))
+      const entryIds = new Set((entryRecords || []).map((e: any) => e.object_id).filter(Boolean))
+      const locationIds = new Set((locationHistory || []).map((l: any) => l.object_id))
+      const conditionIds = new Set((conditionAssessments || []).map((c: any) => c.object_id))
       const activeLoansWithAgreement = (activeLoans || []).filter((l: any) => l.agreement_reference?.trim()).length
       const activeLoanTotal = (activeLoans || []).length
-      const valuedIds = new Set((valuationArtifacts || []).map((v: any) => v.artifact_id).filter(Boolean))
-      const imageIds = new Set((artifactImageIds || []).map((i: any) => i.artifact_id).filter(Boolean))
-      const rightsIds = new Set((rightsRecords || []).map((r: any) => r.artifact_id).filter(Boolean))
-      const reproIds = new Set((reproductionRequests || []).map((r: any) => r.artifact_id).filter(Boolean))
-      const conservationIds = new Set((conservationTreatments || []).map((c: any) => c.artifact_id).filter(Boolean))
+      const valuedIds = new Set((valuationObjects || []).map((v: any) => v.object_id).filter(Boolean))
+      const imageIds = new Set((objectImageIds || []).map((i: any) => i.object_id).filter(Boolean))
+      const rightsIds = new Set((rightsRecords || []).map((r: any) => r.object_id).filter(Boolean))
+      const reproIds = new Set((reproductionRequests || []).map((r: any) => r.object_id).filter(Boolean))
+      const conservationIds = new Set((conservationTreatments || []).map((c: any) => c.object_id).filter(Boolean))
 
       const rows: ComplianceRow[] = [
         // Primary procedures (★)
@@ -211,7 +211,7 @@ export default function DocumentationPlanPage() {
         {
           procedure: '★6 Object Exit',
           metric: 'Exit records for deaccessioned objects',
-          numerator: (exits || []).filter((e: any) => deaccIds.has(e.artifact_id)).length,
+          numerator: (exits || []).filter((e: any) => deaccIds.has(e.object_id)).length,
           denominator: deacc,
           link: '/dashboard/exits',
         },
