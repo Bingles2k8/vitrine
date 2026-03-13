@@ -4,12 +4,43 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
-import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
+import { PLANS, PLAN_ORDER, getPlan, type PlanId } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
+import { formatSize } from '@/lib/formatSize'
 
 const CHECK = '✓'
 const CROSS = '✕'
+
+function UsageRow({ label, used, limit, format }: {
+  label: string
+  used: number
+  limit: number | null
+  format?: (n: number) => string
+}) {
+  const display = format ?? ((n: number) => n.toLocaleString())
+  if (limit === null) {
+    return (
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-stone-600 dark:text-stone-400">{label}</span>
+        <span className="font-mono text-stone-500 dark:text-stone-400">{display(used)} / Unlimited</span>
+      </div>
+    )
+  }
+  const pct = Math.min(100, (used / limit) * 100)
+  const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-400' : 'bg-stone-400 dark:bg-stone-500'
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm mb-1.5">
+        <span className="text-stone-600 dark:text-stone-400">{label}</span>
+        <span className="font-mono text-stone-500 dark:text-stone-400">{display(used)} / {display(limit)}</span>
+      </div>
+      <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
 
 export default function PlanPage() {
   const [museum, setMuseum] = useState<any>(null)
@@ -18,6 +49,9 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [checkoutResult, setCheckoutResult] = useState<'success' | 'cancelled' | null>(null)
+  const [objectCount, setObjectCount] = useState(0)
+  const [staffCount, setStaffCount] = useState(0)
+  const [storageUsedBytes, setStorageUsedBytes] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -31,6 +65,30 @@ export default function PlanPage() {
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
+
+      const { count: objCount } = await supabase
+        .from('objects')
+        .select('id', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+        .is('deleted_at', null)
+      setObjectCount(objCount ?? 0)
+
+      const { count: sCount } = await supabase
+        .from('staff_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+      setStaffCount((sCount ?? 0) + 1)
+
+      if (getPlan(museum.plan).compliance) {
+        const { data: usage } = await supabase
+          .from('object_documents')
+          .select('file_size.sum()')
+          .eq('museum_id', museum.id)
+          .is('deleted_at', null)
+          .single()
+        setStorageUsedBytes((usage as any)?.sum ?? 0)
+      }
+
       setLoading(false)
     }
     load()
@@ -142,6 +200,25 @@ export default function PlanPage() {
               </p>
             </div>
           )}
+
+          {/* Current Usage */}
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 mb-8">
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4">
+              Current Usage — {getPlan(currentPlan).label} plan
+            </div>
+            <div className="space-y-4">
+              <UsageRow label="Objects" used={objectCount} limit={getPlan(currentPlan).objects} />
+              <UsageRow label="Staff accounts" used={staffCount} limit={getPlan(currentPlan).staff} />
+              {getPlan(currentPlan).compliance && (
+                <UsageRow
+                  label="Document storage"
+                  used={storageUsedBytes}
+                  limit={getPlan(currentPlan).documentStorageMb !== null ? getPlan(currentPlan).documentStorageMb! * 1024 * 1024 : null}
+                  format={formatSize}
+                />
+              )}
+            </div>
+          </div>
 
           <div className="mb-8">
             <p className="text-sm text-stone-500 dark:text-stone-400">
