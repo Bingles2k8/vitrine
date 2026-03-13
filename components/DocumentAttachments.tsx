@@ -132,16 +132,16 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">
-          Supporting Documents{docs.length > 0 && <span className="ml-1 normal-case tracking-normal font-mono text-stone-300 dark:text-stone-600">({docs.length})</span>}
+        <span className="text-xs uppercase tracking-widest text-stone-600 dark:text-stone-400">
+          📎 Supporting Documents{docs.length > 0 && <span className="ml-1 normal-case tracking-normal font-mono text-stone-400 dark:text-stone-500">({docs.length})</span>}
         </span>
         {canEdit && !showForm && (
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+            className="text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-300 dark:border-stone-600 hover:border-stone-900 dark:hover:border-stone-300 rounded px-2 py-0.5 transition-colors"
           >
-            + Attach
+            + Attach file
           </button>
         )}
       </div>

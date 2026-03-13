@@ -189,9 +189,9 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                         <button
                           type="button"
                           onClick={() => setDocsLoanId(docsLoanId === l.id ? null : l.id)}
-                          className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100"
+                          className="text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-300 dark:border-stone-600 hover:border-stone-900 dark:hover:border-stone-300 rounded px-2 py-0.5 transition-colors"
                         >
-                          {docsLoanId === l.id ? 'Hide docs' : 'Documents'}
+                          {docsLoanId === l.id ? 'Hide attachments' : '📎 Attachments'}
                         </button>
                       </div>
                     </td>
