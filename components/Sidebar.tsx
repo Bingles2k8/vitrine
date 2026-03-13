@@ -306,9 +306,9 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                   <div className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-1.5 capitalize">{museum.plan}</div>
                   <button
                     onClick={() => { setSettingsOpen(false); router.push('/dashboard/plan') }}
-                    className="w-full text-left text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 transition-colors"
+                    className="w-full text-left text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-300 dark:border-stone-600 hover:border-stone-900 dark:hover:border-stone-300 rounded px-2 py-1 transition-colors"
                   >
-                    Upgrade plan →
+                    My Plan →
                   </button>
                 </div>
               )}
