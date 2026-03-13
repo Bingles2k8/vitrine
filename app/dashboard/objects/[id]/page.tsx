@@ -401,7 +401,7 @@ export default function ObjectDetail() {
           )}
 
           {activeTab === 'acquisition' && (
-            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} objectId={object?.id} museumId={museum?.id} />
+            <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} objectId={object?.id} museumId={museum?.id} canAttach={getPlan(museum?.plan).compliance} />
           )}
 
           {activeTab === 'location' && (

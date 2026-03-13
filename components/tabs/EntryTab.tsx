@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
+import { getPlan } from '@/lib/plans'
 
 const ENTRY_METHODS = ['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer']
 
@@ -291,6 +292,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           relatedToType="entry_record"
           relatedToId={entryRecord.id}
           canEdit={canEdit}
+          canAttach={canEdit && getPlan(museum.plan).compliance}
         />
       </div>
 

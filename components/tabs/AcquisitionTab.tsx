@@ -10,6 +10,7 @@ interface AcquisitionTabProps {
   saving: boolean
   objectId?: string
   museumId?: string
+  canAttach?: boolean
 }
 
 function SaveBar({ saving }: { saving: boolean }) {
@@ -23,7 +24,7 @@ function SaveBar({ saving }: { saving: boolean }) {
   )
 }
 
-export default function AcquisitionTab({ form, set, canEdit, saving, objectId, museumId }: AcquisitionTabProps) {
+export default function AcquisitionTab({ form, set, canEdit, saving, objectId, museumId, canAttach }: AcquisitionTabProps) {
   return (
     <>
       {/* Card 1 — Acquisition */}
@@ -199,6 +200,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             relatedToType="acquisition"
             relatedToId={null}
             canEdit={canEdit}
+            canAttach={canAttach}
           />
         </div>
       )}

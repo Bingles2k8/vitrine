@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES } from '@/components/tabs/shared'
+import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
@@ -26,6 +27,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
   const [submitting, setSubmitting] = useState(false)
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     if (!object.id) return
@@ -199,7 +201,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           />
         </div>
 
-        {canEdit && (
+        {canAttach && (
           <div>
             <label className={labelCls}>Supporting Documents</label>
             <StagedDocumentPicker relatedToType="condition_assessment" value={stagedDocs} onChange={setStagedDocs} />
@@ -288,6 +290,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                             relatedToType="condition_assessment"
                             relatedToId={h.id}
                             canEdit={canEdit}
+                            canAttach={canAttach}
                           />
                         </td>
                       </tr>

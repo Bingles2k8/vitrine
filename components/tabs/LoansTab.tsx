@@ -3,6 +3,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
+import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
@@ -31,6 +32,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   const [returnCondition, setReturnCondition] = useState('')
   const [docsLoanId, setDocsLoanId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
@@ -153,10 +155,12 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
         </div>
         <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
         <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
-        <div>
-          <label className={labelCls}>Supporting Documents</label>
-          <StagedDocumentPicker relatedToType="loan" value={stagedDocs} onChange={setStagedDocs} />
-        </div>
+        {canAttach && (
+          <div>
+            <label className={labelCls}>Supporting Documents</label>
+            <StagedDocumentPicker relatedToType="loan" value={stagedDocs} onChange={setStagedDocs} />
+          </div>
+        )}
         <button type="button" onClick={addLoan} disabled={submitting}
           className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
           {submitting ? 'Saving…' : 'Save loan record →'}
@@ -255,6 +259,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                           relatedToType="loan"
                           relatedToId={l.id}
                           canEdit={canEdit}
+                          canAttach={canAttach}
                         />
                       </td>
                     </tr>

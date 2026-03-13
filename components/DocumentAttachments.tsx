@@ -20,6 +20,7 @@ interface Props {
   relatedToType: string
   relatedToId: string | null
   canEdit: boolean
+  canAttach?: boolean
 }
 
 function fileIcon(mime: string | null) {
@@ -36,7 +37,8 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-export default function DocumentAttachments({ objectId, museumId, relatedToType, relatedToId, canEdit }: Props) {
+export default function DocumentAttachments({ objectId, museumId, relatedToType, relatedToId, canEdit, canAttach }: Props) {
+  const uploadEnabled = canAttach ?? canEdit
   const [docs, setDocs] = useState<any[]>([])
   const [loaded, setLoaded] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -135,7 +137,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
         <span className="text-xs uppercase tracking-widest text-stone-600 dark:text-stone-400">
           📎 Supporting Documents{docs.length > 0 && <span className="ml-1 normal-case tracking-normal font-mono text-stone-400 dark:text-stone-500">({docs.length})</span>}
         </span>
-        {canEdit && !showForm && (
+        {uploadEnabled && !showForm && (
           <button
             type="button"
             onClick={() => setShowForm(true)}
@@ -186,7 +188,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
         </div>
       )}
 
-      {showForm && (
+      {uploadEnabled && showForm && (
         <div className="border border-stone-200 dark:border-stone-700 rounded p-3 space-y-2 bg-stone-50 dark:bg-stone-800/50">
           <div className="grid grid-cols-2 gap-2">
             <div>

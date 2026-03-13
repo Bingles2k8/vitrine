@@ -266,10 +266,12 @@ export default function LoansPage() {
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-3">
-                <label className={labelCls}>Supporting Documents</label>
-                <StagedDocumentPicker relatedToType="entry_record" value={stagedDocs} onChange={setStagedDocs} />
-              </div>
+              {getPlan(museum?.plan).compliance && (
+                <div className="md:col-span-3">
+                  <label className={labelCls}>Supporting Documents</label>
+                  <StagedDocumentPicker relatedToType="entry_record" value={stagedDocs} onChange={setStagedDocs} />
+                </div>
+              )}
               <div className="flex justify-end pt-2 md:col-span-3">
                 <button
                   onClick={handleCreateEntry}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, TREATMENT_TYPES, CURRENCIES } from '@/components/tabs/shared'
+import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
@@ -23,6 +24,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   const [submitting, setSubmitting] = useState(false)
   const [docsTreatmentId, setDocsTreatmentId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const canAttach = canEdit && getPlan(museum.plan).compliance
   const { toast } = useToast()
 
   useEffect(() => {
@@ -115,10 +117,12 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
           <label className={labelCls}>Future Recommendations</label>
           <textarea value={conservationForm.recommendation_future} onChange={e => setConservationForm(f => ({ ...f, recommendation_future: e.target.value }))} rows={2} placeholder="Recommendations for future conservation..." className={`${inputCls} resize-none`} />
         </div>
-        <div>
-          <label className={labelCls}>Supporting Documents</label>
-          <StagedDocumentPicker relatedToType="conservation_treatment" value={stagedDocs} onChange={setStagedDocs} />
-        </div>
+        {canAttach && (
+          <div>
+            <label className={labelCls}>Supporting Documents</label>
+            <StagedDocumentPicker relatedToType="conservation_treatment" value={stagedDocs} onChange={setStagedDocs} />
+          </div>
+        )}
         <button type="button" onClick={addConservation} disabled={submitting}
           className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
           {submitting ? 'Saving…' : 'Save treatment →'}
@@ -177,6 +181,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                           relatedToType="conservation_treatment"
                           relatedToId={t.id}
                           canEdit={canEdit}
+                          canAttach={canAttach}
                         />
                       </td>
                     </tr>
