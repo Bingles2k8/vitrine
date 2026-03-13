@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { formatSize } from '@/lib/formatSize'
 
 const DOC_TYPES: Record<string, string[]> = {
   acquisition:            ['Deed of Gift', 'Bill of Sale', 'Export Licence', 'Ethics Approval', 'Accession Form', 'Other'],
@@ -31,11 +32,6 @@ function fileIcon(mime: string | null) {
   return '📄'
 }
 
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
 
 export default function DocumentAttachments({ objectId, museumId, relatedToType, relatedToId, canEdit, canAttach }: Props) {
   const uploadEnabled = canAttach ?? canEdit

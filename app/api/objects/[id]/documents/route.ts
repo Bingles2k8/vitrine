@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { getPlan } from '@/lib/plans'
 
 async function resolveMuseum(supabase: any, userId: string) {
   const { data: owned } = await supabase
@@ -90,6 +91,22 @@ export async function POST(
 
   if (!related_to_type || !label || !file_url || !file_name) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  // Enforce storage quota
+  const limitMb = getPlan(museum.plan).documentStorageMb
+  if (limitMb !== null) {
+    const { data: usage } = await supabase
+      .from('object_documents')
+      .select('file_size.sum()')
+      .eq('museum_id', museum.id)
+      .is('deleted_at', null)
+      .single()
+    const usedBytes = (usage as any)?.sum ?? 0
+    const limitBytes = limitMb * 1024 * 1024
+    if (usedBytes + (file_size ?? 0) > limitBytes) {
+      return NextResponse.json({ error: 'Storage limit reached for your plan' }, { status: 403 })
+    }
   }
 
   const { data: doc, error } = await supabase

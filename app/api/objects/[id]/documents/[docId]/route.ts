@@ -32,10 +32,26 @@ export async function DELETE(
 
   if (!museum) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Soft-delete — verify it belongs to this museum and object
+  // Fetch the document to get the storage path
+  const { data: doc } = await supabase
+    .from('object_documents')
+    .select('id, file_url')
+    .eq('id', docId)
+    .eq('object_id', objectId)
+    .eq('museum_id', museum.id)
+    .maybeSingle()
+
+  if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Delete from Supabase Storage
+  const marker = '/object-documents/'
+  const storagePath = doc.file_url.slice(doc.file_url.indexOf(marker) + marker.length)
+  await supabase.storage.from('object-documents').remove([storagePath])
+
+  // Hard-delete the row
   const { error } = await supabase
     .from('object_documents')
-    .update({ deleted_at: new Date().toISOString() })
+    .delete()
     .eq('id', docId)
     .eq('object_id', objectId)
     .eq('museum_id', museum.id)

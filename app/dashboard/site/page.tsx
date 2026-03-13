@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage } from '@/lib/image-compression'
 import { getPlan } from '@/lib/plans'
+import { formatSize } from '@/lib/formatSize'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -66,6 +67,7 @@ export default function SiteBuilder() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [uploadingField, setUploadingField] = useState<string | null>(null)
+  const [storageUsedBytes, setStorageUsedBytes] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -131,6 +133,16 @@ export default function SiteBuilder() {
         card_padding: museum.card_padding || 'normal',
         card_metadata: museum.card_metadata || 'full',
       })
+      if (getPlan(museum.plan).compliance) {
+        const { data: usage } = await supabase
+          .from('object_documents')
+          .select('file_size.sum()')
+          .eq('museum_id', museum.id)
+          .is('deleted_at', null)
+          .single()
+        setStorageUsedBytes((usage as any)?.sum ?? 0)
+      }
+
       setLoading(false)
     }
     load()
@@ -635,6 +647,35 @@ export default function SiteBuilder() {
                   className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
                   Upgrade →
                 </button>
+              </div>
+            )}
+
+            {/* Document Storage — compliance plans only */}
+            {getPlan(museum?.plan).compliance && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Document Storage</div>
+                {getPlan(museum?.plan).documentStorageMb === null ? (
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
+                    {formatSize(storageUsedBytes)} used &mdash; <span className="text-stone-400 dark:text-stone-500">Unlimited</span>
+                  </p>
+                ) : (() => {
+                  const limitBytes = getPlan(museum?.plan).documentStorageMb! * 1024 * 1024
+                  const pct = Math.min(100, (storageUsedBytes / limitBytes) * 100)
+                  const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-400' : 'bg-stone-400 dark:bg-stone-500'
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
+                          {formatSize(storageUsedBytes)} of {formatSize(limitBytes)} used
+                        </p>
+                        <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{pct.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             )}
 
