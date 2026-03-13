@@ -28,6 +28,7 @@ export default function RiskPage() {
   const [risks, setRisks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Open' | 'Mitigated' | 'Closed'>('All')
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -95,7 +96,15 @@ export default function RiskPage() {
   const criticalOpen = risks.filter(r => r.severity === 'Critical' && r.status === 'Open')
   const dueForReview = risks.filter(r => r.status === 'Open' && r.review_date && r.review_date <= today)
 
-  const filtered = risks.filter(r => filter === 'All' || r.status === filter)
+  const q = searchQuery.trim().toLowerCase()
+  const filtered = risks.filter(r => {
+    if (filter !== 'All' && r.status !== filter) return false
+    if (!q) return true
+    return (
+      r.objects?.title?.toLowerCase().includes(q) ||
+      r.objects?.accession_no?.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/risk" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -131,6 +140,19 @@ export default function RiskPage() {
                 {f === 'All' ? 'All Risks' : f}
               </button>
             ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name or accession number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
           </div>
 
           {/* Table */}

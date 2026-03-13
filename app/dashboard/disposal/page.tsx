@@ -21,6 +21,7 @@ export default function DisposalPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -118,6 +119,15 @@ export default function DisposalPage() {
   const proposed = records.filter(r => r.status === 'Proposed')
   const approved = records.filter(r => r.status === 'Approved')
   const completed = records.filter(r => r.status === 'Completed')
+
+  const dq = searchQuery.trim().toLowerCase()
+  const filteredRecords = records.filter(r => {
+    if (!dq) return true
+    return (
+      r.objects?.title?.toLowerCase().includes(dq) ||
+      r.objects?.accession_no?.toLowerCase().includes(dq)
+    )
+  })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/disposal" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -241,6 +251,19 @@ export default function DisposalPage() {
             </div>
           )}
 
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name or accession number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
+          </div>
+
           {records.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">&oslash;</div>
@@ -261,7 +284,7 @@ export default function DisposalPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {records.map(r => (
+                  {filteredRecords.map(r => (
                     <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800">
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.disposal_reference}</td>
                       <td className="px-4 py-3">

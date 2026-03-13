@@ -19,6 +19,7 @@ export default function AccessionRegisterPage() {
   const [loading, setLoading] = useState(true)
   const [yearFilter, setYearFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
   const { toast } = useToast()
@@ -103,10 +104,12 @@ export default function AccessionRegisterPage() {
     objects.map(a => a.acquisition_date?.slice(0, 4)).filter(Boolean)
   )).sort((a, b) => b.localeCompare(a))
 
+  const q = searchQuery.trim().toLowerCase()
   const filtered = objects.filter(a => {
     const matchYear = !yearFilter || a.acquisition_date?.startsWith(yearFilter)
     const matchMethod = methodFilter === 'All' || a.acquisition_method === methodFilter
-    return matchYear && matchMethod
+    const matchSearch = !q || a.title?.toLowerCase().includes(q) || a.accession_no?.toLowerCase().includes(q)
+    return matchYear && matchMethod && matchSearch
   })
 
   const confirmed = objects.filter(a => a.accession_register_confirmed).length
@@ -133,6 +136,19 @@ export default function AccessionRegisterPage() {
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Unconfirmed</div>
               <div className={`font-serif text-4xl ${objects.length - confirmed > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{objects.length - confirmed}</div>
             </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name or accession number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
           </div>
 
           {/* Filters */}

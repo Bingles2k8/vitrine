@@ -14,6 +14,7 @@ export default function AuditPage() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -86,6 +87,15 @@ export default function AuditPage() {
   const inventoriedThisYear = objects.filter(a => a.last_inventoried?.startsWith(thisYearStr))
   const overdue = objects.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
 
+  const q = searchQuery.trim().toLowerCase()
+  const filteredObjects = objects.filter(a => {
+    if (!q) return true
+    return (
+      a.title?.toLowerCase().includes(q) ||
+      a.accession_no?.toLowerCase().includes(q)
+    )
+  })
+
   return (
     <DashboardShell museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
@@ -124,6 +134,19 @@ export default function AuditPage() {
 
           <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Best practice recommends annual inventory checks. Click any row to record an audit.</p>
 
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name or accession number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
+          </div>
+
           {/* Table */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
             <table className="w-full">
@@ -137,7 +160,7 @@ export default function AuditPage() {
                 </tr>
               </thead>
               <tbody>
-                {objects.map(a => {
+                {filteredObjects.map(a => {
                   const isNever = !a.last_inventoried
                   const isOld = a.last_inventoried && a.last_inventoried < oneYearAgoStr
 

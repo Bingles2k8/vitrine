@@ -27,6 +27,7 @@ export default function EntryRegisterPage() {
   const [entries, setEntries] = useState<any[]>([])
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -188,6 +189,17 @@ export default function EntryRegisterPage() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredEntries = entries.filter(e => {
+    if (!q) return true
+    return (
+      e.objects?.title?.toLowerCase().includes(q) ||
+      e.objects?.accession_no?.toLowerCase().includes(q) ||
+      e.object_description?.toLowerCase().includes(q) ||
+      e.entry_number?.toLowerCase().includes(q)
+    )
+  })
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
   const returned = entries.filter(e => e.outcome === 'Returned to depositor').length
 
@@ -269,6 +281,19 @@ export default function EntryRegisterPage() {
           {/* Info banner */}
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">
             <p className="text-xs text-stone-500 dark:text-stone-400">Entry details are edited on each object&apos;s page. Click an entry below to open it, or create a new object to begin.</p>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by object name or accession number…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+            />
           </div>
 
           {/* New Entry Form */}
@@ -376,7 +401,7 @@ export default function EntryRegisterPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map(e => (
+                  {filteredEntries.map(e => (
                     <tr key={e.id}
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${e.objects?.deleted_at ? 'cursor-default' : 'cursor-pointer'}`}
                       onClick={() => {
