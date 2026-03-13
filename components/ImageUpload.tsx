@@ -33,7 +33,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
 
     const { data, error } = await supabase.storage
       .from('object-images')
-      .upload(filename, compressed, { upsert: true })
+      .upload(filename, compressed, { upsert: true, contentType: compressed.type })
 
     if (error) {
       console.error(error)

@@ -33,7 +33,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('object-images').upload(filename, compressed, { upsert: true })
+    const { data, error } = await supabase.storage.from('object-images').upload(filename, compressed, { upsert: true, contentType: compressed.type })
     if (error) { setUploading(false); return }
     const { data: { publicUrl } } = supabase.storage.from('object-images').getPublicUrl(data.path)
     const isPrimary = images.length === 0
