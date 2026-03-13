@@ -54,7 +54,7 @@ export const PLANS: Record<PlanId, {
     ticketing: true,
     visitInfo: true,
     documentStorageMb: 1024,
-    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing'],
+    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '1 GB document storage'],
   },
   institution: {
     label: 'Institution',
@@ -68,7 +68,7 @@ export const PLANS: Record<PlanId, {
     ticketing: true,
     visitInfo: true,
     documentStorageMb: 10240,
-    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support'],
+    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support', '10 GB document storage'],
   },
   enterprise: {
     label: 'Enterprise',
@@ -82,7 +82,7 @@ export const PLANS: Record<PlanId, {
     ticketing: true,
     visitInfo: true,
     documentStorageMb: null,
-    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations'],
+    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations', 'Unlimited document storage'],
   },
 }
 

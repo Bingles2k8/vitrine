@@ -300,6 +300,7 @@ export default function PlanPage() {
                   { label: 'Analytics', values: [false, false, true, true, true] },
                   { label: 'Staff management', values: [false, false, true, true, true] },
                   { label: 'Priority support', values: [false, false, false, true, true] },
+                  { label: 'Document storage', values: ['—', '—', '1 GB', '10 GB', 'Unlimited'] },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="px-6 py-3 text-stone-600 dark:text-stone-400">{row.label}</td>

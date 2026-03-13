@@ -577,6 +577,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
                 'Conservation condition records',
                 'Loan and transfer agreements',
                 'Compliance progress dashboard',
+                plan.documentStorageMb === null ? 'Unlimited document storage' : `${plan.documentStorageMb! >= 1024 ? plan.documentStorageMb! / 1024 + ' GB' : plan.documentStorageMb + ' MB'} document storage`,
               ]}
               mockup={<ComplianceMockup />}
               flip={true}
