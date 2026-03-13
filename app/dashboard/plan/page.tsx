@@ -80,13 +80,23 @@ export default function PlanPage() {
       setStaffCount((sCount ?? 0) + 1)
 
       if (getPlan(museum.plan).compliance) {
-        const { data: usage } = await supabase
+        const { data: usage, error: usageErr } = await supabase
           .from('object_documents')
           .select('file_size.sum()')
           .eq('museum_id', museum.id)
           .is('deleted_at', null)
           .single()
-        setStorageUsedBytes((usage as any)?.sum ?? 0)
+        if (!usageErr && usage) {
+          setStorageUsedBytes((usage as any)?.sum ?? 0)
+        } else {
+          // Fallback: sum client-side (handles older PostgREST versions)
+          const { data: docs } = await supabase
+            .from('object_documents')
+            .select('file_size')
+            .eq('museum_id', museum.id)
+            .is('deleted_at', null)
+          setStorageUsedBytes((docs ?? []).reduce((s: number, d: any) => s + (d.file_size ?? 0), 0))
+        }
       }
 
       setLoading(false)

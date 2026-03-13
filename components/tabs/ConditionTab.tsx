@@ -3,6 +3,7 @@
 import { useState, useEffect, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES } from '@/components/tabs/shared'
 import { getPlan } from '@/lib/plans'
+import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
@@ -28,6 +29,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const canAttach = canEdit && getPlan(museum.plan).compliance
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!object.id) return
@@ -80,7 +82,8 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       set('condition_assessor', conditionForm.assessor)
 
       if (stagedDocs.length > 0) {
-        await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
+        const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
+        if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])
       }
       setConditionForm({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })

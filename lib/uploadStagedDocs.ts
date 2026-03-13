@@ -7,7 +7,9 @@ export async function uploadStagedDocs(
   museumId: string,
   relatedToType: string,
   relatedToId: string,
-): Promise<void> {
+): Promise<string[]> {
+  const failed: string[] = []
+
   for (const doc of staged) {
     if (!doc.label.trim() || !doc.file) continue
 
@@ -20,6 +22,7 @@ export async function uploadStagedDocs(
 
     if (storageErr) {
       console.error('[uploadStagedDocs]', doc.file.name, storageErr.message)
+      failed.push(doc.file.name)
       continue
     }
 
@@ -45,6 +48,9 @@ export async function uploadStagedDocs(
     if (!res.ok) {
       console.error('[uploadStagedDocs] API error for', doc.file.name)
       await supabase.storage.from('object-documents').remove([storageData.path])
+      failed.push(doc.file.name)
     }
   }
+
+  return failed
 }

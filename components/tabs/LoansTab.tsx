@@ -32,11 +32,14 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   const [returnCondition, setReturnCondition] = useState('')
   const [docsLoanId, setDocsLoanId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const [entryRecord, setEntryRecord] = useState<any>(null)
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: any) => { setLoanHistory(data || []); setLoanLoaded(true) })
+    supabase.from('entry_records').select('id').eq('object_id', object.id).maybeSingle()
+      .then(({ data }: any) => setEntryRecord(data))
   }, [object.id])
 
   async function addLoan() {
@@ -49,7 +52,8 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
     await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
     set('status', 'On Loan')
     if (stagedDocs.length > 0) {
-      await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'loan', newLoan.id)
+      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'loan', newLoan.id)
+      if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
@@ -166,6 +170,20 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           {submitting ? 'Saving…' : 'Save loan record →'}
         </button>
       </div>
+
+      {canAttach && entryRecord && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+          <div className={sectionTitle} style={{marginBottom: 8}}>Entry Record Documents</div>
+          <DocumentAttachments
+            objectId={object.id}
+            museumId={museum.id}
+            relatedToType="entry_record"
+            relatedToId={entryRecord.id}
+            canEdit={canEdit}
+            canAttach={canAttach}
+          />
+        </div>
+      )}
 
       {loanLoaded && loanHistory.length > 0 && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">

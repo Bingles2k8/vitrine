@@ -41,7 +41,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     const { data: newTreatment, error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, object_id: object.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null }).select('id').single()
     if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
     if (stagedDocs.length > 0) {
-      await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
+      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
+      if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }
     setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
