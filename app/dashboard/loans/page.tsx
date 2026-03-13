@@ -9,6 +9,8 @@ import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
 import { inputCls, labelCls, ENTRY_REASONS } from '@/components/tabs/shared'
+import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 const defaultEntry = () => ({
   entry_date: new Date().toISOString().slice(0, 10),
@@ -34,6 +36,7 @@ export default function LoansPage() {
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [newEntry, setNewEntry] = useState(defaultEntry)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
@@ -105,6 +108,9 @@ export default function LoansPage() {
     }).select('id').single()
     if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
+    if (stagedDocs.length > 0) {
+      await uploadStagedDocs(supabase, stagedDocs, newObject.id, museum.id, 'entry_record', created.id)
+    }
     router.push(`/dashboard/objects/${newObject.id}?tab=loans&direction=In`)
   }
 
@@ -198,7 +204,7 @@ export default function LoansPage() {
             </div>
             {canEdit && (
               <button
-                onClick={() => { setShowForm(v => !v); setNewEntry(defaultEntry()) }}
+                onClick={() => { setShowForm(v => !v); setNewEntry(defaultEntry()); setStagedDocs([]) }}
                 className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 {showForm ? 'Cancel' : '+ New loan in'}
@@ -260,7 +266,11 @@ export default function LoansPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end pt-2">
+              <div className="md:col-span-3">
+                <label className={labelCls}>Supporting Documents</label>
+                <StagedDocumentPicker relatedToType="entry_record" value={stagedDocs} onChange={setStagedDocs} />
+              </div>
+              <div className="flex justify-end pt-2 md:col-span-3">
                 <button
                   onClick={handleCreateEntry}
                   disabled={submitting}

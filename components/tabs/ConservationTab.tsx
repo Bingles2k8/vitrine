@@ -4,6 +4,8 @@ import { useEffect, useState, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, TREATMENT_TYPES, CURRENCIES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
+import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 interface ConservationTabProps {
   form: Record<string, any>
@@ -20,6 +22,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   const [conservationForm, setConservationForm] = useState({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
   const [submitting, setSubmitting] = useState(false)
   const [docsTreatmentId, setDocsTreatmentId] = useState<string | null>(null)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -33,8 +36,12 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     const year = new Date().getFullYear()
     const count = conservationHistory.filter(t => t.treatment_reference?.startsWith(`CT-${year}-`)).length
     const treatmentRef = `CT-${year}-${String(count + 1).padStart(3, '0')}`
-    const { error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, object_id: object.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null })
+    const { data: newTreatment, error: consErr } = await supabase.from('conservation_treatments').insert({ ...conservationForm, object_id: object.id, museum_id: museum.id, start_date: conservationForm.start_date || null, end_date: conservationForm.end_date || null, treatment_reference: treatmentRef, condition_before: conservationForm.condition_before || null, condition_after: conservationForm.condition_after || null, materials_used: conservationForm.materials_used || null, cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null, cost_currency: conservationForm.cost_currency || null, recommendation_future: conservationForm.recommendation_future || null }).select('id').single()
     if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
+    if (stagedDocs.length > 0) {
+      await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
+      setStagedDocs([])
+    }
     setConservationForm({ treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', outcome: '', condition_before: '', condition_after: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
     const { data } = await supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setConservationHistory(data || [])
@@ -107,6 +114,10 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         <div>
           <label className={labelCls}>Future Recommendations</label>
           <textarea value={conservationForm.recommendation_future} onChange={e => setConservationForm(f => ({ ...f, recommendation_future: e.target.value }))} rows={2} placeholder="Recommendations for future conservation..." className={`${inputCls} resize-none`} />
+        </div>
+        <div>
+          <label className={labelCls}>Supporting Documents</label>
+          <StagedDocumentPicker relatedToType="conservation_treatment" value={stagedDocs} onChange={setStagedDocs} />
         </div>
         <button type="button" onClick={addConservation} disabled={submitting}
           className="bg-stone-900 text-white text-xs font-mono px-4 py-2 rounded disabled:opacity-40">

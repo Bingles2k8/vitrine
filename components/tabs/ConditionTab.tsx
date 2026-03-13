@@ -3,6 +3,8 @@
 import { useState, useEffect, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES } from '@/components/tabs/shared'
 import DocumentAttachments from '@/components/DocumentAttachments'
+import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 interface ConditionTabProps {
   form: Record<string, any>
@@ -23,6 +25,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
   const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })
   const [submitting, setSubmitting] = useState(false)
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
 
   useEffect(() => {
     if (!object.id) return
@@ -45,7 +48,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       const count = conditionHistory.filter(h => h.assessment_reference?.startsWith(`CC-${year}-`)).length
       const assessmentRef = `CC-${year}-${String(count + 1).padStart(3, '0')}`
 
-      await supabase.from('condition_assessments').insert({
+      const { data: newAssessment, error: insertErr } = await supabase.from('condition_assessments').insert({
         assessment_reference: assessmentRef,
         grade: conditionForm.grade,
         assessed_at: conditionForm.assessed_at,
@@ -61,7 +64,8 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         next_check_date: conditionForm.next_check_date || null,
         object_id: object.id,
         museum_id: museum.id,
-      })
+      }).select('id').single()
+      if (insertErr) throw insertErr
 
       await supabase.from('objects').update({
         condition_grade: conditionForm.grade,
@@ -73,6 +77,10 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       set('condition_date', conditionForm.assessed_at)
       set('condition_assessor', conditionForm.assessor)
 
+      if (stagedDocs.length > 0) {
+        await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
+        setStagedDocs([])
+      }
       setConditionForm({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })
 
       const { data } = await supabase
@@ -190,6 +198,13 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
             disabled={!canEdit}
           />
         </div>
+
+        {canEdit && (
+          <div>
+            <label className={labelCls}>Supporting Documents</label>
+            <StagedDocumentPicker relatedToType="condition_assessment" value={stagedDocs} onChange={setStagedDocs} />
+          </div>
+        )}
 
         {canEdit && (
           <button

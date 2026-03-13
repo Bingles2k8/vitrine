@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
+import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 interface LoansTabProps {
   form: Record<string, any>
@@ -28,6 +30,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   const [returnLocation, setReturnLocation] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
   const [docsLoanId, setDocsLoanId] = useState<string | null>(null)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
 
   useEffect(() => {
     supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
@@ -39,10 +42,14 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
     setSubmitting(true)
     const year = new Date().getFullYear()
     const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
-    const { error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null })
+    const { data: newLoan, error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null }).select('id').single()
     if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
     await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
     set('status', 'On Loan')
+    if (stagedDocs.length > 0) {
+      await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'loan', newLoan.id)
+      setStagedDocs([])
+    }
     setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
     const { data } = await supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setLoanHistory(data || [])
@@ -146,6 +153,10 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
         </div>
         <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
         <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
+        <div>
+          <label className={labelCls}>Supporting Documents</label>
+          <StagedDocumentPicker relatedToType="loan" value={stagedDocs} onChange={setStagedDocs} />
+        </div>
         <button type="button" onClick={addLoan} disabled={submitting}
           className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
           {submitting ? 'Saving…' : 'Save loan record →'}
