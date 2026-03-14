@@ -60,7 +60,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
           <div className={sectionTitle}>Report Damage</div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Incident Date *</label>
               <input type="date" value={damageForm.incident_date} onChange={e => setDamageForm(f => ({ ...f, incident_date: e.target.value }))} className={inputCls} />
@@ -102,7 +102,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
               <input value={damageForm.location_at_incident} onChange={e => setDamageForm(f => ({ ...f, location_at_incident: e.target.value }))} placeholder="Where the object was" className={inputCls} />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Repair Estimate</label>
               <input type="number" step="0.01" min="0" value={damageForm.repair_estimate} onChange={e => setDamageForm(f => ({ ...f, repair_estimate: e.target.value }))} placeholder="0.00" className={inputCls} />

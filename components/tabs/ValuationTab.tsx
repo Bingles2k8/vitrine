@@ -58,7 +58,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
           <div className={sectionTitle}>Record Valuation</div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="col-span-2">
               <label className={labelCls}>Value *</label>
               <input type="number" step="0.01" min="0" value={valuationForm.value} onChange={e => setValuationForm(f => ({ ...f, value: e.target.value }))}

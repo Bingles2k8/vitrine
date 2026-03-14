@@ -65,12 +65,12 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <input value={form.title} onChange={e => set('title', e.target.value)} className={inputCls} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Artist / Maker</label><input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Date / Year</label><input value={form.year} onChange={e => set('year', e.target.value)} className={inputCls} /></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Medium</label>
             <select value={form.medium} onChange={e => set('medium', e.target.value)} className={inputCls}>
@@ -80,12 +80,12 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <div><label className={labelCls}>Culture / Origin</label><input value={form.culture} onChange={e => set('culture', e.target.value)} className={inputCls} /></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Accession No.</label><input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} /></div>
           <div><label className={labelCls}>Dimensions</label><input value={form.dimensions} onChange={e => set('dimensions', e.target.value)} className={inputCls} /></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Object Type</label>
             <select value={form.object_type} onChange={e => set('object_type', e.target.value)} className={inputCls}>
@@ -136,7 +136,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Insured Value</label>
             <input type="number" step="0.01" min="0" value={form.insured_value || ''} onChange={e => set('insured_value', e.target.value)} placeholder="0.00" className={inputCls} />
@@ -199,7 +199,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Cataloguing</div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Maker Name</label><input value={form.maker_name} onChange={e => set('maker_name', e.target.value)} placeholder="Full name" className={inputCls} /></div>
           <div>
             <label className={labelCls}>Maker Role</label>
@@ -210,7 +210,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div><label className={labelCls}>Date (Early)</label><input value={form.production_date_early} onChange={e => set('production_date_early', e.target.value)} placeholder="e.g. 1850" className={inputCls} /></div>
           <div><label className={labelCls}>Date (Late)</label><input value={form.production_date_late} onChange={e => set('production_date_late', e.target.value)} placeholder="e.g. 1860" className={inputCls} /></div>
           <div>
@@ -223,12 +223,12 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <div><label className={labelCls}>Production Place</label><input value={form.production_place} onChange={e => set('production_place', e.target.value)} placeholder="City, region, country" className={inputCls} /></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Physical Materials</label><input value={form.physical_materials} onChange={e => set('physical_materials', e.target.value)} placeholder="e.g. oil, canvas, gilt wood" className={inputCls} /></div>
           <div><label className={labelCls}>Technique</label><input value={form.technique} onChange={e => set('technique', e.target.value)} placeholder="e.g. hand-thrown, woven" className={inputCls} /></div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><label className={labelCls}>School / Style / Period</label><input value={form.school_style_period} onChange={e => set('school_style_period', e.target.value)} placeholder="e.g. Impressionist" className={inputCls} /></div>
           <div><label className={labelCls}>Subject Depicted</label><input value={form.subject_depicted} onChange={e => set('subject_depicted', e.target.value)} placeholder="e.g. landscape, portrait" className={inputCls} /></div>
           <div><label className={labelCls}>Number of Parts</label><input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} /></div>
@@ -237,7 +237,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Structured dimensions */}
         <div>
           <label className={labelCls}>Structured Dimensions</label>
-          <div className="grid grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             <div><input type="number" step="0.1" min="0" value={form.dimension_height} onChange={e => set('dimension_height', e.target.value)} placeholder="H" className={inputCls} /></div>
             <div><input type="number" step="0.1" min="0" value={form.dimension_width} onChange={e => set('dimension_width', e.target.value)} placeholder="W" className={inputCls} /></div>
             <div><input type="number" step="0.1" min="0" value={form.dimension_depth} onChange={e => set('dimension_depth', e.target.value)} placeholder="D" className={inputCls} /></div>
@@ -271,11 +271,11 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
 
         <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Associations</div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Associated Person</label><input value={form.associated_person} onChange={e => set('associated_person', e.target.value)} placeholder="e.g. previous owner, subject" className={inputCls} /></div>
           <div><label className={labelCls}>Associated Organisation</label><input value={form.associated_organisation} onChange={e => set('associated_organisation', e.target.value)} placeholder="e.g. commission, guild" className={inputCls} /></div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><label className={labelCls}>Associated Place</label><input value={form.associated_place} onChange={e => set('associated_place', e.target.value)} placeholder="e.g. depicted location" className={inputCls} /></div>
           <div><label className={labelCls}>Associated Event</label><input value={form.associated_event} onChange={e => set('associated_event', e.target.value)} placeholder="e.g. exhibition, war" className={inputCls} /></div>
           <div><label className={labelCls}>Associated Concept</label><input value={form.associated_concept} onChange={e => set('associated_concept', e.target.value)} placeholder="e.g. mourning, trade" className={inputCls} /></div>

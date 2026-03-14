@@ -61,7 +61,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
           <div className={sectionTitle}>Record Exit</div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Exit Date *</label>
               <input type="date" value={exitForm.exit_date} onChange={e => setExitForm(f => ({ ...f, exit_date: e.target.value }))} className={inputCls} />

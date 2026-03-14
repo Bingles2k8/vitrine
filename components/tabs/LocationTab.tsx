@@ -169,7 +169,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
 
         {showAddLocation && (
           <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-4 bg-stone-50 dark:bg-stone-800/50">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Name *</label>
                 <input value={newLocation.name} onChange={e => setNewLocation({ ...newLocation, name: e.target.value })} className={inputCls} />
@@ -190,7 +190,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
                 <label className={labelCls}>Building</label>
                 <input value={newLocation.building} onChange={e => setNewLocation({ ...newLocation, building: e.target.value })} className={inputCls} />

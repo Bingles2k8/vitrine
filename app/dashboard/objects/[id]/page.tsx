@@ -95,6 +95,9 @@ export default function ObjectDetail() {
     associated_place: '', associated_organisation: '',
     dimension_height: '', dimension_width: '', dimension_depth: '', dimension_weight: '',
     dimension_unit: 'cm', dimension_weight_unit: 'kg', dimension_notes: '',
+    show_on_site: true,
+    acquisition_justification: '', acquisition_documentation_ref: '',
+    acquisition_value: '', acquisition_currency: 'GBP',
   })
 
   useEffect(() => {
@@ -196,6 +199,10 @@ export default function ObjectDetail() {
         dimension_unit: object.dimension_unit || 'cm',
         dimension_weight_unit: object.dimension_weight_unit || 'kg',
         dimension_notes: object.dimension_notes || '',
+        acquisition_justification: object.acquisition_justification || '',
+        acquisition_documentation_ref: object.acquisition_documentation_ref || '',
+        acquisition_value: object.acquisition_value ?? '',
+        acquisition_currency: object.acquisition_currency || 'GBP',
       })
       const [{ data: lv }, { data: locs }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
@@ -235,8 +242,9 @@ export default function ObjectDetail() {
       dimension_width: formToSave.dimension_width ? parseFloat(formToSave.dimension_width) : null,
       dimension_depth: formToSave.dimension_depth ? parseFloat(formToSave.dimension_depth) : null,
       dimension_weight: formToSave.dimension_weight ? parseFloat(formToSave.dimension_weight) : null,
-      // Insurance
+      // Insurance & acquisition value
       insured_value: formToSave.insured_value ? parseFloat(formToSave.insured_value) : null,
+      acquisition_value: formToSave.acquisition_value ? parseFloat(formToSave.acquisition_value) : null,
     }).eq('id', params.id)
 
     if (error) { toast(error.message, 'error') } else {
@@ -371,7 +379,7 @@ export default function ObjectDetail() {
         </div>
 
         {/* Tab bar */}
-        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-8 flex gap-1 overflow-x-auto">
+        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-4 md:px-8 flex gap-1 overflow-x-auto">
           {(museum?.ui_mode === 'simple' ? TABS.filter(t => SIMPLE_TABS.includes(t.id)) : TABS).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors ${

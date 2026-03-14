@@ -31,7 +31,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Acquisition (Procedure 2)</div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Acquisition Method</label>
             <select value={form.acquisition_method || ''} onChange={e => set('acquisition_method', e.target.value)} className={inputCls}>
@@ -45,7 +45,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Acquisition Source</label>
             <input value={form.acquisition_source || ''} onChange={e => set('acquisition_source', e.target.value)} placeholder="Donor name, auction house…" className={inputCls} />
@@ -78,7 +78,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Accession Date</label>
             <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
@@ -107,7 +107,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Governance (Procedure 2 — Mandatory)</div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Source Contact Details</label>
             <input value={form.acquisition_source_contact || ''} onChange={e => set('acquisition_source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} />
@@ -118,7 +118,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className={labelCls}>Authority Date</label>
             <input type="date" value={form.acquisition_authority_date || ''} onChange={e => set('acquisition_authority_date', e.target.value)} className={inputCls} />
@@ -137,7 +137,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         {(form.acquisition_method === 'Purchase' || form.acquisition_method === 'Exchange' || form.acquisition_method === 'Bequest') && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Purchase Price / Agreed Value</label>
               <input type="number" step="0.01" min="0" value={form.acquisition_value || ''} onChange={e => set('acquisition_value', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" className={inputCls} />
