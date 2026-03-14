@@ -3,7 +3,10 @@ import { stripe, PRICE_TO_PLAN } from '@/lib/stripe'
 import { PLANS } from '@/lib/plans'
 import { createClient } from '@supabase/supabase-js'
 import { generateTicketCode } from '@/lib/ticket-utils'
+import { Resend } from 'resend'
 import type Stripe from 'stripe'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -108,8 +111,49 @@ export async function POST(request: Request) {
           stripe_subscription_id: null,
           pending_downgrade_plan: null,
           pending_downgrade_date: null,
+          payment_past_due: false,
         })
         .eq('id', museumId)
+    }
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+    if (customerId) {
+      await supabase
+        .from('museums')
+        .update({ payment_past_due: true })
+        .eq('stripe_customer_id', customerId)
+
+      const customerEmail = invoice.customer_email
+      if (customerEmail) {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
+        await resend.emails.send({
+          from: 'Vitrine <noreply@contact.vitrinecms.com>',
+          to: customerEmail,
+          subject: 'Action required: your Vitrine payment failed',
+          html: `
+            <p>Hi,</p>
+            <p>We weren't able to process your Vitrine subscription payment. Stripe will automatically retry the charge over the coming days.</p>
+            <p>To avoid any disruption to your plan, please update your payment method now:</p>
+            <p><a href="${siteUrl}/dashboard/plan">Update billing details →</a></p>
+            <p>If you have any questions, just reply to this email.</p>
+            <p>— The Vitrine team</p>
+          `,
+        })
+      }
+    }
+  }
+
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+    if (customerId) {
+      await supabase
+        .from('museums')
+        .update({ payment_past_due: false })
+        .eq('stripe_customer_id', customerId)
     }
   }
 

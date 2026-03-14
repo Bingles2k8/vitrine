@@ -22,6 +22,7 @@ export default function DisposalPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [specificSearch, setSpecificSearch] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,7 +42,7 @@ export default function DisposalPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const [{ data: recs }, { data: arts }] = await Promise.all([
-        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
       ])
       setMuseum(museum)
@@ -120,12 +121,24 @@ export default function DisposalPage() {
   const approved = records.filter(r => r.status === 'Approved')
   const completed = records.filter(r => r.status === 'Completed')
 
-  const dq = searchQuery.trim().toLowerCase()
+  const rawQ = searchQuery.trim()
+  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
+  const isSpecific = specificSearch || isQuoted
+  const dq = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
   const filteredRecords = records.filter(r => {
     if (!dq) return true
-    return (
+    if (isSpecific) return (
       r.objects?.title?.toLowerCase().includes(dq) ||
       r.objects?.accession_no?.toLowerCase().includes(dq)
+    )
+    return (
+      r.objects?.title?.toLowerCase().includes(dq) ||
+      r.objects?.accession_no?.toLowerCase().includes(dq) ||
+      r.objects?.description?.toLowerCase().includes(dq) ||
+      r.objects?.medium?.toLowerCase().includes(dq) ||
+      r.objects?.physical_materials?.toLowerCase().includes(dq) ||
+      r.objects?.artist?.toLowerCase().includes(dq) ||
+      r.objects?.maker_name?.toLowerCase().includes(dq)
     )
   })
 
@@ -252,16 +265,22 @@ export default function DisposalPage() {
           )}
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by object name or accession number…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search objects… or use "quotes" for specific search'
+                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
+              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+              Specific search
+            </label>
           </div>
 
           {records.length === 0 ? (

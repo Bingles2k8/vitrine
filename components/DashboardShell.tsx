@@ -110,6 +110,12 @@ export default function DashboardShell({
             </span>
           </div>
         )}
+        {museum?.payment_past_due && (
+          <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
+            <span>Your last payment failed. Please update your payment method to keep your plan active.</span>
+            <a href="/dashboard/plan" className="underline font-medium whitespace-nowrap">Update billing →</a>
+          </div>
+        )}
         {children}
       </main>
       <CommandPalette museumId={museum?.id ?? null} />

@@ -28,6 +28,7 @@ export default function EntryRegisterPage() {
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [specificSearch, setSpecificSearch] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -64,7 +65,7 @@ export default function EntryRegisterPage() {
       const { museum, isOwner, staffAccess } = result
       try {
         const [{ data: entries }, { data: objects }] = await Promise.all([
-          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
+          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at, description, medium, physical_materials, artist, maker_name)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
           supabase.from('objects').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
@@ -190,14 +191,27 @@ export default function EntryRegisterPage() {
   const simple = museum?.ui_mode === 'simple'
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
-  const q = searchQuery.trim().toLowerCase()
+  const rawQ = searchQuery.trim()
+  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
+  const isSpecific = specificSearch || isQuoted
+  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
   const filteredEntries = entries.filter(e => {
     if (!q) return true
+    if (isSpecific) return (
+      e.objects?.title?.toLowerCase().includes(q) ||
+      e.objects?.accession_no?.toLowerCase().includes(q) ||
+      e.entry_number?.toLowerCase().includes(q)
+    )
     return (
       e.objects?.title?.toLowerCase().includes(q) ||
       e.objects?.accession_no?.toLowerCase().includes(q) ||
       e.object_description?.toLowerCase().includes(q) ||
-      e.entry_number?.toLowerCase().includes(q)
+      e.entry_number?.toLowerCase().includes(q) ||
+      e.objects?.description?.toLowerCase().includes(q) ||
+      e.objects?.medium?.toLowerCase().includes(q) ||
+      e.objects?.physical_materials?.toLowerCase().includes(q) ||
+      e.objects?.artist?.toLowerCase().includes(q) ||
+      e.objects?.maker_name?.toLowerCase().includes(q)
     )
   })
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
@@ -284,16 +298,22 @@ export default function EntryRegisterPage() {
           </div>
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by object name or accession number…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search objects… or use "quotes" for specific search'
+                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
+              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+              Specific search
+            </label>
           </div>
 
           {/* New Entry Form */}

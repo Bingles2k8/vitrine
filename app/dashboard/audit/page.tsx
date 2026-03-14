@@ -15,6 +15,7 @@ export default function AuditPage() {
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [specificSearch, setSpecificSearch] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -27,7 +28,7 @@ export default function AuditPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: objects } = await supabase
         .from('objects')
-        .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by')
+        .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by, description, medium, physical_materials, artist, maker_name')
         .eq('museum_id', museum.id)
         .is('deleted_at', null)
         .neq('status', 'Deaccessioned')
@@ -87,12 +88,24 @@ export default function AuditPage() {
   const inventoriedThisYear = objects.filter(a => a.last_inventoried?.startsWith(thisYearStr))
   const overdue = objects.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
 
-  const q = searchQuery.trim().toLowerCase()
+  const rawQ = searchQuery.trim()
+  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
+  const isSpecific = specificSearch || isQuoted
+  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
   const filteredObjects = objects.filter(a => {
     if (!q) return true
-    return (
+    if (isSpecific) return (
       a.title?.toLowerCase().includes(q) ||
       a.accession_no?.toLowerCase().includes(q)
+    )
+    return (
+      a.title?.toLowerCase().includes(q) ||
+      a.accession_no?.toLowerCase().includes(q) ||
+      a.description?.toLowerCase().includes(q) ||
+      a.medium?.toLowerCase().includes(q) ||
+      a.physical_materials?.toLowerCase().includes(q) ||
+      a.artist?.toLowerCase().includes(q) ||
+      a.maker_name?.toLowerCase().includes(q)
     )
   })
 
@@ -135,16 +148,22 @@ export default function AuditPage() {
           <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Best practice recommends annual inventory checks. Click any row to record an audit.</p>
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by object name or accession number…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search objects… or use "quotes" for specific search'
+                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
+              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+              Specific search
+            </label>
           </div>
 
           {/* Table */}

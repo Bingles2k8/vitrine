@@ -33,6 +33,7 @@ export default function LoansPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Out' | 'In' | 'Overdue'>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [specificSearch, setSpecificSearch] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [newEntry, setNewEntry] = useState(defaultEntry)
@@ -50,7 +51,7 @@ export default function LoansPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: loans } = await supabase
         .from('loans')
-        .select('*, objects(title, accession_no, emoji)')
+        .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name)')
         .eq('museum_id', museum.id)
         .order('loan_end_date', { ascending: true, nullsFirst: false })
       setMuseum(museum)
@@ -158,16 +159,28 @@ export default function LoansPage() {
   const overdue = active.filter(isOverdue)
   const returnedThisYear = loans.filter(l => l.status === 'Returned' && l.loan_end_date?.startsWith(new Date().getFullYear().toString()))
 
-  const q = searchQuery.trim().toLowerCase()
+  const rawQ = searchQuery.trim()
+  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
+  const isSpecific = specificSearch || isQuoted
+  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
   const filtered = loans.filter(l => {
     if (filter === 'Out' && !(l.direction === 'Out' && l.status === 'Active')) return false
     if (filter === 'In' && !(l.direction === 'In' && l.status === 'Active')) return false
     if (filter === 'Overdue' && !isOverdue(l)) return false
     if (!q) return true
+    if (isSpecific) return (
+      l.objects?.title?.toLowerCase().includes(q) ||
+      l.objects?.accession_no?.toLowerCase().includes(q)
+    )
     return (
       l.objects?.title?.toLowerCase().includes(q) ||
       l.objects?.accession_no?.toLowerCase().includes(q) ||
-      l.borrowing_institution?.toLowerCase().includes(q)
+      l.borrowing_institution?.toLowerCase().includes(q) ||
+      l.objects?.description?.toLowerCase().includes(q) ||
+      l.objects?.medium?.toLowerCase().includes(q) ||
+      l.objects?.physical_materials?.toLowerCase().includes(q) ||
+      l.objects?.artist?.toLowerCase().includes(q) ||
+      l.objects?.maker_name?.toLowerCase().includes(q)
     )
   })
 
@@ -288,16 +301,22 @@ export default function LoansPage() {
           )}
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by object name, accession number, or institution…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search objects… or use "quotes" for specific search'
+                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
+              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+              Specific search
+            </label>
           </div>
 
           {/* Table */}

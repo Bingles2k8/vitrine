@@ -16,6 +16,7 @@ export default function ConservationPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Active' | 'Completed' | 'Cancelled'>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [specificSearch, setSpecificSearch] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -28,7 +29,7 @@ export default function ConservationPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: treatments } = await supabase
         .from('conservation_treatments')
-        .select('*, objects(title, accession_no, emoji, status)')
+        .select('*, objects(title, accession_no, emoji, status, description, medium, physical_materials, artist, maker_name)')
         .eq('museum_id', museum.id)
         .order('start_date', { ascending: false })
       setMuseum(museum)
@@ -82,13 +83,25 @@ export default function ConservationPage() {
   const completedThisYear = treatments.filter(t => t.status === 'Completed' && t.end_date?.startsWith(thisYear))
   const inRestoration = treatments.filter(t => t.status === 'Active' && t.objects?.status === 'Restoration')
 
-  const q = searchQuery.trim().toLowerCase()
+  const rawQ = searchQuery.trim()
+  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
+  const isSpecific = specificSearch || isQuoted
+  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
   const filtered = treatments.filter(t => {
     if (filter !== 'All' && t.status !== filter) return false
     if (!q) return true
-    return (
+    if (isSpecific) return (
       t.objects?.title?.toLowerCase().includes(q) ||
       t.objects?.accession_no?.toLowerCase().includes(q)
+    )
+    return (
+      t.objects?.title?.toLowerCase().includes(q) ||
+      t.objects?.accession_no?.toLowerCase().includes(q) ||
+      t.objects?.description?.toLowerCase().includes(q) ||
+      t.objects?.medium?.toLowerCase().includes(q) ||
+      t.objects?.physical_materials?.toLowerCase().includes(q) ||
+      t.objects?.artist?.toLowerCase().includes(q) ||
+      t.objects?.maker_name?.toLowerCase().includes(q)
     )
   })
 
@@ -124,16 +137,22 @@ export default function ConservationPage() {
           </div>
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by object name or accession number…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder='Search objects… or use "quotes" for specific search'
+                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
+              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+              Specific search
+            </label>
           </div>
 
           {/* Table */}
