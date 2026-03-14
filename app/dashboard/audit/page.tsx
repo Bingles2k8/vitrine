@@ -124,7 +124,7 @@ export default function AuditPage() {
               el.href = url; el.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`; el.click()
               URL.revokeObjectURL(url)
             }}
-            className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded"
+            className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded whitespace-nowrap shrink-0"
           >
             Export CSV
           </button>

@@ -342,30 +342,30 @@ export default function ObjectDetail() {
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }} isOwner={isOwner} staffAccess={staffAccess}>
         {/* Top bar */}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => router.push('/dashboard')}
-              className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+              className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors shrink-0">
               ← Collection
             </button>
-            <span className="text-stone-200 dark:text-stone-700">/</span>
-            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{object.title}</span>
+            <span className="text-stone-200 dark:text-stone-700 shrink-0">/</span>
+            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100 truncate max-w-[160px] sm:max-w-none">{object.title}</span>
           </div>
           <div className="flex items-center gap-4">
             {fullMode && museum?.slug && (
               <button onClick={() => setQrModalOpen(true)}
-                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                className="hidden sm:inline text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
                 QR label
               </button>
             )}
             {fullMode && (
               <button onClick={() => window.open(`/print/object/${params.id}`, '_blank')}
-                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                className="hidden sm:inline text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
                 Print record
               </button>
             )}
             {canEdit && fullMode && (
               <button onClick={handleDuplicate} disabled={duplicating}
-                className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors disabled:opacity-50">
+                className="hidden sm:inline text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors disabled:opacity-50">
                 {duplicating ? 'Duplicating…' : 'Duplicate'}
               </button>
             )}

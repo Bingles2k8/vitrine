@@ -267,7 +267,7 @@ export default function SiteBuilder() {
             {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
             {error && <span className="text-xs font-mono text-red-500">{error}</span>}
             <button onClick={() => window.open('/museum/' + museum.slug, '_blank')}
-              className="border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
+              className="hidden sm:block border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
               View public site
             </button>
             <button onClick={handleSave} disabled={saving}

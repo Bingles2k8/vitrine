@@ -225,10 +225,10 @@ export default function EventDetailPage() {
   return (
     <DashboardShell museum={museum} activePath="/dashboard/events" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
       <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/dashboard/events')} className="text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 text-sm">←</button>
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{event.title}</span>
-          <span className={`text-xs font-mono px-2 py-0.5 rounded capitalize ${
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={() => router.push('/dashboard/events')} className="text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 text-sm shrink-0">←</button>
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100 truncate max-w-[130px] sm:max-w-none">{event.title}</span>
+          <span className={`hidden sm:inline text-xs font-mono px-2 py-0.5 rounded capitalize ${
             event.status === 'published' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
             : event.status === 'cancelled' ? 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400'
             : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'

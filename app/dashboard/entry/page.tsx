@@ -240,7 +240,7 @@ export default function EntryRegisterPage() {
           </div>
 
           {/* Object usage bar + action buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {(() => {
               const planInfo = getPlan(museum?.plan)
               const limit = planInfo.objects
@@ -250,7 +250,7 @@ export default function EntryRegisterPage() {
               const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
               const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
               return (
-                <div className="flex-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
+                <div className="w-full sm:flex-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
