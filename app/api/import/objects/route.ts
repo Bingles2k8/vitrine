@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
+import { csvImportRowSchema } from '@/lib/validations'
 
 const VALID_STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned']
 
@@ -81,6 +82,19 @@ export async function POST(request: Request) {
         error: `Import would exceed your plan limit of ${planInfo.objects} objects. You have ${existing} objects and are trying to import ${rows.length}. Upgrade your plan or import fewer rows.`
       }, { status: 400 })
     }
+  }
+
+  // Validate each row against the schema
+  const validationErrors: number[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const result = csvImportRowSchema.safeParse(rows[i])
+    if (!result.success) validationErrors.push(i + 1)
+  }
+  if (validationErrors.length > 0) {
+    return NextResponse.json(
+      { error: `Rows have invalid data: ${validationErrors.slice(0, 10).join(', ')}${validationErrors.length > 10 ? '...' : ''}` },
+      { status: 400 }
+    )
   }
 
   // Build insert records

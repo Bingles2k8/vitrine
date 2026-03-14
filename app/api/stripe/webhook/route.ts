@@ -120,27 +120,37 @@ export async function POST(request: Request) {
     const invoice = event.data.object as Stripe.Invoice
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
     if (customerId) {
-      await supabase
+      // Idempotency: only update DB and send email if not already marked past_due.
+      // Stripe retries failed payment webhooks — without this we'd send duplicate emails.
+      const { data: museum } = await supabase
         .from('museums')
-        .update({ payment_past_due: true })
+        .select('payment_past_due')
         .eq('stripe_customer_id', customerId)
+        .maybeSingle()
 
-      const customerEmail = invoice.customer_email
-      if (customerEmail) {
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
-        await resend.emails.send({
-          from: 'Vitrine <noreply@contact.vitrinecms.com>',
-          to: customerEmail,
-          subject: 'Action required: your Vitrine payment failed',
-          html: `
-            <p>Hi,</p>
-            <p>We weren't able to process your Vitrine subscription payment. Stripe will automatically retry the charge over the coming days.</p>
-            <p>To avoid any disruption to your plan, please update your payment method now:</p>
-            <p><a href="${siteUrl}/dashboard/plan">Update billing details →</a></p>
-            <p>If you have any questions, just reply to this email.</p>
-            <p>— The Vitrine team</p>
-          `,
-        })
+      if (!museum?.payment_past_due) {
+        await supabase
+          .from('museums')
+          .update({ payment_past_due: true })
+          .eq('stripe_customer_id', customerId)
+
+        const customerEmail = invoice.customer_email
+        if (customerEmail) {
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
+          await resend.emails.send({
+            from: 'Vitrine <noreply@contact.vitrinecms.com>',
+            to: customerEmail,
+            subject: 'Action required: your Vitrine payment failed',
+            html: `
+              <p>Hi,</p>
+              <p>We weren't able to process your Vitrine subscription payment. Stripe will automatically retry the charge over the coming days.</p>
+              <p>To avoid any disruption to your plan, please update your payment method now:</p>
+              <p><a href="${siteUrl}/dashboard/plan">Update billing details →</a></p>
+              <p>If you have any questions, just reply to this email.</p>
+              <p>— The Vitrine team</p>
+            `,
+          })
+        }
       }
     }
   }

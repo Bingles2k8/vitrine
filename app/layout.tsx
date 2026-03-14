@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, DM_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Providers from "@/components/Providers";
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}` }} />
+        <Script id="theme-detect" strategy="beforeInteractive">{`try{var t=localStorage.getItem('theme');if(t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`}</Script>
       </head>
       <body
         className={`${geistSans.variable} ${dmSans.variable} antialiased`}

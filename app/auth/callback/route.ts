@@ -2,11 +2,24 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 
+function getSafeRedirectPath(next: string | null): string {
+  if (!next) return '/dashboard'
+  try {
+    // Parse against a placeholder origin — if the path resolves to a different
+    // origin, it's an open redirect attempt (e.g. //evil.com, /\evil.com)
+    const parsed = new URL(next, 'https://placeholder.local')
+    if (parsed.origin !== 'https://placeholder.local') return '/dashboard'
+    return parsed.pathname + parsed.search + parsed.hash
+  } catch {
+    return '/dashboard'
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const safePath = (nextParam.startsWith('/') && !nextParam.startsWith('//')) ? nextParam : '/dashboard'
+  const nextParam = searchParams.get('next')
+  const safePath = getSafeRedirectPath(nextParam)
   const redirectUrl = `${origin}${safePath}`
 
   if (code) {

@@ -22,6 +22,12 @@ export async function POST(request: Request) {
   const { museum_id, object_id, page_type } = body
 
   if (!museum_id || typeof museum_id !== 'string') return NextResponse.json({}, { status: 200 })
+
+  // Validate UUID format to prevent arbitrary strings being stored in analytics
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_REGEX.test(museum_id)) return NextResponse.json({}, { status: 200 })
+  if (object_id && !UUID_REGEX.test(object_id)) return NextResponse.json({}, { status: 200 })
+
   if (!VALID_PAGE_TYPES.includes(page_type)) return NextResponse.json({}, { status: 200 })
 
   const supabase = createClient(
