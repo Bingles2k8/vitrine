@@ -3,6 +3,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
 import { csvImportRowSchema } from '@/lib/validations'
+import { rateLimit, apiLimiter } from '@/lib/rate-limit'
 
 const VALID_STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned']
 
@@ -10,6 +11,9 @@ export async function POST(request: Request) {
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const limited = await rateLimit(apiLimiter, user.id)
+  if (limited) return limited
 
   // Find museum — owner or Admin/Editor staff
   let museumId: string | null = null

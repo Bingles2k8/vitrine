@@ -36,6 +36,16 @@ export async function POST(request: Request) {
     const museumId = subscription.metadata.museum_id
     if (!museumId) return NextResponse.json({ received: true })
 
+    // Verify the museum actually belongs to this Stripe customer — prevents metadata spoofing
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
+    const { data: verifiedMuseum } = await supabase
+      .from('museums')
+      .select('id')
+      .eq('id', museumId)
+      .eq('stripe_customer_id', customerId)
+      .maybeSingle()
+    if (!verifiedMuseum) return NextResponse.json({ received: true })
+
     if (subscription.status === 'active' || subscription.status === 'trialing') {
       const priceId = subscription.items.data[0]?.price.id
       const planId = PRICE_TO_PLAN[priceId] ?? subscription.metadata.plan_id
@@ -101,6 +111,16 @@ export async function POST(request: Request) {
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const museumId = subscription.metadata.museum_id
+    const deletedCustomerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
+    if (museumId && deletedCustomerId) {
+      const { data: verifiedDeletedMuseum } = await supabase
+        .from('museums')
+        .select('id')
+        .eq('id', museumId)
+        .eq('stripe_customer_id', deletedCustomerId)
+        .maybeSingle()
+      if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
+    }
     if (museumId) {
       await supabase
         .from('museums')

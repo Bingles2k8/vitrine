@@ -45,7 +45,14 @@ export async function DELETE(
 
   // Delete from Supabase Storage
   const marker = '/object-documents/'
-  const storagePath = doc.file_url.slice(doc.file_url.indexOf(marker) + marker.length)
+  const markerIdx = doc.file_url.indexOf(marker)
+  if (markerIdx === -1) {
+    return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 })
+  }
+  const storagePath = doc.file_url.slice(markerIdx + marker.length)
+  if (!storagePath) {
+    return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 })
+  }
   await supabase.storage.from('object-documents').remove([storagePath])
 
   // Hard-delete the row
