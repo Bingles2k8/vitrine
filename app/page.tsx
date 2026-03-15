@@ -137,7 +137,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5 rounded-xl overflow-hidden border border-white/5">
             {[
               { icon: '🗄️', title: 'Collection CMS', desc: 'Add, edit and organise every item in your collection. Rich metadata fields, status tracking, and image uploads.' },
-              { icon: '🌐', title: 'Public Website', desc: 'Your collection beautifully presented online. Visitors can search and filter — just like the V&A\'s world-class collection browser.' },
+              { icon: '🌐', title: 'Public Website', desc: 'Your collection beautifully presented online. Visitors can browse, search, and filter your objects with a world-class collection interface.' },
               { icon: '🎨', title: 'Brand Customisation', desc: 'Upload your logo, set your colours, write your story. Your public site looks like yours — Vitrine stays invisible to visitors.' },
               { icon: '🎫', title: 'Ticket Booking', desc: 'Accept ticket bookings online, manage capacity, and issue digital confirmations. Works for free entry and paid exhibitions.' },
               { icon: '👥', title: 'Staff & Roles', desc: 'Invite your team with role-based access. Curators manage items, volunteers add records, directors see everything.' },
