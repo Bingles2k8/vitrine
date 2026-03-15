@@ -57,7 +57,6 @@ export async function POST() {
   if (!connectId) {
     const account = await stripe.accounts.create({
       type: 'express',
-      country: 'GB',
       email: user.email,
       capabilities: {
         card_payments: { requested: true },
