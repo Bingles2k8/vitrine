@@ -46,7 +46,7 @@ export default function DashboardShell({
   }, [isMobile, sidebarOpen])
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex overflow-x-hidden">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex overflow-x-clip">
       {!isMobile && (
         <Sidebar
           museum={museum}
