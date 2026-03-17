@@ -94,15 +94,6 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     }
   }
 
-  // Same auto-fill for the current_location field in Card 1
-  function handleCurrentLocationChange(name: string) {
-    set('current_location', name)
-    const match = locations.find((l: any) => l.name.toLowerCase() === name.toLowerCase())
-    if (match) {
-      // Optionally surface location details — just update the name for now
-    }
-  }
-
   async function addLocation() {
     if (!locationForm.location) return
     setSubmitting(true)
@@ -160,23 +151,72 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       {/* Current Location */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Current Location</div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Location Name</label>
-            <AutocompleteInput
-              value={form.current_location || ''}
-              onChange={handleCurrentLocationChange}
-              staticList={locationNames}
-              placeholder="e.g. Gallery 2, Store B"
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Location Note</label>
-            <input value={form.location_note || ''} onChange={e => set('location_note', e.target.value)} className={inputCls} disabled={!canEdit} />
-          </div>
-        </div>
+        {(() => {
+          const loc = locations.find((l: any) => l.name === form.current_location)
+          if (!form.current_location) {
+            return <p className="text-sm text-stone-400 dark:text-stone-500">No location recorded yet.</p>
+          }
+          return (
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Name</div>
+                <div className="text-sm text-stone-900 dark:text-stone-100 font-medium">{form.current_location}</div>
+              </div>
+              {loc && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {loc.location_code && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Code</div>
+                      <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{loc.location_code}</div>
+                    </div>
+                  )}
+                  {loc.location_type && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Type</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{loc.location_type}</div>
+                    </div>
+                  )}
+                  {loc.building && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Building</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{loc.building}</div>
+                    </div>
+                  )}
+                  {loc.floor && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Floor</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{loc.floor}</div>
+                    </div>
+                  )}
+                  {loc.room && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Room</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{loc.room}</div>
+                    </div>
+                  )}
+                  {(loc.unit || loc.position) && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Unit / Position</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{loc.unit || loc.position}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {form.location_note && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Note</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{form.location_note}</div>
+                </div>
+              )}
+              {locationHistory[0] && (
+                <div className="text-xs text-stone-400 dark:text-stone-500">
+                  Last moved {new Date(locationHistory[0].moved_at).toLocaleDateString('en-GB')}
+                  {locationHistory[0].moved_by ? ` by ${locationHistory[0].moved_by}` : ''}
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Record a Movement */}
