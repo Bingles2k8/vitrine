@@ -39,8 +39,8 @@ function fuzzyMatch(input: string, list: string[]): string | null {
 interface Props {
   value: string
   onChange: (val: string) => void
-  museumId: string
-  field: string
+  museumId?: string
+  field?: string
   staticList: string[]
   placeholder?: string
   className?: string
@@ -62,6 +62,7 @@ export default function AutocompleteInput({
   const [collectionValues, setCollectionValues] = useState<string[]>([])
 
   useEffect(() => {
+    if (!museumId || !field) return
     const supabase = createClient()
     supabase
       .from('objects')

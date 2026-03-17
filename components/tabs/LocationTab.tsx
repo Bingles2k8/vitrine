@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { inputCls, labelCls, sectionTitle, LOCATION_REASONS } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle } from '@/components/tabs/shared'
+import AutocompleteInput from '@/components/AutocompleteInput'
 
 interface LocationTabProps {
   form: Record<string, any>
@@ -32,15 +33,25 @@ function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }
   )
 }
 
+const LOCATION_TYPES = ['Display', 'Storage', 'Quarantine', 'Transit', 'Conservation Lab', 'Office']
+const today = new Date().toISOString().split('T')[0]
+
 export default function LocationTab({ form, set, canEdit, saving, object, museum, supabase, logActivity, locations, setLocations }: LocationTabProps) {
   const router = useRouter()
 
   const [locationHistory, setLocationHistory] = useState<any[]>([])
   const [locationLoaded, setLocationLoaded] = useState(false)
-  const MOVE_TYPES = ['Permanent', 'Temporary']
-  const [locationForm, setLocationForm] = useState({ location: '', reason: '', moved_by: '', authorised_by: '', move_type: 'Permanent', expected_return_date: '', expected_return_location: '' })
-  const [showAddLocation, setShowAddLocation] = useState(false)
-  const [newLocation, setNewLocation] = useState({ name: '', location_code: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
+  const [locationForm, setLocationForm] = useState({
+    location: '',
+    location_code: '',
+    building: '',
+    floor: '',
+    room: '',
+    unit: '',
+    location_type: 'Storage',
+    moved_by: '',
+    moved_at: today,
+  })
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -56,26 +67,80 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       })
   }, [object.id])
 
+  // Derived suggestion lists from the locations registry
+  const locationNames = useMemo(() => [...new Set(locations.map((l: any) => l.name))].sort() as string[], [locations])
+  const locationCodes = useMemo(() => [...new Set(locations.map((l: any) => l.location_code).filter(Boolean))].sort() as string[], [locations])
+  const buildings = useMemo(() => [...new Set(locations.map((l: any) => l.building).filter(Boolean))].sort() as string[], [locations])
+  const floors = useMemo(() => [...new Set(locations.map((l: any) => l.floor).filter(Boolean))].sort() as string[], [locations])
+  const rooms = useMemo(() => [...new Set(locations.map((l: any) => l.room).filter(Boolean))].sort() as string[], [locations])
+  const units = useMemo(() => [...new Set(locations.map((l: any) => l.unit || l.position).filter(Boolean))].sort() as string[], [locations])
+
+  // When a known location name is typed, auto-fill the other fields
+  function handleLocationNameChange(name: string) {
+    const match = locations.find((l: any) => l.name.toLowerCase() === name.toLowerCase())
+    if (match) {
+      setLocationForm(f => ({
+        ...f,
+        location: name,
+        location_code: match.location_code || '',
+        building: match.building || '',
+        floor: match.floor || '',
+        room: match.room || '',
+        unit: match.unit || match.position || '',
+        location_type: match.location_type || 'Storage',
+      }))
+    } else {
+      setLocationForm(f => ({ ...f, location: name }))
+    }
+  }
+
+  // Same auto-fill for the current_location field in Card 1
+  function handleCurrentLocationChange(name: string) {
+    set('current_location', name)
+    const match = locations.find((l: any) => l.name.toLowerCase() === name.toLowerCase())
+    if (match) {
+      // Optionally surface location details — just update the name for now
+    }
+  }
+
   async function addLocation() {
     if (!locationForm.location) return
     setSubmitting(true)
     try {
+      // Upsert to locations registry if name is new
+      const existing = locations.find((l: any) => l.name.toLowerCase() === locationForm.location.toLowerCase())
+      if (!existing) {
+        const { data: newLoc } = await supabase
+          .from('locations')
+          .insert({
+            name: locationForm.location,
+            location_code: locationForm.location_code || null,
+            building: locationForm.building || null,
+            floor: locationForm.floor || null,
+            room: locationForm.room || null,
+            unit: locationForm.unit || null,
+            location_type: locationForm.location_type,
+            museum_id: museum.id,
+          })
+          .select()
+          .single()
+        if (newLoc) setLocations((prev: any[]) => [...prev, newLoc])
+      }
+
+      // Record the movement
       await supabase.from('location_history').insert({
         location: locationForm.location,
-        reason: locationForm.reason,
-        moved_by: locationForm.moved_by,
-        authorised_by: locationForm.authorised_by,
-        move_type: locationForm.move_type,
-        expected_return_date: locationForm.move_type === 'Temporary' && locationForm.expected_return_date ? locationForm.expected_return_date : null,
-        expected_return_location: locationForm.move_type === 'Temporary' ? (locationForm.expected_return_location || null) : null,
+        moved_by: locationForm.moved_by || null,
+        moved_at: locationForm.moved_at ? `${locationForm.moved_at}T12:00:00` : new Date().toISOString(),
         object_id: object.id,
         museum_id: museum.id,
       })
 
+      // Update current location on the object
       await supabase.from('objects').update({ current_location: locationForm.location }).eq('id', object.id)
-
       set('current_location', locationForm.location)
-      setLocationForm({ location: '', reason: '', moved_by: '', authorised_by: '', move_type: 'Permanent', expected_return_date: '', expected_return_location: '' })
+
+      setLocationForm({ location: '', location_code: '', building: '', floor: '', room: '', unit: '', location_type: 'Storage', moved_by: '', moved_at: today })
 
       const { data } = await supabase
         .from('location_history')
@@ -84,40 +149,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
         .order('moved_at', { ascending: false })
       setLocationHistory(data || [])
 
-      await logActivity('movement', `Moved to ${locationForm.location}${locationForm.reason ? ` (${locationForm.reason})` : ''}`)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function saveNewLocation() {
-    if (!newLocation.name) return
-    setSubmitting(true)
-    try {
-      const { data } = await supabase
-        .from('locations')
-        .insert({
-          name: newLocation.name,
-          location_code: newLocation.location_code || null,
-          building: newLocation.building,
-          floor: newLocation.floor,
-          room: newLocation.room,
-          unit: newLocation.unit,
-          position: newLocation.position,
-          location_type: newLocation.location_type,
-          environmental_notes: newLocation.environmental_notes,
-          museum_id: museum.id,
-        })
-        .select()
-        .single()
-
-      if (data) {
-        setLocations((prev: any[]) => [...prev, data])
-        set('current_location', data.name)
-      }
-
-      setNewLocation({ name: '', location_code: '', building: '', floor: '', room: '', unit: '', position: '', location_type: 'Storage', environmental_notes: '' })
-      setShowAddLocation(false)
+      await logActivity('movement', `Moved to ${locationForm.location}`)
     } finally {
       setSubmitting(false)
     }
@@ -129,205 +161,107 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Current Location</div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Current Location</label>
-            <select
-              value={locations.find(l => l.name === form.current_location) ? form.current_location : ''}
-              onChange={e => set('current_location', e.target.value)}
+            <label className={labelCls}>Location Name</label>
+            <AutocompleteInput
+              value={form.current_location || ''}
+              onChange={handleCurrentLocationChange}
+              staticList={locationNames}
+              placeholder="e.g. Gallery 2, Store B"
               className={inputCls}
-              disabled={!canEdit}
-            >
-              <option value="">{'\u2014'} Select location {'\u2014'}</option>
-              {locations.map(l => (
-                <option key={l.id} value={l.name}>{l.name}{l.location_type ? ` (${l.location_type})` : ''}</option>
-              ))}
-            </select>
-            {!locations.find(l => l.name === form.current_location) && (
-              <input
-                value={form.current_location || ''}
-                onChange={e => set('current_location', e.target.value)}
-                placeholder="Enter location manually"
-                className={`${inputCls} mt-2`}
-                disabled={!canEdit}
-              />
-            )}
+            />
           </div>
           <div>
             <label className={labelCls}>Location Note</label>
             <input value={form.location_note || ''} onChange={e => set('location_note', e.target.value)} className={inputCls} disabled={!canEdit} />
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowAddLocation(!showAddLocation)}
-          className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-        >
-          {showAddLocation ? 'Cancel' : 'Add new location to registry \u2192'}
-        </button>
-
-        {showAddLocation && (
-          <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-4 bg-stone-50 dark:bg-stone-800/50">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Name *</label>
-                <input value={newLocation.name} onChange={e => setNewLocation({ ...newLocation, name: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Location Code <span className="text-red-400">*</span></label>
-                <input value={newLocation.location_code} onChange={e => setNewLocation({ ...newLocation, location_code: e.target.value })}
-                  placeholder="e.g. STORE-A-BAY3-SHELF2" className={inputCls} />
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Unique location code — required for Accreditation</p>
-              </div>
-              <div>
-                <label className={labelCls}>Type</label>
-                <select value={newLocation.location_type} onChange={e => setNewLocation({ ...newLocation, location_type: e.target.value })} className={inputCls}>
-                  {['Display', 'Storage', 'Quarantine', 'Transit', 'Conservation Lab', 'Office'].map(t => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <label className={labelCls}>Building</label>
-                <input value={newLocation.building} onChange={e => setNewLocation({ ...newLocation, building: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Floor</label>
-                <input value={newLocation.floor} onChange={e => setNewLocation({ ...newLocation, floor: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Room</label>
-                <input value={newLocation.room} onChange={e => setNewLocation({ ...newLocation, room: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Unit / Position</label>
-                <input value={newLocation.position} onChange={e => setNewLocation({ ...newLocation, position: e.target.value })} className={inputCls} />
-              </div>
-            </div>
-
-            <div>
-              <label className={labelCls}>Environmental Notes</label>
-              <input
-                value={newLocation.environmental_notes}
-                onChange={e => setNewLocation({ ...newLocation, environmental_notes: e.target.value })}
-                placeholder="Temperature, humidity, light conditions"
-                className={inputCls}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={saveNewLocation}
-                disabled={submitting || !newLocation.name}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-4 py-2 rounded disabled:opacity-50"
-              >
-                {submitting ? 'Saving\u2026' : 'Save location'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddLocation(false)}
-                className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Record a Movement */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Record a Movement</div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>New Location *</label>
-            <select
-              value={locations.find(l => l.name === locationForm.location) ? locationForm.location : ''}
-              onChange={e => setLocationForm({ ...locationForm, location: e.target.value })}
+            <label className={labelCls}>New Location <span className="text-red-400">*</span></label>
+            <AutocompleteInput
+              value={locationForm.location}
+              onChange={handleLocationNameChange}
+              staticList={locationNames}
+              placeholder="e.g. Gallery 2, Store B"
               className={inputCls}
-              disabled={!canEdit}
-            >
-              <option value="">{'\u2014'} Select location {'\u2014'}</option>
-              {locations.map(l => (
-                <option key={l.id} value={l.name}>{l.name}{l.location_type ? ` (${l.location_type})` : ''}</option>
-              ))}
-            </select>
-            {!locations.find(l => l.name === locationForm.location) && (
-              <input
-                value={locationForm.location}
-                onChange={e => setLocationForm({ ...locationForm, location: e.target.value })}
-                placeholder="Enter location manually"
-                className={`${inputCls} mt-2`}
-                disabled={!canEdit}
-              />
-            )}
+            />
           </div>
           <div>
-            <label className={labelCls}>Reason</label>
-            <select
-              value={locationForm.reason}
-              onChange={e => setLocationForm({ ...locationForm, reason: e.target.value })}
+            <label className={labelCls}>Location Code <span className="text-red-400">*</span></label>
+            <AutocompleteInput
+              value={locationForm.location_code}
+              onChange={v => setLocationForm(f => ({ ...f, location_code: v }))}
+              staticList={locationCodes}
+              placeholder="e.g. STORE-A-BAY3-SHELF2"
               className={inputCls}
-              disabled={!canEdit}
-            >
-              <option value="">{'\u2014'} Select reason {'\u2014'}</option>
-              {LOCATION_REASONS.map(r => <option key={r}>{r}</option>)}
-            </select>
+            />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Unique location code — required for Accreditation</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <label className={labelCls}>Building</label>
+            <AutocompleteInput
+              value={locationForm.building}
+              onChange={v => setLocationForm(f => ({ ...f, building: v }))}
+              staticList={buildings}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Floor</label>
+            <AutocompleteInput
+              value={locationForm.floor}
+              onChange={v => setLocationForm(f => ({ ...f, floor: v }))}
+              staticList={floors}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Room</label>
+            <AutocompleteInput
+              value={locationForm.room}
+              onChange={v => setLocationForm(f => ({ ...f, room: v }))}
+              staticList={rooms}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Unit / Position</label>
+            <AutocompleteInput
+              value={locationForm.unit}
+              onChange={v => setLocationForm(f => ({ ...f, unit: v }))}
+              staticList={units}
+              className={inputCls}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className={labelCls}>Type</label>
+            <select value={locationForm.location_type} onChange={e => setLocationForm(f => ({ ...f, location_type: e.target.value }))} className={inputCls}>
+              {LOCATION_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
           <div>
             <label className={labelCls}>Moved By</label>
-            <input
-              value={locationForm.moved_by}
-              onChange={e => setLocationForm({ ...locationForm, moved_by: e.target.value })}
-              className={inputCls}
-              disabled={!canEdit}
-            />
+            <input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} disabled={!canEdit} />
           </div>
           <div>
-            <label className={labelCls}>Authorised By</label>
-            <input
-              value={locationForm.authorised_by}
-              onChange={e => setLocationForm({ ...locationForm, authorised_by: e.target.value })}
-              placeholder="Staff member or governing body"
-              className={inputCls}
-              disabled={!canEdit}
-            />
+            <label className={labelCls}>Date of Move</label>
+            <input type="date" value={locationForm.moved_at} onChange={e => setLocationForm(f => ({ ...f, moved_at: e.target.value }))} className={inputCls} max={today} disabled={!canEdit} />
           </div>
         </div>
-
-        <div>
-          <label className={labelCls}>Move Type</label>
-          <div className="flex gap-2">
-            {MOVE_TYPES.map(t => (
-              <button key={t} type="button" onClick={() => setLocationForm({ ...locationForm, move_type: t })}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${locationForm.move_type === t ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {locationForm.move_type === 'Temporary' && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Expected Return Date</label>
-              <input type="date" value={locationForm.expected_return_date} onChange={e => setLocationForm({ ...locationForm, expected_return_date: e.target.value })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Expected Return Location</label>
-              <input value={locationForm.expected_return_location} onChange={e => setLocationForm({ ...locationForm, expected_return_location: e.target.value })} placeholder="Where the object should return to" className={inputCls} />
-            </div>
-          </div>
-        )}
 
         {canEdit && (
           <button
@@ -351,10 +285,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                 <tr className="border-b border-stone-200 dark:border-stone-700">
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Location</th>
-                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Reason</th>
-                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Moved By</th>
-                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Authorised By</th>
-                  <th className="text-left py-2 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Type</th>
+                  <th className="text-left py-2 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Moved By</th>
                 </tr>
               </thead>
               <tbody>
@@ -362,10 +293,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                   <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{new Date(h.moved_at).toLocaleDateString('en-GB')}</td>
                     <td className="py-2 pr-4 text-stone-900 dark:text-stone-100">{h.location}</td>
-                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.reason}</td>
-                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.moved_by}</td>
-                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.authorised_by}</td>
-                    <td className="py-2 text-stone-500 dark:text-stone-400 text-xs">{h.move_type || 'Permanent'}</td>
+                    <td className="py-2 text-stone-500 dark:text-stone-400">{h.moved_by}</td>
                   </tr>
                 ))}
               </tbody>
