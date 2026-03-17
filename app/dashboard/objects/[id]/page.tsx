@@ -23,6 +23,7 @@ import ValuationTab from '@/components/tabs/ValuationTab'
 import RiskTab from '@/components/tabs/RiskTab'
 import DamageTab from '@/components/tabs/DamageTab'
 import ExitsTab from '@/components/tabs/ExitsTab'
+import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
@@ -30,11 +31,11 @@ const TABS = [
   { id: 'acquisition',  label: 'Acquisition' },
   { id: 'location',     label: 'Location' },
   { id: 'condition',    label: 'Condition' },
+  { id: 'rights',       label: 'Rights & Legal' },
+  { id: 'valuation',    label: 'Valuation' },
   { id: 'conservation', label: 'Conservation' },
   { id: 'loans',        label: 'Loans' },
-  { id: 'rights',       label: 'Rights & Legal' },
   { id: 'audit',        label: 'Audit' },
-  { id: 'valuation',    label: 'Valuation' },
   { id: 'risk',         label: 'Risk' },
   { id: 'damage',       label: 'Damage' },
   { id: 'exits',        label: 'Exits' },
@@ -401,7 +402,8 @@ export default function ObjectDetail() {
           ))}
         </div>
 
-        <form onSubmit={handleSave} className="p-8 max-w-3xl space-y-6">
+        <div className="flex items-start gap-8 p-8">
+        <form onSubmit={handleSave} className="flex-1 min-w-0 max-w-3xl space-y-6">
 
           {!canEdit && (
             <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
@@ -462,6 +464,49 @@ export default function ObjectDetail() {
           )}
 
         </form>
+        <div className="hidden lg:block w-44 shrink-0">
+          <div className="sticky top-20">
+            <ObjectProgressSidebar
+              sections={[
+                { id: 'overview',    label: 'Overview',       complete: !!form.title,
+                  fields: [{ label: 'Title', complete: !!form.title }] },
+                { id: 'entry',       label: 'Entry',
+                  complete: !!(object?.entry_number && object?.entry_date && object?.received_by),
+                  fields: [
+                    { label: 'Entry number', complete: !!object?.entry_number },
+                    { label: 'Entry date',   complete: !!object?.entry_date },
+                    { label: 'Entry by',     complete: !!object?.received_by },
+                  ] },
+                { id: 'acquisition', label: 'Acquisition',
+                  complete: !!(form.acquisition_method && form.acquisition_date && form.acquisition_justification && (form.ethics_art_loss_register || form.ethics_cites || form.ethics_dealing_act || form.ethics_human_remains)),
+                  fields: [
+                    { label: 'Acquisition method',        complete: !!form.acquisition_method },
+                    { label: 'Acquisition date',          complete: !!form.acquisition_date },
+                    { label: 'Acquisition justification', complete: !!form.acquisition_justification },
+                    { label: 'Legal & ethics checks',     complete: !!(form.ethics_art_loss_register || form.ethics_cites || form.ethics_dealing_act || form.ethics_human_remains) },
+                  ] },
+                { id: 'location',    label: 'Location',       complete: !!form.current_location,
+                  fields: [{ label: 'Location', complete: !!form.current_location }] },
+                { id: 'condition',   label: 'Condition',
+                  complete: !!(form.condition_grade && form.condition_date),
+                  fields: [
+                    { label: 'Condition grade',   complete: !!form.condition_grade },
+                    { label: 'Assessment date',   complete: !!form.condition_date },
+                  ] },
+                { id: 'rights',      label: 'Rights & Legal', complete: !!(form.copyright_status || form.rights_holder),
+                  fields: [
+                    { label: 'Rights status', complete: !!form.copyright_status },
+                    { label: 'Rights holder', complete: !!form.rights_holder },
+                  ] },
+                { id: 'valuation',   label: 'Valuation',      complete: !!latestValuation,
+                  fields: [{ label: 'Valuation recorded', complete: !!latestValuation }] },
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
+        </div>
+        </div>
         {qrModalOpen && museum && (
           <QRLabelModal
             object={{ id: params.id as string, title: form.title, accession_no: form.accession_no, show_on_site: form.show_on_site }}
