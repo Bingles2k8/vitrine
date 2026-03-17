@@ -68,7 +68,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
 
 
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Add Conservation Treatment (Procedure 5)</div>
+        <div className={sectionTitle}>Add Conservation Treatment</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Treatment Type *</label>

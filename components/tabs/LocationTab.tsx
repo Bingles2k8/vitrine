@@ -127,7 +127,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     <>
       {/* Current Location */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Current Location (Procedure 3)</div>
+        <div className={sectionTitle}>Current Location</div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -178,7 +178,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                 <label className={labelCls}>Location Code <span className="text-red-400">*</span></label>
                 <input value={newLocation.location_code} onChange={e => setNewLocation({ ...newLocation, location_code: e.target.value })}
                   placeholder="e.g. STORE-A-BAY3-SHELF2" className={inputCls} />
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Unique code (Mandatory — Spectrum Proc 3)</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Unique location code — required for Accreditation</p>
               </div>
               <div>
                 <label className={labelCls}>Type</label>

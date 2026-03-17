@@ -20,7 +20,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
   const { toast } = useToast()
   const router = useRouter()
 
-  // Rights records state (Proc 18)
+  // Rights records state
   const [rightsRecords, setRightsRecords] = useState<any[]>([])
   const [rightsLoaded, setRightsLoaded] = useState(false)
   const [rightsForm, setRightsForm] = useState({
@@ -28,7 +28,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     licence_terms: '', restrictions: '', rights_in: '', rights_out: '', notes: '',
   })
 
-  // Reproduction requests state (Proc 19)
+  // Reproduction requests state
   const [reproductionRequests, setReproductionRequests] = useState<any[]>([])
   const [reproductionRequestsLoaded, setReproductionRequestsLoaded] = useState(false)
   const [reproductionForm, setReproductionForm] = useState({
@@ -119,7 +119,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     <>
       {/* Copyright & Rights Overview */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Rights Management (Procedure 18)</div>
+        <div className={sectionTitle}>Rights Management</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Copyright Status</label>
@@ -230,9 +230,9 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
         )}
       </div>
 
-      {/* Reproduction Requests (Proc 19) */}
+      {/* Reproduction Requests */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Reproduction Requests (Procedure 19)</div>
+        <div className={sectionTitle}>Reproduction Requests</div>
         {canEdit && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

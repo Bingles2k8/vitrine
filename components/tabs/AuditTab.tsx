@@ -54,7 +54,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
     <>
 
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Record Inventory Check (Procedure 7)</div>
+        <div className={sectionTitle}>Record Inventory Check</div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
           <div><label className={labelCls}>Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>

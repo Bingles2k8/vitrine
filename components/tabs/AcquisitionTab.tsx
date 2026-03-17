@@ -29,7 +29,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
     <>
       {/* Card 1 — Acquisition */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Acquisition (Procedure 2)</div>
+        <div className={sectionTitle}>Acquisition</div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -45,16 +45,9 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Acquisition Source</label>
-            <input value={form.acquisition_source || ''} onChange={e => set('acquisition_source', e.target.value)} placeholder="Donor name, auction house…" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Legal Transfer Date</label>
-            <input type="date" value={form.legal_transfer_date || ''} onChange={e => set('legal_transfer_date', e.target.value)} className={inputCls} />
-            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">The date legal title formally passed to the museum</p>
-          </div>
+        <div>
+          <label className={labelCls}>Acquisition Source</label>
+          <input value={form.acquisition_source || ''} onChange={e => set('acquisition_source', e.target.value)} placeholder="Donor name, auction house…" className={inputCls} />
         </div>
 
         <div>
@@ -62,14 +55,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           <textarea value={form.acquisition_justification || ''} onChange={e => set('acquisition_justification', e.target.value)} rows={3}
             placeholder="How this object fits the collecting policy — rationale for acquisition…"
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Mandatory (Spectrum 5.1 Proc 2) — required for Accreditation</p>
-        </div>
-
-        <div>
-          <label className={labelCls}>Associated Documentation Reference</label>
-          <input value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
-            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…" className={inputCls} />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Reference to deeds of gift, purchase receipts, correspondence (Mandatory per Spectrum)</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation</p>
         </div>
 
         <div>
@@ -78,16 +64,10 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Accession Date</label>
-            <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
-            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
-          </div>
-          <div>
-            <label className={labelCls}>Location After Accessioning</label>
-            <input value={form.location_after_accessioning || ''} onChange={e => set('location_after_accessioning', e.target.value)} placeholder="Where the object was placed after accessioning" className={inputCls} />
-          </div>
+        <div>
+          <label className={labelCls}>Accession Date</label>
+          <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
         </div>
 
         <div>
@@ -105,7 +85,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
 
       {/* Card 2 — Governance */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Governance (Procedure 2 — Mandatory)</div>
+        <div className={sectionTitle}>Governance</div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -141,7 +121,6 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             <div>
               <label className={labelCls}>Purchase Price / Agreed Value</label>
               <input type="number" step="0.01" min="0" value={form.acquisition_value || ''} onChange={e => set('acquisition_value', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" className={inputCls} />
-              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for purchase, exchange, or bequest valuation (Spectrum Proc 2)</p>
             </div>
             <div>
               <label className={labelCls}>Currency</label>
@@ -163,7 +142,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
 
       {/* Card 3 — Legal & Ethics Checks */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Legal &amp; Ethics Checks (Procedure 2 — Mandatory)</div>
+        <div className={sectionTitle}>Legal &amp; Ethics Checks</div>
 
         <p className="text-xs text-stone-400 dark:text-stone-500">Tick each check once completed. All must be considered for acquisitions made after 2005.</p>
 
@@ -190,7 +169,23 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
       </div>
 
-      {/* Card 4 — Supporting Documents */}
+      {/* Card 4 — Associated Documentation */}
+      {objectId && museumId && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+          <div className={sectionTitle}>Associated Documentation <span className="text-red-400">*</span></div>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Deeds of gift, purchase receipts, correspondence, and other transfer documents. Required for Accreditation.</p>
+          <DocumentAttachments
+            objectId={objectId}
+            museumId={museumId}
+            relatedToType="acquisition_deed"
+            relatedToId={null}
+            canEdit={canEdit}
+            canAttach={canAttach}
+          />
+        </div>
+      )}
+
+      {/* Card 5 — Supporting Documents */}
       {objectId && museumId && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
           <div className={sectionTitle}>Supporting Documents</div>

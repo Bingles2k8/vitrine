@@ -105,7 +105,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
     <>
       {/* Log Condition Assessment */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Log Condition Assessment (Procedure 4)</div>
+        <div className={sectionTitle}>Log Condition Assessment</div>
 
         <div>
           <label className={labelCls}>Condition Grade *</label>
