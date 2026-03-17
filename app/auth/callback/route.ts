@@ -18,11 +18,13 @@ function getSafeRedirectPath(next: string | null): string {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const tokenHash = searchParams.get('token_hash')
+  const type = searchParams.get('type')
   const nextParam = searchParams.get('next')
   const safePath = getSafeRedirectPath(nextParam)
   const redirectUrl = `${origin}${safePath}`
 
-  if (code) {
+  if (code || (tokenHash && type)) {
     // Create the redirect response first so we can write cookies directly onto it
     const response = NextResponse.redirect(redirectUrl)
 
@@ -41,9 +43,21 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-    if (exchangeError) {
-      return NextResponse.redirect(`${origin}/login?error=auth`)
+    if (tokenHash && type) {
+      // Token hash flow — works cross-device (no PKCE verifier needed)
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: type as 'email' | 'signup' | 'recovery' | 'invite' | 'magiclink',
+      })
+      if (error) {
+        return NextResponse.redirect(`${origin}/login?error=auth`)
+      }
+    } else {
+      // PKCE code exchange — standard magic link flow
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code!)
+      if (exchangeError) {
+        return NextResponse.redirect(`${origin}/login?error=auth`)
+      }
     }
 
     // Link user_id to staff_members record if this is an invited staff member
