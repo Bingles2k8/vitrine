@@ -45,6 +45,17 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
   return (
     <>
+      {/* Hazard alert */}
+      {form.hazard_note && (
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-3 flex items-start gap-3">
+          <span className="text-lg shrink-0">⚠️</span>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-amber-700 dark:text-amber-400 font-medium mb-0.5">Hazard Note</div>
+            <div className="text-sm text-amber-800 dark:text-amber-300">{form.hazard_note}</div>
+          </div>
+        </div>
+      )}
+
       {/* Images */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
         <ImageUpload currentUrl={form.image_url} onUpload={(url: string) => set('image_url', url)} />

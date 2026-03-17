@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import AutocompleteInput from '@/components/AutocompleteInput'
 
 interface ConditionTabProps {
   form: Record<string, any>
@@ -19,12 +20,13 @@ interface ConditionTabProps {
 }
 
 const REASONS_FOR_CHECK = ['Acquisition', 'Loan out', 'Loan return', 'Display change', 'Routine', 'Damage suspected', 'Conservation', 'Insurance', 'Other']
-const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
+const OTHER_REASON_SUGGESTIONS = ['Pest inspection', 'Environmental check', 'Pre-loan', 'Post-loan', 'Before photography', 'After photography', 'Emergency', 'Staff training', 'Insurance renewal', 'Public exhibition']
+const today = new Date().toISOString().split('T')[0]
 
 export default function ConditionTab({ form, set, canEdit, object, museum, supabase, logActivity }: ConditionTabProps) {
   const [conditionHistory, setConditionHistory] = useState<any[]>([])
   const [conditionLoaded, setConditionLoaded] = useState(false)
-  const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })
+  const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
   const [submitting, setSubmitting] = useState(false)
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
@@ -51,6 +53,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       const year = new Date().getFullYear()
       const count = conditionHistory.filter(h => h.assessment_reference?.startsWith(`CC-${year}-`)).length
       const assessmentRef = `CC-${year}-${String(count + 1).padStart(3, '0')}`
+      const effectiveReason = conditionForm.reason_for_check === 'Other' ? (conditionForm.other_reason || 'Other') : conditionForm.reason_for_check
 
       const { data: newAssessment, error: insertErr } = await supabase.from('condition_assessments').insert({
         assessment_reference: assessmentRef,
@@ -58,13 +61,10 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         assessed_at: conditionForm.assessed_at,
         assessor: conditionForm.assessor,
         notes: conditionForm.notes,
-        reason_for_check: conditionForm.reason_for_check || null,
+        reason_for_check: effectiveReason || null,
         long_description: conditionForm.long_description || null,
-        specific_issues: conditionForm.specific_issues || null,
-        location_on_object: conditionForm.location_on_object || null,
         hazard_note: conditionForm.hazard_note || null,
         recommendations: conditionForm.recommendations || null,
-        priority: conditionForm.priority || null,
         next_check_date: conditionForm.next_check_date || null,
         object_id: object.id,
         museum_id: museum.id,
@@ -75,18 +75,20 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         condition_grade: conditionForm.grade,
         condition_date: conditionForm.assessed_at,
         condition_assessor: conditionForm.assessor,
+        hazard_note: conditionForm.hazard_note || null,
       }).eq('id', object.id)
 
       set('condition_grade', conditionForm.grade)
       set('condition_date', conditionForm.assessed_at)
       set('condition_assessor', conditionForm.assessor)
+      set('hazard_note', conditionForm.hazard_note || '')
 
       if (stagedDocs.length > 0) {
         const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
         if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])
       }
-      setConditionForm({ grade: '', assessed_at: '', assessor: '', notes: '', reason_for_check: '', long_description: '', specific_issues: '', location_on_object: '', hazard_note: '', recommendations: '', priority: '', next_check_date: '' })
+      setConditionForm({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
 
       const { data } = await supabase
         .from('condition_assessments')
@@ -107,97 +109,87 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Log Condition Assessment</div>
 
-        <div>
-          <label className={labelCls}>Condition Grade *</label>
-          <div className="flex gap-2 flex-wrap">
-            {CONDITION_GRADES.map(g => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setConditionForm({ ...conditionForm, grade: g })}
-                disabled={!canEdit}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
-                  conditionForm.grade === g
-                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white'
-                    : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Assessment Date *</label>
+            <label className={labelCls}>Condition Grade <span className="text-red-400">*</span></label>
+            <select
+              value={conditionForm.grade}
+              onChange={e => setConditionForm(f => ({ ...f, grade: e.target.value }))}
+              className={inputCls}
+              disabled={!canEdit}
+            >
+              <option value="">— Select grade —</option>
+              {CONDITION_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Assessment Date <span className="text-red-400">*</span></label>
             <input
               type="date"
               value={conditionForm.assessed_at}
-              onChange={e => setConditionForm({ ...conditionForm, assessed_at: e.target.value })}
+              onChange={e => setConditionForm(f => ({ ...f, assessed_at: e.target.value }))}
               className={inputCls}
               disabled={!canEdit}
             />
           </div>
-          <div>
-            <label className={labelCls}>Assessor</label>
-            <input
-              value={conditionForm.assessor}
-              onChange={e => setConditionForm({ ...conditionForm, assessor: e.target.value })}
-              className={inputCls}
-              disabled={!canEdit}
-            />
-          </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Assessor</label>
+          <input
+            value={conditionForm.assessor}
+            onChange={e => setConditionForm(f => ({ ...f, assessor: e.target.value }))}
+            className={inputCls}
+            disabled={!canEdit}
+          />
         </div>
 
         <div>
           <label className={labelCls}>Reason for Check</label>
-          <select value={conditionForm.reason_for_check} onChange={e => setConditionForm({ ...conditionForm, reason_for_check: e.target.value })} className={inputCls} disabled={!canEdit}>
+          <select value={conditionForm.reason_for_check} onChange={e => setConditionForm(f => ({ ...f, reason_for_check: e.target.value, other_reason: '' }))} className={inputCls} disabled={!canEdit}>
             <option value="">— Select —</option>
             {REASONS_FOR_CHECK.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
         </div>
+
+        {conditionForm.reason_for_check === 'Other' && (
+          <div>
+            <label className={labelCls}>Specify reason</label>
+            <AutocompleteInput
+              value={conditionForm.other_reason}
+              onChange={v => setConditionForm(f => ({ ...f, other_reason: v }))}
+              staticList={OTHER_REASON_SUGGESTIONS}
+              placeholder="Describe the reason…"
+              className={inputCls}
+            />
+          </div>
+        )}
+
         <div>
           <label className={labelCls}>Detailed Description</label>
-          <textarea value={conditionForm.long_description} onChange={e => setConditionForm({ ...conditionForm, long_description: e.target.value })} rows={2} placeholder="Detailed condition description..." className={`${inputCls} resize-none`} disabled={!canEdit} />
+          <textarea value={conditionForm.long_description} onChange={e => setConditionForm(f => ({ ...f, long_description: e.target.value }))} rows={2} placeholder="Detailed condition description..." className={`${inputCls} resize-none`} disabled={!canEdit} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Specific Issues</label>
-            <textarea value={conditionForm.specific_issues} onChange={e => setConditionForm({ ...conditionForm, specific_issues: e.target.value })} rows={2} placeholder="e.g. flaking paint, crack in base..." className={`${inputCls} resize-none`} disabled={!canEdit} />
-          </div>
-          <div>
-            <label className={labelCls}>Location on Object</label>
-            <input value={conditionForm.location_on_object} onChange={e => setConditionForm({ ...conditionForm, location_on_object: e.target.value })} placeholder="e.g. upper left corner, base" className={inputCls} disabled={!canEdit} />
-          </div>
-        </div>
+
         <div>
           <label className={labelCls}>Hazard Note</label>
-          <input value={conditionForm.hazard_note} onChange={e => setConditionForm({ ...conditionForm, hazard_note: e.target.value })} placeholder="Any hazardous materials or handling risks" className={inputCls} disabled={!canEdit} />
+          <input value={conditionForm.hazard_note} onChange={e => setConditionForm(f => ({ ...f, hazard_note: e.target.value }))} placeholder="Any hazardous materials or handling risks" className={inputCls} disabled={!canEdit} />
         </div>
+
         <div>
           <label className={labelCls}>Recommendations</label>
-          <textarea value={conditionForm.recommendations} onChange={e => setConditionForm({ ...conditionForm, recommendations: e.target.value })} rows={2} placeholder="Recommended actions..." className={`${inputCls} resize-none`} disabled={!canEdit} />
+          <textarea value={conditionForm.recommendations} onChange={e => setConditionForm(f => ({ ...f, recommendations: e.target.value }))} rows={2} placeholder="Recommended actions..." className={`${inputCls} resize-none`} disabled={!canEdit} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Priority</label>
-            <select value={conditionForm.priority} onChange={e => setConditionForm({ ...conditionForm, priority: e.target.value })} className={inputCls} disabled={!canEdit}>
-              <option value="">— Select —</option>
-              {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Next Check Date</label>
-            <input type="date" value={conditionForm.next_check_date} onChange={e => setConditionForm({ ...conditionForm, next_check_date: e.target.value })} className={inputCls} disabled={!canEdit} />
-          </div>
+
+        <div>
+          <label className={labelCls}>Next Check Date</label>
+          <input type="date" value={conditionForm.next_check_date} onChange={e => setConditionForm(f => ({ ...f, next_check_date: e.target.value }))} className={inputCls} disabled={!canEdit} />
         </div>
 
         <div>
           <label className={labelCls}>Notes</label>
           <textarea
             value={conditionForm.notes}
-            onChange={e => setConditionForm({ ...conditionForm, notes: e.target.value })}
+            onChange={e => setConditionForm(f => ({ ...f, notes: e.target.value }))}
             rows={3}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
             disabled={!canEdit}

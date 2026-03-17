@@ -80,7 +80,7 @@ export default function ObjectDetail() {
     ethics_art_loss_register: false, ethics_cites: false,
     ethics_dealing_act: false, ethics_human_remains: false,
     current_location: '', location_note: '',
-    condition_grade: '', condition_date: '', condition_assessor: '',
+    condition_grade: '', condition_date: '', condition_assessor: '', hazard_note: '',
     copyright_status: '', rights_holder: '', rights_notes: '',
     disposal_method: '', disposal_date: '', disposal_note: '',
     disposal_authorization: '', disposal_recipient: '',
@@ -165,6 +165,7 @@ export default function ObjectDetail() {
         condition_grade: object.condition_grade || '',
         condition_date: object.condition_date || '',
         condition_assessor: object.condition_assessor || '',
+        hazard_note: object.hazard_note || '',
         copyright_status: object.copyright_status || '',
         rights_holder: object.rights_holder || '',
         rights_notes: object.rights_notes || '',
@@ -232,7 +233,7 @@ export default function ObjectDetail() {
     if (!form.title.trim()) { toast('Title is required', 'error'); return }
     setSaving(true)
 
-    const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
+    const { condition_grade, condition_date, condition_assessor, hazard_note, ...formToSave } = form
     const { error } = await supabase.from('objects').update({
       ...formToSave,
       // marks is now merged into inscription in the UI — clear marks to avoid duplication
@@ -281,7 +282,7 @@ export default function ObjectDetail() {
   async function handleDuplicate() {
     if (!canEdit || !object) return
     setDuplicating(true)
-    const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
+    const { condition_grade, condition_date, condition_assessor, hazard_note: _hz, ...formToSave } = form
     const { data: newObject, error } = await supabase.from('objects').insert({
       ...formToSave,
       museum_id: museum.id,

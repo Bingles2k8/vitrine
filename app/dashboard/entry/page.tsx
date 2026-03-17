@@ -8,7 +8,7 @@ import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { useToast } from '@/components/Toast'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
-import { inputCls, labelCls, ENTRY_REASONS } from '@/components/tabs/shared'
+import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES } from '@/components/tabs/shared'
 import CSVImportModal from '@/components/CSVImportModal'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -45,6 +45,7 @@ export default function EntryRegisterPage() {
     received_by: '',
     entry_method: '',
     accession_no: '',
+    condition_grade: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
   const { toast } = useToast()
@@ -168,6 +169,7 @@ export default function EntryRegisterPage() {
       accession_no: newEntry.accession_no || null,
       status: 'Entry',
       emoji: '🖼️',
+      condition_grade: newEntry.condition_grade || null,
     }).select('id').single()
     if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
@@ -384,6 +386,13 @@ export default function EntryRegisterPage() {
                   <div>
                     <label className={labelCls}>Object Number</label>
                     <input type="text" className={inputCls} placeholder="e.g. 2026.001" value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Condition Grade</label>
+                    <select className={inputCls} value={newEntry.condition_grade} onChange={e => setNewEntry(v => ({ ...v, condition_grade: e.target.value }))}>
+                      <option value="">— Select —</option>
+                      {CONDITION_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
                   </div>
                 </div>
               </div>

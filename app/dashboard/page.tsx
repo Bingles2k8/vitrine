@@ -279,7 +279,18 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">{a.emoji}</div>
                           <div>
-                            <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</span>
+                              {a.hazard_note && (
+                                <div className="relative group/hz inline-block">
+                                  <span className="text-sm cursor-default select-none">⚠️</span>
+                                  <div className="absolute bottom-full left-0 mb-2 w-56 p-3 bg-stone-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover/hz:opacity-100 group-hover/hz:visible transition-all z-50 pointer-events-none">
+                                    <div className="font-medium text-amber-400 mb-1">Hazard Note</div>
+                                    <div className="text-stone-300">{a.hazard_note}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             <div className="text-xs text-stone-400 dark:text-stone-500">{a.accession_no}</div>
                           </div>
                         </div>
