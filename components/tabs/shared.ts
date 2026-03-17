@@ -69,6 +69,27 @@ export const RISK_SEVERITY_STYLES: Record<string, string> = {
   Low:      'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
 }
 
+export const CULTURES = [
+  'British', 'English', 'Scottish', 'Welsh', 'Irish',
+  'French', 'German', 'Italian', 'Spanish', 'Portuguese', 'Dutch', 'Flemish',
+  'Netherlandish', 'Belgian', 'Swiss', 'Austrian', 'Scandinavian', 'Norwegian',
+  'Swedish', 'Danish', 'Russian', 'Greek', 'Roman', 'Byzantine',
+  'Ottoman', 'Persian', 'Islamic', 'Egyptian', 'African',
+  'American', 'Canadian', 'Australian', 'Japanese', 'Chinese', 'Korean',
+  'Indian', 'Mughal', 'Aztec', 'Mayan', 'Pre-Columbian', 'Viking',
+  'Medieval European', 'Renaissance', 'Baroque', 'Rococo',
+]
+
+export const PRODUCTION_PLACES = [
+  'London', 'Edinburgh', 'Dublin', 'Paris', 'Rome', 'Florence', 'Venice',
+  'Milan', 'Naples', 'Amsterdam', 'Antwerp', 'Brussels', 'Bruges', 'Ghent',
+  'Berlin', 'Vienna', 'Prague', 'Madrid', 'Seville', 'Lisbon',
+  'New York', 'Boston', 'Philadelphia', 'Washington D.C.',
+  'Beijing', 'Shanghai', 'Kyoto', 'Tokyo', 'Delhi', 'Jaipur',
+  'Cairo', 'Istanbul', 'Athens', 'Jerusalem', 'Samarkand',
+  'Mexico City', 'Lima', 'Sydney', 'Cape Town',
+]
+
 // ── Cataloguing constants (Proc 5) ──────────────────────────────────────
 export const MAKER_ROLES = ['Artist', 'Maker', 'Manufacturer', 'Designer', 'Attributed to', 'Workshop of', 'School of', 'After', 'Unknown']
 export const DATE_QUALIFIERS = ['Exact', 'Circa', 'Before', 'After', 'Between']

@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, PRODUCTION_PLACES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
+import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageUpload from '@/components/ImageUpload'
 import ImageGallery from '@/components/ImageGallery'
 import DocumentAttachments from '@/components/DocumentAttachments'
@@ -42,15 +43,6 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
   const router = useRouter()
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
-  // Normalise object type on blur: trim and title-case
-  function normaliseObjectType(val: string) {
-    if (!val) return val
-    const trimmed = val.trim()
-    // Check if it matches a known type case-insensitively
-    const match = OBJECT_TYPES.find(t => t.toLowerCase() === trimmed.toLowerCase())
-    return match ?? (trimmed.charAt(0).toUpperCase() + trimmed.slice(1))
-  }
-
   return (
     <>
       {/* Images */}
@@ -88,41 +80,46 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <div><label className={labelCls}>Date / Year</label><input value={form.year} onChange={e => set('year', e.target.value)} className={inputCls} /></div>
         </div>
 
-        {/* Medium (combobox) + Object Type (autocomplete) */}
+        {/* Medium + Object Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Medium</label>
-            <input
-              list="medium-options"
+            <AutocompleteInput
               value={form.medium}
-              onChange={e => set('medium', e.target.value)}
+              onChange={v => set('medium', v)}
+              museumId={museum.id}
+              field="medium"
+              staticList={MEDIUMS}
               placeholder="Search or type a medium…"
               className={inputCls}
             />
-            <datalist id="medium-options">
-              {MEDIUMS.map(m => <option key={m} value={m} />)}
-            </datalist>
           </div>
           <div>
             <label className={labelCls}>Object Type</label>
-            <input
-              list="object-type-options"
+            <AutocompleteInput
               value={form.object_type}
-              onChange={e => set('object_type', e.target.value)}
-              onBlur={e => set('object_type', normaliseObjectType(e.target.value))}
+              onChange={v => set('object_type', v)}
+              museumId={museum.id}
+              field="object_type"
+              staticList={OBJECT_TYPES}
               placeholder="e.g. Painting, Sculpture…"
               className={inputCls}
             />
-            <datalist id="object-type-options">
-              {OBJECT_TYPES.map(t => <option key={t} value={t} />)}
-            </datalist>
           </div>
         </div>
 
         {/* Culture/Origin */}
         <div>
           <label className={labelCls}>Culture / Origin</label>
-          <input value={form.culture} onChange={e => set('culture', e.target.value)} className={inputCls} />
+          <AutocompleteInput
+            value={form.culture}
+            onChange={v => set('culture', v)}
+            museumId={museum.id}
+            field="culture"
+            staticList={CULTURES}
+            placeholder="e.g. British, French, Japanese…"
+            className={inputCls}
+          />
         </div>
 
         {/* Accession No. + Number of Parts */}
@@ -249,7 +246,18 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Maker + Production */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={labelCls}>Maker Name</label><input value={form.maker_name} onChange={e => set('maker_name', e.target.value)} placeholder="Full name" className={inputCls} /></div>
-          <div><label className={labelCls}>Production Place</label><input value={form.production_place} onChange={e => set('production_place', e.target.value)} placeholder="City, region, country" className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Production Place</label>
+            <AutocompleteInput
+              value={form.production_place}
+              onChange={v => set('production_place', v)}
+              museumId={museum.id}
+              field="production_place"
+              staticList={PRODUCTION_PLACES}
+              placeholder="City, region, country"
+              className={inputCls}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
