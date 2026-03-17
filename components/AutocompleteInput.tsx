@@ -70,7 +70,7 @@ export default function AutocompleteInput({
       .not(field, 'is', null)
       .then(({ data }) => {
         if (data) {
-          const unique = [...new Set(data.map((r: Record<string, unknown>) => r[field]).filter(Boolean))] as string[]
+          const unique = [...new Set(data.map((r: any) => r[field]).filter(Boolean))] as string[]
           setCollectionValues(unique)
         }
       })
