@@ -34,14 +34,16 @@ export default function EntryRegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const defaultEntry = () => ({
     entry_date: new Date().toISOString().slice(0, 10),
+    object_title: '',
     depositor_name: '',
     depositor_contact: '',
+    gdpr_consent: false,
+    gdpr_consent_date: '',
     entry_reason: '',
     object_description: '',
     object_count: 1,
     received_by: '',
     entry_method: '',
-    condition_on_entry: '',
     accession_no: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
@@ -101,10 +103,11 @@ export default function EntryRegisterPage() {
     }
     const { data: newObject, error: createError } = await supabase.from('objects').insert({
       museum_id: museum.id,
-      title: entry.object_description,
+      title: entry.objects?.title || entry.object_description || 'Untitled',
       acquisition_source: entry.depositor_name,
       acquisition_source_contact: entry.depositor_contact,
       acquisition_object_count: entry.object_count,
+      number_of_parts: entry.object_count,
       status: 'Entry',
       emoji: '🖼️',
     }).select('id').single()
@@ -119,8 +122,8 @@ export default function EntryRegisterPage() {
   }
 
   async function handleCreateEntry(mode: 'stay' | 'continue') {
-    const { entry_date, depositor_name, entry_reason, object_description, received_by } = newEntry
-    if (!entry_date || !depositor_name || !entry_reason || !object_description || !received_by) {
+    const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by } = newEntry
+    if (!entry_date || !object_title || !depositor_name || !entry_reason || !object_description || !received_by) {
       toast('Please fill in all required fields.', 'error')
       return
     }
@@ -144,22 +147,24 @@ export default function EntryRegisterPage() {
       entry_date: newEntry.entry_date,
       depositor_name: newEntry.depositor_name,
       depositor_contact: newEntry.depositor_contact || null,
+      gdpr_consent: newEntry.gdpr_consent,
+      gdpr_consent_date: newEntry.gdpr_consent && newEntry.gdpr_consent_date ? newEntry.gdpr_consent_date : newEntry.gdpr_consent ? new Date().toISOString().slice(0, 10) : null,
       entry_reason: newEntry.entry_reason,
       object_description: newEntry.object_description,
       object_count: newEntry.object_count,
       received_by: newEntry.received_by,
       entry_method: newEntry.entry_method || null,
-      condition_on_entry: newEntry.condition_on_entry || null,
       outcome: 'Pending',
     }).select('*').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     // Create the object
     const { data: newObject, error: objectError } = await supabase.from('objects').insert({
       museum_id: museum.id,
-      title: newEntry.object_description,
+      title: newEntry.object_title,
       acquisition_source: newEntry.depositor_name,
       acquisition_source_contact: newEntry.depositor_contact || null,
       acquisition_object_count: newEntry.object_count,
+      number_of_parts: newEntry.object_count,
       accession_no: newEntry.accession_no || null,
       status: 'Entry',
       emoji: '🖼️',
@@ -169,7 +174,7 @@ export default function EntryRegisterPage() {
     if (mode === 'continue') {
       router.push(`/dashboard/objects/${newObject.id}`)
     } else {
-      setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_description, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
+      setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_title, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
       setNewEntry(defaultEntry())
       setShowForm(false)
       setSubmitting(false)
@@ -321,17 +326,33 @@ export default function EntryRegisterPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Object Title <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
+                </div>
                 <div>
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
                   <input type="date" className={inputCls} value={newEntry.entry_date} onChange={e => setNewEntry(v => ({ ...v, entry_date: e.target.value }))} />
                 </div>
                 <div>
-                  <label className={labelCls}>Depositor Name <span className="text-red-400">*</span></label>
-                  <input type="text" className={inputCls} placeholder="Name of depositor" value={newEntry.depositor_name} onChange={e => setNewEntry(v => ({ ...v, depositor_name: e.target.value }))} />
+                  <label className={labelCls}>Donor Name <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder="Name of donor" value={newEntry.depositor_name} onChange={e => setNewEntry(v => ({ ...v, depositor_name: e.target.value }))} />
                 </div>
                 <div>
-                  <label className={labelCls}>Depositor Contact</label>
+                  <label className={labelCls}>Donor Contact</label>
                   <input type="text" className={inputCls} placeholder="Email or phone" value={newEntry.depositor_contact} onChange={e => setNewEntry(v => ({ ...v, depositor_contact: e.target.value }))} />
+                </div>
+                <div className="flex flex-col justify-end gap-2 pt-1">
+                  <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                    <input type="checkbox" checked={newEntry.gdpr_consent} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent: e.target.checked }))} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+                    <span className="text-xs font-mono text-stone-500 dark:text-stone-400">GDPR consent obtained</span>
+                  </label>
+                  {newEntry.gdpr_consent && (
+                    <div>
+                      <label className={labelCls}>Consent Date</label>
+                      <input type="date" className={inputCls} value={newEntry.gdpr_consent_date} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent_date: e.target.value }))} />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Entry Reason <span className="text-red-400">*</span></label>
@@ -348,21 +369,17 @@ export default function EntryRegisterPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Received By <span className="text-red-400">*</span></label>
+                  <label className={labelCls}>Entry By <span className="text-red-400">*</span></label>
                   <input type="text" className={inputCls} placeholder="Staff member name" value={newEntry.received_by} onChange={e => setNewEntry(v => ({ ...v, received_by: e.target.value }))} />
                 </div>
                 <div className="md:col-span-2">
                   <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
                   <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>
                     <label className={labelCls}>Object Count</label>
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Condition on Entry</label>
-                    <input type="text" className={inputCls} placeholder="e.g. Good" value={newEntry.condition_on_entry} onChange={e => setNewEntry(v => ({ ...v, condition_on_entry: e.target.value }))} />
                   </div>
                   <div>
                     <label className={labelCls}>Object Number</label>
@@ -411,10 +428,10 @@ export default function EntryRegisterPage() {
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Entry No.</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Depositor</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Donor</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry Reason</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Received By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry By</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
                     {!simple && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>

@@ -68,6 +68,7 @@ export default function ObjectDetail() {
     accession_no: '', dimensions: '', description: '', emoji: '🖼️',
     status: 'On Display', image_url: '',
     object_type: '', inscription: '', marks: '', provenance: '',
+    credit_line: '', historical_context: '', is_gift: null,
     acquisition_method: '', acquisition_date: '', acquisition_source: '',
     acquisition_note: '', legal_transfer_date: '',
     acquisition_source_contact: '', acquisition_authorised_by: '',
@@ -87,7 +88,7 @@ export default function ObjectDetail() {
     insured_value: '', insured_value_currency: 'GBP',
     // Cataloguing (Proc 5)
     maker_name: '', maker_role: '',
-    production_date_early: '', production_date_late: '', production_date_qualifier: '',
+    production_date: '', production_date_early: '', production_date_late: '', production_date_qualifier: '',
     production_place: '', physical_materials: '', technique: '',
     school_style_period: '', subject_depicted: '', number_of_parts: 1,
     distinguishing_features: '', full_description: '',
@@ -133,9 +134,13 @@ export default function ObjectDetail() {
         status: object.status || 'On Display',
         image_url: object.image_url || '',
         object_type: object.object_type || '',
-        inscription: object.inscription || '',
-        marks: object.marks || '',
+        // Combine inscription and marks into one field for the UI
+        inscription: [object.inscription, object.marks].filter(Boolean).join('\n\n') || '',
+        marks: '',
         provenance: object.provenance || '',
+        credit_line: object.credit_line || '',
+        historical_context: object.historical_context || '',
+        is_gift: object.is_gift ?? null,
         acquisition_method: object.acquisition_method || '',
         acquisition_date: object.acquisition_date || '',
         acquisition_source: object.acquisition_source || '',
@@ -176,6 +181,7 @@ export default function ObjectDetail() {
         // Cataloguing (Proc 5)
         maker_name: object.maker_name || '',
         maker_role: object.maker_role || '',
+        production_date: object.production_date || object.production_date_early || '',
         production_date_early: object.production_date_early || '',
         production_date_late: object.production_date_late || '',
         production_date_qualifier: object.production_date_qualifier || '',
@@ -229,6 +235,8 @@ export default function ObjectDetail() {
     const { condition_grade, condition_date, condition_assessor, ...formToSave } = form
     const { error } = await supabase.from('objects').update({
       ...formToSave,
+      // marks is now merged into inscription in the UI — clear marks to avoid duplication
+      marks: '',
       acquisition_date: formToSave.acquisition_date || null,
       legal_transfer_date: formToSave.legal_transfer_date || null,
       acquisition_authority_date: formToSave.acquisition_authority_date || null,

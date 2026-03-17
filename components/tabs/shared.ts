@@ -22,8 +22,14 @@ export const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 
 export const sectionTitle = 'text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-4'
 
 // ── Shared constants ─────────────────────────────────────────────────────
-export const MEDIUMS = ['Oil on canvas','Watercolour','Sculpture','Photography','Ceramics','Textiles','Metalwork','Mixed media','Wood','Glass','Print']
-export const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Deaccessioned']
+export const MEDIUMS = [
+  'Oil on canvas','Acrylic','Watercolour','Gouache','Tempera','Pastel','Charcoal','Ink','Oil on panel',
+  'Fresco','Encaustic','Egg tempera','Collage','Mixed media','Digital','Film / Video',
+  'Sculpture','Bronze','Marble','Stone','Plaster','Terracotta','Ceramics','Glass','Enamel','Mosaic',
+  'Photography','Print','Etching','Lithograph','Screen print','Engraving','Woodcut',
+  'Textiles','Embroidery','Tapestry','Leather','Metalwork','Wood','Paper','Ivory','Bone','Other',
+]
+export const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Conservation','Deaccessioned']
 export const EMOJIS = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨']
 export const OBJECT_TYPES = ['Painting','Drawing','Print','Photograph','Sculpture','Ceramic','Textile','Furniture','Metalwork','Glass','Archaeological','Natural History','Document / Archive','Other']
 export const ACQ_METHODS = ['Purchase','Gift','Bequest','Transfer','Found','Fieldwork','Exchange','Unknown']

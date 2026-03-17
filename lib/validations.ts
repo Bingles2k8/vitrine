@@ -41,7 +41,7 @@ export const csvImportRowSchema = z.object({
 const VALID_DOC_RELATED_TYPES = [
   'acquisition', 'loan', 'conservation_treatment', 'condition_assessment',
   'entry_record', 'exit_record', 'valuation', 'insurance', 'risk',
-  'damage', 'emergency', 'reproduction', 'rights', 'general',
+  'damage', 'emergency', 'reproduction', 'rights', 'general', 'provenance',
 ] as const
 
 export const documentUploadSchema = z.object({

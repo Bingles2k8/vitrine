@@ -25,6 +25,8 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
     entry_date: '',
     depositor_name: '',
     depositor_contact: '',
+    gdpr_consent: false,
+    gdpr_consent_date: '',
     entry_reason: '',
     object_description: '',
     object_count: 1,
@@ -70,6 +72,8 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           entry_date: data.entry_date || '',
           depositor_name: data.depositor_name || '',
           depositor_contact: data.depositor_contact || '',
+          gdpr_consent: data.gdpr_consent || false,
+          gdpr_consent_date: data.gdpr_consent_date || '',
           entry_reason: data.entry_reason || '',
           object_description: data.object_description || '',
           object_count: data.object_count || 1,
@@ -184,25 +188,38 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
             <input type="number" min={1} value={entryForm.object_count} onChange={e => setE('object_count', parseInt(e.target.value) || 1)} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Received By</label>
+            <label className={labelCls}>Entry By</label>
             <input value={entryForm.received_by} onChange={e => setE('received_by', e.target.value)} className={inputCls} />
           </div>
         </div>
       </div>
 
-      {/* Card 2 — Depositor */}
+      {/* Card 2 — Donor */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Depositor</div>
+        <div className={sectionTitle}>Donor</div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Depositor Name</label>
+            <label className={labelCls}>Donor Name</label>
             <input value={entryForm.depositor_name} onChange={e => setE('depositor_name', e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Depositor Contact</label>
+            <label className={labelCls}>Donor Contact</label>
             <input value={entryForm.depositor_contact} onChange={e => setE('depositor_contact', e.target.value)} className={inputCls} />
           </div>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+            <input type="checkbox" checked={entryForm.gdpr_consent} onChange={e => setE('gdpr_consent', e.target.checked)} />
+            GDPR consent obtained
+          </label>
+          {entryForm.gdpr_consent && (
+            <div className="mt-2">
+              <label className={labelCls}>Consent Date</label>
+              <input type="date" value={entryForm.gdpr_consent_date} onChange={e => setE('gdpr_consent_date', e.target.value)} className={inputCls} />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
