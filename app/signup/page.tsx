@@ -2,17 +2,14 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
-  const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,25 +30,6 @@ export default function SignupPage() {
     } else {
       setSent(true)
       setLoading(false)
-    }
-  }
-
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email',
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      router.push('/set-password')
     }
   }
 
@@ -100,43 +78,16 @@ export default function SignupPage() {
               </button>
             </form>
           ) : (
-            <div>
-              <p className="text-sm text-stone-500 dark:text-stone-400 mb-5">
-                We sent a 6-digit code to <span className="font-mono text-stone-900 dark:text-stone-100">{email}</span>. Enter it below to continue.
+            <div className="text-center py-4">
+              <div className="text-3xl mb-4">✉️</div>
+              <h2 className="font-serif text-lg text-stone-900 dark:text-stone-100 mb-2">Check your email</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">
+                We&apos;ve sent a verification link to <span className="font-mono text-stone-900 dark:text-stone-100">{email}</span>. Click the link to create your account.
               </p>
-              <form onSubmit={handleVerify} className="space-y-4">
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
-                    Verification code
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="123456"
-                    required
-                    autoFocus
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 tracking-widest text-center"
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-xs text-red-500 font-mono">{error}</p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || otp.length < 6}
-                  className="w-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded py-2 text-sm font-mono disabled:opacity-50"
-                >
-                  {loading ? 'Verifying…' : 'Verify'}
-                </button>
-              </form>
-              <p className="text-xs text-stone-400 dark:text-stone-500 mt-4">
+              <p className="text-xs text-stone-400 dark:text-stone-500">
                 Didn&apos;t receive it? Check your spam folder or{' '}
                 <button
-                  onClick={() => { setSent(false); setOtp(''); setError('') }}
+                  onClick={() => { setSent(false); setError('') }}
                   className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                 >
                   try again
