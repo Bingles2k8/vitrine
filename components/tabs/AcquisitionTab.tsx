@@ -65,6 +65,25 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         <div>
+          <label className={labelCls}>Associated Documentation <span className="text-red-400">*</span></label>
+          <input value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
+            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…" className={inputCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation — deeds of gift, purchase receipts, correspondence</p>
+          {objectId && museumId && (
+            <div className="mt-3 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
+              <DocumentAttachments
+                objectId={objectId}
+                museumId={museumId}
+                relatedToType="acquisition_deed"
+                relatedToId={null}
+                canEdit={canEdit}
+                canAttach={canAttach}
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
           <label className={labelCls}>Accession Date</label>
           <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
@@ -169,23 +188,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
       </div>
 
-      {/* Card 4 — Associated Documentation */}
-      {objectId && museumId && (
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Associated Documentation <span className="text-red-400">*</span></div>
-          <p className="text-xs text-stone-400 dark:text-stone-500">Deeds of gift, purchase receipts, correspondence, and other transfer documents. Required for Accreditation.</p>
-          <DocumentAttachments
-            objectId={objectId}
-            museumId={museumId}
-            relatedToType="acquisition_deed"
-            relatedToId={null}
-            canEdit={canEdit}
-            canAttach={canAttach}
-          />
-        </div>
-      )}
-
-      {/* Card 5 — Supporting Documents */}
+      {/* Card 4 — Supporting Documents */}
       {objectId && museumId && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
           <div className={sectionTitle}>Supporting Documents</div>
