@@ -64,13 +64,16 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
-        <div>
+        <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-3">
           <label className={labelCls}>Associated Documentation <span className="text-red-400">*</span></label>
-          <input value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
-            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…" className={inputCls} />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation — deeds of gift, purchase receipts, correspondence</p>
+          <textarea value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
+            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…"
+            rows={4}
+            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+          <p className="text-xs text-stone-400 dark:text-stone-500">Required for Accreditation — deeds of gift, purchase receipts, correspondence</p>
           {objectId && museumId && (
-            <div className="mt-3 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
+            <>
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 pt-1">Associated Documentation Supporting Documents</div>
               <DocumentAttachments
                 objectId={objectId}
                 museumId={museumId}
@@ -79,7 +82,7 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
                 canEdit={canEdit}
                 canAttach={canAttach}
               />
-            </div>
+            </>
           )}
         </div>
 
