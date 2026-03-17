@@ -12,11 +12,12 @@ import { formatSize } from '@/lib/formatSize'
 const CHECK = '✓'
 const CROSS = '✕'
 
-function UsageRow({ label, used, limit, format }: {
+function UsageRow({ label, used, limit, format, note }: {
   label: string
   used: number
   limit: number | null
   format?: (n: number) => string
+  note?: string
 }) {
   const display = format ?? ((n: number) => n.toLocaleString())
   if (limit === null) {
@@ -38,6 +39,7 @@ function UsageRow({ label, used, limit, format }: {
       <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
+      {note && <div className="text-xs text-stone-400 dark:text-stone-500 font-mono mt-1">{note}</div>}
     </div>
   )
 }
@@ -50,6 +52,7 @@ export default function PlanPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [checkoutResult, setCheckoutResult] = useState<'success' | 'cancelled' | null>(null)
   const [objectCount, setObjectCount] = useState(0)
+  const [trashedCount, setTrashedCount] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
   const [storageUsedBytes, setStorageUsedBytes] = useState(0)
   const router = useRouter()
@@ -66,12 +69,12 @@ export default function PlanPage() {
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
 
-      const { count: objCount } = await supabase
-        .from('objects')
-        .select('id', { count: 'exact', head: true })
-        .eq('museum_id', museum.id)
-        .is('deleted_at', null)
+      const [{ count: objCount }, { count: trashed }] = await Promise.all([
+        supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id),
+        supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
+      ])
       setObjectCount(objCount ?? 0)
+      setTrashedCount(trashed ?? 0)
 
       const { count: sCount } = await supabase
         .from('staff_members')
@@ -217,7 +220,7 @@ export default function PlanPage() {
               Current Usage — {getPlan(currentPlan).label} plan
             </div>
             <div className="space-y-4">
-              <UsageRow label="Objects" used={objectCount} limit={getPlan(currentPlan).objects} />
+              <UsageRow label="Objects" used={objectCount} limit={getPlan(currentPlan).objects} note={trashedCount > 0 ? `${(objectCount - trashedCount).toLocaleString()} in collection · ${trashedCount.toLocaleString()} in bin` : undefined} />
               <UsageRow label="Staff accounts" used={staffCount} limit={getPlan(currentPlan).staff} />
               {getPlan(currentPlan).compliance && (
                 <UsageRow

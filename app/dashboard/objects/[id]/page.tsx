@@ -270,11 +270,11 @@ export default function ObjectDetail() {
       toast('Deaccessioned objects cannot be deleted. Use the Disposal register instead.', 'error')
       return
     }
-    if (!confirm('Move "' + object.title + '" to trash?')) return
+    if (!confirm('Move "' + object.title + '" to bin?')) return
     setDeleting(true)
     const { error } = await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).eq('id', params.id)
     if (error) { toast(error.message, 'error'); setDeleting(false) } else {
-      toast('Moved to trash')
+      toast('Moved to bin')
       router.push('/dashboard')
     }
   }
@@ -381,7 +381,7 @@ export default function ObjectDetail() {
             {canEdit && (
               <button onClick={handleDelete} disabled={deleting}
                 className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
-                {deleting ? 'Moving…' : 'Move to trash'}
+                {deleting ? 'Moving…' : 'Move to bin'}
               </button>
             )}
           </div>

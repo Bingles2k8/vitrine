@@ -485,9 +485,9 @@ export default function EntryRegisterPage() {
                           <button
                             onClick={() => router.push('/dashboard/trash')}
                             className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors"
-                            title="This object has been moved to trash"
+                            title="This object has been moved to bin"
                           >
-                            Removed — view trash →
+                            Removed — view bin →
                           </button>
                         ) : e.object_id ? (
                           (() => {

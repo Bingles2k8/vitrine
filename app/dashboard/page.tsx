@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
+  const [trashedCount, setTrashedCount] = useState(0)
   const [showImport, setShowImport] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState('')
@@ -74,7 +75,7 @@ export default function Dashboard() {
 
   async function bulkDelete() {
     if (!selectedIds.size || !canEdit) return
-    if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to trash?`)) return
+    if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to bin?`)) return
     setBulking(true)
     const ids = Array.from(selectedIds)
     await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).in('id', ids)
@@ -93,15 +94,17 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
+          supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
         ])
 
         setMuseum(museum)
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
+        setTrashedCount(trashed ?? 0)
         setObjects(objects || [])
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
@@ -140,7 +143,7 @@ export default function Dashboard() {
 
   // null = show all; a status string = show only that status
   const CARDS = [
-    { label: 'Total Objects', filterKey: null,           value: objects.length,             sub: objects.length === 0 ? 'Add your first item' : `${objects.length} in collection` },
+    { label: 'Total Objects', filterKey: null,           value: objects.length + trashedCount, sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection` },
     { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: objects.length ? `${Math.round(statusCount('On Display')/objects.length*100)}% of collection` : '—' },
     { label: 'On Loan',       filterKey: 'On Loan',      value: statusCount('On Loan'),       sub: '—' },
     { label: 'In Restoration',filterKey: 'Restoration',  value: statusCount('Restoration'),   sub: '—' },
@@ -235,7 +238,7 @@ export default function Dashboard() {
                   </select>
                   <button onClick={() => bulkSetVisibility(true)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Show on site</button>
                   <button onClick={() => bulkSetVisibility(false)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Hide from site</button>
-                  <button onClick={bulkDelete} disabled={bulking} className="text-xs font-mono text-red-400 hover:text-red-300 dark:hover:text-red-600 transition-colors disabled:opacity-50">Move to trash</button>
+                  <button onClick={bulkDelete} disabled={bulking} className="text-xs font-mono text-red-400 hover:text-red-300 dark:hover:text-red-600 transition-colors disabled:opacity-50">Move to bin</button>
                   <button onClick={() => setSelectedIds(new Set())} className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-300 dark:hover:text-stone-600 transition-colors ml-auto">Clear ×</button>
                 </div>
               )}

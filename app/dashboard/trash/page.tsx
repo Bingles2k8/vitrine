@@ -14,6 +14,8 @@ export default function TrashPage() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulking, setBulking] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
@@ -39,6 +41,22 @@ export default function TrashPage() {
     load()
   }, [])
 
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === objects.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(objects.map(a => a.id)))
+    }
+  }
+
   async function handleRestore(id: string) {
     const { error } = await supabase
       .from('objects')
@@ -50,6 +68,7 @@ export default function TrashPage() {
     } else {
       toast('Object restored')
       setObjects(objects.filter(a => a.id !== id))
+      setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
   }
 
@@ -66,7 +85,40 @@ export default function TrashPage() {
     } else {
       toast('Permanently deleted')
       setObjects(objects.filter(a => a.id !== id))
+      setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
+  }
+
+  async function handleBulkDelete() {
+    if (!selectedIds.size) return
+    if (!confirm(`Permanently delete ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return
+    setBulking(true)
+    const ids = Array.from(selectedIds)
+    const { error } = await supabase.from('objects').delete().in('id', ids)
+    if (error) {
+      toast(error.message, 'error')
+    } else {
+      toast(`${ids.length} object${ids.length === 1 ? '' : 's'} permanently deleted`)
+      setObjects(objects.filter(a => !ids.includes(a.id)))
+      setSelectedIds(new Set())
+    }
+    setBulking(false)
+  }
+
+  async function handleDeleteAll() {
+    if (!objects.length) return
+    if (!confirm(`Permanently delete all ${objects.length} object${objects.length === 1 ? '' : 's'} in the bin? This cannot be undone.`)) return
+    setBulking(true)
+    const ids = objects.map(a => a.id)
+    const { error } = await supabase.from('objects').delete().in('id', ids)
+    if (error) {
+      toast(error.message, 'error')
+    } else {
+      toast(`${ids.length} object${ids.length === 1 ? '' : 's'} permanently deleted`)
+      setObjects([])
+      setSelectedIds(new Set())
+    }
+    setBulking(false)
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
@@ -85,15 +137,35 @@ export default function TrashPage() {
       {/* Header */}
       <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-8">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-stone-400 uppercase tracking-widest">Trash</span>
+          <span className="text-xs font-mono text-stone-400 uppercase tracking-widest">Bin</span>
           <span className="text-xs font-mono text-stone-300 dark:text-stone-600">{objects.length} item{objects.length !== 1 ? 's' : ''}</span>
         </div>
+        {canEdit && objects.length > 0 && (
+          <div className="flex items-center gap-3">
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulking}
+                className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
+              >
+                Delete selected ({selectedIds.size})
+              </button>
+            )}
+            <button
+              onClick={handleDeleteAll}
+              disabled={bulking}
+              className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              Delete all
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="p-8">
         {objects.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-sm text-stone-400 dark:text-stone-500 font-mono">Trash is empty</p>
+            <p className="text-sm text-stone-400 dark:text-stone-500 font-mono">Bin is empty</p>
             <p className="text-xs text-stone-300 dark:text-stone-600 mt-1">Deleted objects will appear here</p>
           </div>
         ) : (
@@ -101,6 +173,16 @@ export default function TrashPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  {canEdit && (
+                    <th className="px-4 py-3 w-8">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === objects.length}
+                        onChange={toggleSelectAll}
+                        className="rounded border-stone-300 dark:border-stone-600 accent-stone-900 dark:accent-white"
+                      />
+                    </th>
+                  )}
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Accession No.</th>
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Deleted</th>
@@ -109,7 +191,17 @@ export default function TrashPage() {
               </thead>
               <tbody>
                 {objects.map(a => (
-                  <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800">
+                  <tr key={a.id} className={`border-b border-stone-100 dark:border-stone-800 ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800/50' : ''}`}>
+                    {canEdit && (
+                      <td className="px-4 py-3 w-8">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(a.id)}
+                          onChange={() => toggleSelect(a.id)}
+                          className="rounded border-stone-300 dark:border-stone-600 accent-stone-900 dark:accent-white"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-base">{a.emoji || '🖼️'}</span>
@@ -146,7 +238,7 @@ export default function TrashPage() {
         )}
 
         <p className="text-xs text-stone-400 dark:text-stone-500 mt-4">
-          Items in the trash can be restored or permanently deleted.
+          Items in the bin can be restored or permanently deleted.
         </p>
       </div>
     </DashboardShell>

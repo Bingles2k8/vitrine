@@ -136,7 +136,7 @@ function ExportModal({ onClose }: { onClose: () => void }) {
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={includeDeleted} onChange={e => setIncludeDeleted(e.target.checked)}
             className="rounded border-stone-300 dark:border-stone-600 accent-stone-900 dark:accent-white" />
-          <span className="text-xs text-stone-500 dark:text-stone-400">Include deleted / trashed objects</span>
+          <span className="text-xs text-stone-500 dark:text-stone-400">Include deleted / binned objects</span>
         </label>
 
         <div className="flex gap-3 pt-1">
@@ -159,6 +159,7 @@ export default function AnalyticsPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [objects, setObjects] = useState<ObjectItem[]>([])
+  const [trashedCount, setTrashedCount] = useState(0)
   const [pageViews, setPageViews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showExport, setShowExport] = useState(false)
@@ -173,14 +174,16 @@ export default function AnalyticsPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const [{ data: objects }, { data: views }] = await Promise.all([
+      const [{ data: objects }, { data: views }, { count: trashed }] = await Promise.all([
         supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
+        supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setObjects(objects || [])
+      setTrashedCount(trashed ?? 0)
       setPageViews(views || [])
       setLoading(false)
     }
@@ -313,7 +316,7 @@ export default function AnalyticsPage() {
           <div className="p-4 md:p-8 space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Total Objects', value: objects.length },
+                { label: 'Total Objects', value: objects.length + trashedCount },
                 { label: 'On Display', value: objects.filter(a => a.status === 'On Display').length },
                 { label: 'Mediums', value: new Set(objects.map(a => a.medium).filter(Boolean)).size },
                 { label: 'Cultures', value: new Set(objects.map(a => a.culture).filter(Boolean)).size },
