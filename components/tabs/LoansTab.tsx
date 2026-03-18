@@ -27,6 +27,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   const [loanForm, setLoanForm] = useState({ direction: searchParams.get('direction') === 'In' ? 'In' : 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
+  const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
   const [returnLocation, setReturnLocation] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
@@ -90,14 +91,14 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   return (
     <>
       {form.status === 'On Loan' && loanHistory.some(l => l.status === 'Active') && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
           This object is currently on loan — the active loan record is highlighted below.
         </div>
       )}
 
 
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Add Loan Record (Procedures 4 &amp; 5)</div>
+      {canEdit && <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+        <div className={sectionTitle}>Add Loan Record</div>
         <div>
           <label className={labelCls}>Direction</label>
           <div className="flex gap-2">
@@ -166,10 +167,10 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           </div>
         )}
         <button type="button" onClick={addLoan} disabled={submitting}
-          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
           {submitting ? 'Saving…' : 'Save loan record →'}
         </button>
-      </div>
+      </div>}
 
       {canAttach && entryRecord && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
@@ -182,6 +183,126 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
             canEdit={canEdit}
             canAttach={canAttach}
           />
+        </div>
+      )}
+
+      {selectedRecord && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedRecord(null)}>
+          <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
+              <div>
+                <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.borrowing_institution}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">Loan {selectedRecord.direction}</span>
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${selectedRecord.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : selectedRecord.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{selectedRecord.status}</span>
+                  {selectedRecord.loan_number && <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{selectedRecord.loan_number}</span>}
+                </div>
+              </div>
+              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              {(selectedRecord.loan_start_date || selectedRecord.loan_end_date) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedRecord.loan_start_date && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Start Date</div>
+                      <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{new Date(selectedRecord.loan_start_date).toLocaleDateString('en-GB')}</div>
+                    </div>
+                  )}
+                  {selectedRecord.loan_end_date && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Expected Return</div>
+                      <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{new Date(selectedRecord.loan_end_date).toLocaleDateString('en-GB')}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {(selectedRecord.contact_name || selectedRecord.contact_email) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedRecord.contact_name && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Contact</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.contact_name}</div>
+                    </div>
+                  )}
+                  {selectedRecord.contact_email && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Email</div>
+                      <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.contact_email}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {selectedRecord.purpose && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Purpose</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.purpose}</div>
+                </div>
+              )}
+              {selectedRecord.insurance_type && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Insurance Type</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.insurance_type}</div>
+                </div>
+              )}
+              {selectedRecord.insurance_value && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Insurance Value</div>
+                  <div className="text-sm font-mono text-stone-700 dark:text-stone-300">£{Number(selectedRecord.insurance_value).toLocaleString('en-GB')}</div>
+                </div>
+              )}
+              {selectedRecord.conditions && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Special Conditions</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.conditions}</div>
+                </div>
+              )}
+              {selectedRecord.environmental_requirements && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Environmental Requirements</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.environmental_requirements}</div>
+                </div>
+              )}
+              {selectedRecord.display_requirements && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Display Requirements</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.display_requirements}</div>
+                </div>
+              )}
+              {selectedRecord.courier_transport_arrangements && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Courier / Transport</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.courier_transport_arrangements}</div>
+                </div>
+              )}
+              {selectedRecord.condition_arrival && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Condition at {selectedRecord.direction === 'In' ? 'Arrival' : 'Exit'}</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.condition_arrival}</div>
+                </div>
+              )}
+              {selectedRecord.condition_return && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Condition on Return</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.condition_return}</div>
+                </div>
+              )}
+              {selectedRecord.notes && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Notes</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.notes}</div>
+                </div>
+              )}
+              {canEdit && selectedRecord.status === 'Active' && (
+                <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
+                  <button type="button" onClick={() => { promptEndLoan(selectedRecord.id); setSelectedRecord(null) }}
+                    className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                    End loan →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -200,7 +321,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
             <tbody>
               {loanHistory.map(l => (
                 <Fragment key={l.id}>
-                  <tr className={`border-b border-stone-100 dark:border-stone-800 ${l.status === 'Active' ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`}>
+                  <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer ${l.status === 'Active' ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`} onClick={() => setSelectedRecord(l)}>
                     <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{l.loan_number || '—'}</td>
                     <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
                     <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100">{l.borrowing_institution}</td>
@@ -210,9 +331,9 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                       {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>{l.status}</span>
+                      <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{l.status}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         {l.status === 'Active' && (
                           endingLoanId === l.id

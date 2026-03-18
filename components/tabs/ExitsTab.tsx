@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, EXIT_REASONS, TEMP_REASONS } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import { getPlan } from '@/lib/plans'
+import DocumentAttachments from '@/components/DocumentAttachments'
+import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 interface ExitsTabProps {
   canEdit: boolean
@@ -20,7 +24,10 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
   const today = new Date().toISOString().slice(0, 10)
   const [exitForm, setExitForm] = useState({ exit_date: today, exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
+  const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
@@ -48,6 +55,14 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    if (stagedDocs.length > 0) {
+      const newRecord = await supabase.from('object_exits').select('id').eq('exit_number', exitNumber).single()
+      if (newRecord.data) {
+        const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'exit_record', newRecord.data.id)
+        if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
+        setStagedDocs([])
+      }
+    }
     setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
     const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
     setExitHistory(data || [])
@@ -138,8 +153,14 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
             <label className={labelCls}>Notes</label>
             <textarea rows={2} value={exitForm.notes} onChange={e => setExitForm(f => ({ ...f, notes: e.target.value }))} className={`${inputCls} resize-none`} />
           </div>
+          {canAttach && (
+            <div>
+              <label className={labelCls}>Supporting Documents</label>
+              <StagedDocumentPicker relatedToType="exit_record" value={stagedDocs} onChange={setStagedDocs} />
+            </div>
+          )}
           <button type="button" onClick={addExit} disabled={!exitForm.recipient_name || !exitForm.exit_authorised_by || submitting}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {submitting ? 'Saving…' : 'Save exit record →'}
           </button>
         </div>
@@ -159,12 +180,12 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
             </tr></thead>
             <tbody>
               {exitHistory.map(e => (
-                <tr key={e.id} className="border-b border-stone-100 dark:border-stone-800">
+                <tr key={e.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(e)}>
                   <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
                   <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(e.exit_date + 'T00:00:00').toLocaleDateString('en-GB')}</td>
                   <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
                   <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
-                  <td className="px-4 py-3">{e.signed_receipt ? <span className="text-xs font-mono text-emerald-600">✓ Signed</span> : <span className="text-xs font-mono text-amber-600">Pending</span>}</td>
+                  <td className="px-4 py-3">{e.signed_receipt ? <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">✓ Signed</span> : <span className="text-xs font-mono text-amber-600 dark:text-amber-400">Pending</span>}</td>
                   <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.expected_return_date ? new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
                 </tr>
               ))}
@@ -177,6 +198,98 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-16 text-center">
           <div className="text-4xl mb-3">↗</div>
           <p className="text-sm text-stone-400 dark:text-stone-500">No exit records for this object.</p>
+        </div>
+      )}
+
+      {selectedRecord && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedRecord(null)}>
+          <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
+              <div>
+                <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.exit_reason}</div>
+                <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5">{selectedRecord.exit_number}</div>
+              </div>
+              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Exit Date</div>
+                  <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{new Date(selectedRecord.exit_date + 'T00:00:00').toLocaleDateString('en-GB')}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Authorised By</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.exit_authorised_by || '—'}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Recipient</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.recipient_name}</div>
+                </div>
+                {selectedRecord.recipient_contact && (
+                  <div>
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Contact</div>
+                    <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.recipient_contact}</div>
+                  </div>
+                )}
+              </div>
+              {selectedRecord.destination_address && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Destination</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.destination_address}</div>
+                </div>
+              )}
+              {selectedRecord.transport_method && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Transport</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.transport_method}</div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Insurance Confirmed</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">{selectedRecord.insurance_indemnity_confirmed ? 'Yes' : 'No'}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Signed Receipt</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300">
+                    {selectedRecord.signed_receipt ? `Yes${selectedRecord.signed_receipt_date ? ` — ${new Date(selectedRecord.signed_receipt_date + 'T00:00:00').toLocaleDateString('en-GB')}` : ''}` : 'Pending'}
+                  </div>
+                </div>
+              </div>
+              {selectedRecord.expected_return_date && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Expected Return</div>
+                  <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{new Date(selectedRecord.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB')}</div>
+                </div>
+              )}
+              {selectedRecord.exit_condition && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Condition at Exit</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.exit_condition}</div>
+                </div>
+              )}
+              {selectedRecord.packing_notes && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Packing Notes</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.packing_notes}</div>
+                </div>
+              )}
+              {selectedRecord.notes && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Notes</div>
+                  <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.notes}</div>
+                </div>
+              )}
+              {canAttach && (
+                <div className="pt-4 border-t border-stone-100 dark:border-stone-800">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Documents</div>
+                  <DocumentAttachments objectId={object.id} museumId={museum.id} relatedToType="exit_record" relatedToId={selectedRecord.id} canEdit={canEdit} canAttach={canAttach} />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>
