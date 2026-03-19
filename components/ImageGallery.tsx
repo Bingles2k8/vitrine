@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { compressImage } from '@/lib/image-compression'
+import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
@@ -28,6 +28,12 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setUploadError('Please upload a JPG, PNG, WEBP, GIF, or AVIF file.')
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     setUploadError(null)
     const compressed = await compressImage(file)
@@ -122,7 +128,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
             {uploadError && (
               <div className="text-xs text-red-500 mt-1 text-center px-1">{uploadError}</div>
             )}
-            <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} className="hidden" />
+            <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleFile} disabled={uploading} className="hidden" />
           </label>
         )}
         {canEdit && images.length >= imageLimit && (

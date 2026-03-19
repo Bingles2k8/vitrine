@@ -7,7 +7,7 @@ import { TEMPLATES } from '@/lib/templates'
 import DashboardShell from '@/components/DashboardShell'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
-import { compressImage } from '@/lib/image-compression'
+import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan } from '@/lib/plans'
 
 const FONTS = [
@@ -359,7 +359,7 @@ export default function SiteBuilder() {
                     <div className="flex gap-2">
                       <label className="text-xs font-mono text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                         {uploadingField === 'logo_image_url' ? 'Uploading…' : 'Change'}
-                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
+                        <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
                       </label>
                       <button type="button" onClick={() => set('logo_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
@@ -370,7 +370,7 @@ export default function SiteBuilder() {
                       {uploadingField === 'logo_image_url' ? <span className="text-xs font-mono text-stone-400">…</span> : form.logo_emoji}
                     </div>
                     <span className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Upload logo image</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
+                    <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
                   </label>
                 )}
               </div>
@@ -414,7 +414,7 @@ export default function SiteBuilder() {
                     <div className="flex gap-2">
                       <label className="text-xs font-mono text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                         {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change image'}
-                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
+                        <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                       </label>
                       <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
@@ -429,7 +429,7 @@ export default function SiteBuilder() {
                         <div className="text-xs text-stone-400 dark:text-stone-500">Upload a header image</div>
                       </>
                     )}
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
+                    <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                   </label>
                 )}
               </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { compressImage } from '@/lib/image-compression'
+import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 
 interface Props {
   currentUrl?: string
@@ -18,6 +18,12 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setUploadError('Please upload a JPG, PNG, WEBP, GIF, or AVIF file.')
+      e.target.value = ''
+      return
+    }
 
     setUploading(true)
     setUploadError(null)
@@ -70,7 +76,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
               </span>
               <input
                 type="file"
-                accept="image/*"
+                accept={ALLOWED_IMAGE_ACCEPT}
                 onChange={handleFile}
                 className="hidden"
               />
@@ -85,7 +91,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
             <div className="text-xs text-stone-300 dark:text-stone-600">JPG, PNG, WEBP up to 10MB</div>
             <input
               type="file"
-              accept="image/*"
+              accept={ALLOWED_IMAGE_ACCEPT}
               onChange={handleFile}
               className="hidden"
             />
