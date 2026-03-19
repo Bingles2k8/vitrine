@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -51,6 +51,10 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [checkoutResult, setCheckoutResult] = useState<'success' | 'cancelled' | null>(null)
+  const [pollingForPlan, setPollingForPlan] = useState(false)
+  const [pollingTimedOut, setPollingTimedOut] = useState(false)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollAttemptsRef = useRef(0)
   const [objectCount, setObjectCount] = useState(0)
   const [trashedCount, setTrashedCount] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
@@ -59,6 +63,13 @@ export default function PlanPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const checkoutParam = params.get('checkout') as 'success' | 'cancelled' | null
+    if (checkoutParam) {
+      setCheckoutResult(checkoutParam)
+      window.history.replaceState({}, '', '/dashboard/plan')
+    }
+
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
@@ -103,14 +114,33 @@ export default function PlanPage() {
       }
 
       setLoading(false)
+
+      // If returning from a successful checkout but the webhook hasn't fired yet,
+      // poll until the plan updates in the database (race condition with Stripe webhooks).
+      if (checkoutParam === 'success' && museum.plan === 'community') {
+        setPollingForPlan(true)
+        pollAttemptsRef.current = 0
+        pollIntervalRef.current = setInterval(async () => {
+          pollAttemptsRef.current++
+          const polledResult = await getMuseumForUser(supabase)
+          if (polledResult && polledResult.museum.plan !== 'community') {
+            clearInterval(pollIntervalRef.current!)
+            setMuseum(polledResult.museum)
+            setPollingForPlan(false)
+            return
+          }
+          if (pollAttemptsRef.current >= 8) {
+            clearInterval(pollIntervalRef.current!)
+            setPollingForPlan(false)
+            setPollingTimedOut(true)
+          }
+        }, 2000)
+      }
     }
     load()
 
-    const params = new URLSearchParams(window.location.search)
-    const result = params.get('checkout') as 'success' | 'cancelled' | null
-    if (result) {
-      setCheckoutResult(result)
-      window.history.replaceState({}, '', '/dashboard/plan')
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
     }
   }, [])
 
@@ -180,7 +210,11 @@ export default function PlanPage() {
           {checkoutResult === 'success' && (
             <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
               <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">
-                Subscription activated! Your plan will update shortly.
+                {pollingForPlan
+                  ? 'Activating your plan…'
+                  : pollingTimedOut
+                    ? 'Your plan is activating — this can take a moment. Refresh the page if it does not update shortly.'
+                    : 'Subscription activated!'}
               </p>
             </div>
           )}
