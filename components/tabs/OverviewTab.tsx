@@ -216,7 +216,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Description */}
         <div>
-          <label className={labelCls}>Description (public)</label>
+          <label className={labelCls}>Description</label>
           <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} className={textareaCls} />
         </div>
 

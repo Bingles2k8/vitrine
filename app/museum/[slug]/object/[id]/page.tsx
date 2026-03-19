@@ -5,6 +5,31 @@ import { getMuseumStyles } from '@/lib/museum-styles'
 import PageViewTracker from '@/components/PageViewTracker'
 import PublicImageGallery from '@/components/PublicImageGallery'
 
+function formatDate(object: any): string | null {
+  const date = object.production_date || object.year
+  if (!date) return null
+  if (object.production_date_qualifier && object.production_date) {
+    return `${object.production_date_qualifier} ${object.production_date}`
+  }
+  return date
+}
+
+function formatDimensions(object: any): string | null {
+  const dims: string[] = []
+  if (object.dimension_height) dims.push(`H ${object.dimension_height}`)
+  if (object.dimension_width) dims.push(`W ${object.dimension_width}`)
+  if (object.dimension_depth) dims.push(`D ${object.dimension_depth}`)
+  const parts: string[] = []
+  if (dims.length > 0) {
+    parts.push(dims.join(' × ') + (object.dimension_unit ? ` ${object.dimension_unit}` : ''))
+  }
+  if (object.dimension_weight) {
+    parts.push(`${object.dimension_weight}${object.dimension_weight_unit ? ` ${object.dimension_weight_unit}` : ''}`)
+  }
+  if (object.dimension_notes) parts.push(object.dimension_notes)
+  return parts.length > 0 ? parts.join(' · ') : (object.dimensions || null)
+}
+
 export default async function PublicObject({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const { slug, id } = await params
   const supabase = await createServerSideClient()
@@ -45,6 +70,34 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
 
   const { accent, content, headingStyle } = getMuseumStyles(museum)
 
+  const metaRows = [
+    { label: 'Date', value: formatDate(object) },
+    { label: 'Object Type', value: object.object_type },
+    { label: 'Medium', value: object.medium },
+    { label: 'Culture', value: object.culture },
+    { label: 'Production Place', value: object.production_place },
+    { label: 'Accession', value: object.accession_no },
+    { label: 'Dimensions', value: formatDimensions(object) },
+    parseInt(object.number_of_parts) > 1 ? { label: 'No. of Parts', value: String(object.number_of_parts) } : null,
+    { label: 'Status', value: object.status },
+    { label: 'Location', value: object.current_location },
+    object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
+  ].filter((row): row is { label: string; value: string } => !!row && !!row.value)
+
+  const proseSections = [
+    { label: 'Historical Context', value: object.historical_context },
+    { label: 'Marks and Inscriptions', value: object.inscription },
+    { label: 'Materials & Techniques', value: object.physical_materials },
+    { label: 'Provenance', value: object.provenance },
+    { label: 'Credit Line', value: object.credit_line },
+  ].filter(s => !!s.value)
+
+  const associations = [
+    { label: 'Associated Person', value: object.associated_person },
+    { label: 'Associated Organisation', value: object.associated_organisation },
+    { label: 'Associated Place', value: object.associated_place },
+  ].filter(a => !!a.value)
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
       <PageViewTracker museumId={museum.id} pageType="object" objectId={object.id} />
@@ -78,29 +131,43 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
             <p className="text-sm font-mono mb-8" style={{ color: accent }}>{object.rarity}</p>
           )}
 
-          <div className="grid grid-cols-2 border rounded-lg overflow-hidden mb-8" style={{ borderColor: content.border }}>
-            {[
-              { label: 'Date', value: object.year },
-              { label: 'Medium', value: object.medium },
-              { label: 'Culture', value: object.culture },
-              { label: 'Accession', value: object.accession_no },
-              { label: 'Dimensions', value: object.dimensions },
-              { label: 'Status', value: object.status },
-              object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
-            ].filter(Boolean).map((row: any, i) => (
-              <div
-                key={row.label}
-                className={'p-4 ' + (i % 2 === 0 ? 'border-r ' : '') + 'border-b last:border-b-0'}
-                style={{ borderColor: content.border }}
-              >
-                <div className="text-xs uppercase tracking-widest mb-1 font-mono" style={{ color: content.muted }}>{row.label}</div>
-                <div className="text-sm" style={{ color: content.heading }}>{row.value || '—'}</div>
-              </div>
-            ))}
-          </div>
+          {metaRows.length > 0 && (
+            <div className="grid grid-cols-2 border rounded-lg overflow-hidden mb-8" style={{ borderColor: content.border }}>
+              {metaRows.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={'p-4 ' + (i % 2 === 0 ? 'border-r ' : '') + 'border-b last:border-b-0'}
+                  style={{ borderColor: content.border }}
+                >
+                  <div className="text-xs uppercase tracking-widest mb-1 font-mono" style={{ color: content.muted }}>{row.label}</div>
+                  <div className="text-sm" style={{ color: content.heading }}>{row.value}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {object.description && (
-            <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{object.description}</p>
+            <p className="leading-relaxed font-light text-sm mb-8" style={{ color: content.body }}>{object.description}</p>
+          )}
+
+          {proseSections.map(section => (
+            <div key={section.label} className="mb-6">
+              <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>{section.label}</div>
+              <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{section.value}</p>
+            </div>
+          ))}
+
+          {associations.length > 0 && (
+            <div className="mb-6">
+              <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Associations</div>
+              <div className="space-y-1">
+                {associations.map(a => (
+                  <div key={a.label} className="text-sm" style={{ color: content.body }}>
+                    <span className="font-mono text-xs" style={{ color: content.muted }}>{a.label}: </span>{a.value}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
