@@ -144,36 +144,40 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Entry Reason</label>
-            <select value={entryForm.entry_reason} onChange={e => setE('entry_reason', e.target.value)} className={inputCls}>
-              <option value="">— Select —</option>
-              {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Outcome</label>
-            <select value={entryForm.outcome} onChange={e => setE('outcome', e.target.value)} className={inputCls}>
-              <option value="">— Select —</option>
-              {ENTRY_OUTCOMES.map(o => <option key={o}>{o}</option>)}
-            </select>
-          </div>
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Entry Reason</label>
+                <select value={entryForm.entry_reason} onChange={e => setE('entry_reason', e.target.value)} className={inputCls}>
+                  <option value="">— Select —</option>
+                  {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Outcome</label>
+                <select value={entryForm.outcome} onChange={e => setE('outcome', e.target.value)} className={inputCls}>
+                  <option value="">— Select —</option>
+                  {ENTRY_OUTCOMES.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Entry Method</label>
-            <select value={entryForm.entry_method} onChange={e => setE('entry_method', e.target.value)} className={inputCls}>
-              <option value="">— Select —</option>
-              {ENTRY_METHODS.map(m => <option key={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Scheduled Return Date</label>
-            <input type="date" value={entryForm.scheduled_return_date} onChange={e => setE('scheduled_return_date', e.target.value)} className={inputCls} />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Entry Method</label>
+                <select value={entryForm.entry_method} onChange={e => setE('entry_method', e.target.value)} className={inputCls}>
+                  <option value="">— Select —</option>
+                  {ENTRY_METHODS.map(m => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Scheduled Return Date</label>
+                <input type="date" value={entryForm.scheduled_return_date} onChange={e => setE('scheduled_return_date', e.target.value)} className={inputCls} />
+              </div>
+            </div>
+          </>
+        )}
 
         <div>
           <label className={labelCls}>Condition on Entry</label>

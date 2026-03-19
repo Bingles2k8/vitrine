@@ -149,17 +149,19 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         )}
 
         {/* Status */}
-        <div>
-          <label className={labelCls}>Status</label>
-          <div className="flex gap-2 flex-wrap">
-            {STATUSES.map(s => (
-              <button key={s} type="button" onClick={() => set('status', s)}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                {s}
-              </button>
-            ))}
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Status</label>
+            <div className="flex gap-2 flex-wrap">
+              {STATUSES.map(s => (
+                <button key={s} type="button" onClick={() => set('status', s)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Condition + Location */}
         {form.condition_grade && (
@@ -223,37 +225,43 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
 
         {/* Provenance + doc upload */}
-        <div>
-          <label className={labelCls}>Provenance</label>
-          <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
-            placeholder="Known ownership history prior to acquisition…"
-            className={textareaCls} />
-          {object?.id && museum?.id && (
-            <div className="mt-3 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Provenance Documents</div>
-              <DocumentAttachments
-                objectId={object.id}
-                museumId={museum.id}
-                relatedToType="provenance"
-                relatedToId={null}
-                canEdit={canEdit}
-                canAttach={canAttach}
-              />
-            </div>
-          )}
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Provenance</label>
+            <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
+              placeholder="Known ownership history prior to acquisition…"
+              className={textareaCls} />
+            {object?.id && museum?.id && (
+              <div className="mt-3 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Provenance Documents</div>
+                <DocumentAttachments
+                  objectId={object.id}
+                  museumId={museum.id}
+                  relatedToType="provenance"
+                  relatedToId={null}
+                  canEdit={canEdit}
+                  canAttach={canAttach}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Credit Line */}
-        <div>
-          <label className={labelCls}>Credit Line</label>
-          <input value={form.credit_line || ''} onChange={e => set('credit_line', e.target.value)} placeholder="How the donor wishes to be credited. Leave blank if they don't require credit." className={inputCls} />
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Credit Line</label>
+            <input value={form.credit_line || ''} onChange={e => set('credit_line', e.target.value)} placeholder="How the donor wishes to be credited. Leave blank if they don't require credit." className={inputCls} />
+          </div>
+        )}
 
         {/* Materials & Techniques */}
-        <div>
-          <label className={labelCls}>Materials &amp; Techniques</label>
-          <input value={form.physical_materials} onChange={e => set('physical_materials', e.target.value)} placeholder="e.g. oil on canvas, gilt wood frame; hand-thrown" className={inputCls} />
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Materials &amp; Techniques</label>
+            <input value={form.physical_materials} onChange={e => set('physical_materials', e.target.value)} placeholder="e.g. oil on canvas, gilt wood frame; hand-thrown" className={inputCls} />
+          </div>
+        )}
 
         {/* Maker + Production */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -286,24 +294,26 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
 
         {/* Purchase or Gift */}
-        <div>
-          <label className={labelCls}>Purchase or Gift</label>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { label: 'Not specified', value: null },
-              { label: 'Gift', value: true },
-              { label: 'Purchase', value: false },
-            ].map(opt => {
-              const isActive = form.is_gift === opt.value
-              return (
-                <button key={String(opt.value)} type="button" onClick={() => set('is_gift', opt.value)}
-                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${isActive ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                  {opt.label}
-                </button>
-              )
-            })}
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Purchase or Gift</label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: 'Not specified', value: null },
+                { label: 'Gift', value: true },
+                { label: 'Purchase', value: false },
+              ].map(opt => {
+                const isActive = form.is_gift === opt.value
+                return (
+                  <button key={String(opt.value)} type="button" onClick={() => set('is_gift', opt.value)}
+                    className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${isActive ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Insured Value (Internal) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -375,12 +385,14 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         )}
 
         {/* Full Description (Internal) */}
-        <div>
-          <label className={labelCls}>Full Description {internalLabel}</label>
-          <textarea value={form.full_description} onChange={e => set('full_description', e.target.value)} rows={3}
-            placeholder="Detailed internal catalogue description…"
-            className={textareaCls} />
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <div>
+            <label className={labelCls}>Full Description {internalLabel}</label>
+            <textarea value={form.full_description} onChange={e => set('full_description', e.target.value)} rows={3}
+              placeholder="Detailed internal catalogue description…"
+              className={textareaCls} />
+          </div>
+        )}
 
         {/* Associations */}
         <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Associations</div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle } from '@/components/tabs/shared'
 import AutocompleteInput from '@/components/AutocompleteInput'
+import { getPlan } from '@/lib/plans'
 
 interface LocationTabProps {
   form: Record<string, any>
@@ -144,6 +145,27 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (!getPlan(museum.plan).fullMode) {
+    return (
+      <>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+          <div className={sectionTitle}>Current Location</div>
+          <div>
+            <label className={labelCls}>Where is this item kept?</label>
+            <input
+              value={form.current_location || ''}
+              onChange={e => set('current_location', e.target.value)}
+              placeholder="e.g. Living room shelf, Study cabinet, Attic box 3…"
+              className={inputCls}
+              disabled={!canEdit}
+            />
+          </div>
+        </div>
+        {canEdit && <SaveBar saving={saving} onCancel={() => router.push('/dashboard')} />}
+      </>
+    )
   }
 
   return (

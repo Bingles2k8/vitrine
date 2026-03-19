@@ -30,7 +30,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
   const [submitting, setSubmitting] = useState(false)
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
-  const canAttach = canEdit && getPlan(museum.plan).compliance
+  const canAttach = canEdit && (getPlan(museum.plan).compliance || getPlan(museum.plan).advancedCustomisation)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -144,25 +144,29 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           />
         </div>
 
-        <div>
-          <label className={labelCls}>Reason for Check</label>
-          <select value={conditionForm.reason_for_check} onChange={e => setConditionForm(f => ({ ...f, reason_for_check: e.target.value, other_reason: '' }))} className={inputCls} disabled={!canEdit}>
-            <option value="">— Select —</option>
-            {REASONS_FOR_CHECK.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
+        {getPlan(museum.plan).fullMode && (
+          <>
+            <div>
+              <label className={labelCls}>Reason for Check</label>
+              <select value={conditionForm.reason_for_check} onChange={e => setConditionForm(f => ({ ...f, reason_for_check: e.target.value, other_reason: '' }))} className={inputCls} disabled={!canEdit}>
+                <option value="">— Select —</option>
+                {REASONS_FOR_CHECK.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
 
-        {conditionForm.reason_for_check === 'Other' && (
-          <div>
-            <label className={labelCls}>Specify reason</label>
-            <AutocompleteInput
-              value={conditionForm.other_reason}
-              onChange={v => setConditionForm(f => ({ ...f, other_reason: v }))}
-              staticList={OTHER_REASON_SUGGESTIONS}
-              placeholder="Describe the reason…"
-              className={inputCls}
-            />
-          </div>
+            {conditionForm.reason_for_check === 'Other' && (
+              <div>
+                <label className={labelCls}>Specify reason</label>
+                <AutocompleteInput
+                  value={conditionForm.other_reason}
+                  onChange={v => setConditionForm(f => ({ ...f, other_reason: v }))}
+                  staticList={OTHER_REASON_SUGGESTIONS}
+                  placeholder="Describe the reason…"
+                  className={inputCls}
+                />
+              </div>
+            )}
+          </>
         )}
 
         <div>
