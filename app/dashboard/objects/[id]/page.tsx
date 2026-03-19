@@ -466,7 +466,7 @@ export default function ObjectDetail() {
           )}
 
         </form>
-        <div className="hidden lg:block w-44 shrink-0">
+        {getPlan(museum?.plan).fullMode && <div className="hidden lg:block w-44 shrink-0">
           <div className="sticky top-20">
             <ObjectProgressSidebar
               sections={[
@@ -507,7 +507,7 @@ export default function ObjectDetail() {
               onTabChange={setActiveTab}
             />
           </div>
-        </div>
+        </div>}
         </div>
         {qrModalOpen && museum && (
           <QRLabelModal
