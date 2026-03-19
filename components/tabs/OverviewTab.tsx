@@ -88,9 +88,19 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
 
         {/* Artist + Date */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><label className={labelCls}>Artist / Maker</label><input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Date / Year</label><input value={form.year} onChange={e => set('year', e.target.value)} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Date (Cataloguing)</label>
+            <input value={form.production_date || ''} onChange={e => set('production_date', e.target.value)} placeholder="e.g. 1850, c.1920–1930" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Date Qualifier</label>
+            <select value={form.production_date_qualifier} onChange={e => set('production_date_qualifier', e.target.value)} className={inputCls}>
+              <option value="">{'\u2014'} Select {'\u2014'}</option>
+              {DATE_QUALIFIERS.map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
         </div>
 
         {/* Medium + Object Type */}
@@ -265,9 +275,8 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </div>
         )}
 
-        {/* Maker + Production */}
+        {/* Production */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><label className={labelCls}>Maker Name</label><input value={form.maker_name} onChange={e => set('maker_name', e.target.value)} placeholder="Full name" className={inputCls} /></div>
           <div>
             <label className={labelCls}>Production Place</label>
             <AutocompleteInput
@@ -279,19 +288,6 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
               placeholder="City, region, country"
               className={inputCls}
             />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Date (Cataloguing)</label>
-            <input value={form.production_date || ''} onChange={e => set('production_date', e.target.value)} placeholder="e.g. 1850, c.1920–1930" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Date Qualifier</label>
-            <select value={form.production_date_qualifier} onChange={e => set('production_date_qualifier', e.target.value)} className={inputCls}>
-              <option value="">{'\u2014'} Select {'\u2014'}</option>
-              {DATE_QUALIFIERS.map(q => <option key={q} value={q}>{q}</option>)}
-            </select>
           </div>
         </div>
 
