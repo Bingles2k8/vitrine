@@ -124,7 +124,10 @@ export default function EntryRegisterPage() {
 
   async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by } = newEntry
-    if (!entry_date || !object_title || !depositor_name || !entry_reason || !object_description || !received_by) {
+    const trackDepositor = getPlan(museum?.plan).depositorTracking
+    const requiredMissing = !entry_date || !object_title || !entry_reason || !object_description ||
+      (trackDepositor && (!depositor_name || !received_by))
+    if (requiredMissing) {
       toast('Please fill in all required fields.', 'error')
       return
     }
@@ -196,6 +199,7 @@ export default function EntryRegisterPage() {
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
+  const trackDepositor = getPlan(museum?.plan).depositorTracking
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
   const rawQ = searchQuery.trim()
@@ -336,26 +340,32 @@ export default function EntryRegisterPage() {
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
                   <input type="date" className={inputCls} value={newEntry.entry_date} onChange={e => setNewEntry(v => ({ ...v, entry_date: e.target.value }))} />
                 </div>
-                <div>
-                  <label className={labelCls}>Donor Name <span className="text-red-400">*</span></label>
-                  <input type="text" className={inputCls} placeholder="Name of donor" value={newEntry.depositor_name} onChange={e => setNewEntry(v => ({ ...v, depositor_name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>Donor Contact</label>
-                  <input type="text" className={inputCls} placeholder="Email or phone" value={newEntry.depositor_contact} onChange={e => setNewEntry(v => ({ ...v, depositor_contact: e.target.value }))} />
-                </div>
-                <div className="flex flex-col justify-end gap-2 pt-1">
-                  <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
-                    <input type="checkbox" checked={newEntry.gdpr_consent} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent: e.target.checked }))} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
-                    <span className="text-xs font-mono text-stone-500 dark:text-stone-400">GDPR consent obtained</span>
-                  </label>
-                  {newEntry.gdpr_consent && (
-                    <div>
-                      <label className={labelCls}>Consent Date</label>
-                      <input type="date" className={inputCls} value={newEntry.gdpr_consent_date} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent_date: e.target.value }))} />
-                    </div>
-                  )}
-                </div>
+                {trackDepositor && (
+                  <div>
+                    <label className={labelCls}>Donor Name <span className="text-red-400">*</span></label>
+                    <input type="text" className={inputCls} placeholder="Name of donor" value={newEntry.depositor_name} onChange={e => setNewEntry(v => ({ ...v, depositor_name: e.target.value }))} />
+                  </div>
+                )}
+                {trackDepositor && (
+                  <div>
+                    <label className={labelCls}>Donor Contact</label>
+                    <input type="text" className={inputCls} placeholder="Email or phone" value={newEntry.depositor_contact} onChange={e => setNewEntry(v => ({ ...v, depositor_contact: e.target.value }))} />
+                  </div>
+                )}
+                {trackDepositor && (
+                  <div className="flex flex-col justify-end gap-2 pt-1">
+                    <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                      <input type="checkbox" checked={newEntry.gdpr_consent} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent: e.target.checked }))} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
+                      <span className="text-xs font-mono text-stone-500 dark:text-stone-400">GDPR consent obtained</span>
+                    </label>
+                    {newEntry.gdpr_consent && (
+                      <div>
+                        <label className={labelCls}>Consent Date</label>
+                        <input type="date" className={inputCls} value={newEntry.gdpr_consent_date} onChange={e => setNewEntry(v => ({ ...v, gdpr_consent_date: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className={labelCls}>Entry Reason <span className="text-red-400">*</span></label>
                   <select className={inputCls} value={newEntry.entry_reason} onChange={e => setNewEntry(v => ({ ...v, entry_reason: e.target.value }))}>
@@ -370,10 +380,12 @@ export default function EntryRegisterPage() {
                     {['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer'].map(m => <option key={m}>{m}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className={labelCls}>Entry By <span className="text-red-400">*</span></label>
-                  <input type="text" className={inputCls} placeholder="Staff member name" value={newEntry.received_by} onChange={e => setNewEntry(v => ({ ...v, received_by: e.target.value }))} />
-                </div>
+                {trackDepositor && (
+                  <div>
+                    <label className={labelCls}>Entry By <span className="text-red-400">*</span></label>
+                    <input type="text" className={inputCls} placeholder="Staff member name" value={newEntry.received_by} onChange={e => setNewEntry(v => ({ ...v, received_by: e.target.value }))} />
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
                   <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
@@ -437,12 +449,12 @@ export default function EntryRegisterPage() {
                   <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Entry No.</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Donor</th>
+                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Donor</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry Reason</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry By</th>
+                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry By</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
-                    {!simple && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>}
+                    {!simple && trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
                   </tr>
                 </thead>
@@ -460,19 +472,21 @@ export default function EntryRegisterPage() {
                       <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {new Date(e.entry_date + 'T00:00:00').toLocaleDateString('en-GB')}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.depositor_name}</div>
-                        {e.objects && <div className="text-xs text-stone-400 dark:text-stone-500">{e.objects.accession_no || e.objects.title}</div>}
-                      </td>
+                      {trackDepositor && (
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.depositor_name}</div>
+                          {e.objects && <div className="text-xs text-stone-400 dark:text-stone-500">{e.objects.accession_no || e.objects.title}</div>}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.entry_reason}</td>
                       <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.object_count}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{e.received_by}</td>
+                      {trackDepositor && <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{e.received_by}</td>}
                       <td className="px-4 py-3">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${OUTCOME_STYLES[e.outcome] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
                           {e.outcome || 'Pending'}
                         </span>
                       </td>
-                      {!simple && (
+                      {!simple && trackDepositor && (
                         <td className="px-4 py-3">
                           {e.receipt_issued
                             ? <span className="text-xs font-mono text-emerald-600">✓ Issued</span>

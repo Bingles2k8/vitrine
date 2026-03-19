@@ -187,92 +187,98 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
             <label className={labelCls}>Number of Objects</label>
             <input type="number" min={1} value={entryForm.object_count} onChange={e => setE('object_count', parseInt(e.target.value) || 1)} className={inputCls} />
           </div>
-          <div>
-            <label className={labelCls}>Entry By</label>
-            <input value={entryForm.received_by} onChange={e => setE('received_by', e.target.value)} className={inputCls} />
-          </div>
+          {getPlan(museum.plan).depositorTracking && (
+            <div>
+              <label className={labelCls}>Entry By</label>
+              <input value={entryForm.received_by} onChange={e => setE('received_by', e.target.value)} className={inputCls} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Card 2 — Donor */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Donor</div>
+      {getPlan(museum.plan).depositorTracking && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+          <div className={sectionTitle}>Donor</div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Donor Name</label>
-            <input value={entryForm.depositor_name} onChange={e => setE('depositor_name', e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Donor Contact</label>
-            <input value={entryForm.depositor_contact} onChange={e => setE('depositor_contact', e.target.value)} className={inputCls} />
-          </div>
-        </div>
-
-        <div>
-          <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
-            <input type="checkbox" checked={entryForm.gdpr_consent} onChange={e => setE('gdpr_consent', e.target.checked)} />
-            GDPR consent obtained
-          </label>
-          {entryForm.gdpr_consent && (
-            <div className="mt-2">
-              <label className={labelCls}>Consent Date</label>
-              <input type="date" value={entryForm.gdpr_consent_date} onChange={e => setE('gdpr_consent_date', e.target.value)} className={inputCls} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Donor Name</label>
+              <input value={entryForm.depositor_name} onChange={e => setE('depositor_name', e.target.value)} className={inputCls} />
             </div>
-          )}
-        </div>
+            <div>
+              <label className={labelCls}>Donor Contact</label>
+              <input value={entryForm.depositor_contact} onChange={e => setE('depositor_contact', e.target.value)} className={inputCls} />
+            </div>
+          </div>
 
-        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Legal Owner / Title Holder</label>
-            <input value={entryForm.legal_owner} onChange={e => setE('legal_owner', e.target.value)} placeholder="If different from depositor" className={inputCls} />
+            <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+              <input type="checkbox" checked={entryForm.gdpr_consent} onChange={e => setE('gdpr_consent', e.target.checked)} />
+              GDPR consent obtained
+            </label>
+            {entryForm.gdpr_consent && (
+              <div className="mt-2">
+                <label className={labelCls}>Consent Date</label>
+                <input type="date" value={entryForm.gdpr_consent_date} onChange={e => setE('gdpr_consent_date', e.target.value)} className={inputCls} />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Legal Owner / Title Holder</label>
+              <input value={entryForm.legal_owner} onChange={e => setE('legal_owner', e.target.value)} placeholder="If different from depositor" className={inputCls} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Object Description</label>
+            <textarea value={entryForm.object_description} onChange={e => setE('object_description', e.target.value)} rows={3}
+              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+          </div>
+
+          <div>
+            <label className={labelCls}>Liability Statement</label>
+            <textarea value={entryForm.liability_statement} onChange={e => setE('liability_statement', e.target.value)} rows={2}
+              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
           </div>
         </div>
-
-        <div>
-          <label className={labelCls}>Object Description</label>
-          <textarea value={entryForm.object_description} onChange={e => setE('object_description', e.target.value)} rows={3}
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-        </div>
-
-        <div>
-          <label className={labelCls}>Liability Statement</label>
-          <textarea value={entryForm.liability_statement} onChange={e => setE('liability_statement', e.target.value)} rows={2}
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-        </div>
-      </div>
+      )}
 
       {/* Card 3 — Receipt & Terms */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Receipt &amp; Terms</div>
+      {getPlan(museum.plan).depositorTracking && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+          <div className={sectionTitle}>Receipt &amp; Terms</div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
-              <input type="checkbox" checked={entryForm.terms_accepted} onChange={e => setE('terms_accepted', e.target.checked)} />
-              Terms &amp; conditions accepted
-            </label>
-            {entryForm.terms_accepted && (
-              <div className="mt-2">
-                <label className={labelCls}>Date accepted</label>
-                <input type="date" value={entryForm.terms_accepted_date} onChange={e => setE('terms_accepted_date', e.target.value)} className={inputCls} />
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
-              <input type="checkbox" checked={entryForm.receipt_issued} onChange={e => setE('receipt_issued', e.target.checked)} />
-              Receipt issued to depositor
-            </label>
-            {entryForm.receipt_issued && (
-              <div className="mt-2">
-                <label className={labelCls}>Receipt date</label>
-                <input type="date" value={entryForm.receipt_date} onChange={e => setE('receipt_date', e.target.value)} className={inputCls} />
-              </div>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                <input type="checkbox" checked={entryForm.terms_accepted} onChange={e => setE('terms_accepted', e.target.checked)} />
+                Terms &amp; conditions accepted
+              </label>
+              {entryForm.terms_accepted && (
+                <div className="mt-2">
+                  <label className={labelCls}>Date accepted</label>
+                  <input type="date" value={entryForm.terms_accepted_date} onChange={e => setE('terms_accepted_date', e.target.value)} className={inputCls} />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                <input type="checkbox" checked={entryForm.receipt_issued} onChange={e => setE('receipt_issued', e.target.checked)} />
+                Receipt issued to depositor
+              </label>
+              {entryForm.receipt_issued && (
+                <div className="mt-2">
+                  <label className={labelCls}>Receipt date</label>
+                  <input type="date" value={entryForm.receipt_date} onChange={e => setE('receipt_date', e.target.value)} className={inputCls} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Card 4 — Risk */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
