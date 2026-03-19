@@ -7,7 +7,6 @@ import { Resend } from 'resend'
 import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
@@ -156,6 +155,7 @@ export async function POST(request: Request) {
 
         const customerEmail = invoice.customer_email
         if (customerEmail) {
+          const resend = new Resend(process.env.RESEND_API_KEY)
           const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
           await resend.emails.send({
             from: 'Vitrine <noreply@contact.vitrinecms.com>',
