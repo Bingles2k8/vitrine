@@ -28,11 +28,14 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   const allObjects = objects || []
   const onDisplay = allObjects.filter(a => a.status === 'On Display').length
+  const collectionLabel = museum.collection_label || 'Collection'
+  const distinctCategories = new Set(allObjects.map((o: any) => o.medium).filter(Boolean)).size
+  const distinctOrigins = new Set(allObjects.map((o: any) => o.culture).filter(Boolean)).size
 
   const isPaid = getPlan(museum.plan).advancedCustomisation
   const { data: featuredObjects } = isPaid ? await supabase
     .from('objects')
-    .select('id, title, artist, image_url, emoji')
+    .select('id, title, artist, image_url, emoji, condition_grade, rarity')
     .eq('museum_id', museum.id)
     .eq('show_on_site', true)
     .eq('is_featured', true)
@@ -82,7 +85,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             {tmpl.id === 'editorial' ? (
               <>
                 <div className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: heroAccent }}>
-                  {museum.name} — Permanent Collection
+                  {museum.name} — {collectionLabel}
                 </div>
                 <h1 className="leading-none mb-6" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(3rem, 8vw, 7rem)' }}>
                   {museum.tagline || 'The Collection'}
@@ -106,6 +109,31 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {allObjects.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6 pt-8">
+          <p className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.5)' }}>
+            {[
+              `${allObjects.length} pieces`,
+              distinctCategories > 1 ? `${distinctCategories} categories` : null,
+              distinctOrigins > 1 ? `${distinctOrigins} origins` : null,
+              museum.collecting_since ? `Since ${museum.collecting_since}` : null,
+            ].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      )}
+
+      {museum.collector_bio && (
+        <div className="max-w-6xl mx-auto px-6 pt-10 pb-2">
+          <div className="flex items-center gap-4 mb-4">
+            <h2 className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>About the Collector</h2>
+            <div className="h-px flex-1" style={{ background: 'rgba(128,128,128,0.12)' }} />
+          </div>
+          <p className="text-sm leading-relaxed max-w-2xl font-light" style={{ color: 'rgba(128,128,128,0.8)' }}>
+            {museum.collector_bio}
+          </p>
         </div>
       )}
 

@@ -13,6 +13,8 @@ interface ObjectItem {
   status: string
   emoji: string
   image_url: string | null
+  condition_grade?: string | null
+  rarity?: string | null
 }
 
 interface StyleSettings {
@@ -202,12 +204,22 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
                     </span>
                   </div>
                 )}
+                {a.condition_grade && (
+                  <div className="absolute bottom-2 left-2">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-black/50 text-white backdrop-blur-sm">
+                      {a.condition_grade}
+                    </span>
+                  </div>
+                )}
               </div>
               {card_metadata !== 'none' && (
                 <div className={cardPad}>
                   <div className={`text-base leading-snug mb-1 ${titleClass}`}>{a.title}</div>
                   {(card_metadata === 'title+artist' || card_metadata === 'full') && (
                     <div className={`text-xs mb-1 ${artistClass}`}>{a.artist}</div>
+                  )}
+                  {(card_metadata === 'title+artist' || card_metadata === 'full') && a.rarity && (
+                    <div className={`text-xs font-mono mb-1 ${metaClass}`}>{a.rarity}</div>
                   )}
                   {card_metadata === 'full' && (
                     <div className="flex items-center justify-between">

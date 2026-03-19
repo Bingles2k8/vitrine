@@ -133,9 +133,10 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           />
         </div>
 
-        {/* Accession No. + Number of Parts */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Accession No. + Rarity + Number of Parts */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><label className={labelCls}>Accession No.</label><input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} /></div>
+          <div><label className={labelCls}>Edition / Rarity</label><input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)} placeholder="e.g. 1 of 500, First Edition" className={inputCls} /></div>
           <div><label className={labelCls}>Number of Parts</label><input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} /></div>
         </div>
 

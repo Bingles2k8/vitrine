@@ -100,6 +100,9 @@ export default function SiteBuilder() {
     social_website: '',
     seo_description: '',
     footer_text: '',
+    collection_label: '',
+    collecting_since: '',
+    collector_bio: '',
   })
 
   useEffect(() => {
@@ -142,6 +145,9 @@ export default function SiteBuilder() {
         social_website: museum.social_website || '',
         seo_description: museum.seo_description || '',
         footer_text: museum.footer_text || '',
+        collection_label: museum.collection_label || '',
+        collecting_since: museum.collecting_since || '',
+        collector_bio: museum.collector_bio || '',
       })
       setLoading(false)
     }
@@ -737,6 +743,55 @@ export default function SiteBuilder() {
                 <div className="flex-1">
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Footer</div>
                   <p className="text-sm text-stone-500 dark:text-stone-400">Add a custom copyright notice or text to your site footer. Available on Hobbyist and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
+              </div>
+            )}
+
+            {/* Collector Identity — Hobbyist+ */}
+            {getPlan(museum?.plan).advancedCustomisation ? (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collector Identity</div>
+                <p className="text-xs text-stone-400 dark:text-stone-500">Personalise how your collection is described and introduce yourself to visitors.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collection Label</label>
+                    <select value={form.collection_label} onChange={e => set('collection_label', e.target.value)}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950">
+                      <option value="">Collection (default)</option>
+                      <option value="Museum">Museum</option>
+                      <option value="Collection">Collection</option>
+                      <option value="Archive">Archive</option>
+                      <option value="Gallery">Gallery</option>
+                      <option value="Cabinet">Cabinet</option>
+                    </select>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Used in your public site headings.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collecting Since</label>
+                    <input value={form.collecting_since} onChange={e => set('collecting_since', e.target.value)}
+                      placeholder="e.g. 2003"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown in your collection stats.</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About the Collector</label>
+                  <textarea value={form.collector_bio} onChange={e => set('collector_bio', e.target.value)}
+                    placeholder="I've been collecting vintage radios since 2003, starting with a Bush TR82 I found at a car boot sale…"
+                    rows={4}
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown as a personal introduction above your collection grid.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Collector Identity</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Add a personal bio, collection label, and "collecting since" year to your public site. Available on Hobbyist and above.</p>
                 </div>
                 <button onClick={() => router.push('/dashboard/plan')}
                   className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">

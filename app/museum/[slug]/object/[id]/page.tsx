@@ -79,7 +79,10 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
           <h1 className="text-4xl font-normal leading-tight mb-2" style={{ ...headingStyle, color: content.heading }}>
             {object.title}
           </h1>
-          <p className="text-xl mb-8" style={{ ...headingStyle, color: content.muted }}>{object.artist}</p>
+          <p className={`text-xl ${object.rarity ? 'mb-1' : 'mb-8'}`} style={{ ...headingStyle, color: content.muted }}>{object.artist}</p>
+          {object.rarity && (
+            <p className="text-sm font-mono mb-8" style={{ color: accent }}>{object.rarity}</p>
+          )}
 
           <div className="grid grid-cols-2 border rounded-lg overflow-hidden mb-8" style={{ borderColor: content.border }}>
             {[
@@ -89,7 +92,8 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
               { label: 'Accession', value: object.accession_no },
               { label: 'Dimensions', value: object.dimensions },
               { label: 'Status', value: object.status },
-            ].map((row, i) => (
+              object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
+            ].filter(Boolean).map((row: any, i) => (
               <div
                 key={row.label}
                 className={'p-4 ' + (i % 2 === 0 ? 'border-r ' : '') + 'border-b last:border-b-0'}
