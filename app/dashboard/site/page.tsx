@@ -94,6 +94,12 @@ export default function SiteBuilder() {
     image_ratio: 'square',
     card_padding: 'normal',
     card_metadata: 'full',
+    social_instagram: '',
+    social_twitter: '',
+    social_facebook: '',
+    social_website: '',
+    seo_description: '',
+    footer_text: '',
   })
 
   useEffect(() => {
@@ -130,6 +136,12 @@ export default function SiteBuilder() {
         image_ratio: museum.image_ratio || 'square',
         card_padding: museum.card_padding || 'normal',
         card_metadata: museum.card_metadata || 'full',
+        social_instagram: museum.social_instagram || '',
+        social_twitter: museum.social_twitter || '',
+        social_facebook: museum.social_facebook || '',
+        social_website: museum.social_website || '',
+        seo_description: museum.seo_description || '',
+        footer_text: museum.footer_text || '',
       })
       setLoading(false)
     }
@@ -630,6 +642,101 @@ export default function SiteBuilder() {
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Embed on your website</div>
                   <p className="text-sm text-stone-500 dark:text-stone-400">Embed your collection as an iframe on any website. Available on Professional and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
+              </div>
+            )}
+
+            {/* Social Links — Hobbyist+ */}
+            {getPlan(museum?.plan).advancedCustomisation ? (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Social Links</div>
+                <p className="text-xs text-stone-400 dark:text-stone-500">Links shown as icons in your site's footer.</p>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Instagram</label>
+                  <input value={form.social_instagram} onChange={e => set('social_instagram', e.target.value)}
+                    placeholder="https://instagram.com/yourmuseum"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">X / Twitter</label>
+                  <input value={form.social_twitter} onChange={e => set('social_twitter', e.target.value)}
+                    placeholder="https://x.com/yourmuseum"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facebook</label>
+                  <input value={form.social_facebook} onChange={e => set('social_facebook', e.target.value)}
+                    placeholder="https://facebook.com/yourmuseum"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Website</label>
+                  <input value={form.social_website} onChange={e => set('social_website', e.target.value)}
+                    placeholder="https://yourmuseum.org"
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Social Links</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Add Instagram, X, Facebook, and website links to your public site footer. Available on Hobbyist and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
+              </div>
+            )}
+
+            {/* SEO & Sharing — Hobbyist+ */}
+            {getPlan(museum?.plan).advancedCustomisation ? (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">SEO & Sharing</div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Meta Description</label>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Shown in Google results and link previews. Defaults to your tagline if left blank.</p>
+                  <textarea value={form.seo_description} onChange={e => set('seo_description', e.target.value)}
+                    placeholder="Discover our permanent collection of 18th-century European paintings and decorative arts."
+                    rows={3}
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Your hero image is automatically used as the link preview image.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">SEO & Sharing</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Customise how your site appears in Google results and link previews. Available on Hobbyist and above.</p>
+                </div>
+                <button onClick={() => router.push('/dashboard/plan')}
+                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                  Upgrade →
+                </button>
+              </div>
+            )}
+
+            {/* Footer — Hobbyist+ */}
+            {getPlan(museum?.plan).advancedCustomisation ? (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Footer</div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Footer Text</label>
+                  <input value={form.footer_text} onChange={e => set('footer_text', e.target.value)}
+                    placeholder="© 2025 My Museum. All rights reserved."
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Appears in the footer alongside "Powered by Vitrine".</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Footer</div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">Add a custom copyright notice or text to your site footer. Available on Hobbyist and above.</p>
                 </div>
                 <button onClick={() => router.push('/dashboard/plan')}
                   className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">

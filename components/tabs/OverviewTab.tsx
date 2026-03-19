@@ -350,6 +350,29 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </button>
         </div>
 
+        {/* Feature on homepage toggle — paid plans only, only when visible on site */}
+        {form.show_on_site && getPlan(museum.plan).advancedCustomisation && (
+          <div>
+            <button
+              type="button"
+              onClick={() => set('is_featured', !form.is_featured)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                form.is_featured
+                  ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400'
+                  : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+              }`}
+            >
+              <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.is_featured ? 'bg-amber-400 dark:bg-amber-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.is_featured ? 'left-4' : 'left-0.5'}`} />
+              </span>
+              {form.is_featured ? 'Featured on homepage' : 'Feature on homepage'}
+            </button>
+            {!form.is_featured && (
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Show this work in a highlighted section above the collection grid.</p>
+            )}
+          </div>
+        )}
+
         {/* Full Description (Internal) */}
         <div>
           <label className={labelCls}>Full Description {internalLabel}</label>

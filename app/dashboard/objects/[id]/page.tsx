@@ -98,6 +98,7 @@ export default function ObjectDetail() {
     dimension_height: '', dimension_width: '', dimension_depth: '', dimension_weight: '',
     dimension_unit: 'cm', dimension_weight_unit: 'kg', dimension_notes: '',
     show_on_site: true,
+    is_featured: false,
     acquisition_justification: '', acquisition_documentation_ref: '',
     acquisition_value: '', acquisition_currency: 'GBP',
   })
@@ -178,6 +179,7 @@ export default function ObjectDetail() {
         last_inventoried: object.last_inventoried || '',
         inventoried_by: object.inventoried_by || '',
         show_on_site: object.show_on_site ?? true,
+        is_featured: object.is_featured ?? false,
         insured_value: object.insured_value ?? '',
         insured_value_currency: object.insured_value_currency || 'GBP',
         // Cataloguing (Proc 5)
@@ -402,7 +404,7 @@ export default function ObjectDetail() {
           ))}
         </div>
 
-        <div className="flex items-start gap-8 p-8">
+        <div className="flex gap-8 p-8">
         <form onSubmit={handleSave} className="flex-1 min-w-0 max-w-3xl space-y-6">
 
           {!canEdit && (

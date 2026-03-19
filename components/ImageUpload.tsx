@@ -12,6 +12,7 @@ interface Props {
 export default function ImageUpload({ currentUrl, onUpload }: Props) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(currentUrl || '')
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const supabase = createClient()
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -19,13 +20,10 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
     if (!file) return
 
     setUploading(true)
+    setUploadError(null)
 
     // Compress before upload
     const compressed = await compressImage(file)
-
-    // Show local preview
-    const localUrl = URL.createObjectURL(compressed)
-    setPreview(localUrl)
 
     // Upload to Supabase Storage
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
@@ -36,7 +34,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
       .upload(filename, compressed, { upsert: true, contentType: compressed.type })
 
     if (error) {
-      console.error(error)
+      setUploadError('Upload failed — please try again')
       setUploading(false)
       return
     }
@@ -48,6 +46,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
 
     onUpload(publicUrl)
     setPreview(publicUrl)
+    setUploadError(null)
     setUploading(false)
   }
 
@@ -99,6 +98,9 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
           </div>
         )}
       </div>
+      {uploadError && (
+        <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
+      )}
     </div>
   )
 }

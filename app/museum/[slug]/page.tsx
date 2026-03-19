@@ -1,7 +1,9 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import CollectionSearch from '@/components/CollectionSearch'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 
 export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
@@ -26,6 +28,18 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   const allObjects = objects || []
   const onDisplay = allObjects.filter(a => a.status === 'On Display').length
+
+  const isPaid = getPlan(museum.plan).advancedCustomisation
+  const { data: featuredObjects } = isPaid ? await supabase
+    .from('objects')
+    .select('id, title, artist, image_url, emoji')
+    .eq('museum_id', museum.id)
+    .eq('show_on_site', true)
+    .eq('is_featured', true)
+    .is('deleted_at', null)
+    .order('featured_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(6) : { data: [] }
 
   const { tmpl, accent, primary, headingStyle } = getMuseumStyles(museum)
 
@@ -91,6 +105,41 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 </p>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {featuredObjects && featuredObjects.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6 pt-10 pb-2">
+          <div className="flex items-center gap-4 mb-6">
+            <h2 className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>
+              Featured Works
+            </h2>
+            <div className="h-px flex-1" style={{ background: 'rgba(128,128,128,0.12)' }} />
+          </div>
+          <div className={`grid gap-4 ${featuredObjects.length === 1 ? 'grid-cols-1 max-w-sm' : featuredObjects.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+            {featuredObjects.map(obj => (
+              <Link key={obj.id} href={`/museum/${slug}/object/${obj.id}`}
+                className="group block overflow-hidden rounded-lg border transition-shadow hover:shadow-md"
+                style={{ borderColor: 'rgba(128,128,128,0.12)', borderRadius: `${museum.card_radius ?? 8}px` }}>
+                <div className="relative w-full pb-[56%] bg-stone-100 dark:bg-stone-800">
+                  {obj.image_url ? (
+                    <img src={obj.image_url} alt={obj.title || ''}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate" style={headingStyle}>
+                    {obj.title || 'Untitled'}
+                  </div>
+                  {obj.artist && (
+                    <div className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5">{obj.artist}</div>
+                  )}
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}
