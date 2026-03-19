@@ -12,9 +12,10 @@ interface Props {
   onPrimaryChange: (url: string) => void
   canEdit: boolean
   imageLimit: number
+  currentPrimaryUrl?: string
 }
 
-export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit }: Props) {
+export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit, currentPrimaryUrl }: Props) {
   const [images, setImages] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -42,7 +43,8 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     const { data, error } = await supabase.storage.from('object-images').upload(filename, compressed, { upsert: true, contentType: compressed.type })
     if (error) { setUploading(false); return }
     const { data: { publicUrl } } = supabase.storage.from('object-images').getPublicUrl(data.path)
-    const isPrimary = images.length === 0
+    // Only set as primary if there are no gallery images AND no existing primary on the object
+    const isPrimary = images.length === 0 && !currentPrimaryUrl
     const res = await fetch(`/api/objects/${objectId}/images`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

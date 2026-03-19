@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import PageViewTracker from '@/components/PageViewTracker'
+import PublicImageGallery from '@/components/PublicImageGallery'
 
 export default async function PublicObject({ params }: { params: Promise<{ slug: string, id: string }> }) {
   const { slug, id } = await params
@@ -33,9 +34,14 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     .eq('object_id', object.id)
     .order('sort_order', { ascending: true })
 
-  const images = galleryImages || []
-  const primaryImage = images.find(img => img.is_primary)?.url || images[0]?.url || object.image_url
-  const additionalImages = images.length > 1 ? images.filter(img => img.url !== primaryImage) : []
+  const rawImages = galleryImages || []
+  // Build ordered list: primary first, then the rest in sort order
+  const primaryImage = rawImages.find(img => img.is_primary) || rawImages[0]
+  const allImages = primaryImage
+    ? [primaryImage, ...rawImages.filter(img => img.url !== primaryImage.url)]
+    : object.image_url
+      ? [{ url: object.image_url, caption: null }]
+      : []
 
   const { accent, content, headingStyle } = getMuseumStyles(museum)
 
@@ -52,26 +58,14 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
 
-        <div className="sticky top-24 space-y-3">
-          <div
-            className="aspect-square rounded-xl flex items-center justify-center text-[120px] overflow-hidden border"
-            style={{ background: content.cardBg, borderColor: content.border }}
-          >
-            {primaryImage ? (
-              <img src={primaryImage} alt={object.title} className="w-full h-full object-cover" />
-            ) : (
-              <span>{object.emoji}</span>
-            )}
-          </div>
-          {additionalImages.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {additionalImages.map((img, i) => (
-                <div key={i} className="flex-shrink-0 w-16 h-16 rounded-lg border overflow-hidden" style={{ borderColor: content.border, background: content.cardBg }}>
-                  <img src={img.url} alt={img.caption || `${object.title} — image ${i + 2}`} className="w-full h-full object-cover" title={img.caption || undefined} />
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="sticky top-24">
+          <PublicImageGallery
+            images={allImages}
+            title={object.title}
+            emoji={object.emoji}
+            cardBg={content.cardBg}
+            border={content.border}
+          />
         </div>
 
         <div>
