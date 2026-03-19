@@ -186,11 +186,37 @@ export async function POST(request: Request) {
     }
   }
 
-  // Handle ticket purchase completion
+  // Handle checkout session completion
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const orderId = session.metadata?.order_id
     const museumId = session.metadata?.museum_id
+
+    // Handle subscription checkout plan activation — acts as an immediate fallback
+    // alongside customer.subscription.created, which may arrive with a delay.
+    if (session.mode === 'subscription' && !orderId) {
+      const planId = session.metadata?.plan_id
+      const subscriptionId = typeof session.subscription === 'string'
+        ? session.subscription
+        : (session.subscription as Stripe.Subscription)?.id
+      const customerId = typeof session.customer === 'string'
+        ? session.customer
+        : (session.customer as Stripe.Customer)?.id
+
+      if (planId && planId in PLANS && subscriptionId && customerId && museumId) {
+        await supabase
+          .from('museums')
+          .update({
+            plan: planId,
+            ui_mode: PLANS[planId as keyof typeof PLANS].fullMode ? 'full' : 'simple',
+            stripe_subscription_id: subscriptionId,
+            pending_downgrade_plan: null,
+            pending_downgrade_date: null,
+          })
+          .eq('id', museumId)
+          .eq('stripe_customer_id', customerId)
+      }
+    }
 
     if (orderId && museumId) {
       const paymentIntentId = typeof session.payment_intent === 'string'
