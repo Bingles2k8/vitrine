@@ -27,7 +27,7 @@ export default function PublicImageGallery({ images, title, emoji, cardBg, borde
         style={{ background: cardBg, borderColor: border }}
       >
         {active ? (
-          <img src={active.url} alt={active.caption || title} className="w-full h-full object-cover" />
+          <img src={active.url} alt={active.caption || title} className="w-full h-full object-contain" />
         ) : (
           <span>{emoji}</span>
         )}
@@ -49,7 +49,7 @@ export default function PublicImageGallery({ images, title, emoji, cardBg, borde
               }}
               title={img.caption || undefined}
             >
-              <img src={img.url} alt={img.caption || `${title} — image ${i + 1}`} className="w-full h-full object-cover" />
+              <img src={img.url} alt={img.caption || `${title} — image ${i + 1}`} className="w-full h-full object-contain" />
             </button>
           ))}
         </div>

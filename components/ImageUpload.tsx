@@ -68,7 +68,7 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
             <img
               src={preview}
               alt="Object"
-              className="w-full aspect-square object-cover rounded-lg border border-stone-200 dark:border-stone-700"
+              className="w-full aspect-square object-contain rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
             />
             <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer">
               <span className="text-white text-xs font-mono bg-black/60 px-3 py-1.5 rounded">
