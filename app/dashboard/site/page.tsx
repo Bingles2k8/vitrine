@@ -241,9 +241,9 @@ export default function SiteBuilder() {
     tight: 'p-1.5', normal: 'p-2', generous: 'p-3',
   }
 
-  const previewGridCols = Math.min(form.grid_columns, 3)
-  const previewColClass = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-3', 'grid-cols-3'][previewGridCols]
-  const sampleEmojis = ['🏺','🖼️','💎','📜','🗿','🌿']
+  const previewGridCols = form.grid_columns
+  const previewColClass = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5'][previewGridCols]
+  const sampleEmojis = ['🏺','🖼️','💎','📜','🗿','🌿','🎭','🔮','🌸','🗽']
 
   return (
     <DashboardShell
@@ -761,7 +761,7 @@ export default function SiteBuilder() {
 
           {/* Right — live preview */}
           <div className="overflow-y-auto p-4 md:p-8">
-            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Live Preview</div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Preview</div>
             <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden shadow-sm">
 
               {/* Browser chrome */}
