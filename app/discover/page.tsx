@@ -1,4 +1,4 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import DiscoverFilters from './DiscoverFilters'
@@ -20,7 +20,12 @@ export default async function DiscoverPage({
   const query = q?.trim() || ''
   const selectedCategories = categories ? categories.split(',').filter(Boolean) : []
 
-  const supabase = await createServerSideClient()
+  // Service role client — bypasses RLS so we can query across all discoverable museums
+  // regardless of whether the visitor is logged in. Safe because this is server-only code.
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Fetch discoverable museums
   const { data: museums } = await supabase
