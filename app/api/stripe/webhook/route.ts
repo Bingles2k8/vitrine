@@ -226,7 +226,7 @@ export async function POST(request: Request) {
       // Fetch order details for ticket generation
       const { data: order } = await supabase
         .from('ticket_orders')
-        .select('id, quantity, slot_id, event_id, buyer_name, status')
+        .select('id, quantity, slot_id, event_id, buyer_name, buyer_email, status')
         .eq('id', orderId)
         .maybeSingle()
 
@@ -285,18 +285,47 @@ export async function POST(request: Request) {
           .update({ status: 'completed', stripe_payment_intent_id: paymentIntentId })
           .eq('id', order.id)
 
-        // Fetch event title for activity log
-        const { data: evt } = await supabase
-          .from('events')
-          .select('title')
-          .eq('id', order.event_id)
-          .maybeSingle()
+        // Fetch event and slot details for activity log + confirmation email
+        const [{ data: evt }, { data: slot }, { data: emailMuseum }] = await Promise.all([
+          supabase.from('events').select('title').eq('id', order.event_id).maybeSingle(),
+          supabase.from('event_time_slots').select('start_time, end_time').eq('id', order.slot_id).maybeSingle(),
+          supabase.from('museums').select('name, slug').eq('id', museumId).maybeSingle(),
+        ])
 
         await supabase.from('activity_log').insert({
           museum_id: museumId,
           action_type: 'ticket_sold',
           description: `${order.quantity} ticket(s) sold for "${evt?.title ?? 'event'}" — ${order.buyer_name}`,
         })
+
+        // Send confirmation email to buyer
+        if (order.buyer_email && evt?.title) {
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
+          const slotLine = slot
+            ? `<p style="color:#666;margin:0 0 16px">${new Date(slot.start_time).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — ${new Date(slot.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>`
+            : ''
+          const ticketLines = tickets
+            .map(t => `<p style="margin:0 0 8px;font-family:monospace"><a href="${siteUrl}/verify/${t.ticket_code}" style="color:#000">${t.ticket_code}</a></p>`)
+            .join('')
+          const sessionLine = session.id
+            ? `<p style="margin:24px 0 0"><a href="${siteUrl}/museum/${emailMuseum?.slug}/events/${order.event_id}/checkout/success?session_id=${session.id}" style="color:#666;font-size:13px">View your booking →</a></p>`
+            : ''
+          const resend = new Resend(process.env.RESEND_API_KEY)
+          await resend.emails.send({
+            from: 'Vitrine <noreply@contact.vitrinecms.com>',
+            to: order.buyer_email,
+            subject: `Your tickets for ${evt.title}`,
+            html: `
+              <p>Hi ${order.buyer_name},</p>
+              <p>Your booking is confirmed! Here are your tickets for <strong>${evt.title}</strong>.</p>
+              ${slotLine}
+              <div style="margin:16px 0">${ticketLines}</div>
+              <p style="color:#666;font-size:13px">Scan these codes at the door. Each link shows the full ticket details.</p>
+              ${sessionLine}
+              <p style="margin-top:24px">See you there!<br>— ${emailMuseum?.name ?? 'The Vitrine team'}</p>
+            `,
+          }).catch(err => console.error('[webhook] Failed to send ticket confirmation email:', err))
+        }
       }
     }
   }

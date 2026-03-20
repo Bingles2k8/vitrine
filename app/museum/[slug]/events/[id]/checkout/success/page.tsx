@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import TicketQRCodes from './TicketQRCodes'
+import ProcessingState from './ProcessingState'
+
+export const dynamic = 'force-dynamic'
 
 export default async function CheckoutSuccessPage({
   params,
@@ -94,15 +97,11 @@ export default async function CheckoutSuccessPage({
   return (
     <div className="max-w-xl mx-auto px-6 py-16">
       {processing ? (
-        <div className="text-center">
-          <div className="text-5xl mb-5">⏳</div>
-          <h1 className="text-3xl mb-3" style={{ ...headingStyle, color: content.heading }}>Processing your booking</h1>
-          <p className="text-sm mb-6" style={{ color: content.muted }}>Your payment is being confirmed. This usually takes a few seconds. Please refresh this page shortly.</p>
-          <Link href={`/museum/${slug}/events/${id}/checkout/success?session_id=${session_id}`}
-            className="text-sm font-mono transition-colors" style={{ color: content.muted }}>
-            Refresh →
-          </Link>
-        </div>
+        <ProcessingState
+          headingStyle={headingStyle}
+          headingColor={content.heading}
+          mutedColor={content.muted}
+        />
       ) : tickets.length > 0 ? (
         <>
           <div className="text-center mb-8">

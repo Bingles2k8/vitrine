@@ -6,6 +6,7 @@ import { publicLimiter, rateLimit } from '@/lib/rate-limit'
 import { generateTicketCode } from '@/lib/ticket-utils'
 import { getPlan } from '@/lib/plans'
 import { headers } from 'next/headers'
+import { Resend } from 'resend'
 
 export async function POST(request: Request) {
   // Rate limit by IP since this is a public endpoint
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   // Fetch museum for plan check and Stripe Connect info
   const { data: museum } = await supabase
     .from('museums')
-    .select('id, slug, plan, stripe_connect_id, stripe_connect_onboarded')
+    .select('id, name, slug, plan, stripe_connect_id, stripe_connect_onboarded')
     .eq('id', event.museum_id)
     .maybeSingle()
 
@@ -136,6 +137,34 @@ export async function POST(request: Request) {
       action_type: 'ticket_sold',
       description: `${quantity} free ticket(s) booked for "${event.title}" — ${buyerName}`,
     })
+
+    // Send confirmation email to buyer (non-critical)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+    const { data: slot } = await supabase
+      .from('event_time_slots')
+      .select('start_time, end_time')
+      .eq('id', slotId)
+      .maybeSingle()
+    const slotLine = slot
+      ? `<p style="color:#666;margin:0 0 16px">${new Date(slot.start_time).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — ${new Date(slot.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>`
+      : ''
+    const ticketLines = tickets
+      .map(t => `<p style="margin:0 0 8px;font-family:monospace"><a href="${siteUrl}/verify/${t.ticket_code}" style="color:#000">${t.ticket_code}</a></p>`)
+      .join('')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    resend.emails.send({
+      from: 'Vitrine <noreply@contact.vitrinecms.com>',
+      to: buyerEmail,
+      subject: `Your tickets for ${event.title}`,
+      html: `
+        <p>Hi ${buyerName},</p>
+        <p>Your booking is confirmed! Here are your tickets for <strong>${event.title}</strong>.</p>
+        ${slotLine}
+        <div style="margin:16px 0">${ticketLines}</div>
+        <p style="color:#666;font-size:13px">Scan these codes at the door. Each link shows the full ticket details.</p>
+        <p style="margin-top:24px">See you there!<br>— ${museum.name ?? 'The Vitrine team'}</p>
+      `,
+    }).catch(err => console.error('[ticket-checkout] Failed to send confirmation email:', err))
 
     return NextResponse.json({
       success: true,
