@@ -48,8 +48,13 @@ CREATE POLICY "Users can delete object_images in their museums"
 
 -- -------------------------------------------------------------
 -- Public read access (for the public museum website)
--- Mirror pattern used for objects: show images for on-display objects
+-- Anyone (logged in or not) can view images for publicly visible objects.
+-- Matches the app-level filter on objects (show_on_site = true).
+-- No TO anon restriction so authenticated users visiting another
+-- museum's public page also see images correctly.
 -- -------------------------------------------------------------
+DROP POLICY IF EXISTS "Public can view images for public objects" ON object_images;
+
 CREATE POLICY "Public can view images for public objects"
   ON object_images FOR SELECT
   USING (
@@ -57,6 +62,6 @@ CREATE POLICY "Public can view images for public objects"
       SELECT 1 FROM objects
       WHERE objects.id = object_images.object_id
         AND objects.show_on_site = true
-        AND objects.status IN ('On Display', 'On Loan')
+        AND objects.deleted_at IS NULL
     )
   );
