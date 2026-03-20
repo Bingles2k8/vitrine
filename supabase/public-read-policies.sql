@@ -7,21 +7,28 @@
 -- so they need explicit policies to allow unauthenticated reads.
 -- Without these, objects on the public site return empty even
 -- though the query filters by status.
+--
+-- NOTE: These policies intentionally have no TO anon restriction
+-- so that authenticated users visiting another museum's public
+-- page also see the correct public data (not a 404).
 -- =============================================================
 
 
--- Allow anyone to look up a museum by its slug (needed for the
--- public page to load at all).
+-- Drop old policies before recreating
+DROP POLICY IF EXISTS "Public can read museums" ON museums;
+DROP POLICY IF EXISTS "Public can read on-display and on-loan objects" ON objects;
+DROP POLICY IF EXISTS "Public can read visible objects" ON objects;
+
+
+-- Allow anyone (logged in or not) to look up a museum by its slug.
 CREATE POLICY "Public can read museums"
   ON museums FOR SELECT
-  TO anon
   USING (true);
 
 
--- Allow anyone to read objects that are publicly visible
--- (On Display or On Loan). Objects in Storage, Restoration, or
--- Deaccessioned remain private.
-CREATE POLICY "Public can read on-display and on-loan objects"
+-- Allow anyone (logged in or not) to read objects that are marked
+-- visible on the public site. Matches the app-level filter exactly
+-- (show_on_site = true, not soft-deleted).
+CREATE POLICY "Public can read visible objects"
   ON objects FOR SELECT
-  TO anon
-  USING (status IN ('On Display', 'On Loan'));
+  USING (show_on_site = true AND deleted_at IS NULL);
