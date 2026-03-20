@@ -39,8 +39,7 @@ export default async function DiscoverPage({
   let objectsQuery = supabase
     .from('objects')
     .select('id, title, description, image_url, category, museum_id, emoji')
-    .in('status', ['On Display', 'On Loan'])
-    .neq('show_on_site', false)
+    .eq('show_on_site', true)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
