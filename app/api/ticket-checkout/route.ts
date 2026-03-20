@@ -187,6 +187,7 @@ export async function POST(request: Request) {
     }],
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
+      on_behalf_of: museum.stripe_connect_id,
       transfer_data: { destination: museum.stripe_connect_id },
     },
     customer_email: buyerEmail,
