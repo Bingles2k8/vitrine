@@ -4,6 +4,8 @@ import { Suspense } from 'react'
 import DiscoverFilters from './DiscoverFilters'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Discover Collections — Vitrine',
   description: 'Browse objects from public collections on Vitrine.',
@@ -31,11 +33,10 @@ export default async function DiscoverPage({
 
   let objectsQuery = supabase
     .from('objects')
-    .select('id, title, description, image_url, category, museum_id')
+    .select('id, title, description, image_url, category, museum_id, emoji')
     .in('status', ['On Display', 'On Loan'])
-    .not('image_url', 'is', null)
+    .neq('show_on_site', false)
     .is('deleted_at', null)
-    .eq('show_on_site', true)
     .order('created_at', { ascending: false })
 
   if (museumIds.length > 0) {
@@ -139,11 +140,17 @@ export default async function DiscoverPage({
                     >
                       {/* Image */}
                       <div className="relative pb-[100%] bg-stone-900 overflow-hidden">
-                        <img
-                          src={obj.image_url}
-                          alt={obj.title}
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+                        {obj.image_url ? (
+                          <img
+                            src={obj.image_url}
+                            alt={obj.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-4xl text-stone-700">
+                            {obj.emoji || '🏛️'}
+                          </div>
+                        )}
                       </div>
 
                       {/* Info */}

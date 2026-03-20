@@ -215,8 +215,19 @@ export default function Dashboard() {
 
           {/* Discoverability */}
           {(isOwner || staffAccess === 'Admin') && (
-            <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-4 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-5 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Vitrine Directory</div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed max-w-xl">
+                    List your collection in the public <a href="/discover" target="_blank" className="text-amber-600 hover:text-amber-500 underline">Vitrine discovery directory</a> — a searchable catalogue of collections from across the Vitrine community. Visitors can browse by category or search for specific objects. Only items marked <span className="font-mono">On Display</span> or <span className="font-mono">On Loan</span> will appear.
+                  </p>
+                </div>
+                <a href="/discover" target="_blank" className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-shrink-0">
+                  View directory →
+                </a>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={async () => {
@@ -253,12 +264,9 @@ export default function Dashboard() {
                   </select>
                 )}
                 {discoverable && !collectionCategory && (
-                  <span className="text-xs font-mono text-amber-600 dark:text-amber-500">Category required to appear in directory</span>
+                  <span className="text-xs font-mono text-amber-600 dark:text-amber-500">A category is required to appear in the directory</span>
                 )}
               </div>
-              <a href="/discover" target="_blank" className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-shrink-0">
-                View directory →
-              </a>
             </div>
           )}
 
