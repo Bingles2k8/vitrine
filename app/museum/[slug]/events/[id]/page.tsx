@@ -48,11 +48,6 @@ function formatPrice(cents: number, currency: string) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(cents / 100)
 }
 
-function calculateCustomerFee(priceCents: number, quantity: number) {
-  const total = priceCents * quantity
-  return Math.round(total * 0.02) + Math.round(total * 0.015) + 20
-}
-
 function formatSlotTime(dt: string) {
   return new Date(dt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
@@ -280,7 +275,7 @@ export default function PublicEventDetailPage() {
                     Total: <span className="font-mono font-medium" style={{ color: content.heading }}>
                       {event.price_cents === 0
                         ? 'Free'
-                        : formatPrice(event.price_cents * quantity + calculateCustomerFee(event.price_cents, quantity), event.currency)
+                        : formatPrice(event.price_cents * quantity, event.currency)
                       }
                     </span>
                   </div>

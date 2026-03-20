@@ -69,9 +69,6 @@ export async function POST(request: Request) {
 
   const totalCents = event.price_cents * quantity
   const platformFeeCents = Math.round(totalCents * 0.02)
-  const stripeFeeCents = Math.round(totalCents * 0.015) + 20
-  const customerFeeCents = platformFeeCents + stripeFeeCents
-  const chargedTotalCents = totalCents + customerFeeCents
 
   // For paid events, verify Stripe Connect is set up before creating an order.
   // This prevents orphaned cancelled orders accumulating when the museum isn't onboarded.
@@ -183,10 +180,10 @@ export async function POST(request: Request) {
     line_items: [{
       price_data: {
         currency: event.currency,
-        unit_amount: chargedTotalCents,
-        product_data: { name: `${event.title} — ${quantity} Ticket${quantity > 1 ? 's' : ''}` },
+        unit_amount: event.price_cents,
+        product_data: { name: `${event.title} — Ticket` },
       },
-      quantity: 1,
+      quantity,
     }],
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
