@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       .map(t => `<p style="margin:0 0 8px;font-family:monospace"><a href="${siteUrl}/verify/${t.ticket_code}" style="color:#000">${t.ticket_code}</a></p>`)
       .join('')
     const resend = new Resend(process.env.RESEND_API_KEY)
-    resend.emails.send({
+    await resend.emails.send({
       from: 'Vitrine <noreply@contact.vitrinecms.com>',
       to: buyerEmail,
       subject: `Your tickets for ${event.title}`,
