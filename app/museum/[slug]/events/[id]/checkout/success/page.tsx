@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import TicketQRCodes from './TicketQRCodes'
 import ProcessingState from './ProcessingState'
+import { stripe } from '@/lib/stripe'
+import { generateTicketCode } from '@/lib/ticket-utils'
+import { Resend } from 'resend'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +49,7 @@ export default async function CheckoutSuccessPage({
   if (session_id) {
     const { data: o } = await serviceSupabase
       .from('ticket_orders')
-      .select('id, buyer_name, quantity, status, slot_id')
+      .select('id, buyer_name, buyer_email, quantity, status, slot_id')
       .eq('stripe_checkout_session_id', session_id)
       .eq('event_id', event.id)
       .single()
@@ -58,6 +61,104 @@ export default async function CheckoutSuccessPage({
         .select('ticket_code, status')
         .eq('order_id', o.id)
       tickets = t || []
+    }
+
+    // Webhook fallback: if order is pending, verify payment directly with Stripe
+    // and complete the order here. This handles cases where the webhook is delayed
+    // or misconfigured.
+    if (order?.status === 'pending' && tickets.length === 0) {
+      try {
+        const stripeSession = await stripe.checkout.sessions.retrieve(session_id)
+        if (stripeSession.payment_status === 'paid') {
+          // Idempotency: check again inside the guard (parallel renders)
+          const { count: existing } = await serviceSupabase
+            .from('tickets')
+            .select('id', { count: 'exact', head: true })
+            .eq('order_id', order.id)
+
+          if (!existing || existing === 0) {
+            const { data: slotSuccess } = await serviceSupabase.rpc('increment_slot_bookings', {
+              slot_uuid: order.slot_id,
+              qty: order.quantity,
+            })
+
+            if (slotSuccess) {
+              const newTickets = Array.from({ length: order.quantity }, () => ({
+                order_id: order.id,
+                ticket_code: generateTicketCode(),
+                status: 'valid',
+              }))
+              const { error: ticketError } = await serviceSupabase.from('tickets').insert(newTickets)
+
+              if (!ticketError) {
+                const paymentIntentId = typeof stripeSession.payment_intent === 'string'
+                  ? stripeSession.payment_intent
+                  : stripeSession.payment_intent?.id ?? null
+
+                await serviceSupabase
+                  .from('ticket_orders')
+                  .update({ status: 'completed', stripe_payment_intent_id: paymentIntentId })
+                  .eq('id', order.id)
+
+                tickets = newTickets.map(t => ({ ticket_code: t.ticket_code, status: t.status }))
+                order = { ...order, status: 'completed' }
+
+                // Send confirmation email (non-critical)
+                if (order.buyer_email) {
+                  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrine.museum'
+                  const { data: slotData } = await serviceSupabase
+                    .from('event_time_slots')
+                    .select('start_time, end_time')
+                    .eq('id', order.slot_id)
+                    .single()
+                  const slotLine = slotData
+                    ? `<p style="color:#666;margin:0 0 16px">${new Date(slotData.start_time).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} — ${new Date(slotData.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>`
+                    : ''
+                  const ticketLines = newTickets
+                    .map(t => `<p style="margin:0 0 8px;font-family:monospace"><a href="${siteUrl}/verify/${t.ticket_code}" style="color:#000">${t.ticket_code}</a></p>`)
+                    .join('')
+                  const resend = new Resend(process.env.RESEND_API_KEY)
+                  resend.emails.send({
+                    from: 'Vitrine <noreply@contact.vitrinecms.com>',
+                    to: order.buyer_email,
+                    subject: `Your tickets for ${event.title}`,
+                    html: `
+                      <p>Hi ${order.buyer_name},</p>
+                      <p>Your booking is confirmed! Here are your tickets for <strong>${event.title}</strong>.</p>
+                      ${slotLine}
+                      <div style="margin:16px 0">${ticketLines}</div>
+                      <p style="color:#666;font-size:13px">Scan these codes at the door.</p>
+                      <p style="margin:24px 0 0"><a href="${siteUrl}/museum/${slug}/events/${id}/checkout/success?session_id=${session_id}" style="color:#666;font-size:13px">View your booking →</a></p>
+                      <p style="margin-top:24px">See you there!<br>— ${museum.name ?? 'The Vitrine team'}</p>
+                    `,
+                  }).catch(err => console.error('[success-page] Failed to send confirmation email:', err))
+                }
+              } else {
+                // Ticket insert failed — release the capacity we incremented
+                await serviceSupabase.rpc('decrement_slot_bookings', { slot_uuid: order.slot_id, qty: order.quantity })
+                console.error('[success-page] Failed to insert tickets for order', order.id, ticketError)
+              }
+            } else {
+              // Slot is full — cancel the order
+              await serviceSupabase
+                .from('ticket_orders')
+                .update({ status: 'cancelled' })
+                .eq('id', order.id)
+              order = { ...order, status: 'cancelled' }
+            }
+          } else {
+            // Tickets were already generated (race condition) — just fetch them
+            const { data: t } = await serviceSupabase
+              .from('tickets')
+              .select('ticket_code, status')
+              .eq('order_id', order.id)
+            tickets = t || []
+            order = { ...order, status: 'completed' }
+          }
+        }
+      } catch (err) {
+        console.error('[success-page] Stripe verification failed:', err)
+      }
     }
   }
 
