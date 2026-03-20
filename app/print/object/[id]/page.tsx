@@ -1,4 +1,4 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createReadOnlyServerClient } from '@/lib/supabase-server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { getPlan } from '@/lib/plans'
@@ -6,7 +6,7 @@ import PrintButtons from './PrintButtons'
 
 export default async function PrintObjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createServerSideClient()
+  const supabase = await createReadOnlyServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
