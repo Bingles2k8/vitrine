@@ -203,7 +203,7 @@ export default function EventsPage() {
                   <div className="text-2xl">💳</div>
                   <div className="flex-1">
                     <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-1">Set up payments to sell tickets</h3>
-                    <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Connect your Stripe account to receive ticket revenue. Free events work without this. A 2% platform fee applies to paid tickets.</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Connect your Stripe account to receive ticket revenue. Free events work without this. A 4% + 20p platform fee applies to paid tickets.</p>
                     <button
                       onClick={startConnectOnboarding}
                       disabled={connectLoading}

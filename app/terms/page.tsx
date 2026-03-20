@@ -65,7 +65,7 @@ export default function TermsPage() {
             <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
               Vitrine offers free and paid subscription plans. Plan features and limits are described on our{' '}
               <Link href="/#pricing" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">pricing page</Link>.
-              Where museums use Vitrine&apos;s ticketing feature to sell tickets to visitors, Composition Limited, the company that owns and operates Vitrine, charges a platform fee of 2% of the gross ticket sale value (excluding any Stripe payment processing fees). This fee is deducted automatically at the point of sale via Stripe Connect. We reserve the right to change pricing with 30 days&apos; notice.
+              Where museums use Vitrine&apos;s ticketing feature to sell tickets to visitors, Composition Limited, the company that owns and operates Vitrine, charges a platform fee of 4% + 20p per transaction on ticket sales. This fee is deducted automatically at the point of sale via Stripe Connect. We reserve the right to change pricing with 30 days&apos; notice.
             </p>
           </section>
 
