@@ -25,8 +25,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [discoverable, setDiscoverable] = useState(museum?.discoverable ?? false)
+  const [discoverable, setDiscoverable] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
+
+  // Sync discoverable from museum prop (museum may be null on first render)
+  useEffect(() => {
+    setDiscoverable(museum?.discoverable ?? false)
+  }, [museum?.discoverable])
 
   // Fetch user email
   useEffect(() => {
