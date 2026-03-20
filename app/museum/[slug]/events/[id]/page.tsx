@@ -28,6 +28,7 @@ interface TimeSlot {
   end_time: string
   capacity: number
   booked_count: number
+  open_entry: boolean
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -205,14 +206,22 @@ export default function PublicEventDetailPage() {
               <label className="block text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>Select a time slot</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {slots.map(slot => {
+                  const now = new Date()
+                  const started = new Date(slot.start_time) <= now
+                  const ended = new Date(slot.end_time) <= now
                   const remaining = slot.capacity - slot.booked_count
                   const soldOut = remaining <= 0
+                  const bookable = !ended && (!started || slot.open_entry)
                   const isSelected = selectedSlot === slot.id
+                  const subLabel = soldOut ? 'Sold Out'
+                    : ended ? 'Ended'
+                    : started && !slot.open_entry ? 'In Progress'
+                    : `${remaining} spot${remaining === 1 ? '' : 's'} remaining`
                   return (
                     <button
                       key={slot.id}
                       type="button"
-                      disabled={soldOut}
+                      disabled={soldOut || !bookable}
                       onClick={() => setSelectedSlot(slot.id)}
                       className="text-left border rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
@@ -224,7 +233,7 @@ export default function PublicEventDetailPage() {
                         {formatSlotTime(slot.start_time)} — {formatSlotEnd(slot.end_time)}
                       </div>
                       <div className="text-xs mt-1" style={{ color: content.muted }}>
-                        {soldOut ? 'Sold Out' : `${remaining} spot${remaining === 1 ? '' : 's'} remaining`}
+                        {subLabel}
                       </div>
                     </button>
                   )

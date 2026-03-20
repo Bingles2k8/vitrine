@@ -30,6 +30,7 @@ interface TimeSlot {
   end_time: string
   capacity: number
   booked_count: number
+  open_entry: boolean
 }
 
 interface Order {
@@ -68,6 +69,7 @@ export default function EventDetailPage() {
   const [slotStart, setSlotStart] = useState('10:00')
   const [slotEnd, setSlotEnd] = useState('11:00')
   const [slotCapacity, setSlotCapacity] = useState('50')
+  const [slotOpenEntry, setSlotOpenEntry] = useState(false)
 
   // Edit form state
   const [editTitle, setEditTitle] = useState('')
@@ -170,10 +172,13 @@ export default function EventDetailPage() {
     const endTime = `${slotDate}T${slotEnd}:00`
     const { data } = await supabase
       .from('event_time_slots')
-      .insert({ event_id: event.id, start_time: startTime, end_time: endTime, capacity: parseInt(slotCapacity) || 50 })
+      .insert({ event_id: event.id, start_time: startTime, end_time: endTime, capacity: parseInt(slotCapacity) || 50, open_entry: slotOpenEntry })
       .select('*')
       .single()
-    if (data) setSlots(prev => [...prev, data].sort((a, b) => a.start_time.localeCompare(b.start_time)))
+    if (data) {
+      setSlots(prev => [...prev, data].sort((a, b) => a.start_time.localeCompare(b.start_time)))
+      setSlotOpenEntry(false)
+    }
   }
 
   async function handleDeleteSlot(slotId: string) {
@@ -400,6 +405,11 @@ export default function EventDetailPage() {
                   </div>
                 </div>
               </div>
+              <label className="flex items-center gap-2 mt-4 cursor-pointer w-fit">
+                <input type="checkbox" checked={slotOpenEntry} onChange={e => setSlotOpenEntry(e.target.checked)}
+                  className="rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-white" />
+                <span className="text-xs text-stone-500 dark:text-stone-400 font-mono">Open entry — visitors can buy tickets after the start time (e.g. exhibitions)</span>
+              </label>
             </form>
 
             {/* Slots list */}
@@ -414,8 +424,13 @@ export default function EventDetailPage() {
                   return (
                     <div key={slot.id} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-4 flex items-center gap-4">
                       <div className="flex-1">
-                        <div className="text-sm text-stone-900 dark:text-stone-100 font-mono">
-                          {formatDateTime(slot.start_time)} — {formatTime(slot.end_time)}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-stone-900 dark:text-stone-100 font-mono">
+                            {formatDateTime(slot.start_time)} — {formatTime(slot.end_time)}
+                          </span>
+                          {slot.open_entry && (
+                            <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">open entry</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 mt-2">
                           <div className="flex-1 bg-stone-100 dark:bg-stone-800 rounded-full h-2 overflow-hidden max-w-xs">

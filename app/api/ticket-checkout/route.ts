@@ -37,13 +37,16 @@ export async function POST(request: Request) {
   // Fetch slot and verify capacity
   const { data: slot } = await supabase
     .from('event_time_slots')
-    .select('id, event_id, capacity, booked_count, start_time')
+    .select('id, event_id, capacity, booked_count, start_time, end_time, open_entry')
     .eq('id', slotId)
     .eq('event_id', eventId)
     .maybeSingle()
 
   if (!slot) return NextResponse.json({ error: 'Time slot not found' }, { status: 404 })
-  if (new Date(slot.start_time) <= new Date()) {
+  const now = new Date()
+  const slotStarted = new Date(slot.start_time) <= now
+  const slotEnded = new Date(slot.end_time) <= now
+  if (slotEnded || (!slot.open_entry && slotStarted)) {
     return NextResponse.json({ error: 'This time slot has already passed' }, { status: 409 })
   }
   if (slot.booked_count + quantity > slot.capacity) {
