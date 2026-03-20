@@ -8,6 +8,7 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import CSVImportModal from '@/components/CSVImportModal'
+import { COLLECTION_CATEGORIES } from '@/lib/categories'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -30,6 +31,9 @@ export default function Dashboard() {
   const [trashedCount, setTrashedCount] = useState(0)
   const [showImport, setShowImport] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [discoverable, setDiscoverable] = useState(false)
+  const [collectionCategory, setCollectionCategory] = useState('')
+  const [savingDiscovery, setSavingDiscovery] = useState(false)
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulking, setBulking] = useState(false)
   const router = useRouter()
@@ -104,6 +108,8 @@ export default function Dashboard() {
         setMuseum(museum)
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
+        setDiscoverable(museum.discoverable ?? false)
+        setCollectionCategory(museum.collection_category || '')
         setTrashedCount(trashed ?? 0)
         setObjects(objects || [])
         setLoans(activeLoans || [])
@@ -119,6 +125,16 @@ export default function Dashboard() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function saveDiscoverability(newDiscoverable: boolean, newCategory: string) {
+    if (!museum) return
+    setSavingDiscovery(true)
+    await supabase.from('museums').update({
+      discoverable: newDiscoverable,
+      collection_category: newCategory || null,
+    }).eq('id', museum.id)
+    setSavingDiscovery(false)
   }
 
   if (loading) {
@@ -196,6 +212,55 @@ export default function Dashboard() {
               )
             })}
           </div>
+
+          {/* Discoverability */}
+          {(isOwner || staffAccess === 'Admin') && (
+            <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-4 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const next = !discoverable
+                    setDiscoverable(next)
+                    await saveDiscoverability(next, collectionCategory)
+                  }}
+                  disabled={savingDiscovery}
+                  className={`flex items-center gap-2.5 px-4 py-2 rounded border text-xs font-mono transition-all flex-shrink-0 ${
+                    discoverable
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                      : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                  }`}
+                >
+                  <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${discoverable ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                    <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${discoverable ? 'left-3.5' : 'left-0.5'}`} />
+                  </span>
+                  {discoverable ? 'Listed in Vitrine directory' : 'Not listed in directory'}
+                </button>
+                {discoverable && (
+                  <select
+                    value={collectionCategory}
+                    onChange={async e => {
+                      setCollectionCategory(e.target.value)
+                      await saveDiscoverability(discoverable, e.target.value)
+                    }}
+                    disabled={savingDiscovery}
+                    className="border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-xs font-mono bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 outline-none focus:border-stone-400 dark:focus:border-stone-500 disabled:opacity-50"
+                  >
+                    <option value="">— Select a category —</option>
+                    {COLLECTION_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                )}
+                {discoverable && !collectionCategory && (
+                  <span className="text-xs font-mono text-amber-600 dark:text-amber-500">Category required to appear in directory</span>
+                )}
+              </div>
+              <a href="/discover" target="_blank" className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-shrink-0">
+                View directory →
+              </a>
+            </div>
+          )}
 
           {objects.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
