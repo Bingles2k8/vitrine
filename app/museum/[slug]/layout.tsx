@@ -1,8 +1,9 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
-import { getMuseumStyles } from '@/lib/museum-styles'
+import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import MuseumNav from '@/components/MuseumNav'
+import MuseumSidebar from '@/components/MuseumSidebar'
 import type { Metadata } from 'next'
 
 export async function generateMetadata({
@@ -65,7 +66,8 @@ export default async function MuseumLayout({
   const hasVisitInfo = getPlan(museum.plan).visitInfo
   const isPaid = getPlan(museum.plan).advancedCustomisation
 
-  const { pageBg, font, navStyle, accent, headingStyle } = getMuseumStyles(museum)
+  const { pageBg, font, navStyle, accent, headingStyle, content } = getMuseumStyles(museum)
+  const layoutVariant = getLayoutVariant(museum)
 
   const socialLinks = isPaid ? [
     { url: museum.social_instagram, icon: (
@@ -93,11 +95,78 @@ export default async function MuseumLayout({
     )},
   ].filter(s => s.url) : []
 
-  return (
-    <div className="min-h-screen" style={{ background: pageBg }}>
+  const fonts = (
+    <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`} />
+    </>
+  )
+
+  const standardFooter = (
+    <footer className="border-t py-10 mt-10" style={{ borderColor: 'rgba(128,128,128,0.12)' }}>
+      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between gap-6">
+        <div style={{ color: 'rgba(128,128,128,0.5)', fontFamily: headingStyle.fontFamily, fontStyle: 'italic' }}>
+          {isPaid && museum.footer_text ? museum.footer_text : museum.name}
+        </div>
+        {socialLinks.length > 0 && (
+          <div className="flex items-center gap-4">
+            {socialLinks.map((s, i) => (
+              <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                style={{ color: 'rgba(128,128,128,0.45)' }}
+                className="hover:opacity-70 transition-opacity">
+                {s.icon}
+              </a>
+            ))}
+          </div>
+        )}
+        <div className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.35)' }}>
+          Powered by Vitrine
+        </div>
+      </div>
+    </footer>
+  )
+
+  if (layoutVariant === 'sidebar') {
+    return (
+      <div className="min-h-screen flex" style={{ background: pageBg }}>
+        {fonts}
+        <MuseumSidebar
+          slug={slug}
+          museumName={museum.name}
+          logoEmoji={museum.logo_emoji}
+          logoImageUrl={museum.logo_image_url}
+          accent={accent}
+          headingStyle={headingStyle}
+          contentHeading={content.heading}
+          contentBody={content.body}
+          contentMuted={content.muted}
+          contentBorder={content.border}
+          pageBg={pageBg}
+          hasEvents={hasEvents}
+          hasVisitInfo={hasVisitInfo}
+          socialLinks={socialLinks}
+        />
+        <main className="flex-1 min-w-0" style={{ marginLeft: '240px' }}>
+          {children}
+          <footer className="border-t py-8 mt-10" style={{ borderColor: content.border }}>
+            <div className="px-8 flex items-center justify-between gap-6">
+              <div className="text-xs font-mono" style={{ color: content.muted }}>
+                {isPaid && museum.footer_text ? museum.footer_text : museum.name}
+              </div>
+              <div className="text-xs font-mono" style={{ color: content.muted, opacity: 0.5 }}>
+                Powered by Vitrine
+              </div>
+            </div>
+          </footer>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen relative" style={{ background: pageBg }}>
+      {fonts}
 
       <MuseumNav
         slug={slug}
@@ -115,29 +184,7 @@ export default async function MuseumLayout({
 
       {children}
 
-      <footer className="border-t py-10 mt-10" style={{ borderColor: 'rgba(128,128,128,0.12)' }}>
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between gap-6">
-          <div style={{ color: 'rgba(128,128,128,0.5)', fontFamily: headingStyle.fontFamily, fontStyle: 'italic' }}>
-            {isPaid && museum.footer_text ? museum.footer_text : museum.name}
-          </div>
-
-          {socialLinks.length > 0 && (
-            <div className="flex items-center gap-4">
-              {socialLinks.map((s, i) => (
-                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
-                  style={{ color: 'rgba(128,128,128,0.45)' }}
-                  className="hover:opacity-70 transition-opacity">
-                  {s.icon}
-                </a>
-              ))}
-            </div>
-          )}
-
-          <div className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.35)' }}>
-            Powered by Vitrine
-          </div>
-        </div>
-      </footer>
+      {standardFooter}
     </div>
   )
 }

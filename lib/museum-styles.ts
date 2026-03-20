@@ -10,6 +10,7 @@ export const FONT_MAP: Record<string, { google: string; css: string }> = {
 
 export const PAGE_BG: Record<string, string> = {
   minimal: '#fafaf9', dramatic: '#0c0a09', archival: '#f5f0e8', editorial: '#ffffff', classic: '#111827',
+  cover: '#0d0b08', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9',
 }
 
 // Per-template content colours for sub-pages
@@ -26,6 +27,10 @@ export const CONTENT_COLORS: Record<string, {
   archival:  { heading: '#292524', body: '#78716c', muted: '#a8a29e', border: '#d4c5a0', cardBg: 'rgba(255,255,255,0.5)', inputBg: '#fffbf0' },
   dramatic:  { heading: '#ffffff', body: 'rgba(255,255,255,0.6)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)' },
   classic:   { heading: '#fef3c7', body: 'rgba(254,243,199,0.6)',  muted: 'rgba(254,243,199,0.35)',  border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)' },
+  cover:     { heading: '#ffffff', body: 'rgba(255,255,255,0.65)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.06)', inputBg: 'rgba(255,255,255,0.08)' },
+  curator:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff' },
+  magazine:  { heading: '#000000', body: '#44403c', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#f5f5f4' },
+  salon:     { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff' },
 }
 
 export const NAV_STYLES: Record<string, { nav: string; text: string; link: string }> = {
@@ -34,6 +39,15 @@ export const NAV_STYLES: Record<string, { nav: string; text: string; link: strin
   archival:  { nav: 'bg-amber-50 border-b border-amber-200/50',text: 'text-stone-800',  link: 'text-stone-500 hover:text-stone-800' },
   editorial: { nav: 'bg-white border-b-4 border-black',        text: 'text-black font-bold', link: 'text-stone-400 hover:text-black' },
   classic:   { nav: 'bg-stone-900 border-b border-white/10',   text: 'text-amber-100', link: 'text-amber-100/50 hover:text-amber-100' },
+  cover:     { nav: 'absolute top-0 left-0 right-0 z-50 bg-transparent border-0', text: 'text-white', link: 'text-white/60 hover:text-white' },
+  curator:   { nav: 'bg-stone-50 border-b border-stone-100',   text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
+  magazine:  { nav: 'bg-white border-b-2 border-black',        text: 'text-black font-bold', link: 'text-stone-400 hover:text-black' },
+  salon:     { nav: 'bg-white border-b border-stone-100',      text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
+}
+
+export function getLayoutVariant(museum: any): string {
+  const tmpl = getTemplate(museum.template || 'minimal')
+  return tmpl.layout_variant
 }
 
 export function getMuseumStyles(museum: any) {

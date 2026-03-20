@@ -56,6 +56,33 @@ function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number
   )
 }
 
+function CollapsibleSection({ title, defaultOpen = false, children }: {
+  title: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+      >
+        <span className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">{title}</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className={`text-stone-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && <div className="px-6 pb-6 pt-4 space-y-6 border-t border-stone-100 dark:border-stone-800">{children}</div>}
+    </div>
+  )
+}
+
 export default function SiteBuilder() {
   const isMobile = useIsMobile()
   const [museum, setMuseum] = useState<any>(null)
@@ -216,15 +243,19 @@ export default function SiteBuilder() {
     </div>
   )
 
-  const isLightTemplate = form.template === 'minimal' || form.template === 'editorial'
+  const selectedTemplate = TEMPLATES.find(t => t.id === form.template) || TEMPLATES[0]
+  const layoutVariant = selectedTemplate.layout_variant
+  const isLightTemplate = form.template === 'minimal' || form.template === 'editorial' || form.template === 'curator' || form.template === 'magazine' || form.template === 'salon'
   const previewHeroBg = isLightTemplate ? '#ffffff' : form.primary_color
   const previewHeroText = isLightTemplate ? '#111111' : '#ffffff'
 
   const previewNavBg: Record<string, string> = {
     minimal: '#ffffff', dramatic: '#0c0a09', archival: '#fdf6e3', editorial: '#ffffff', classic: '#1e293b',
+    cover: 'transparent', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9',
   }
   const previewNavText: Record<string, string> = {
     minimal: '#111111', dramatic: '#ffffff', archival: '#3a2e1e', editorial: '#000000', classic: '#f0ead8',
+    cover: '#ffffff', curator: '#1c1917', magazine: '#000000', salon: '#1c1917',
   }
 
   const navBg = previewNavBg[form.template] || '#ffffff'
@@ -279,6 +310,12 @@ export default function SiteBuilder() {
       {FONTS.map(f => (
         <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
       ))}
+      {/* Force-download italic variants — browser lazily skips italic binary files until first use */}
+      <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', visibility: 'hidden' }}>
+        {FONTS.map(f => (
+          <span key={f.id} style={{ fontFamily: f.css, fontStyle: 'italic', fontWeight: 400 }}>A</span>
+        ))}
+      </div>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
           <div className="flex items-center gap-3">
@@ -298,41 +335,134 @@ export default function SiteBuilder() {
         <div className="h-[calc(100vh-3.5rem)] grid grid-cols-2 gap-8 overflow-hidden">
 
           {/* Left — settings */}
-          <div className="overflow-y-auto p-4 md:p-8 space-y-6">
+          <div className="overflow-y-auto p-4 md:p-8 space-y-3">
 
-            {/* Template picker */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Template</div>
-              <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
-              <div className="grid grid-cols-5 gap-3">
-                {TEMPLATES.map(t => (
-                  <button key={t.id} onClick={() => selectTemplate(t.id)}
-                    className={`text-left rounded-lg border-2 overflow-hidden transition-all ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
-                    <div className="h-20 relative" style={{ background: t.previewBg }}>
-                      <div className="px-2 py-1.5 border-b flex items-center" style={{ borderColor: t.previewText + '15' }}>
-                        <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
+            {/* Template & Colour */}
+            <CollapsibleSection title="Template & Colour">
+              <div>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {TEMPLATES.map(t => (
+                    <button key={t.id} onClick={() => selectTemplate(t.id)}
+                      className={`text-left rounded-lg border-2 overflow-hidden transition-all ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
+                      <div className="h-20 relative overflow-hidden" style={{ background: t.previewBg }}>
+                        {t.layout_variant === 'cover' && (
+                          <>
+                            {/* Full-bleed cover preview */}
+                            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${t.previewBg}, ${t.previewText}30 80%, ${t.previewText}80)` }} />
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="w-8 h-1.5 rounded mb-1" style={{ background: t.previewText + 'cc' }} />
+                              <div className="w-12 h-0.5 rounded" style={{ background: t.previewText + '50' }} />
+                            </div>
+                            <div className="absolute top-1.5 left-2 right-2 flex items-center justify-between">
+                              <div className="w-6 h-0.5 rounded" style={{ background: t.previewText + '40' }} />
+                              <div className="flex gap-1">
+                                <div className="w-4 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                                <div className="w-4 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'text-forward' && (
+                          <>
+                            {/* Centered text preview */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3">
+                              <div className="w-16 h-2 rounded" style={{ background: t.previewText + 'dd' }} />
+                              <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
+                              <div className="w-12 h-0.5 rounded mt-1" style={{ background: t.previewAccent + '80' }} />
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 h-5">
+                              {[3,4,3,4].map((_, i) => (
+                                <div key={i} className="flex-1" style={{ background: t.previewText + '15' }} />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'magazine' && (
+                          <>
+                            {/* Masthead bar */}
+                            <div className="absolute top-0 left-0 right-0 px-2 py-1 border-b-2" style={{ borderColor: t.previewText }}>
+                              <div className="w-14 h-2 rounded" style={{ background: t.previewText + 'ee', fontWeight: 800 }} />
+                            </div>
+                            {/* Asymmetric grid preview */}
+                            <div className="absolute top-7 left-1.5 right-1.5 bottom-1.5 flex gap-0.5">
+                              <div className="flex-[2] rounded-sm" style={{ background: t.previewText + '25' }} />
+                              <div className="flex-[1] flex flex-col gap-0.5">
+                                <div className="flex-1 rounded-sm" style={{ background: t.previewText + '18' }} />
+                                <div className="flex-1 rounded-sm" style={{ background: t.previewText + '18' }} />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'sidebar' && (
+                          <>
+                            {/* Sidebar split preview */}
+                            <div className="absolute inset-0 flex">
+                              <div className="w-6 h-full flex flex-col pt-2 px-1 gap-1.5 border-r" style={{ background: t.previewBg, borderColor: t.previewText + '20' }}>
+                                <div className="w-3 h-3 rounded-sm" style={{ background: t.previewText + '40' }} />
+                                <div className="w-4 h-0.5 rounded" style={{ background: t.previewText + '60' }} />
+                                <div className="w-3 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                                <div className="w-3 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                              </div>
+                              <div className="flex-1 p-1 grid grid-cols-2 gap-0.5 content-start">
+                                {[0,1,2,3].map(i => (
+                                  <div key={i} className="rounded-sm aspect-square" style={{ background: t.previewText + '18' }} />
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'standard' && (
+                          <>
+                            <div className="px-2 py-1.5 border-b flex items-center" style={{ borderColor: t.previewText + '15' }}>
+                              <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
+                            </div>
+                            <div className="px-2 pt-2">
+                              <div className="w-8 h-1 rounded mb-1" style={{ background: t.previewAccent + 'cc' }} />
+                              <div className="w-12 h-2 rounded" style={{ background: t.previewText + 'cc' }} />
+                            </div>
+                          </>
+                        )}
+                        {form.template === t.id && (
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-stone-900 dark:bg-white flex items-center justify-center z-10">
+                            <span className="text-white dark:text-stone-900 text-xs leading-none">✓</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="px-2 pt-2">
-                        <div className="w-8 h-1 rounded mb-1" style={{ background: t.previewAccent + 'cc' }} />
-                        <div className="w-12 h-2 rounded" style={{ background: t.previewText + 'cc' }} />
+                      <div className="px-2 py-1.5 bg-white dark:bg-stone-800 border-t border-stone-100 dark:border-stone-700">
+                        <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.name}</div>
+                        <div className="text-xs text-stone-400 dark:text-stone-500 truncate mt-0.5" style={{ fontSize: '10px' }}>{t.description}</div>
                       </div>
-                      {form.template === t.id && (
-                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-stone-900 flex items-center justify-center">
-                          <span className="text-white text-xs leading-none">✓</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-2 py-1.5 bg-white dark:bg-stone-800 border-t border-stone-100 dark:border-stone-700">
-                      <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.name}</div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Primary colour</div>
+                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for the hero banner</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.primary_color }} />
+                  <input type="color" value={form.primary_color} onChange={e => set('primary_color', e.target.value)}
+                    className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Accent colour</div>
+                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for labels and highlights</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.accent_color }} />
+                  <input type="color" value={form.accent_color} onChange={e => set('accent_color', e.target.value)}
+                    className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
+                </div>
+              </div>
+            </CollapsibleSection>
 
-            {/* Identity */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Museum Identity</div>
+            {/* Museum Identity */}
+            <CollapsibleSection title="Museum Identity" defaultOpen>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum Name</label>
                 <input value={form.name} onChange={e => set('name', e.target.value)}
@@ -355,7 +485,6 @@ export default function SiteBuilder() {
                   ))}
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Logo Image</label>
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Upload an image to replace the emoji in the nav bar. Square images work best.</p>
@@ -380,13 +509,11 @@ export default function SiteBuilder() {
                   </label>
                 )}
               </div>
-
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Header Image</label>
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Background image for the hero section. Wide landscape images work best.</p>
                 {form.hero_image_url ? (
                   <div className="space-y-2">
-                    {/* Focal point picker */}
                     <div
                       className="relative rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 select-none"
                       style={{ height: '120px', cursor: 'crosshair' }}
@@ -400,7 +527,6 @@ export default function SiteBuilder() {
                         className="w-full h-full object-cover pointer-events-none"
                         style={{ objectPosition: form.hero_image_position }}
                       />
-                      {/* Focal point indicator */}
                       {(() => {
                         const parts = (form.hero_image_position || '50% 50%').split(' ')
                         const px = parseInt(parts[0]) || 50
@@ -412,7 +538,6 @@ export default function SiteBuilder() {
                           />
                         )
                       })()}
-                      {/* Hint */}
                       <div className="absolute bottom-0 inset-x-0 px-2.5 py-1.5 bg-gradient-to-t from-black/50 to-transparent pointer-events-none">
                         <p className="text-xs text-white/80 font-mono">Drag to reposition</p>
                       </div>
@@ -439,46 +564,37 @@ export default function SiteBuilder() {
                   </label>
                 )}
               </div>
-            </div>
-
-            {/* Colours */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Colours</div>
-              <div className="flex items-center justify-between">
+              {getPlan(museum?.plan).advancedCustomisation ? (
                 <div>
-                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Primary colour</div>
-                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for the hero banner</div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Footer Text</label>
+                  <input value={form.footer_text} onChange={e => set('footer_text', e.target.value)}
+                    placeholder="© 2025 My Museum. All rights reserved."
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Appears in the footer alongside "Powered by Vitrine".</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.primary_color }} />
-                  <input type="color" value={form.primary_color} onChange={e => set('primary_color', e.target.value)}
-                    className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Footer Text</div>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Add a custom copyright notice or text to your site footer. Available on Hobbyist and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-stone-900 dark:text-stone-100 mb-1">Accent colour</div>
-                  <div className="text-xs text-stone-400 dark:text-stone-500">Used for labels and highlights</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700" style={{ background: form.accent_color }} />
-                  <input type="color" value={form.accent_color} onChange={e => set('accent_color', e.target.value)}
-                    className="w-10 h-8 rounded cursor-pointer border border-stone-200" />
-                </div>
-              </div>
-            </div>
+              )}
+            </CollapsibleSection>
 
             {/* Layout & Style */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Layout & Style</div>
-
+            <CollapsibleSection title="Layout & Style">
               <div>
                 <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Heading Font</div>
                 <div className="space-y-2">
                   {FONTS.map(f => (
                     <button key={f.id} type="button" onClick={() => set('heading_font', f.id)}
                       className={`w-full text-left px-3 py-2.5 rounded border transition-all flex items-center justify-between ${form.heading_font === f.id ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
-                      <span className={form.heading_font === f.id ? 'text-white dark:text-stone-900' : 'text-stone-800 dark:text-stone-200'} style={{ fontFamily: f.css, fontSize: '15px' }}>{f.name}</span>
+                      <span className={form.heading_font === f.id ? 'text-white dark:text-stone-900' : 'text-stone-800 dark:text-stone-200'} style={{ fontFamily: f.css, fontSize: '18px' }}>{f.name}</span>
                       <span className={`text-xs font-mono ${form.heading_font === f.id ? 'text-stone-400 dark:text-stone-600' : 'text-stone-500 dark:text-stone-400'}`}>{f.sample}</span>
                     </button>
                   ))}
@@ -545,13 +661,12 @@ export default function SiteBuilder() {
                   { value: 'full', label: 'Full' },
                 ]}
               />
-            </div>
+            </CollapsibleSection>
 
-            {/* Visit info — Professional+ only */}
-            {getPlan(museum?.plan).visitInfo ? (
-              <>
-                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Visit Information</div>
+            {/* Visit Information — Professional+ */}
+            <CollapsibleSection title="Visit Information">
+              {getPlan(museum?.plan).visitInfo ? (
+                <div className="space-y-6">
                   <div>
                     <label className="block text-xs uppercase tracking-widest text-stone-400 mb-1.5">Address</label>
                     <textarea value={form.address} onChange={e => set('address', e.target.value)}
@@ -584,9 +699,23 @@ export default function SiteBuilder() {
                       className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
                   </div>
                 </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Add your address, opening hours, and contact details to your public site. Available on Professional and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
+                </div>
+              )}
+            </CollapsibleSection>
 
-                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">About & Facilities</div>
+            {/* About & Social */}
+            <CollapsibleSection title="About & Social">
+              {getPlan(museum?.plan).visitInfo ? (
+                <div className="space-y-6">
                   <div>
                     <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About / Mission</label>
                     <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">A short description of your museum's history and purpose, shown on the Visit page.</p>
@@ -602,26 +731,140 @@ export default function SiteBuilder() {
                       className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Visit Information & About</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Add your address, opening hours, contact details, and about text to your public site. Available on Professional and above.</p>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">About & Facilities</div>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Add about text and facilities info to your public site. Available on Professional and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
                 </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
+              )}
+              {getPlan(museum?.plan).advancedCustomisation ? (
+                <div className="space-y-6">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Social Links</div>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 -mt-2">Links shown as icons in your site's footer.</p>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Instagram</label>
+                    <input value={form.social_instagram} onChange={e => set('social_instagram', e.target.value)}
+                      placeholder="https://instagram.com/yourmuseum"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">X / Twitter</label>
+                    <input value={form.social_twitter} onChange={e => set('social_twitter', e.target.value)}
+                      placeholder="https://x.com/yourmuseum"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facebook</label>
+                    <input value={form.social_facebook} onChange={e => set('social_facebook', e.target.value)}
+                      placeholder="https://facebook.com/yourmuseum"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Website</label>
+                    <input value={form.social_website} onChange={e => set('social_website', e.target.value)}
+                      placeholder="https://yourmuseum.org"
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Social Links</div>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Add Instagram, X, Facebook, and website links to your public site footer. Available on Hobbyist and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
+                </div>
+              )}
+            </CollapsibleSection>
 
-            {/* Embed — Professional+ only */}
-            {getPlan(museum?.plan).fullMode ? (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Embed on your website</div>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Add your collection to any existing website using this iframe snippet.</p>
+            {/* SEO & Sharing — Hobbyist+ */}
+            <CollapsibleSection title="SEO & Sharing">
+              {getPlan(museum?.plan).advancedCustomisation ? (
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Meta Description</label>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Shown in Google results and link previews. Defaults to your tagline if left blank.</p>
+                  <textarea value={form.seo_description} onChange={e => set('seo_description', e.target.value)}
+                    placeholder="Discover our permanent collection of 18th-century European paintings and decorative arts."
+                    rows={3}
+                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Your hero image is automatically used as the link preview image.</p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Customise how your site appears in Google results and link previews. Available on Hobbyist and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            {/* Collector Identity — Hobbyist+ */}
+            <CollapsibleSection title="Collector Identity">
+              {getPlan(museum?.plan).advancedCustomisation ? (
+                <div className="space-y-6">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">Personalise how your collection is described and introduce yourself to visitors.</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collection Label</label>
+                      <select value={form.collection_label} onChange={e => set('collection_label', e.target.value)}
+                        className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950">
+                        <option value="">Collection (default)</option>
+                        <option value="Museum">Museum</option>
+                        <option value="Collection">Collection</option>
+                        <option value="Archive">Archive</option>
+                        <option value="Gallery">Gallery</option>
+                        <option value="Cabinet">Cabinet</option>
+                      </select>
+                      <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Used in your public site headings.</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collecting Since</label>
+                      <input value={form.collecting_since} onChange={e => set('collecting_since', e.target.value)}
+                        placeholder="e.g. 2003"
+                        className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+                      <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown in your collection stats.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About the Collector</label>
+                    <textarea value={form.collector_bio} onChange={e => set('collector_bio', e.target.value)}
+                      placeholder="I've been collecting vintage radios since 2003, starting with a Bush TR82 I found at a car boot sale…"
+                      rows={4}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown as a personal introduction above your collection grid.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Add a personal bio, collection label, and "collecting since" year to your public site. Available on Hobbyist and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            {/* Embed on Website — Professional+ */}
+            <CollapsibleSection title="Embed on Website">
+              {getPlan(museum?.plan).fullMode ? (
                 <div className="space-y-3">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">Add your collection to any existing website using this iframe snippet.</p>
                   <textarea
                     readOnly
                     value={`<iframe\n  src="${typeof window !== 'undefined' ? window.location.origin : 'https://vitrine.app'}/museum/${museum.slug}/embed"\n  width="100%"\n  height="600"\n  frameborder="0"\n  style="border:none;border-radius:8px"\n></iframe>`}
@@ -642,175 +885,18 @@ export default function SiteBuilder() {
                     Copy embed code
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Embed on your website</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Embed your collection as an iframe on any website. Available on Professional and above.</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
-
-            {/* Social Links — Hobbyist+ */}
-            {getPlan(museum?.plan).advancedCustomisation ? (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Social Links</div>
-                <p className="text-xs text-stone-400 dark:text-stone-500">Links shown as icons in your site's footer.</p>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Instagram</label>
-                  <input value={form.social_instagram} onChange={e => set('social_instagram', e.target.value)}
-                    placeholder="https://instagram.com/yourmuseum"
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">X / Twitter</label>
-                  <input value={form.social_twitter} onChange={e => set('social_twitter', e.target.value)}
-                    placeholder="https://x.com/yourmuseum"
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Facebook</label>
-                  <input value={form.social_facebook} onChange={e => set('social_facebook', e.target.value)}
-                    placeholder="https://facebook.com/yourmuseum"
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Website</label>
-                  <input value={form.social_website} onChange={e => set('social_website', e.target.value)}
-                    placeholder="https://yourmuseum.org"
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Social Links</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Add Instagram, X, Facebook, and website links to your public site footer. Available on Hobbyist and above.</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
-
-            {/* SEO & Sharing — Hobbyist+ */}
-            {getPlan(museum?.plan).advancedCustomisation ? (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">SEO & Sharing</div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Meta Description</label>
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Shown in Google results and link previews. Defaults to your tagline if left blank.</p>
-                  <textarea value={form.seo_description} onChange={e => set('seo_description', e.target.value)}
-                    placeholder="Discover our permanent collection of 18th-century European paintings and decorative arts."
-                    rows={3}
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Your hero image is automatically used as the link preview image.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">SEO & Sharing</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Customise how your site appears in Google results and link previews. Available on Hobbyist and above.</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
-
-            {/* Footer — Hobbyist+ */}
-            {getPlan(museum?.plan).advancedCustomisation ? (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Footer</div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Footer Text</label>
-                  <input value={form.footer_text} onChange={e => set('footer_text', e.target.value)}
-                    placeholder="© 2025 My Museum. All rights reserved."
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Appears in the footer alongside "Powered by Vitrine".</p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Footer</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Add a custom copyright notice or text to your site footer. Available on Hobbyist and above.</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
-
-            {/* Collector Identity — Hobbyist+ */}
-            {getPlan(museum?.plan).advancedCustomisation ? (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collector Identity</div>
-                <p className="text-xs text-stone-400 dark:text-stone-500">Personalise how your collection is described and introduce yourself to visitors.</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collection Label</label>
-                    <select value={form.collection_label} onChange={e => set('collection_label', e.target.value)}
-                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950">
-                      <option value="">Collection (default)</option>
-                      <option value="Museum">Museum</option>
-                      <option value="Collection">Collection</option>
-                      <option value="Archive">Archive</option>
-                      <option value="Gallery">Gallery</option>
-                      <option value="Cabinet">Cabinet</option>
-                    </select>
-                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Used in your public site headings.</p>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Embed your collection as an iframe on any website. Available on Professional and above.</p>
                   </div>
-                  <div>
-                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Collecting Since</label>
-                    <input value={form.collecting_since} onChange={e => set('collecting_since', e.target.value)}
-                      placeholder="e.g. 2003"
-                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
-                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown in your collection stats.</p>
-                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">About the Collector</label>
-                  <textarea value={form.collector_bio} onChange={e => set('collector_bio', e.target.value)}
-                    placeholder="I've been collecting vintage radios since 2003, starting with a Bush TR82 I found at a car boot sale…"
-                    rows={4}
-                    className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-950" />
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Shown as a personal introduction above your collection grid.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Collector Identity</div>
-                  <p className="text-sm text-stone-500 dark:text-stone-400">Add a personal bio, collection label, and "collecting since" year to your public site. Available on Hobbyist and above.</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/plan')}
-                  className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
-                  Upgrade →
-                </button>
-              </div>
-            )}
-
-            {/* Plan & Storage link */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Plan & Storage</div>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{getPlan(museum?.plan).label} plan</p>
-              </div>
-              <button onClick={() => router.push('/dashboard/plan')}
-                className="text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-300 dark:border-stone-600 hover:border-stone-900 dark:hover:border-stone-300 rounded px-3 py-1.5 transition-colors">
-                View usage →
-              </button>
-            </div>
+              )}
+            </CollapsibleSection>
 
           </div>
 
@@ -831,73 +917,268 @@ export default function SiteBuilder() {
                 </div>
               </div>
 
-              {/* Nav */}
-              <div className="px-4 h-10 flex items-center justify-between border-b"
-                style={{ background: navBg, borderColor: navText + '15' }}>
-                <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: navText }}>
-                  {form.logo_image_url
-                    ? <img src={form.logo_image_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
-                    : form.logo_emoji
-                  }
-                  {form.name || 'Your Museum'}
-                </div>
-                <div className="flex gap-4">
-                  <span className="text-xs border-b" style={{ color: navText, borderColor: form.accent_color }}>Collection</span>
-                  <span className="text-xs opacity-40" style={{ color: navText }}>Visit</span>
-                </div>
-              </div>
-
-              {/* Hero */}
-              {form.hero_height !== 'none' && (
-                <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
-                  background: previewHeroBg,
-                  backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
-                }}>
-                  {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
-                  <div className="relative z-10">
-                    <div className="text-xs uppercase tracking-widest mb-1.5 font-mono" style={{ color: form.hero_image_url ? '#fff' : form.accent_color }}>
-                      {form.name || 'Your Museum'}
-                    </div>
-                    <div style={{
-                      ...previewHeadingStyle,
-                      color: form.hero_image_url ? '#fff' : previewHeroText,
-                      fontSize: form.hero_height === 'fullscreen' ? '20px' : form.hero_height === 'tall' ? '16px' : '13px'
+              {/* ── COVER preview ──────────────────────────────────────── */}
+              {layoutVariant === 'cover' && (() => {
+                const heroBg = form.hero_image_url ? undefined : form.primary_color
+                return (
+                  <>
+                    {/* Full-bleed hero with nav overlaid */}
+                    <div className="relative" style={{
+                      height: '160px',
+                      backgroundColor: heroBg || '#1a1a1a',
+                      backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
                     }}>
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)' }} />
+                      {/* Floating nav */}
+                      <div className="absolute top-0 left-0 right-0 px-4 h-9 flex items-center justify-between">
+                        <div className="text-xs flex items-center gap-1" style={{ ...previewHeadingStyle, color: '#ffffff' }}>
+                          {form.logo_emoji} {form.name || 'Your Museum'}
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="text-xs border-b border-white/60 text-white/90">Collection</span>
+                        </div>
+                      </div>
+                      {/* Name + tagline at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
+                        <div className="text-xs font-mono mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>{form.name || 'Your Museum'}</div>
+                        <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '24px' }}>
+                          {form.tagline || 'Explore the collection'}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Cards below */}
+                    <div className="p-3" style={{ background: '#0d0b08' }}>
+                      <div className={`grid ${previewColClass} gap-2`}>
+                        {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                          <div key={i} className="overflow-hidden" style={{ borderRadius: `${form.card_radius}px`, background: 'rgba(255,255,255,0.06)' }}>
+                            <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: 'rgba(255,255,255,0.1)' }}>
+                              <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                            </div>
+                            {form.card_metadata !== 'none' && (
+                              <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                                <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: 'rgba(255,255,255,0.3)' }} />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* ── CURATOR (text-forward) preview ─────────────────────── */}
+              {layoutVariant === 'text-forward' && (
+                <>
+                  {/* Nav */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: '#faf8f5', borderColor: '#e7e5e4' }}>
+                    <div className="text-xs flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: '#1c1917' }}>
+                      {form.logo_emoji} {form.name || 'Your Museum'}
+                    </div>
+                    <span className="text-xs border-b" style={{ color: '#1c1917', borderColor: form.accent_color }}>Collection</span>
+                  </div>
+                  {/* Large centred text intro */}
+                  <div className="flex flex-col items-center justify-center text-center px-6 py-8" style={{ background: '#faf8f5' }}>
+                    <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: form.accent_color }}>{form.name || 'Your Museum'}</div>
+                    <div className="mb-3" style={{ ...previewHeadingStyle, color: '#1c1917', fontSize: '28px' }}>
                       {form.tagline || 'Explore the collection'}
+                    </div>
+                    <div className="w-10 h-px mb-3" style={{ background: '#e7e5e4' }} />
+                    <div className="text-xs leading-relaxed max-w-xs" style={{ color: '#78716c' }}>
+                      A carefully curated collection…
+                    </div>
+                  </div>
+                  {/* Thin rule */}
+                  <div className="mx-4 mb-3 h-px" style={{ background: '#e7e5e4' }} />
+                  {/* Cards */}
+                  <div className="px-3 pb-3" style={{ background: '#faf8f5' }}>
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden bg-white border border-stone-100" style={{ borderRadius: `${form.card_radius}px` }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-1.5 bg-stone-200 rounded w-3/4 mb-1" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── MAGAZINE preview ───────────────────────────────────── */}
+              {layoutVariant === 'magazine' && (
+                <>
+                  {/* Nav — bold border */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b-2 border-black bg-white">
+                    <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: '#000' }}>
+                      {form.logo_emoji} {form.name || 'Your Museum'}
+                    </div>
+                    <span className="text-xs border-b font-bold" style={{ color: '#000', borderColor: form.accent_color }}>Collection</span>
+                  </div>
+                  {/* Masthead bar */}
+                  <div className="px-3 py-2 flex items-end justify-between border-b-2 border-black bg-white">
+                    <div style={{ ...previewHeadingStyle, color: '#000', fontSize: '26px', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}>
+                      {form.tagline || form.name || 'The Collection'}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-mono" style={{ color: form.accent_color }}>{form.name}</div>
+                    </div>
+                  </div>
+                  {/* Asymmetric hero grid */}
+                  <div className="p-2 bg-white">
+                    <div className="grid grid-cols-3 gap-1" style={{ height: '110px' }}>
+                      <div className="col-span-2 bg-stone-100 flex items-center justify-center text-2xl rounded-sm overflow-hidden relative">
+                        {sampleEmojis[0]}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-1">
+                          <div className="h-1.5 bg-white/60 rounded w-3/4" />
+                        </div>
+                      </div>
+                      <div className="col-span-1 flex flex-col gap-1">
+                        {[1, 2].map(i => (
+                          <div key={i} className="flex-1 bg-stone-100 flex items-center justify-center text-lg rounded-sm overflow-hidden relative">
+                            {sampleEmojis[i]}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
+                              <div className="h-1 bg-white/60 rounded w-3/4" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Rule + small grid */}
+                  <div className="px-3 pb-3 bg-white">
+                    <div className="h-px mb-2" style={{ background: '#e7e5e4' }} />
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(3, 3 + previewGridCols).map((e, i) => (
+                        <div key={i} className="overflow-hidden border border-stone-100" style={{ borderRadius: `${form.card_radius}px` }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                            <div className="absolute inset-0 flex items-center justify-center">{e}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── SALON (sidebar) preview ────────────────────────────── */}
+              {layoutVariant === 'sidebar' && (
+                <div className="flex" style={{ background: '#fafaf9', minHeight: '280px' }}>
+                  {/* Sidebar */}
+                  <div className="flex flex-col pt-4 px-3 gap-3 border-r" style={{ width: '72px', borderColor: '#e7e5e4' }}>
+                    <div className="flex flex-col items-start gap-1">
+                      <div className="text-lg">{form.logo_emoji}</div>
+                      <div className="text-xs leading-tight" style={{ ...previewHeadingStyle, color: '#1c1917', fontSize: '9px', maxWidth: '56px' }}>
+                        {form.name || 'Your Museum'}
+                      </div>
+                    </div>
+                    <div className="w-8 h-px" style={{ background: '#e7e5e4' }} />
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs font-mono" style={{ color: form.accent_color, fontSize: '8px', borderLeft: `2px solid ${form.accent_color}`, paddingLeft: '4px' }}>Collection</div>
+                      <div className="text-xs font-mono" style={{ color: '#a8a29e', fontSize: '8px', paddingLeft: '6px' }}>Events</div>
+                      <div className="text-xs font-mono" style={{ color: '#a8a29e', fontSize: '8px', paddingLeft: '6px' }}>Visit</div>
+                    </div>
+                  </div>
+                  {/* Main content */}
+                  <div className="flex-1 p-3">
+                    <div className="text-xs font-mono mb-2" style={{ color: '#a8a29e', fontSize: '9px' }}>Collection · 42 pieces</div>
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden border border-stone-100 bg-white" style={{ borderRadius: `${form.card_radius}px` }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                            <div className="absolute inset-0 flex items-center justify-center text-lg">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-1.5 bg-stone-200 rounded w-3/4" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Cards */}
-              <div className="bg-white p-3">
-                {form.card_metadata !== 'none' && (
-                  <div className="text-xs text-stone-400 font-mono mb-2">On Display</div>
-                )}
-                <div className={`grid ${previewColClass} gap-2`}>
-                  {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                    <div key={i} className="overflow-hidden border border-stone-100"
-                      style={{ borderRadius: `${form.card_radius}px` }}>
-                      <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
-                        <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+              {/* ── STANDARD preview (all original templates) ──────────── */}
+              {layoutVariant === 'standard' && (
+                <>
+                  {/* Nav */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b"
+                    style={{ background: navBg, borderColor: navText + '15' }}>
+                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: navText }}>
+                      {form.logo_image_url
+                        ? <img src={form.logo_image_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
+                        : form.logo_emoji
+                      }
+                      {form.name || 'Your Museum'}
+                    </div>
+                    <div className="flex gap-4">
+                      <span className="text-xs border-b" style={{ color: navText, borderColor: form.accent_color }}>Collection</span>
+                      <span className="text-xs opacity-40" style={{ color: navText }}>Visit</span>
+                    </div>
+                  </div>
+
+                  {/* Hero */}
+                  {form.hero_height !== 'none' && (
+                    <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
+                      backgroundColor: previewHeroBg,
+                      backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
+                    }}>
+                      {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
+                      <div className="relative z-10">
+                        <div className="text-xs uppercase tracking-widest mb-1.5 font-mono" style={{ color: form.hero_image_url ? '#fff' : form.accent_color }}>
+                          {form.name || 'Your Museum'}
+                        </div>
+                        <div style={{
+                          ...previewHeadingStyle,
+                          color: form.hero_image_url ? '#fff' : previewHeroText,
+                          fontSize: form.hero_height === 'fullscreen' ? '32px' : form.hero_height === 'tall' ? '26px' : '22px'
+                        }}>
+                          {form.tagline || 'Explore the collection'}
+                        </div>
                       </div>
-                      {form.card_metadata !== 'none' && (
-                        <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                          <div className="h-2 bg-stone-200 rounded w-3/4 mb-1" />
-                          {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                            <div className="h-1.5 bg-stone-100 rounded w-1/2 mb-1" />
-                          )}
-                          {form.card_metadata === 'full' && (
-                            <div className="h-1.5 bg-stone-100 rounded w-1/3" />
+                    </div>
+                  )}
+
+                  {/* Cards */}
+                  <div className="bg-white p-3">
+                    {form.card_metadata !== 'none' && (
+                      <div className="text-xs text-stone-400 font-mono mb-2">On Display</div>
+                    )}
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden border border-stone-100"
+                          style={{ borderRadius: `${form.card_radius}px` }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-2 bg-stone-200 rounded w-3/4 mb-1" />
+                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
+                                <div className="h-1.5 bg-stone-100 rounded w-1/2 mb-1" />
+                              )}
+                              {form.card_metadata === 'full' && (
+                                <div className="h-1.5 bg-stone-100 rounded w-1/3" />
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
 
             </div>
           </div>
