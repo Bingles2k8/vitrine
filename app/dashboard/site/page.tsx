@@ -181,6 +181,22 @@ export default function SiteBuilder() {
     load()
   }, [])
 
+  useEffect(() => {
+    FONTS.forEach(f => {
+      if (document.querySelector(`link[data-vitrine-font="${f.id}"]`)) return
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.setAttribute('data-vitrine-font', f.id)
+      link.href = `https://fonts.googleapis.com/css2?family=${f.google}&display=block`
+      document.head.appendChild(link)
+      link.addEventListener('load', () => {
+        const name = f.css.split(',')[0].replace(/'/g, '').trim()
+        document.fonts.load(`italic 400 1em "${name}"`)
+        document.fonts.load(`400 1em "${name}"`)
+      })
+    })
+  }, [])
+
   function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
   }
@@ -306,16 +322,6 @@ export default function SiteBuilder() {
         </>
       ) : (
       <>
-      {/* Preload all Google Fonts so the picker preview renders instantly */}
-      {FONTS.map(f => (
-        <link key={f.id} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f.google}&display=swap`} />
-      ))}
-      {/* Force-download italic variants — browser lazily skips italic binary files until first use */}
-      <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', visibility: 'hidden' }}>
-        {FONTS.map(f => (
-          <span key={f.id} style={{ fontFamily: f.css, fontStyle: 'italic', fontWeight: 400 }}>A</span>
-        ))}
-      </div>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
           <div className="flex items-center gap-3">
