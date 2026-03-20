@@ -68,7 +68,7 @@ export async function POST(request: Request) {
   }
 
   const totalCents = event.price_cents * quantity
-  const platformFeeCents = Math.round(totalCents * 0.02)
+  const platformFeeCents = Math.round(totalCents * 0.05)
 
   // For paid events, verify Stripe Connect is set up before creating an order.
   // This prevents orphaned cancelled orders accumulating when the museum isn't onboarded.
