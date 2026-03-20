@@ -346,6 +346,7 @@ export default function EventDetailPage() {
                   <input type="number" value={editPricePounds} onChange={e => setEditPricePounds(e.target.value)} min="0" step="0.01"
                     className="w-full border border-stone-200 dark:border-stone-700 rounded pl-7 pr-3 py-2 text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-stone-400" />
                 </div>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">A Vitrine platform fee of 3.5% + £0.20 is added per transaction.</p>
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Currency</label>
