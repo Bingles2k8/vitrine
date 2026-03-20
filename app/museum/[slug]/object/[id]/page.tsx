@@ -2,6 +2,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 import PublicImageGallery from '@/components/PublicImageGallery'
 
@@ -80,7 +81,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     { label: 'Dimensions', value: formatDimensions(object) },
     parseInt(object.number_of_parts) > 1 ? { label: 'No. of Parts', value: String(object.number_of_parts) } : null,
     { label: 'Status', value: object.status },
-    { label: 'Location', value: object.current_location },
+    { label: 'Location', value: getPlan(museum.plan).fullMode && object.status === 'Storage' ? 'In Storage' : object.current_location },
     object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
   ].filter((row): row is { label: string; value: string } => !!row && !!row.value)
 
