@@ -25,6 +25,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [discoverable, setDiscoverable] = useState(museum?.discoverable ?? false)
   const settingsRef = useRef<HTMLDivElement>(null)
 
   // Fetch user email
@@ -75,6 +76,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   function changeTheme(t: Theme) {
     setTheme(t)
     localStorage.setItem('theme', t)
+  }
+
+  async function toggleDiscoverable() {
+    if (!museum) return
+    const next = !discoverable
+    setDiscoverable(next)
+    await supabase.from('museums').update({ discoverable: next }).eq('id', museum.id)
   }
 
   function navItem(path: string, icon: string, label: string) {
@@ -296,6 +304,26 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                       {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* Directory (owner only) */}
+              {museum && isOwner && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Directory</div>
+                  <button
+                    onClick={toggleDiscoverable}
+                    className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
+                      discoverable
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${discoverable ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${discoverable ? 'left-3.5' : 'left-0.5'}`} />
+                    </span>
+                    {discoverable ? 'Listed in directory' : 'Not listed'}
+                  </button>
                 </div>
               )}
 

@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [discoverable, setDiscoverable] = useState(false)
   const [collectionCategory, setCollectionCategory] = useState('')
   const [savingDiscovery, setSavingDiscovery] = useState(false)
+  const [bannerDismissed, setBannerDismissed] = useState(true) // true until localStorage checked
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulking, setBulking] = useState(false)
   const router = useRouter()
@@ -87,6 +88,10 @@ export default function Dashboard() {
     setSelectedIds(new Set())
     setBulking(false)
   }
+
+  useEffect(() => {
+    setBannerDismissed(localStorage.getItem('discover-banner-dismissed') === 'true')
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -214,7 +219,7 @@ export default function Dashboard() {
           </div>
 
           {/* Discoverability */}
-          {(isOwner || staffAccess === 'Admin') && (
+          {!bannerDismissed && (isOwner || staffAccess === 'Admin') && (
             <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-5 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -223,9 +228,18 @@ export default function Dashboard() {
                     List your collection in the public <a href="/discover" target="_blank" className="text-amber-600 hover:text-amber-500 underline">Vitrine discovery directory</a> — a searchable catalogue of collections from across the Vitrine community. Visitors can browse by category or search for specific objects. Only items marked <span className="font-mono">On Display</span> or <span className="font-mono">On Loan</span> will appear.
                   </p>
                 </div>
-                <a href="/discover" target="_blank" className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-shrink-0">
-                  View directory →
-                </a>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <a href="/discover" target="_blank" className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                    View directory →
+                  </a>
+                  <button
+                    onClick={() => { localStorage.setItem('discover-banner-dismissed', 'true'); setBannerDismissed(true) }}
+                    className="text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 transition-colors text-base leading-none"
+                    aria-label="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
