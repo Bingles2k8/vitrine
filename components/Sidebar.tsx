@@ -312,8 +312,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </div>
               )}
 
-              {/* Directory (Professional+ owners only) */}
-              {museum && isOwner && planInfo?.fullMode && (
+              {/* Directory (Professional+ owners and admins) */}
+              {museum && (isOwner || staffAccess === 'Admin') && planInfo?.fullMode && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Directory</div>
                   <button

@@ -219,7 +219,7 @@ export default function Dashboard() {
           </div>
 
           {/* Discoverability */}
-          {!bannerDismissed && fullMode && isOwner && (
+          {!bannerDismissed && fullMode && (isOwner || staffAccess === 'Admin') && (
             <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-5 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
