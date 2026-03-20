@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, PRODUCTION_PLACES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
+import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageUpload from '@/components/ImageUpload'
 import ImageGallery from '@/components/ImageGallery'
@@ -381,6 +382,22 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             )}
           </div>
         )}
+
+        {/* Discovery category override */}
+        <div>
+          <label className={labelCls}>Discovery Category</label>
+          <select
+            value={form.category || ''}
+            onChange={e => set('category', e.target.value || null)}
+            className={inputCls}
+          >
+            <option value="">— Inherit from collection —</option>
+            {COLLECTION_CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Overrides your collection's primary category in the Vitrine discovery directory.</p>
+        </div>
 
         {/* Full Description (Internal) */}
         {getPlan(museum.plan).fullMode && (

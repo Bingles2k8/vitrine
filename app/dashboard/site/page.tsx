@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan } from '@/lib/plans'
+import { COLLECTION_CATEGORIES } from '@/lib/categories'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -130,6 +131,8 @@ export default function SiteBuilder() {
     collection_label: '',
     collecting_since: '',
     collector_bio: '',
+    discoverable: false,
+    collection_category: '',
   })
 
   useEffect(() => {
@@ -175,6 +178,8 @@ export default function SiteBuilder() {
         collection_label: museum.collection_label || '',
         collecting_since: museum.collecting_since || '',
         collector_bio: museum.collector_bio || '',
+        discoverable: museum.discoverable ?? false,
+        collection_category: museum.collection_category || '',
       })
       setLoading(false)
     }
@@ -902,6 +907,40 @@ export default function SiteBuilder() {
                   </button>
                 </div>
               )}
+            </CollapsibleSection>
+
+            {/* Discoverability */}
+            <CollapsibleSection title="Discoverability">
+              <div className="space-y-4">
+                <p className="text-xs text-stone-400 dark:text-stone-500">Allow your collection to appear in the public <a href="/discover" target="_blank" className="text-amber-600 hover:text-amber-500 underline">Vitrine discovery directory</a>. Only objects marked "On Display" or "On Loan" with a photo will be shown.</p>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.discoverable}
+                    onChange={e => set('discoverable', e.target.checked)}
+                    className="w-4 h-4 rounded accent-stone-900 dark:accent-white"
+                  />
+                  <span className="text-sm text-stone-700 dark:text-stone-300">Make my collection discoverable in the Vitrine directory</span>
+                </label>
+                {form.discoverable && (
+                  <div>
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Primary collection category <span className="text-red-400">*</span></div>
+                    <select
+                      value={form.collection_category}
+                      onChange={e => set('collection_category', e.target.value)}
+                      className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 outline-none focus:border-stone-400 dark:focus:border-stone-500"
+                    >
+                      <option value="">— Select a category —</option>
+                      {COLLECTION_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    {!form.collection_category && (
+                      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1.5">A category is required for your collection to appear in the directory.</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </CollapsibleSection>
 
           </div>

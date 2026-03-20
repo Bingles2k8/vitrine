@@ -101,6 +101,7 @@ export default function ObjectDetail() {
     is_featured: false,
     acquisition_justification: '', acquisition_documentation_ref: '',
     acquisition_value: '', acquisition_currency: 'GBP',
+    category: '',
   })
 
   useEffect(() => {
@@ -213,6 +214,7 @@ export default function ObjectDetail() {
         acquisition_documentation_ref: object.acquisition_documentation_ref || '',
         acquisition_value: object.acquisition_value ?? '',
         acquisition_currency: object.acquisition_currency || 'GBP',
+        category: object.category || '',
       })
       const [{ data: lv }, { data: locs }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
