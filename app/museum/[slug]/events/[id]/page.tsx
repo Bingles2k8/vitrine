@@ -288,7 +288,7 @@ export default function PublicEventDetailPage() {
                         </div>
                       </div>
                       <p className="text-xs" style={{ color: content.muted }}>
-                        Refunds are available on request from the museum. The booking fee is non-refundable.
+                        Refunds are available on request from the museum. The booking fee and payment processing fee are non-refundable.
                       </p>
                     </>
                   ) : (

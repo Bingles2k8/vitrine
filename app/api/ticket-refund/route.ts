@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe } from '@/lib/stripe'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
+import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const supabase = await createServerSideClient()
@@ -54,11 +55,21 @@ export async function POST(request: Request) {
   }
 
   // Issue Stripe refund for paid orders.
-  // Refund = amount_cents - platform_fee_cents so the booking fee is always retained by Vitrine,
-  // regardless of whether the booking fee was charged as a separate Stripe line item or deducted
-  // internally from the museum's payout (pre-fee-transparency orders).
+  // Refund = amount_cents - platform_fee_cents - stripe_processing_fee so that neither the
+  // Vitrine booking fee nor Stripe's card processing fee (which Stripe does not return on refund)
+  // come out of Vitrine's pocket. The exact Stripe fee is fetched from the balance transaction.
   if (order.stripe_payment_intent_id) {
-    const refundAmount = order.amount_cents - (order.platform_fee_cents ?? 0)
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      order.stripe_payment_intent_id,
+      { expand: ['latest_charge.balance_transaction'] }
+    )
+    const charge = paymentIntent.latest_charge as Stripe.Charge | null
+    const stripeFee = (charge?.balance_transaction as Stripe.BalanceTransaction | null)?.fee ?? 0
+
+    const refundAmount = Math.max(
+      order.amount_cents - (order.platform_fee_cents ?? 0) - stripeFee,
+      0
+    )
     await stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
       amount: refundAmount,

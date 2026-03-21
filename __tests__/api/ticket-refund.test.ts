@@ -9,6 +9,13 @@ vi.mock('@/lib/stripe', () => ({
     refunds: {
       create: vi.fn().mockResolvedValue({ id: 're_test' }),
     },
+    paymentIntents: {
+      retrieve: vi.fn().mockResolvedValue({
+        latest_charge: {
+          balance_transaction: { fee: 36 }, // £0.36 Stripe processing fee
+        },
+      }),
+    },
   },
 }))
 
@@ -171,14 +178,14 @@ describe('POST /api/ticket-refund', () => {
 
   // ── Paid order refund ─────────────────────────────────────────────────────
 
-  it('issues a Stripe refund for amount_cents minus platform_fee_cents (booking fee always retained)', async () => {
+  it('issues a Stripe refund for amount_cents minus platform_fee_cents minus Stripe processing fee', async () => {
     const res = await POST(makeRequest({ order_id: 'order-uuid' }))
 
     expect(res.status).toBe(200)
     expect(stripeRefundsCreate).toHaveBeenCalledOnce()
     expect(stripeRefundsCreate).toHaveBeenCalledWith({
       payment_intent: 'pi_test',
-      amount: 940, // 1000 (ticket price) - 60 (platform fee) = 940
+      amount: 904, // 1000 (ticket price) - 60 (platform fee) - 36 (Stripe fee) = 904
     })
   })
 
