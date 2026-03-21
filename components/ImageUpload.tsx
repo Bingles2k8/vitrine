@@ -58,10 +58,6 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
 
   return (
     <div>
-      <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
-        Photo
-      </label>
-
       <div className="relative">
         {preview ? (
           <div className="relative group">
