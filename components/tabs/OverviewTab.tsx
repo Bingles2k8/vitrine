@@ -60,7 +60,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
       {/* Images */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
         <div className="flex flex-row gap-2 overflow-x-auto">
-          <div className="w-20 h-20 shrink-0">
+          <div className="w-40 h-40 shrink-0">
             <ImageUpload currentUrl={form.image_url} onUpload={(url: string) => set('image_url', url)} />
           </div>
           <ImageGallery objectId={object.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerObject} currentPrimaryUrl={form.image_url} hidePrimary />

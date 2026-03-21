@@ -104,7 +104,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
 
       <div className="flex flex-row gap-2 overflow-x-auto">
         {displayedImages.map(image => (
-          <div key={image.id} className="relative group rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 shrink-0 w-20 h-20">
+          <div key={image.id} className="relative group rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 shrink-0 w-40 h-40">
             <img src={image.url} alt="" className="w-full h-full object-contain" />
             {canEdit && (
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
@@ -129,7 +129,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
         ))}
 
         {canEdit && images.length < imageLimit && (
-          <label className="flex flex-col items-center justify-center w-20 h-20 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-900">
+          <label className="flex flex-col items-center justify-center w-40 h-40 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-900">
             <div className="text-lg mb-1">📷</div>
             <div className="text-xs text-stone-400 dark:text-stone-500">{uploading ? 'Uploading…' : '+ Add image'}</div>
             {uploadError && (
@@ -139,7 +139,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
           </label>
         )}
         {canEdit && images.length >= imageLimit && (
-          <div className="flex flex-col items-center justify-center w-20 h-20 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-2 gap-1">
+          <div className="flex flex-col items-center justify-center w-40 h-40 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-2 gap-1">
             <div className="text-xs text-stone-400 dark:text-stone-500">
               {imageLimit === 1 ? 'Image limit reached' : `${imageLimit} image limit reached`}
             </div>
