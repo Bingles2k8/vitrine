@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   // Fetch the order and verify it belongs to this museum
   const { data: order } = await supabase
     .from('ticket_orders')
-    .select('id, museum_id, slot_id, quantity, amount_cents, status, stripe_payment_intent_id')
+    .select('id, museum_id, slot_id, quantity, amount_cents, platform_fee_cents, status, stripe_payment_intent_id')
     .eq('id', order_id)
     .eq('museum_id', museumId)
     .maybeSingle()
@@ -53,11 +53,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Order is not eligible for refund' }, { status: 409 })
   }
 
-  // Issue Stripe refund for paid orders (ticket price only — booking fee is non-refundable)
+  // Issue Stripe refund for paid orders.
+  // Refund = amount_cents - platform_fee_cents so the booking fee is always retained by Vitrine,
+  // regardless of whether the booking fee was charged as a separate Stripe line item or deducted
+  // internally from the museum's payout (pre-fee-transparency orders).
   if (order.stripe_payment_intent_id) {
+    const refundAmount = order.amount_cents - (order.platform_fee_cents ?? 0)
     await stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
-      amount: order.amount_cents,
+      amount: refundAmount,
     })
   }
 

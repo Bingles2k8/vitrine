@@ -98,6 +98,7 @@ const baseOrder = {
   slot_id: 'slot-uuid',
   quantity: 2,
   amount_cents: 1000,
+  platform_fee_cents: 60,
   status: 'completed',
   stripe_payment_intent_id: 'pi_test',
 }
@@ -105,6 +106,7 @@ const baseOrder = {
 const freeOrder = {
   ...baseOrder,
   amount_cents: 0,
+  platform_fee_cents: 0,
   stripe_payment_intent_id: null,
 }
 
@@ -169,14 +171,14 @@ describe('POST /api/ticket-refund', () => {
 
   // ── Paid order refund ─────────────────────────────────────────────────────
 
-  it('issues a partial Stripe refund for amount_cents (ticket price only)', async () => {
+  it('issues a Stripe refund for amount_cents minus platform_fee_cents (booking fee always retained)', async () => {
     const res = await POST(makeRequest({ order_id: 'order-uuid' }))
 
     expect(res.status).toBe(200)
     expect(stripeRefundsCreate).toHaveBeenCalledOnce()
     expect(stripeRefundsCreate).toHaveBeenCalledWith({
       payment_intent: 'pi_test',
-      amount: 1000, // amount_cents only — booking fee is non-refundable
+      amount: 940, // 1000 (ticket price) - 60 (platform fee) = 940
     })
   })
 
