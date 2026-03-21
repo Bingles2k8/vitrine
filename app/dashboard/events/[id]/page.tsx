@@ -83,6 +83,8 @@ export default function EventDetailPage() {
 
   // Expanded order for viewing tickets
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
+  const [refundingOrder, setRefundingOrder] = useState<string | null>(null)
+  const [processingRefund, setProcessingRefund] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -186,6 +188,31 @@ export default function EventDetailPage() {
     if (slot && slot.booked_count > 0) return // Don't delete slots with bookings
     await supabase.from('event_time_slots').delete().eq('id', slotId)
     setSlots(prev => prev.filter(s => s.id !== slotId))
+  }
+
+  async function handleRefundOrder(orderId: string) {
+    setProcessingRefund(true)
+    try {
+      const res = await fetch('/api/ticket-refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId }),
+      })
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === orderId
+          ? { ...o, status: 'cancelled', tickets: o.tickets?.map(t => ({ ...t, status: 'refunded' })) }
+          : o
+        ))
+        setRefundingOrder(null)
+        toast('Order refunded successfully', 'success')
+      } else {
+        const data = await res.json()
+        toast(data.error || 'Failed to process refund', 'error')
+      }
+    } catch {
+      toast('Failed to process refund', 'error')
+    }
+    setProcessingRefund(false)
   }
 
   async function handleMarkTicketUsed(ticketId: string) {
@@ -506,6 +533,36 @@ export default function EventDetailPage() {
                           {expandedOrder === order.id && order.tickets && (
                             <tr key={`${order.id}-tickets`}>
                               <td colSpan={6} className="px-4 py-3 bg-stone-50 dark:bg-stone-800">
+                                {order.status === 'completed' && (
+                                  <div className="flex items-center gap-3 pb-2 mb-2 border-b border-stone-200 dark:border-stone-700">
+                                    {refundingOrder === order.id ? (
+                                      <>
+                                        <span className="text-xs text-stone-500 dark:text-stone-400 font-mono">
+                                          {order.amount_cents > 0
+                                            ? `Refund ${formatPrice(order.amount_cents, order.currency)} to buyer? Booking fee is non-refundable.`
+                                            : 'Cancel this booking?'}
+                                        </span>
+                                        <button
+                                          onClick={e => { e.stopPropagation(); handleRefundOrder(order.id) }}
+                                          disabled={processingRefund}
+                                          className="text-xs font-mono text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 transition-colors">
+                                          {processingRefund ? 'Processing...' : 'Confirm'}
+                                        </button>
+                                        <button
+                                          onClick={e => { e.stopPropagation(); setRefundingOrder(null) }}
+                                          className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                                          Cancel
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={e => { e.stopPropagation(); setRefundingOrder(order.id) }}
+                                        className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                        {order.amount_cents > 0 ? 'Refund order' : 'Cancel booking'}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                                 <div className="space-y-2">
                                   {order.tickets.map(ticket => (
                                     <div key={ticket.id} className="flex items-center gap-3">

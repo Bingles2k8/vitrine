@@ -177,14 +177,24 @@ export async function POST(request: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
-    line_items: [{
-      price_data: {
-        currency: event.currency,
-        unit_amount: event.price_cents,
-        product_data: { name: `${event.title} — Ticket` },
+    line_items: [
+      {
+        price_data: {
+          currency: event.currency,
+          unit_amount: event.price_cents,
+          product_data: { name: `${event.title} — Ticket` },
+        },
+        quantity,
       },
-      quantity,
-    }],
+      {
+        price_data: {
+          currency: event.currency,
+          unit_amount: platformFeeCents,
+          product_data: { name: 'Booking fee' },
+        },
+        quantity: 1,
+      },
+    ],
     payment_intent_data: {
       application_fee_amount: platformFeeCents,
       on_behalf_of: museum.stripe_connect_id,

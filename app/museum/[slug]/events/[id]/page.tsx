@@ -270,20 +270,39 @@ export default function PublicEventDetailPage() {
                   <div className="text-sm rounded px-4 py-3" style={{ color: '#dc2626', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>{error}</div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <div className="text-sm" style={{ color: content.body }}>
-                    Total: <span className="font-mono font-medium" style={{ color: content.heading }}>
-                      {event.price_cents === 0
-                        ? 'Free'
-                        : formatPrice(event.price_cents * quantity, event.currency)
-                      }
-                    </span>
+                <div className="space-y-3">
+                  {event.price_cents > 0 ? (
+                    <>
+                      <div className="text-sm space-y-1.5" style={{ color: content.body }}>
+                        <div className="flex justify-between">
+                          <span>Tickets ({quantity} × {formatPrice(event.price_cents, event.currency)})</span>
+                          <span className="font-mono">{formatPrice(event.price_cents * quantity, event.currency)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Booking fee</span>
+                          <span className="font-mono">{formatPrice(Math.round(event.price_cents * quantity * 0.04) + 20, event.currency)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium pt-1.5 border-t" style={{ borderColor: content.border, color: content.heading }}>
+                          <span>Total</span>
+                          <span className="font-mono">{formatPrice(event.price_cents * quantity + Math.round(event.price_cents * quantity * 0.04) + 20, event.currency)}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs" style={{ color: content.muted }}>
+                        Refunds are available on request from the museum. The booking fee is non-refundable.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="text-sm" style={{ color: content.body }}>
+                      Total: <span className="font-mono font-medium" style={{ color: content.heading }}>Free</span>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <button type="submit" disabled={booking}
+                      className="text-sm font-mono px-6 py-3 rounded transition-colors disabled:opacity-50 text-white"
+                      style={{ background: accent }}>
+                      {booking ? 'Processing...' : event.price_cents === 0 ? 'Reserve Tickets' : 'Book Now'}
+                    </button>
                   </div>
-                  <button type="submit" disabled={booking}
-                    className="text-sm font-mono px-6 py-3 rounded transition-colors disabled:opacity-50 text-white"
-                    style={{ background: accent }}>
-                    {booking ? 'Processing...' : event.price_cents === 0 ? 'Reserve Tickets' : 'Book Now'}
-                  </button>
                 </div>
               </>
             )}
