@@ -186,7 +186,7 @@ export default function NewEventPage() {
                   className="w-full border border-stone-200 dark:border-stone-700 rounded pl-7 pr-3 py-2 text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500"
                 />
               </div>
-              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Vitrine deducts a platform fee of 4% + 20p from each transaction.</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">A booking fee of 4% + 20p per transaction will be added on top of your ticket price and charged to the visitor.</p>
             </div>
             <div>
               <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Currency</label>
