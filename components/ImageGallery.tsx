@@ -13,9 +13,10 @@ interface Props {
   canEdit: boolean
   imageLimit: number
   currentPrimaryUrl?: string
+  hidePrimary?: boolean
 }
 
-export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit, currentPrimaryUrl }: Props) {
+export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit, currentPrimaryUrl, hidePrimary }: Props) {
   const [images, setImages] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -91,28 +92,32 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
 
   if (images.length === 0 && !canEdit) return null
 
+  const displayedImages = hidePrimary ? images.filter(i => i.url !== currentPrimaryUrl) : images
+
   return (
     <div>
-      <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
-        Image Gallery
-      </label>
+      {!hidePrimary && (
+        <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
+          Image Gallery
+        </label>
+      )}
 
       <div className="flex flex-row gap-2 overflow-x-auto">
-        {images.map(image => (
+        {displayedImages.map(image => (
           <div key={image.id} className="relative group rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 shrink-0 w-20 h-20">
             <img src={image.url} alt="" className="w-full h-full object-contain" />
             {canEdit && (
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                {!image.is_primary && (
+                {!hidePrimary && image.is_primary && (
+                  <span className="text-xs font-mono bg-amber-500 text-white px-2 py-1 rounded w-full text-center">
+                    Primary ★
+                  </span>
+                )}
+                {(hidePrimary || !image.is_primary) && (
                   <button type="button" onClick={() => setPrimary(image)}
                     className="text-xs font-mono bg-white text-stone-900 px-2 py-1 rounded w-full text-center hover:bg-stone-100 transition-colors">
                     Set as primary
                   </button>
-                )}
-                {image.is_primary && (
-                  <span className="text-xs font-mono bg-amber-500 text-white px-2 py-1 rounded w-full text-center">
-                    Primary ★
-                  </span>
                 )}
                 <button type="button" onClick={() => deleteImage(image)}
                   className="text-xs font-mono bg-red-600 text-white px-2 py-1 rounded w-full text-center hover:bg-red-700 transition-colors">
