@@ -92,41 +92,33 @@ export async function POST(
   if (!parsed.success) return parsed.response
   const { related_to_type, related_to_id, label, document_type, file_url, file_name, file_size, mime_type } = parsed.data
 
-  // Enforce storage quota
   const limitMb = getPlan(museum.plan).documentStorageMb
-  if (limitMb !== null) {
-    const { data: usage } = await supabase
-      .from('object_documents')
-      .select('file_size.sum()')
-      .eq('museum_id', museum.id)
-      .is('deleted_at', null)
-      .single()
-    const usedBytes = (usage as any)?.sum ?? 0
-    const limitBytes = limitMb * 1024 * 1024
-    if (usedBytes + (file_size ?? 0) > limitBytes) {
+  const limitBytes = limitMb !== null ? limitMb * 1024 * 1024 : null
+
+  // Quota check + insert run atomically inside a Postgres function that
+  // locks the museum row (FOR UPDATE), preventing concurrent uploads from
+  // both passing the quota check and together exceeding the limit.
+  const { data: doc, error } = await supabase.rpc('insert_document_if_quota_ok', {
+    p_museum_id:       museum.id,
+    p_object_id:       objectId,
+    p_uploaded_by:     user.id,
+    p_related_to_type: related_to_type,
+    p_related_to_id:   related_to_id ?? null,
+    p_label:           label,
+    p_document_type:   document_type ?? null,
+    p_file_url:        file_url,
+    p_file_name:       file_name,
+    p_file_size:       file_size ?? null,
+    p_mime_type:       mime_type ?? null,
+    p_limit_bytes:     limitBytes,
+  })
+
+  if (error) {
+    if (error.message.includes('storage_limit_exceeded')) {
       return NextResponse.json({ error: 'Storage limit reached for your plan' }, { status: 403 })
     }
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  const { data: doc, error } = await supabase
-    .from('object_documents')
-    .insert({
-      object_id: objectId,
-      museum_id: museum.id,
-      uploaded_by: user.id,
-      related_to_type,
-      related_to_id: related_to_id ?? null,
-      label,
-      document_type: document_type ?? null,
-      file_url,
-      file_name,
-      file_size: file_size ?? null,
-      mime_type: mime_type ?? null,
-    })
-    .select()
-    .single()
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json(doc)
 }
