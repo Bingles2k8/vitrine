@@ -37,20 +37,48 @@ vi.mock('@supabase/supabase-js', () => ({
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
 
+interface MockClientOpts {
+  /** Queued return values for .maybySingle() calls, in order */
+  maybySingleResults?: Array<{ data: any; error: null }>
+  /** Value returned for the tickets count query (default 0 = no existing tickets) */
+  ticketCount?: number
+  /** Return value for supabase.rpc() — controls slot capacity check (default true = capacity available) */
+  rpcResult?: boolean
+  /** If set, tickets.insert() resolves with this error instead of succeeding */
+  ticketInsertError?: any
+}
+
 /**
  * Creates a mock Supabase client that:
- * - Tracks all .update() calls (accessible via .getUpdatesFor(table))
+ * - Tracks all .update() and .insert() calls (accessible via .getUpdatesFor / .getInsertsFor)
  * - Returns queued results for .maybySingle() in call order
+ * - Exposes chain.count for count queries (used by the tickets idempotency check)
  */
-function makeMockClient(maybySingleResults: Array<{ data: any; error: null }> = []) {
+function makeMockClient(
+  maybySingleResults: Array<{ data: any; error: null }> = [],
+  opts: MockClientOpts = {}
+) {
+  const { ticketCount = 0, rpcResult = true, ticketInsertError } = opts
   const updates: Array<{ table: string; data: any }> = []
+  const inserts: Array<{ table: string; data: any }> = []
   let callIndex = 0
 
   function makeChain(table: string) {
     const chain: any = {}
+    // Expose count as a plain property so `await chain` resolves with it.
+    // Used by the tickets idempotency check: const { count } = await supabase.from('tickets')...
+    chain.count = table === 'tickets' ? ticketCount : undefined
+    chain.error = null
     chain.select = vi.fn(() => chain)
     chain.update = vi.fn((data: any) => { updates.push({ table, data }); return chain })
-    chain.insert = vi.fn(() => chain)
+    chain.insert = vi.fn((data: any) => {
+      if (table === 'tickets' && ticketInsertError) {
+        // Return a plain object with an error so the handler's destructure picks it up
+        return { error: ticketInsertError }
+      }
+      inserts.push({ table, data })
+      return chain
+    })
     chain.eq = vi.fn(() => chain)
     chain.neq = vi.fn(() => chain)
     chain.is = vi.fn(() => chain)
@@ -63,12 +91,15 @@ function makeMockClient(maybySingleResults: Array<{ data: any; error: null }> = 
     return chain
   }
 
-  return {
+  const client = {
     from: vi.fn((table: string) => makeChain(table)),
-    rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: rpcResult, error: null }),
     getUpdatesFor: (table: string) =>
       updates.filter(u => u.table === table).map(u => u.data),
+    getInsertsFor: (table: string) =>
+      inserts.filter(i => i.table === table).map(i => i.data),
   }
+  return client
 }
 
 /** Builds a fake Request with a stripe-signature header */
@@ -270,5 +301,182 @@ describe('POST /api/stripe/webhook', () => {
     const updates = mockSupabaseClient.getUpdatesFor('museums')
     expect(updates).toHaveLength(1)
     expect(updates[0]).toMatchObject({ payment_past_due: false })
+  })
+
+  // ── checkout.session.completed — ticket orders ────────────────────────────
+
+  const baseOrder = {
+    id: 'order-uuid',
+    quantity: 2,
+    slot_id: 'slot-uuid',
+    event_id: 'event-uuid',
+    buyer_name: 'Jane Smith',
+    buyer_email: 'jane@museum.com',
+    status: 'pending',
+  }
+
+  function makeTicketSession(overrides: any = {}) {
+    return {
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test',
+          mode: 'payment',
+          payment_intent: 'pi_test',
+          customer: null,
+          subscription: null,
+          metadata: { order_id: 'order-uuid', museum_id: 'museum-uuid' },
+          ...overrides,
+        },
+      },
+    }
+  }
+
+  it('generates the correct number of tickets and marks order completed', async () => {
+    // maybySingle queue: order fetch, then 3 Promise.all queries (events/slots/museums)
+    mockSupabaseClient = makeMockClient(
+      [
+        { data: baseOrder, error: null },
+        { data: null, error: null }, // events
+        { data: null, error: null }, // event_time_slots
+        { data: null, error: null }, // museums
+      ],
+      { ticketCount: 0, rpcResult: true }
+    )
+    constructEvent.mockReturnValue(makeTicketSession() as any)
+
+    await POST(makeRequest({}))
+
+    // One insert call with an array of quantity=2 ticket records
+    const ticketInserts = mockSupabaseClient.getInsertsFor('tickets')
+    expect(ticketInserts).toHaveLength(1)
+    expect(ticketInserts[0]).toHaveLength(2)
+    expect(ticketInserts[0][0]).toMatchObject({ order_id: 'order-uuid', status: 'valid' })
+
+    // Order marked completed
+    expect(
+      mockSupabaseClient.getUpdatesFor('ticket_orders').some(u => u.status === 'completed')
+    ).toBe(true)
+  })
+
+  it('sends a confirmation email when event title is available', async () => {
+    mockSupabaseClient = makeMockClient(
+      [
+        { data: baseOrder, error: null },
+        { data: { title: 'Summer Exhibition' }, error: null }, // events
+        { data: null, error: null },                           // event_time_slots
+        { data: null, error: null },                           // museums
+      ],
+      { ticketCount: 0, rpcResult: true }
+    )
+    constructEvent.mockReturnValue(makeTicketSession() as any)
+
+    await POST(makeRequest({}))
+
+    expect(mockEmailSend).toHaveBeenCalledOnce()
+    expect(mockEmailSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'jane@museum.com',
+        subject: 'Your tickets for Summer Exhibition',
+      })
+    )
+  })
+
+  it('skips ticket generation and marks order completed when tickets already exist (idempotency guard)', async () => {
+    mockSupabaseClient = makeMockClient(
+      [{ data: baseOrder, error: null }],
+      { ticketCount: 2 } // already generated on a previous webhook delivery
+    )
+    constructEvent.mockReturnValue(makeTicketSession() as any)
+
+    await POST(makeRequest({}))
+
+    expect(mockSupabaseClient.getInsertsFor('tickets')).toHaveLength(0)
+    expect(
+      mockSupabaseClient.getUpdatesFor('ticket_orders').some(u => u.status === 'completed')
+    ).toBe(true)
+  })
+
+  it('cancels order when slot is at capacity', async () => {
+    mockSupabaseClient = makeMockClient(
+      [{ data: baseOrder, error: null }],
+      { ticketCount: 0, rpcResult: false } // increment_slot_bookings returns false
+    )
+    constructEvent.mockReturnValue(makeTicketSession() as any)
+
+    await POST(makeRequest({}))
+
+    expect(mockSupabaseClient.getInsertsFor('tickets')).toHaveLength(0)
+    expect(
+      mockSupabaseClient.getUpdatesFor('ticket_orders').some(u => u.status === 'cancelled')
+    ).toBe(true)
+  })
+
+  it('releases slot capacity and returns 500 when ticket insert fails (so Stripe retries)', async () => {
+    mockSupabaseClient = makeMockClient(
+      [{ data: baseOrder, error: null }],
+      { ticketCount: 0, rpcResult: true, ticketInsertError: { message: 'DB error' } }
+    )
+    constructEvent.mockReturnValue(makeTicketSession() as any)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(500)
+    // rpc called twice: increment (before insert) then decrement (capacity rollback)
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledTimes(2)
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+      'decrement_slot_bookings',
+      expect.objectContaining({ slot_uuid: 'slot-uuid', qty: 2 })
+    )
+  })
+
+  // ── charge.refunded ───────────────────────────────────────────────────────
+
+  it('cancels order, marks tickets refunded, and releases slot capacity on full refund', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'order-uuid', slot_id: 'slot-uuid', quantity: 2 }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: {
+        object: {
+          amount: 2000,
+          amount_refunded: 2000,
+          payment_intent: 'pi_test',
+        },
+      },
+    } as any)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    expect(
+      mockSupabaseClient.getUpdatesFor('ticket_orders').some(u => u.status === 'cancelled')
+    ).toBe(true)
+    expect(
+      mockSupabaseClient.getUpdatesFor('tickets').some(u => u.status === 'refunded')
+    ).toBe(true)
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+      'decrement_slot_bookings',
+      { slot_uuid: 'slot-uuid', qty: 2 }
+    )
+  })
+
+  it('ignores partial refunds', async () => {
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: {
+        object: {
+          amount: 2000,
+          amount_refunded: 1000, // partial
+          payment_intent: 'pi_test',
+        },
+      },
+    } as any)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    expect(mockSupabaseClient.getUpdatesFor('ticket_orders')).toHaveLength(0)
   })
 })
