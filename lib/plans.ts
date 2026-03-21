@@ -27,10 +27,10 @@ export const PLANS: Record<PlanId, {
     compliance: false,
     ticketing: false,
     visitInfo: false,
-    advancedCustomisation: false,
+    advancedCustomisation: true,
     documentStorageMb: 0,
     depositorTracking: false,
-    features: ['Up to 100 collection items', 'Public collection website', 'Basic site customisation'],
+    features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation'],
   },
   hobbyist: {
     label: 'Hobbyist',
@@ -99,6 +99,8 @@ export const PLANS: Record<PlanId, {
 }
 
 export const PLAN_ORDER: PlanId[] = ['community', 'hobbyist', 'professional', 'institution', 'enterprise']
+
+export const FREE_TIER_TEMPLATES = ['minimal', 'dramatic', 'archival']
 
 export function getPlan(plan: string) {
   return PLANS[plan as PlanId] ?? PLANS.community

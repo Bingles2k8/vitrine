@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
-import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
+import { PLANS, PLAN_ORDER, FREE_TIER_TEMPLATES, type PlanId } from '@/lib/plans'
 
 export default function Onboarding() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -249,12 +249,12 @@ export default function Onboarding() {
             <p className="text-sm text-stone-400 text-center mb-8">You can customise colours and fonts later in the Site Builder.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {TEMPLATES.slice(0, 3).map(t => (
-                <TemplateCard key={t.id} t={t} selected={template === t.id} onSelect={() => setTemplate(t.id)} />
+                <TemplateCard key={t.id} t={t} selected={template === t.id} onSelect={() => setTemplate(t.id)} paid={!FREE_TIER_TEMPLATES.includes(t.id)} />
               ))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-xl mx-auto">
               {TEMPLATES.slice(3).map(t => (
-                <TemplateCard key={t.id} t={t} selected={template === t.id} onSelect={() => setTemplate(t.id)} />
+                <TemplateCard key={t.id} t={t} selected={template === t.id} onSelect={() => setTemplate(t.id)} paid={!FREE_TIER_TEMPLATES.includes(t.id)} />
               ))}
             </div>
             {error && <p className="text-xs text-red-500 font-mono text-center mb-4">{error}</p>}
@@ -361,7 +361,7 @@ export default function Onboarding() {
   )
 }
 
-function TemplateCard({ t, selected, onSelect }: { t: any; selected: boolean; onSelect: () => void }) {
+function TemplateCard({ t, selected, onSelect, paid }: { t: any; selected: boolean; onSelect: () => void; paid?: boolean }) {
   return (
     <button onClick={onSelect} className={`text-left rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-stone-900 shadow-lg scale-[1.02]' : 'border-stone-200 hover:border-stone-400'}`}>
       <div className="h-36 relative" style={{ background: t.previewBg }}>
@@ -387,6 +387,11 @@ function TemplateCard({ t, selected, onSelect }: { t: any; selected: boolean; on
             </div>
           ))}
         </div>
+        {paid && !selected && (
+          <div className="absolute top-2 left-2">
+            <span className="text-[9px] font-mono uppercase tracking-wide bg-stone-900 text-white px-1.5 py-0.5 rounded">Hobbyist+</span>
+          </div>
+        )}
         {selected && (
           <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-stone-900 flex items-center justify-center">
             <span className="text-white text-xs">✓</span>

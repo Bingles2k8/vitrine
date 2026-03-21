@@ -8,7 +8,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
-import { getPlan } from '@/lib/plans'
+import { getPlan, FREE_TIER_TEMPLATES } from '@/lib/plans'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -348,9 +348,11 @@ export default function SiteBuilder() {
               <div>
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
                 <div className="grid grid-cols-3 gap-3">
-                  {TEMPLATES.map(t => (
-                    <button key={t.id} onClick={() => selectTemplate(t.id)}
-                      className={`text-left rounded-lg border-2 overflow-hidden transition-all ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500'}`}>
+                  {TEMPLATES.map(t => {
+                    const isLocked = museum?.plan === 'community' && !FREE_TIER_TEMPLATES.includes(t.id)
+                    return (
+                    <button key={t.id} onClick={() => !isLocked && selectTemplate(t.id)}
+                      className={`text-left rounded-lg border-2 overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-default' : ''} ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 ' + (!isLocked ? 'hover:border-stone-400 dark:hover:border-stone-500' : '')}`}>
                       <div className="h-20 relative overflow-hidden" style={{ background: t.previewBg }}>
                         {t.layout_variant === 'cover' && (
                           <>
@@ -429,6 +431,11 @@ export default function SiteBuilder() {
                             </div>
                           </>
                         )}
+                        {isLocked && (
+                          <div className="absolute top-1 left-1 z-10">
+                            <span className="text-[9px] font-mono uppercase tracking-wide bg-stone-900 text-white px-1 py-0.5 rounded">Hobbyist+</span>
+                          </div>
+                        )}
                         {form.template === t.id && (
                           <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-stone-900 dark:bg-white flex items-center justify-center z-10">
                             <span className="text-white dark:text-stone-900 text-xs leading-none">✓</span>
@@ -440,7 +447,7 @@ export default function SiteBuilder() {
                         <div className="text-xs text-stone-400 dark:text-stone-500 truncate mt-0.5" style={{ fontSize: '10px' }}>{t.description}</div>
                       </div>
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
               <div className="flex items-center justify-between">
