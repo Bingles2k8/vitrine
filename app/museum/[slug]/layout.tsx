@@ -105,7 +105,7 @@ export default async function MuseumLayout({
 
   const standardFooter = (
     <footer className="border-t py-10 mt-10" style={{ borderColor: 'rgba(128,128,128,0.12)' }}>
-      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between gap-6">
+      <div className="max-w-6xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4">
         <div style={{ color: 'rgba(128,128,128,0.5)', fontFamily: headingStyle.fontFamily, fontStyle: 'italic' }}>
           {isPaid && museum.footer_text ? museum.footer_text : museum.name}
         </div>
@@ -147,10 +147,10 @@ export default async function MuseumLayout({
           hasVisitInfo={hasVisitInfo}
           socialLinks={socialLinks}
         />
-        <main className="flex-1 min-w-0" style={{ marginLeft: '240px' }}>
+        <main className="flex-1 min-w-0 pt-14 md:pt-0 md:ml-[240px]">
           {children}
           <footer className="border-t py-8 mt-10" style={{ borderColor: content.border }}>
-            <div className="px-8 flex items-center justify-between gap-6">
+            <div className="px-8 flex flex-wrap items-center justify-between gap-4">
               <div className="text-xs font-mono" style={{ color: content.muted }}>
                 {isPaid && museum.footer_text ? museum.footer_text : museum.name}
               </div>
@@ -176,6 +176,7 @@ export default async function MuseumLayout({
         navClass={navStyle.nav}
         navTextClass={navStyle.text}
         navLinkClass={navStyle.link}
+        navBg={pageBg}
         accent={accent}
         headingStyle={headingStyle}
         hasEvents={hasEvents}

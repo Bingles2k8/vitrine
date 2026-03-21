@@ -85,16 +85,20 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   // ─── COVER layout ───────────────────────────────────────────────────────────
   if (layoutVariant === 'cover') {
     const heroBg = museum.hero_image_url ? undefined : primary
+    const coverHeightMap: Record<string, string> = {
+      none: '40vh', compact: '50vh', medium: '65vh', tall: '80vh', fullscreen: '100vh',
+    }
+    const coverHeight = coverHeightMap[museum.hero_height || 'fullscreen'] || '100vh'
     return (
       <>
         <PageViewTracker museumId={museum.id} pageType="home" />
 
-        {/* Full-viewport cover hero — sits behind the absolute-positioned nav */}
+        {/* Cover hero — height controlled by hero_height setting (default: fullscreen) */}
         <div
           className="flex items-end"
           style={{
-            height: '100vh',
-            minHeight: '560px',
+            height: coverHeight,
+            minHeight: '360px',
             background: heroBg,
             backgroundImage: museum.hero_image_url ? `url(${museum.hero_image_url})` : undefined,
             backgroundSize: 'cover',
@@ -227,9 +231,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         <PageViewTracker museumId={museum.id} pageType="home" />
 
         {/* Magazine masthead */}
-        <div className="max-w-6xl mx-auto px-6 pt-8 pb-4 flex items-end justify-between gap-6 border-b-2 border-black">
+        <div className="max-w-6xl mx-auto px-6 pt-8 pb-4 flex flex-wrap items-end justify-between gap-3 border-b-2 border-black">
           <h1
-            className="leading-none"
+            className="leading-none min-w-0"
             style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}
           >
             {museum.tagline || museum.name}
@@ -243,18 +247,18 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         {/* Asymmetric featured hero grid */}
         {hasMagazineHero ? (
           <div className="max-w-6xl mx-auto px-6 pt-4">
-            <div className="grid grid-cols-3 gap-2" style={{ height: '420px' }}>
-              {/* First featured — large, 2/3 width */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:h-[420px]">
+              {/* First featured — full width on mobile, 2/3 on desktop */}
               <Link
                 href={`/museum/${slug}/object/${featuredObjects![0].id}`}
-                className="col-span-2 group relative overflow-hidden block"
+                className="col-span-1 md:col-span-2 group relative overflow-hidden block aspect-[16/9] md:aspect-auto"
                 style={{ borderRadius: 0 }}
               >
                 {featuredObjects![0].image_url ? (
                   <img src={featuredObjects![0].image_url} alt={featuredObjects![0].title || ''}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                 ) : (
-                  <div className="w-full h-full bg-stone-100 flex items-center justify-center text-6xl">
+                  <div className="absolute inset-0 w-full h-full bg-stone-100 flex items-center justify-center text-6xl">
                     {featuredObjects![0].emoji || '🖼️'}
                   </div>
                 )}
@@ -269,19 +273,19 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 </div>
               </Link>
 
-              {/* Remaining featured — stacked in right column */}
-              <div className="col-span-1 flex flex-col gap-2">
+              {/* Remaining featured — 2-col row on mobile, stacked in right column on desktop */}
+              <div className="col-span-1 grid grid-cols-2 md:grid-cols-1 gap-2 md:flex md:flex-col">
                 {featuredObjects!.slice(1, 3).map(obj => (
                   <Link
                     key={obj.id}
                     href={`/museum/${slug}/object/${obj.id}`}
-                    className="flex-1 group relative overflow-hidden block"
+                    className="relative overflow-hidden block aspect-[4/3] md:aspect-auto md:flex-1"
                   >
                     {obj.image_url ? (
                       <img src={obj.image_url} alt={obj.title || ''}
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-full bg-stone-200 flex items-center justify-center text-4xl">
+                      <div className="absolute inset-0 w-full h-full bg-stone-200 flex items-center justify-center text-4xl">
                         {obj.emoji || '🖼️'}
                       </div>
                     )}
