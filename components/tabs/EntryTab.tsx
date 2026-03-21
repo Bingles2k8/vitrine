@@ -127,6 +127,8 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
     return <p className="text-sm text-stone-400 dark:text-stone-500 py-8 text-center">No entry record linked</p>
   }
 
+  const isFullMode = getPlan(museum.plan).fullMode
+
   return (
     <>
       {/* Card 1 — Entry Record */}
@@ -136,7 +138,11 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Entry Number</label>
-            <input value={entryForm.entry_number} onChange={e => setE('entry_number', e.target.value)} className={inputCls} />
+            {isFullMode ? (
+              <input value={entryForm.entry_number} onChange={e => setE('entry_number', e.target.value)} className={inputCls} />
+            ) : (
+              <input value={object.accession_no || ''} readOnly className={inputCls} />
+            )}
           </div>
           <div>
             <label className={labelCls}>Entry Date</label>

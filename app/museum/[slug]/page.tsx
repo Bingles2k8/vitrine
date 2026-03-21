@@ -33,6 +33,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const distinctOrigins = new Set(allObjects.map((o: any) => o.culture).filter(Boolean)).size
 
   const isPaid = getPlan(museum.plan).advancedCustomisation
+  const isFullMode = getPlan(museum.plan).fullMode
   const { data: featuredObjects } = isPaid ? await supabase
     .from('objects')
     .select('id, title, artist, image_url, emoji, condition_grade, rarity')
@@ -117,7 +118,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               </h1>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-light" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                  {onDisplay} works on display
+                  {isFullMode ? `${onDisplay} works on display` : `${allObjects.length} in collection`}
                 </span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12l7 7 7-7"/>
@@ -235,7 +236,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           </h1>
           <div className="text-right flex-shrink-0 pb-1">
             <div className="text-xs font-mono uppercase tracking-widest" style={{ color: accent }}>{museum.name}</div>
-            <div className="text-xs font-mono mt-1" style={{ color: content.muted }}>{onDisplay} on display</div>
+            <div className="text-xs font-mono mt-1" style={{ color: content.muted }}>{isFullMode ? `${onDisplay} on display` : `${allObjects.length} in collection`}</div>
           </div>
         </div>
 
@@ -330,7 +331,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               {[
                 `${allObjects.length} pieces`,
                 distinctCategories > 1 ? `${distinctCategories} categories` : null,
-                onDisplay > 0 ? `${onDisplay} on display` : null,
+                isFullMode ? (onDisplay > 0 ? `${onDisplay} on display` : null) : `${allObjects.length} in collection`,
               ].filter(Boolean).join(' · ')}
             </p>
           )}
@@ -380,7 +381,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 </h1>
                 <div className="flex items-center gap-6">
                   <div className="h-px flex-1 bg-black" />
-                  <span className="font-mono text-sm" style={{ color: heroSubText }}>{onDisplay} works on display</span>
+                  <span className="font-mono text-sm" style={{ color: heroSubText }}>{isFullMode ? `${onDisplay} works on display` : `${allObjects.length} in collection`}</span>
                 </div>
               </>
             ) : (
@@ -392,7 +393,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                   {museum.tagline || 'Explore the collection'}
                 </h1>
                 <p className="text-lg font-light" style={{ color: heroSubText }}>
-                  {onDisplay} works currently on display
+                  {isFullMode ? `${onDisplay} works currently on display` : `${allObjects.length} in collection`}
                 </p>
               </>
             )}
