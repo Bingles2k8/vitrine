@@ -333,7 +333,7 @@ export default function PlanPage() {
                       </>
                     ) : isEnterprise ? (
                       <a
-                        href="mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry"
+                        href="/contact/enterprise"
                         className="block w-full text-center text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
                       >
                         Contact us →

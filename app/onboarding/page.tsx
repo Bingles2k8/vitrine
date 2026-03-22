@@ -298,7 +298,7 @@ export default function Onboarding() {
                         ))}
                       </ul>
                       <a
-                        href="mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry"
+                        href="/contact/enterprise"
                         className="block text-center text-xs font-mono py-2 rounded bg-stone-900 text-white hover:bg-stone-700 transition-colors"
                       >
                         Contact us →

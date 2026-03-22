@@ -154,6 +154,54 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Guide CTA */}
+      <section className="py-20 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">How it works</p>
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
+            <div>
+              <h2 className="font-serif text-4xl italic font-normal mb-3">Want to see it in action?</h2>
+              <p className="text-stone-400 font-light max-w-lg">Step-by-step guides that walk you through every feature — from adding your first object to selling tickets for an event.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Link href="/guide/essentials" className="group bg-stone-900/50 border border-white/8 rounded-2xl p-7 hover:bg-stone-900 hover:border-white/15 transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex gap-2">
+                  <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full border border-white/5">Community</span>
+                  <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full border border-white/5">Hobbyist</span>
+                </div>
+                <span className="text-stone-600 group-hover:text-stone-400 transition-colors font-mono text-sm">→</span>
+              </div>
+              <h3 className="font-serif text-2xl italic font-normal mb-2">Essentials guide</h3>
+              <p className="text-stone-500 text-sm font-light leading-relaxed mb-5">Everything you need to catalogue your collection and publish it online. Adding objects, customising your site, managing your account.</p>
+              <div className="flex flex-wrap gap-2">
+                {['Getting started', 'Your collection', 'Public site', 'Customisation', 'Settings'].map(t => (
+                  <span key={t} className="text-xs font-mono text-stone-600 bg-white/4 px-2.5 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+            </Link>
+            <Link href="/guide/professional" className="group bg-stone-900/50 border border-amber-500/15 rounded-2xl p-7 hover:bg-stone-900 hover:border-amber-500/30 transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Professional</span>
+                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Institution</span>
+                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Enterprise</span>
+                </div>
+                <span className="text-stone-600 group-hover:text-amber-400 transition-colors font-mono text-sm">→</span>
+              </div>
+              <h3 className="font-serif text-2xl italic font-normal mb-2">Professional guide</h3>
+              <p className="text-stone-500 text-sm font-light leading-relaxed mb-5">The complete platform walkthrough — analytics, event ticketing, compliance documentation, staff management, and more.</p>
+              <div className="flex flex-wrap gap-2">
+                {['Collection at scale', 'Analytics', 'Ticketing', 'Staff & roles', 'Compliance'].map(t => (
+                  <span key={t} className="text-xs font-mono text-stone-600 bg-white/4 px-2.5 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="py-28 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
@@ -223,7 +271,7 @@ export default function Home() {
                 features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Dedicated support', 'Unlimited document storage'],
                 missing: [],
                 cta: 'Contact us →',
-                ctaHref: 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry',
+                ctaHref: '/contact/enterprise',
                 learnMoreHref: '/plans/enterprise',
                 featured: false,
                 muted: true,

@@ -49,7 +49,7 @@ const PLAN_DETAILS: Record<PlanId, {
   enterprise: {
     tagline: 'No limits. Full service.',
     desc: 'Unlimited objects, unlimited staff, dedicated support, and custom integrations built around how your institution works. Talk to us about what you need.',
-    ctaHref: 'mailto:hello@vitrine.app?subject=Enterprise%20Plan%20Enquiry',
+    ctaHref: '/contact/enterprise',
     cta: 'Contact us →',
     priceDisplay: 'Custom',
     priceNote: null,
@@ -656,6 +656,29 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
 
         </div>
       </section>
+
+      {/* Guide CTA */}
+      {(() => {
+        const guideHref = hasFull ? '/guide/professional' : '/guide/essentials'
+        const guideLabel = hasFull ? 'Professional guide' : 'Essentials guide'
+        return (
+          <section className="py-16 px-6 border-t border-white/5">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 bg-stone-900/50 border border-white/8 rounded-2xl px-8 py-7">
+              <div>
+                <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-1">Step-by-step guide</p>
+                <h3 className="font-serif text-2xl italic font-normal mb-1">Want to see exactly how it works?</h3>
+                <p className="text-stone-400 text-sm font-light">Detailed walkthroughs for every feature on the {plan.label} plan.</p>
+              </div>
+              <Link
+                href={guideHref}
+                className="flex-shrink-0 border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 font-mono text-sm px-6 py-3 rounded transition-colors whitespace-nowrap"
+              >
+                Read the {guideLabel} →
+              </Link>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Bottom CTA */}
       <section className="py-24 px-6 border-t border-white/5">
