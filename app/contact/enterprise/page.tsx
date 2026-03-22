@@ -35,13 +35,13 @@ export default function EnterpriseContactPage() {
           <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Enterprise</p>
           <h1 className="font-serif text-5xl italic font-normal mb-4 leading-none">Get in touch.</h1>
           <p className="text-stone-400 font-light leading-relaxed mb-10">
-            Tell us about your institution and what you need. We'll come back to you within one business day to talk through a plan that fits.
+            Tell us about your institution and what you need. We'll be in touch soon to talk through a plan that fits.
           </p>
 
           {state.status === 'success' ? (
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-8 text-center">
               <p className="text-emerald-400 font-mono text-sm mb-1">Message sent.</p>
-              <p className="text-stone-400 text-sm font-light">We'll be in touch within one business day.</p>
+              <p className="text-stone-400 text-sm font-light">We'll be in touch soon.</p>
             </div>
           ) : (
             <form action={action} className="space-y-5">
