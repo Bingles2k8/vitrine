@@ -51,8 +51,10 @@ export default async function DiscoverPage({
   }
 
   if (query) {
+    // Strip characters with special meaning in PostgREST filter syntax to prevent injection
+    const safeQuery = query.replace(/[,()]/g, '')
     objectsQuery = objectsQuery.or(
-      `title.ilike.%${query}%,description.ilike.%${query}%`
+      `title.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%`
     )
   }
 

@@ -6,6 +6,10 @@ import { generateTicketCode } from '@/lib/ticket-utils'
 import { Resend } from 'resend'
 import type Stripe from 'stripe'
 
+function esc(s: string | null | undefined): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function POST(request: Request) {
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
@@ -314,15 +318,15 @@ export async function POST(request: Request) {
           await resend.emails.send({
             from: 'Vitrine <noreply@contact.vitrinecms.com>',
             to: order.buyer_email,
-            subject: `Your tickets for ${evt.title}`,
+            subject: `Your tickets for ${esc(evt.title)}`,
             html: `
-              <p>Hi ${order.buyer_name},</p>
-              <p>Your booking is confirmed! Here are your tickets for <strong>${evt.title}</strong>.</p>
+              <p>Hi ${esc(order.buyer_name)},</p>
+              <p>Your booking is confirmed! Here are your tickets for <strong>${esc(evt.title)}</strong>.</p>
               ${slotLine}
               <div style="margin:16px 0">${ticketLines}</div>
               <p style="color:#666;font-size:13px">Scan these codes at the door. Each link shows the full ticket details.</p>
               ${sessionLine}
-              <p style="margin-top:24px">See you there!<br>— ${emailMuseum?.name ?? 'The Vitrine team'}</p>
+              <p style="margin-top:24px">See you there!<br>— ${esc(emailMuseum?.name ?? 'The Vitrine team')}</p>
             `,
           }).catch(err => console.error('[webhook] Failed to send ticket confirmation email:', err))
         }

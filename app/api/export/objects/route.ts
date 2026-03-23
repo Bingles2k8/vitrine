@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const limited = await rateLimit(apiLimiter, user.id)
+  if (limited) return limited
 
   // Find the museum — owner or Admin/Editor staff
   let museumId: string | null = null

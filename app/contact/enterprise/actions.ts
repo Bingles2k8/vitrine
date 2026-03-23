@@ -1,8 +1,14 @@
 'use server'
 
 import { Resend } from 'resend'
+import { headers } from 'next/headers'
+import { apiLimiter } from '@/lib/rate-limit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+function esc(s: string | null | undefined): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 export type EnterpriseContactState =
   | { status: 'idle' }
@@ -30,17 +36,24 @@ export async function submitEnterpriseEnquiry(
     return { status: 'error', message: 'Please enter a valid email address.' }
   }
 
+  const hdrs = await headers()
+  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? hdrs.get('x-real-ip') ?? 'unknown'
+  const { success } = await apiLimiter.limit(ip).catch(() => ({ success: true }))
+  if (!success) {
+    return { status: 'error', message: 'Too many requests. Please try again later.' }
+  }
+
   const html = `
     <h2 style="font-family:serif;margin-bottom:24px">Enterprise plan enquiry</h2>
     <table style="font-family:sans-serif;font-size:14px;border-collapse:collapse;width:100%">
-      <tr><td style="padding:8px 0;color:#888;width:180px">Name</td><td style="padding:8px 0">${name}</td></tr>
-      <tr><td style="padding:8px 0;color:#888">Institution</td><td style="padding:8px 0">${institution}</td></tr>
-      <tr><td style="padding:8px 0;color:#888">Email</td><td style="padding:8px 0"><a href="mailto:${email}">${email}</a></td></tr>
-      <tr><td style="padding:8px 0;color:#888">Collection size</td><td style="padding:8px 0">${collectionSize || '—'}</td></tr>
-      <tr><td style="padding:8px 0;color:#888">Storage estimate</td><td style="padding:8px 0">${storageNeeds || '—'}</td></tr>
-      <tr><td style="padding:8px 0;color:#888">Staff / users</td><td style="padding:8px 0">${staffCount || '—'}</td></tr>
+      <tr><td style="padding:8px 0;color:#888;width:180px">Name</td><td style="padding:8px 0">${esc(name)}</td></tr>
+      <tr><td style="padding:8px 0;color:#888">Institution</td><td style="padding:8px 0">${esc(institution)}</td></tr>
+      <tr><td style="padding:8px 0;color:#888">Email</td><td style="padding:8px 0"><a href="mailto:${esc(email)}">${esc(email)}</a></td></tr>
+      <tr><td style="padding:8px 0;color:#888">Collection size</td><td style="padding:8px 0">${esc(collectionSize) || '—'}</td></tr>
+      <tr><td style="padding:8px 0;color:#888">Storage estimate</td><td style="padding:8px 0">${esc(storageNeeds) || '—'}</td></tr>
+      <tr><td style="padding:8px 0;color:#888">Staff / users</td><td style="padding:8px 0">${esc(staffCount) || '—'}</td></tr>
     </table>
-    ${specialRequests ? `<h3 style="font-family:serif;margin-top:24px">Special requests / notes</h3><p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap">${specialRequests}</p>` : ''}
+    ${specialRequests ? `<h3 style="font-family:serif;margin-top:24px">Special requests / notes</h3><p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap">${esc(specialRequests)}</p>` : ''}
   `
 
   try {

@@ -9,6 +9,10 @@ import { stripe } from '@/lib/stripe'
 import { generateTicketCode } from '@/lib/ticket-utils'
 import { Resend } from 'resend'
 
+function esc(s: string | null | undefined): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export const dynamic = 'force-dynamic'
 
 export default async function CheckoutSuccessPage({
@@ -121,15 +125,15 @@ export default async function CheckoutSuccessPage({
                   await resend.emails.send({
                     from: 'Vitrine <noreply@contact.vitrinecms.com>',
                     to: order.buyer_email,
-                    subject: `Your tickets for ${event.title}`,
+                    subject: `Your tickets for ${esc(event.title)}`,
                     html: `
-                      <p>Hi ${order.buyer_name},</p>
-                      <p>Your booking is confirmed! Here are your tickets for <strong>${event.title}</strong>.</p>
+                      <p>Hi ${esc(order.buyer_name)},</p>
+                      <p>Your booking is confirmed! Here are your tickets for <strong>${esc(event.title)}</strong>.</p>
                       ${slotLine}
                       <div style="margin:16px 0">${ticketLines}</div>
                       <p style="color:#666;font-size:13px">Scan these codes at the door.</p>
                       <p style="margin:24px 0 0"><a href="${siteUrl}/museum/${slug}/events/${id}/checkout/success?session_id=${session_id}" style="color:#666;font-size:13px">View your booking →</a></p>
-                      <p style="margin-top:24px">See you there!<br>— ${museum.name ?? 'The Vitrine team'}</p>
+                      <p style="margin-top:24px">See you there!<br>— ${esc(museum.name ?? 'The Vitrine team')}</p>
                     `,
                   }).catch(err => console.error('[success-page] Failed to send confirmation email:', err))
                 }

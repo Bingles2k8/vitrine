@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { getPlan } from '@/lib/plans'
+import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function POST(
   request: Request,
@@ -11,6 +12,9 @@ export async function POST(
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const limited = await rateLimit(apiLimiter, user.id)
+  if (limited) return limited
 
   // Resolve museum — owner or Admin/Editor staff
   let museum: any = null

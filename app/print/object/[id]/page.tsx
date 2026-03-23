@@ -92,7 +92,7 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
       <div className="pr-h2">Object Information</div>
       <div className="pr-grid">
         <div><span className="pr-label">Artist / Maker</span><span className="pr-value">{val(object.artist)}</span></div>
-        <div><span className="pr-label">Year</span><span className="pr-value">{val(object.year)}</span></div>
+        <div><span className="pr-label">Year</span><span className="pr-value">{val(object.production_date || object.year)}</span></div>
         <div><span className="pr-label">Medium</span><span className="pr-value">{val(object.medium)}</span></div>
         <div><span className="pr-label">Object Type</span><span className="pr-value">{val(object.object_type)}</span></div>
         <div><span className="pr-label">Culture / Origin</span><span className="pr-value">{val(object.culture)}</span></div>

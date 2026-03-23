@@ -30,14 +30,15 @@ export async function middleware(request: NextRequest) {
   ) {
     const origin = request.headers.get('origin')
     const host = request.headers.get('host')
-    if (origin && host) {
-      try {
-        if (new URL(origin).host !== host) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-      } catch {
+    if (!origin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    try {
+      if (new URL(origin).host !== host) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+    } catch {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   }
 
