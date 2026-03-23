@@ -1,0 +1,112 @@
+---
+title: "Ticketing & Events"
+section: ticketing
+order: 5
+icon: ticket
+description: "Create events and sell tickets online"
+---
+
+## Event ticketing
+
+Vitrine's built-in ticketing system lets you create events, manage capacity, and accept online bookings directly through your public website, without a separate platform like Eventbrite or TicketTailor.
+
+How the whole system works end-to-end:
+
+- You create an event in the dashboard and set a date, capacity, and ticket price (£0 for free events)
+- The event appears automatically on the **Events** page of your public site
+- Visitors book tickets through the public-facing booking form, entering their name and email
+- For paid events, payment is processed by Stripe and goes directly to your connected bank account
+- Both you and the attendee receive an automated confirmation email
+- You track attendance and manage bookings from the event's dashboard page on the day
+
+<EventsDashboardMockup />
+
+<Callout type="info">
+  Vitrine charges a **2% platform fee** on paid ticket sales. Standard Stripe processing fees (typically 1.4% + 25p for UK cards) also apply. There is no fee at all for free events.
+</Callout>
+
+---
+
+## Setting up payments (required for paid tickets)
+
+Before you can charge for tickets, you need to connect your bank account via Stripe Connect. This is a one-time setup; you don't need to repeat it for every event.
+
+<Steps title="How do I connect my bank account so I can receive ticket payments?">
+  <Step number={1}>Click **Events** in the left sidebar, then click the **Payouts** tab near the top of the Events page.</Step>
+  <Step number={2}>Click **Connect with Stripe**. You'll be taken to a Stripe-hosted onboarding form.</Step>
+  <Step number={3}>Enter your organisation's details: legal name, address, type of organisation, and bank account details (sort code and account number for UK accounts). Stripe will verify this information.</Step>
+  <Step number={4}>Once verification is complete, you'll be redirected back to Vitrine and see a green "Connected" status on the Payouts tab. You can now create paid events.</Step>
+</Steps>
+
+<Callout type="tip">
+  Free events don't require a Stripe connection. You can start using the booking system straight away for free-entry events without going through the payment setup.
+</Callout>
+
+---
+
+## Creating an event
+
+<NewEventFormMockup />
+
+<Steps title="How do I create a new event?">
+  <Step number={1}>Click **Events** in the sidebar, then click **+ New event** in the top-right corner.</Step>
+  <Step number={2}>Enter the **Event title**. Keep it clear and descriptive (e.g. "Behind the Collection: A Curator-Led Tour").</Step>
+  <Step number={3}>Set the **Date and time** using the date picker. Enter the start time; you can optionally add an end time as well.</Step>
+  <Step number={4}>Write a **Description** for the event. This appears on the public booking page and in the confirmation email attendees receive. Include what the event involves, who it's suitable for, and anything visitors need to know in advance.</Step>
+  <Step number={5}>Set the **Capacity** (the maximum number of attendees). Once this many bookings have been made, the booking form will either close or (if enabled) show the waiting list option.</Step>
+  <Step number={6}>Set the **Ticket price**. Enter `0` for a free event. For paid events, enter the price per person in pounds (e.g. `8` for £8.00 per ticket).</Step>
+  <Step number={7}>Toggle **Enable waiting list** on if you want visitors to be able to join a waiting list once capacity is reached. When a booking is cancelled, the next person on the waiting list receives an automatic invitation to claim the spot.</Step>
+  <Step number={8}>Click **Publish event**. The event appears on your public Events page immediately.</Step>
+</Steps>
+
+---
+
+## Managing bookings
+
+<Steps title="How do I see who has booked for an event?">
+  <Step number={1}>Click **Events** in the sidebar and click on the event you want to review.</Step>
+  <Step number={2}>Click the **Bookings** tab. You'll see a list of every booking: name, email address, time of booking, and (for paid events) payment status.</Step>
+  <Step number={3}>The booking capacity bar at the top shows how full the event is at a glance.</Step>
+</Steps>
+
+<Steps title="How do I mark attendance on the day?">
+  <Step number={1}>On the day of the event, open the event in the dashboard and click the **Attendance** tab.</Step>
+  <Step number={2}>As attendees arrive, find their name in the list and click the checkbox or **Check in** button next to it. Their row turns green to confirm they've been marked as present.</Step>
+  <Step number={3}>Alternatively, use the QR scanner on a tablet or phone: click **Scan tickets** and point the camera at the QR code on each attendee's confirmation email.</Step>
+</Steps>
+
+---
+
+## Refunding and cancelling bookings
+
+<Steps title="How do I cancel a booking and refund someone?">
+  <Step number={1}>Go to **Events**, click the relevant event, and open the **Bookings** tab.</Step>
+  <Step number={2}>Find the booking you need to refund and click the **Refund** button in its row.</Step>
+  <Step number={3}>A dialogue will appear confirming the refund amount. Click **Confirm refund**.</Step>
+  <Step number={4}>The attendee receives an automatic email confirming the cancellation and refund. The money is returned to their original payment method within 5–10 business days.</Step>
+</Steps>
+
+<Callout type="warning">
+  When a refund is issued, Stripe's processing fee is not returned. Only the net amount that was paid to you will be refunded to the customer. For example, if you received £7.39 after fees on an £8 ticket, the customer will be refunded £7.39, not £8.00.
+</Callout>
+
+<Steps title="How do I cancel an entire event and refund everyone?">
+  <Step number={1}>Open the event in the dashboard.</Step>
+  <Step number={2}>Click the **Cancel event** button near the top of the page (or in the actions menu).</Step>
+  <Step number={3}>A confirmation dialogue explains that all bookings will be automatically refunded and all attendees notified. Confirm the cancellation.</Step>
+  <Step number={4}>All paid bookings are refunded automatically. All attendees (paid and free) receive a cancellation email. The event is removed from your public Events page.</Step>
+</Steps>
+
+---
+
+## Editing a published event
+
+<Steps title="How do I edit an event after publishing it?">
+  <Step number={1}>Open the event in the dashboard and click **Edit event**.</Step>
+  <Step number={2}>Make your changes (you can update the description, time, or capacity). You cannot reduce capacity below the current number of bookings.</Step>
+  <Step number={3}>Click **Save changes**. Updates are reflected on the public booking page immediately.</Step>
+</Steps>
+
+<Callout type="warning">
+  Vitrine does not automatically email existing attendees when you edit an event. If you change the date or time, notify them separately by emailing attendees directly from the Bookings tab, or by sending a message to the email addresses listed there.
+</Callout>

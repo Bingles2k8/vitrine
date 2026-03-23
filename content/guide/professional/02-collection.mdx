@@ -1,0 +1,108 @@
+---
+title: "Your Collection"
+section: collection
+order: 2
+icon: library
+description: "Manage your collection at scale"
+---
+
+## Collection management on Professional+
+
+On Professional and above, the collection catalogue expands significantly. You can hold up to **5,000 objects on Professional**, **100,000 on Institution**, and **unlimited on Enterprise**. Each object supports up to **10 images**.
+
+Beyond the larger capacity, Professional plans add several capabilities not available on Essentials plans:
+
+- **Document storage**: attach PDFs, scans, and other files directly to object records (1 GB on Professional, 10 GB on Institution, unlimited on Enterprise)
+- **Depositor tracking**: record donor details, entry method, GDPR consent status, and whether a receipt was issued
+- **Extended metadata**: provenance chains, rights and reproduction status, conservation condition records, and loan agreement tracking
+- **CSV bulk import**: populate your catalogue from a spreadsheet rather than adding objects one by one
+
+<ProDashboardMockup />
+
+---
+
+## Adding and editing objects
+
+Adding objects on Professional works the same way as on Essentials, with additional tabs visible on the object detail page for Provenance, Conservation, Rights, and Documents.
+
+<ProObjectDetailMockup />
+
+<Steps title="How do I add a new object?">
+  <Step number={1}>Click **Objects** in the sidebar, then click **+ Add object** in the top-right corner.</Step>
+  <Step number={2}>Fill in the **Title** (required) and as many other fields as you have: date, medium, dimensions, description, and accession number.</Step>
+  <Step number={3}>Upload up to **10 images** using the image panel. Drag to reorder them; the first image in the list becomes the primary display image shown in your catalogue and on your public site.</Step>
+  <Step number={4}>Use the **Provenance**, **Conservation**, and **Rights** tabs to fill in any compliance-related information you have at this stage. (See the Compliance section of this guide for full detail on each.)</Step>
+  <Step number={5}>Set the **Status** and click **Save**. The object is live on your public site immediately if you chose On Display.</Step>
+</Steps>
+
+---
+
+## Bulk importing from a spreadsheet
+
+If you have an existing catalogue in a spreadsheet, you can import it directly rather than entering objects one by one. This is the fastest way to get a large collection into Vitrine.
+
+<Steps title="How do I import objects from a CSV file?">
+  <Step number={1}>Click **Objects** in the sidebar, then click the **Import** button (the icon with an upward arrow in the toolbar above the list).</Step>
+  <Step number={2}>A drawer will open. Click **Download CSV template** to get a spreadsheet with the exact columns Vitrine expects. Open it in Excel, Google Sheets, or any spreadsheet app.</Step>
+  <Step number={3}>Fill in your collection data using the template as a guide. The only required column is **Title**; you can leave any other column blank if you don't have that information.</Step>
+  <Step number={4}>Save your completed spreadsheet as a CSV file, then drag it onto the import drawer or click to upload it.</Step>
+  <Step number={5}>Vitrine will validate every row and show you a preview table. Any rows with errors are highlighted in red with an explanation of the problem.</Step>
+  <Step number={6}>Fix any errors in your spreadsheet and re-upload, or dismiss individual problem rows and import the rest. When you're satisfied, click **Confirm import**.</Step>
+</Steps>
+
+<Callout type="tip">
+  For large collections, consider importing in batches of 500–1,000 rows. It's easier to spot and fix errors in a smaller set, and you can review each batch in the catalogue before moving on to the next.
+</Callout>
+
+<Callout type="warning">
+  The CSV import creates new object records; it does not update existing ones. If you need to correct records you've already imported, edit them individually on their detail pages.
+</Callout>
+
+---
+
+## Document attachments
+
+Documents can be attached directly to any object record. Use this for acquisition receipts, condition reports, loan agreements, rights licences, insurance certificates, or any other supporting paperwork.
+
+<ObjectWithDocumentsMockup />
+
+<Steps title="How do I attach a document to an object?">
+  <Step number={1}>Open the object's detail page by clicking its title in the Objects list.</Step>
+  <Step number={2}>Click the **Documents** tab near the top of the page (to the right of Details, Provenance, Conservation, and Rights).</Step>
+  <Step number={3}>Click **+ Attach document**. Select the file from your computer (PDFs, Word documents, and image files are all supported).</Step>
+  <Step number={4}>Give the document a short **label** that describes what it is, such as "Acquisition receipt 1962" or "Condition report 2023". This label is how you'll identify the document in the list later.</Step>
+  <Step number={5}>Click **Upload**. The document is stored securely against this object's record.</Step>
+</Steps>
+
+<Callout type="info">
+  All document storage counts against your plan's storage quota. You can see how much you've used at any time in **Settings → Plan**. If you're running low, you can upgrade to Institution for 10 GB, or delete documents no longer needed from individual object pages.
+</Callout>
+
+---
+
+## Depositor and acquisition records
+
+When objects enter your collection through donation, bequest, or purchase, you can record the full acquisition details (including depositor contact information and GDPR consent) directly on the object.
+
+<Steps title="How do I record a depositor or acquisition details?">
+  <Step number={1}>Open the object's detail page.</Step>
+  <Step number={2}>Click the **Acquisition** tab.</Step>
+  <Step number={3}>Fill in the **Depositor name** and their contact details. You can also record the **Acquisition method** (Purchase, Donation, Bequest, Transfer, Field collection, or Unknown) and the exact acquisition date.</Step>
+  <Step number={4}>Check or uncheck the **GDPR consent given** checkbox to record whether the depositor consented to their information being stored.</Step>
+  <Step number={5}>Use the **Receipt issued** toggle to note whether a formal receipt was provided to the depositor.</Step>
+  <Step number={6}>Attach any signed documentation (entry forms, receipts) in the **Documents** tab for a complete paper trail.</Step>
+  <Step number={7}>Click **Save**.</Step>
+</Steps>
+
+---
+
+## QR codes and object labels
+
+Every object in Vitrine has a unique QR code that can be printed as a label. Scanning the code takes visitors or staff directly to the object's detail page, useful for gallery labels, storage tags, and loan paperwork.
+
+<Steps title="How do I print a QR label for an object?">
+  <Step number={1}>Open the object's detail page.</Step>
+  <Step number={2}>Click the **QR label** button (the small QR icon in the top-right of the page, next to the status badge).</Step>
+  <Step number={3}>A label preview opens. Choose your preferred label format (small tag, medium card, or A5 sheet).</Step>
+  <Step number={4}>Click **Print** to send it to your printer, or **Download PDF** to save it for batch printing later.</Step>
+</Steps>

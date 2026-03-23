@@ -1,0 +1,108 @@
+---
+title: "Your Collection"
+section: collection
+order: 2
+icon: library
+description: "Add, edit, and organise collection objects"
+---
+
+## Your collection
+
+The **Objects** section is the heart of Vitrine. Every physical item in your museum gets its own digital record here: everything from a Roman brooch to a Victorian portrait. The more detail you add to each record, the richer your public-facing website becomes.
+
+On the Community plan, you can hold up to **100 objects**, with **1 image per object**. On Hobbyist, this increases to **500 objects** and **3 images per object**.
+
+Each object record can hold:
+
+- Title, date, and a free-text description
+- Medium (oil on canvas, ceramic, bronze, etc.)
+- Dimensions
+- Provenance: a note on where the object came from
+- A display status (On Display, In Storage, On Loan, Restoration, or Deaccessioned)
+- One or more photographs
+
+<EssentialsDashboardMockup />
+
+---
+
+## Adding your first object
+
+<AddObjectFormMockup />
+
+<Steps title="How do I add a new object?">
+  <Step number={1}>Click **Objects** in the left sidebar. You'll see your full catalogue list (or an empty state if you're just starting out).</Step>
+  <Step number={2}>Click the **+ Add object** button in the top-right corner of the page. A blank object form will open.</Step>
+  <Step number={3}>Type the object's **Title**. This is the only required field; everything else is optional, but filling in as much as you can makes the record far more useful.</Step>
+  <Step number={4}>Fill in the other fields you have information for: **Date or year** (e.g. "c. 1850" or "1923"), **Medium** (e.g. "Oil on canvas"), **Dimensions**, and a written **Description** of the object.</Step>
+  <Step number={5}>On the right-hand side of the form you'll see the **Image** panel. Drag a photo onto it, or click **Upload** to browse your files. JPG, PNG, and WebP are all supported. Community accounts can upload one image per object; Hobbyist accounts can upload up to three.</Step>
+  <Step number={6}>Set the object's **Status** using the dropdown. Choose **On Display** if it's currently on show and you want visitors to find it on your website. Choose **In Storage** if it's not yet ready to appear publicly.</Step>
+  <Step number={7}>Click **Save**. The object is added to your catalogue. If you set it to On Display, it appears on your public website immediately.</Step>
+</Steps>
+
+<Callout type="tip">
+  Don't let perfect be the enemy of good. It's far better to create a record with just a title and a photo now, then fill in the details later, than to wait until you have complete information. You can return to any object and edit it at any time.
+</Callout>
+
+---
+
+## Editing an existing object
+
+<EssentialsObjectDetailMockup />
+
+<Steps title="How do I edit or update an object record?">
+  <Step number={1}>Click **Objects** in the sidebar to see your full catalogue.</Step>
+  <Step number={2}>Find the object you want to update by scrolling, or type into the search bar at the top to locate it quickly.</Step>
+  <Step number={3}>Click the object's **title** in the first column. This opens the full detail page for that object.</Step>
+  <Step number={4}>Click into any field to edit it. You can change the title, description, date, medium, status, and any other field.</Step>
+  <Step number={5}>To replace or add a photo, click the image panel on the right and upload the new file.</Step>
+  <Step number={6}>When you're done, click **Save changes**. Updates take effect immediately. If the object is set to On Display, your public site reflects the change right away.</Step>
+</Steps>
+
+---
+
+## Searching and filtering your catalogue
+
+<ObjectSearchMockup />
+
+As your collection grows, the search tools become essential.
+
+<Steps title="How do I find a specific object?">
+  <Step number={1}>Click **Objects** in the sidebar.</Step>
+  <Step number={2}>Type into the **Search** bar at the top of the list. Vitrine searches across titles, descriptions, and medium fields in real time. Results appear as you type.</Step>
+  <Step number={3}>To narrow by status, use the **Status** dropdown next to the search bar. Selecting "On Loan", for example, will show only the objects currently on loan to another institution.</Step>
+  <Step number={4}>To clear a search, delete the text from the search bar or click the × icon inside it.</Step>
+</Steps>
+
+---
+
+## Managing object statuses
+
+Every object has a status that controls both its visibility on your public website and how it's organised in your catalogue:
+
+- **On Display**: currently shown in your museum and visible on your public website
+- **In Storage**: in your collection but not shown publicly
+- **On Loan**: lent to another institution; hidden from the public
+- **Restoration**: undergoing conservation work; hidden from the public
+- **Deaccessioned**: permanently left the collection; hidden publicly and moved to the archive view
+
+Only objects set to **On Display** appear to visitors on your website.
+
+---
+
+## Removing or archiving an object
+
+<Steps title="How do I hide an object without deleting it?">
+  <Step number={1}>Open the object's detail page by clicking its title in the Objects list.</Step>
+  <Step number={2}>Use the **Status** dropdown to change it to **In Storage** (or any status other than On Display). Click **Save changes**.</Step>
+  <Step number={3}>The object disappears from your public website immediately, but remains in your catalogue. You can restore it to On Display at any time.</Step>
+</Steps>
+
+<Steps title="How do I permanently delete an object?">
+  <Step number={1}>Open the object's detail page.</Step>
+  <Step number={2}>Scroll to the very bottom of the page, past all the fields.</Step>
+  <Step number={3}>Click **Delete object**. Read the confirmation dialogue carefully, then click **Delete** to confirm.</Step>
+</Steps>
+
+<Callout type="warning">
+  Deletion is permanent and cannot be undone. The record and all its images are removed completely. If there's any chance you might need the record again, use **Deaccessioned** instead, which hides the object publicly while keeping the record in your archive.
+</Callout>
