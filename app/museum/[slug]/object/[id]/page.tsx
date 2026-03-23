@@ -100,7 +100,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
   ].filter(a => !!a.value)
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-16">
+    <div className="max-w-5xl mx-auto px-6 pt-6 pb-16 md:py-16">
       <PageViewTracker museumId={museum.id} pageType="object" objectId={object.id} />
       <Link
         href={`/museum/${slug}`}
@@ -112,7 +112,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
 
-        <div className="sticky top-24">
+        <div className="md:sticky md:top-24">
           <PublicImageGallery
             images={allImages}
             title={object.title}

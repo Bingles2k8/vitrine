@@ -209,6 +209,36 @@ describe('POST /api/ticket-refund', () => {
     )
   })
 
+  // ── Stripe fee edge cases ─────────────────────────────────────────────────
+
+  it('defaults Stripe fee to 0 when balance_transaction is null', async () => {
+    vi.mocked(stripe.paymentIntents.retrieve).mockResolvedValueOnce({
+      latest_charge: { balance_transaction: null },
+    } as any)
+
+    const res = await POST(makeRequest({ order_id: 'order-uuid' }))
+
+    expect(res.status).toBe(200)
+    expect(stripeRefundsCreate).toHaveBeenCalledWith({
+      payment_intent: 'pi_test',
+      amount: 940, // 1000 - 60 - 0 = 940
+    })
+  })
+
+  it('clamps refund to 0 when fees exceed amount_cents', async () => {
+    vi.mocked(stripe.paymentIntents.retrieve).mockResolvedValueOnce({
+      latest_charge: { balance_transaction: { fee: 980 } }, // fee alone exceeds amount
+    } as any)
+
+    const res = await POST(makeRequest({ order_id: 'order-uuid' }))
+
+    expect(res.status).toBe(200)
+    expect(stripeRefundsCreate).toHaveBeenCalledWith({
+      payment_intent: 'pi_test',
+      amount: 0, // Math.max(1000 - 60 - 980, 0) = 0
+    })
+  })
+
   // ── Free order cancellation ───────────────────────────────────────────────
 
   it('skips Stripe for free orders and still cancels + releases slot', async () => {
