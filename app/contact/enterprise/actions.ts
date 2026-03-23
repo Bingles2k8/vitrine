@@ -4,8 +4,6 @@ import { Resend } from 'resend'
 import { headers } from 'next/headers'
 import { apiLimiter } from '@/lib/rate-limit'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 function esc(s: string | null | undefined): string {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -57,6 +55,7 @@ export async function submitEnterpriseEnquiry(
   `
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: 'Vitrine <noreply@contact.vitrinecms.com>',
       to: 'hello@composition.agency',
