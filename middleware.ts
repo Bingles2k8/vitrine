@@ -42,8 +42,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Auth protection for dashboard and print routes ─────────────────
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/print')) {
+  // ── Auth protection for dashboard, print, and admin routes ────────
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/print') || pathname.startsWith('/admin')) {
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -74,5 +74,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/print/:path*', '/api/:path*'],
+  matcher: ['/dashboard/:path*', '/print/:path*', '/admin/:path*', '/admin', '/api/:path*'],
 }
