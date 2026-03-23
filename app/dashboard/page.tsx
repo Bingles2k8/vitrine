@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [bannerDismissed, setBannerDismissed] = useState(true) // true until localStorage checked
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulking, setBulking] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -80,7 +81,7 @@ export default function Dashboard() {
 
   async function bulkDelete() {
     if (!selectedIds.size || !canEdit) return
-    if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to bin?`)) return
+    if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to bin?\n\nItems in the bin are permanently deleted after 90 days.`)) return
     setBulking(true)
     const ids = Array.from(selectedIds)
     await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).in('id', ids)
@@ -120,7 +121,7 @@ export default function Dashboard() {
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
       } catch {
-        // Queries failed — show empty state rather than infinite loading
+        setLoadError(true)
       }
       setLoading(false)
     }
@@ -154,6 +155,25 @@ export default function Dashboard() {
     )
   }
 
+  if (loadError) {
+    return (
+      <DashboardShell museum={museum} activePath="/dashboard" onSignOut={handleSignOut}>
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
+        <div className="p-8 flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mb-3">Failed to load your collection. Please refresh the page.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      </DashboardShell>
+    )
+  }
+
   const statusCount = (s: string) => objects.filter(a => a.status === s).length
 
   const today = new Date().toISOString().slice(0, 10)
@@ -173,6 +193,8 @@ export default function Dashboard() {
 
   const visibleObjects = filter ? objects.filter(a => a.status === filter) : objects
   const fullMode = getPlan(museum?.plan).fullMode
+  const objectLimit = getPlan(museum?.plan).objects
+  const nearLimit = objectLimit !== null && objects.length >= objectLimit * 0.8
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -217,6 +239,17 @@ export default function Dashboard() {
               )
             })}
           </div>
+
+          {/* Near object limit warning */}
+          {nearLimit && trashedCount > 0 && (
+            <div className="mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-6 py-4">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                You're using {objects.length} of {objectLimit} objects on your plan.{' '}
+                You have {trashedCount} item{trashedCount !== 1 ? 's' : ''} in the bin — permanently deleting them will free up space.{' '}
+                <a href="/dashboard/trash" className="underline hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Go to bin →</a>
+              </p>
+            </div>
+          )}
 
           {/* Discoverability */}
           {!bannerDismissed && fullMode && (isOwner || staffAccess === 'Admin') && (
@@ -385,7 +418,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.year}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.production_date || a.year}</td>
                       <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
                       <td className="px-4 py-3">
                         {(() => {

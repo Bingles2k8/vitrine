@@ -238,7 +238,7 @@ export default function TrashPage() {
         )}
 
         <p className="text-xs text-stone-400 dark:text-stone-500 mt-4">
-          Items in the bin can be restored or permanently deleted.
+          Items in the bin are permanently deleted after 90 days. Restore them before then to keep them.
         </p>
       </div>
     </DashboardShell>

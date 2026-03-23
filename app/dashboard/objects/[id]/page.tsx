@@ -88,8 +88,7 @@ export default function ObjectDetail() {
     last_inventoried: '', inventoried_by: '',
     insured_value: '', insured_value_currency: 'GBP',
     // Cataloguing (Proc 5)
-    maker_name: '', maker_role: '',
-    production_date: '', production_date_early: '', production_date_late: '', production_date_qualifier: '',
+    production_date: '', production_date_qualifier: '',
     production_place: '', physical_materials: '', technique: '',
     school_style_period: '', subject_depicted: '', number_of_parts: 1,
     distinguishing_features: '', full_description: '',
@@ -184,11 +183,7 @@ export default function ObjectDetail() {
         insured_value: object.insured_value ?? '',
         insured_value_currency: object.insured_value_currency || 'GBP',
         // Cataloguing (Proc 5)
-        maker_name: object.maker_name || '',
-        maker_role: object.maker_role || '',
         production_date: object.production_date || object.production_date_early || '',
-        production_date_early: object.production_date_early || '',
-        production_date_late: object.production_date_late || '',
         production_date_qualifier: object.production_date_qualifier || '',
         production_place: object.production_place || '',
         physical_materials: object.physical_materials || '',
@@ -243,6 +238,8 @@ export default function ObjectDetail() {
       ...formToSave,
       // marks is now merged into inscription in the UI — clear marks to avoid duplication
       marks: '',
+      // keep legacy year column in sync with the production_date field
+      year: formToSave.production_date || formToSave.year || null,
       acquisition_date: formToSave.acquisition_date || null,
       legal_transfer_date: formToSave.legal_transfer_date || null,
       acquisition_authority_date: formToSave.acquisition_authority_date || null,
@@ -275,7 +272,7 @@ export default function ObjectDetail() {
       toast('Deaccessioned objects cannot be deleted. Use the Disposal register instead.', 'error')
       return
     }
-    if (!confirm('Move "' + object.title + '" to bin?')) return
+    if (!confirm('Move "' + object.title + '" to bin?\n\nItems in the bin are permanently deleted after 90 days.')) return
     setDeleting(true)
     const { error } = await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).eq('id', params.id)
     if (error) { toast(error.message, 'error'); setDeleting(false) } else {
