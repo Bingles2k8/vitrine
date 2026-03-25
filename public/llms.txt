@@ -1,0 +1,38 @@
+# Vitrine
+
+> Vitrine is a collection management platform for museums, galleries, and hobbyist collectors.
+> Catalog, organise, track value, and showcase your collections of coins, stamps, trading cards,
+> vinyl records, comic books, LEGO, watches, wine, art, books, and more. Free to start.
+
+## Core Pages
+
+- [Homepage](https://vitrinecms.com): Product overview, features, and pricing
+- [About](https://vitrinecms.com/about): Company mission and what Vitrine is
+- [FAQ](https://vitrinecms.com/faq): Common questions about Vitrine answered
+- [Discover](https://vitrinecms.com/discover): Browse public collections on Vitrine
+
+## Guides
+
+- [Essentials Guide](https://vitrinecms.com/guide/essentials): Getting started with Community and Hobbyist plans
+- [Professional Guide](https://vitrinecms.com/guide/professional): Advanced features — analytics, ticketing, staff management
+
+## Pricing
+
+Vitrine offers four tiers:
+
+- **Community** – Free. Basic cataloguing for small collections.
+- **Hobbyist** – £5/month. Unlimited items, public website, full cataloguing.
+- **Professional** – £79/month. Analytics, ticketing, compliance tools, staff roles.
+- **Institution** – £349/month. Full museum-grade CMS with advanced customisation.
+- **Enterprise** – Custom pricing for large organisations.
+
+## Collection Types Supported
+
+Vitrine supports any type of physical or digital collection, including:
+coins, stamps, trading cards, sports cards, vinyl records, comic books,
+LEGO sets, toys, books, wine, watches, art, photography, and more.
+
+## Legal
+
+- [Privacy Policy](https://vitrinecms.com/privacy)
+- [Terms of Service](https://vitrinecms.com/terms)

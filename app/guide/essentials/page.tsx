@@ -1,11 +1,13 @@
-import type { Metadata } from 'next'
+import { buildPageMetadata } from '@/lib/seo'
 import { getGuideSections } from '@/lib/guide'
 import GuideLayout from '@/components/guide/GuideLayout'
 
-export const metadata: Metadata = {
-  title: 'How Vitrine works — Essentials guide',
-  description: 'Everything you need to know to get started with the Community and Hobbyist plans.',
-}
+export const metadata = buildPageMetadata({
+  title: 'Vitrine Essentials Guide – Getting Started',
+  description: 'Everything you need to know to get started with Vitrine. Step-by-step guide for Community and Hobbyist plan users.',
+  path: '/guide/essentials',
+  keywords: ['how to use vitrine', 'collection management guide', 'getting started catalog'],
+})
 
 export default async function EssentialsGuidePage() {
   const sections = await getGuideSections('essentials')

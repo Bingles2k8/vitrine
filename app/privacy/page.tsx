@@ -1,4 +1,12 @@
 import Link from 'next/link'
+import { buildPageMetadata } from '@/lib/seo'
+
+export const metadata = buildPageMetadata({
+  title: 'Privacy Policy',
+  description: 'Privacy policy for Vitrine — how we collect, use, and protect your data.',
+  path: '/privacy',
+  noIndex: true,
+})
 
 export default function PrivacyPage() {
   return (

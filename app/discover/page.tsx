@@ -2,14 +2,16 @@ import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import DiscoverFilters from './DiscoverFilters'
-import type { Metadata } from 'next'
+import { buildPageMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Discover Collections — Vitrine',
-  description: 'Browse objects from public collections on Vitrine.',
-}
+export const metadata = buildPageMetadata({
+  title: 'Discover Public Collections',
+  description: 'Browse objects from public collections worldwide on Vitrine. Explore museums, galleries, and private collections.',
+  path: '/discover',
+  keywords: ['public collections', 'museum collection online', 'browse collections', 'collection discovery'],
+})
 
 export default async function DiscoverPage({
   searchParams,

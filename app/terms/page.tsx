@@ -1,4 +1,12 @@
 import Link from 'next/link'
+import { buildPageMetadata } from '@/lib/seo'
+
+export const metadata = buildPageMetadata({
+  title: 'Terms of Service',
+  description: 'Terms of service for Vitrine — the rules and conditions for using our platform.',
+  path: '/terms',
+  noIndex: true,
+})
 
 export default function TermsPage() {
   return (

@@ -1,11 +1,13 @@
-import type { Metadata } from 'next'
+import { buildPageMetadata } from '@/lib/seo'
 import { getGuideSections } from '@/lib/guide'
 import GuideLayout from '@/components/guide/GuideLayout'
 
-export const metadata: Metadata = {
-  title: 'How Vitrine works — Professional guide',
-  description: 'A full guide to Vitrine\'s professional features — analytics, ticketing, compliance, staff management, and more.',
-}
+export const metadata = buildPageMetadata({
+  title: 'Vitrine Professional Guide – Advanced Features',
+  description: 'A full guide to Vitrine\'s professional features — analytics, ticketing, compliance tools, staff management, and more.',
+  path: '/guide/professional',
+  keywords: ['vitrine professional features', 'museum analytics', 'collection ticketing', 'staff management'],
+})
 
 export default async function ProfessionalGuidePage() {
   const sections = await getGuideSections('professional')

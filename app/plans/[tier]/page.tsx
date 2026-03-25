@@ -1,9 +1,34 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
+import { buildPageMetadata, SITE_URL } from '@/lib/seo'
+import { JsonLd } from '@/components/JsonLd'
 
 export function generateStaticParams() {
   return PLAN_ORDER.map(tier => ({ tier }))
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tier: string }>
+}) {
+  const { tier } = await params
+  if (!PLAN_ORDER.includes(tier as PlanId)) return {}
+  const id = tier as PlanId
+  const detail = PLAN_DETAILS[id]
+  const plan = PLANS[id]
+  const priceText = detail.priceDisplay === 'Free'
+    ? 'free'
+    : detail.priceDisplay === 'Custom'
+    ? 'custom pricing'
+    : `${detail.priceDisplay}${detail.priceNote ?? ''}`
+  return buildPageMetadata({
+    title: `${plan.label} Plan – ${detail.tagline.replace(/\.$/, '')}`,
+    description: detail.desc,
+    path: `/plans/${id}`,
+    keywords: ['vitrine pricing', `vitrine ${id} plan`, 'collection management pricing', priceText],
+  })
 }
 
 const PLAN_DETAILS: Record<PlanId, {
@@ -438,8 +463,39 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const hasAdvancedAnalytics = planId === 'institution' || planId === 'enterprise'
   const hasStaff = (plan.staff === null || (plan.staff !== null && plan.staff > 1))
 
+  const pageUrl = `${SITE_URL}/plans/${planId}`
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${SITE_URL}/#pricing` },
+      { '@type': 'ListItem', position: 3, name: `${plan.label} Plan`, item: pageUrl },
+    ],
+  }
+
+  const offerSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: `Vitrine – ${plan.label} Plan`,
+    url: pageUrl,
+    applicationCategory: 'LifestyleApplication',
+    operatingSystem: 'Any (Web Browser)',
+    description: details.desc,
+    offers: {
+      '@type': 'Offer',
+      name: plan.label,
+      price: details.priceDisplay === 'Free' ? '0' : details.priceDisplay === 'Custom' ? undefined : details.priceDisplay.replace('£', ''),
+      priceCurrency: 'GBP',
+      url: pageUrl,
+    },
+  }
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={offerSchema} />
 
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">

@@ -1,8 +1,57 @@
 import Link from 'next/link'
+import { buildPageMetadata, SITE_URL } from '@/lib/seo'
+import { JsonLd } from '@/components/JsonLd'
+
+export const metadata = buildPageMetadata({
+  title: 'Vitrine – Collection Management App for Museums & Collectors',
+  description:
+    'Vitrine gives every museum, gallery, and collector a professional collection CMS and public website. Catalog, organise, and showcase your collection. Free to start.',
+  path: '/',
+  keywords: [
+    'collection management software',
+    'museum CMS',
+    'collection tracker',
+    'catalog my collection',
+    'collection management app',
+    'collection organiser',
+  ],
+})
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      name: 'Vitrine',
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.png`,
+      description:
+        'Vitrine is a modern collection management platform for museums, galleries, and hobbyist collectors.',
+      sameAs: [] as string[],
+    },
+    {
+      '@type': 'WebApplication',
+      name: 'Vitrine',
+      url: SITE_URL,
+      applicationCategory: 'LifestyleApplication',
+      operatingSystem: 'Any (Web Browser)',
+      description:
+        'Catalog, organise, and showcase your collections with Vitrine. The modern collection management platform for museums and collectors.',
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'GBP',
+        lowPrice: '0',
+        highPrice: '349',
+        offerCount: 4,
+      },
+    },
+  ],
+}
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
+      <JsonLd data={organizationSchema} />
 
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
