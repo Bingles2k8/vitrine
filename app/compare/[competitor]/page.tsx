@@ -86,6 +86,7 @@ export default async function CompetitorPage({
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">Discover</Link>
+            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
             <Link href="/#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</Link>
             <Link href="/#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</Link>
           </div>

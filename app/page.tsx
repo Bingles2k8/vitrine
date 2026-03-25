@@ -59,6 +59,7 @@ export default function Home() {
           <span className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></span>
           <div className="hidden md:flex items-center gap-8">
             <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">Discover</Link>
+            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
             <a href="#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</a>
           </div>
