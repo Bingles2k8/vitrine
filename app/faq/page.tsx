@@ -49,7 +49,7 @@ const faqs = [
   {
     question: 'Can I export my collection data?',
     answer:
-      'Yes. You can export your full collection as a CSV at any time. Your data always belongs to you — Vitrine does not lock you in. Paid plans also support structured data exports for insurance and audit purposes.',
+      'Yes. You can export your full collection as a CSV at any time. Your data always belongs to you — Vitrine does not lock you in.',
   },
   {
     question: 'Does Vitrine create a public website for my collection?',
@@ -84,7 +84,7 @@ const faqs = [
   {
     question: 'Does Vitrine help with insurance documentation?',
     answer:
-      'Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. Paid plans let you export this data as a formatted report.',
+      'Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time.',
   },
   {
     question: 'Can I track the value of my collection over time?',
