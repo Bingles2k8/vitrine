@@ -587,7 +587,6 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
               hasFull
                 ? [
                     'Home, collection, about, and visit pages',
-                    'Custom domain support',
                     'Fully branded to your museum',
                     'Mobile-optimised and accessible',
                     'SEO-ready out of the box',

@@ -54,12 +54,7 @@ const faqs = [
   {
     question: 'Does Vitrine create a public website for my collection?',
     answer:
-      'Yes. Every Vitrine account gets a public-facing website at a vitrinecms.com subdomain (or your own custom domain on paid plans). Visitors can browse your collection, view object details, and — on Professional and above — book event tickets. You control exactly which items are publicly visible.',
-  },
-  {
-    question: 'Can I use my own domain name?',
-    answer:
-      'Yes. Paid plans (Hobbyist and above) support custom domain names. You point your DNS records to Vitrine and your collection site loads under your own domain.',
+      'Yes. Every Vitrine account gets a public-facing website at a vitrinecms.com subdomain. Visitors can browse your collection, view object details, and — on Professional and above — book event tickets. You control exactly which items are publicly visible.',
   },
   {
     question: 'Is Vitrine suitable for professional museums and galleries?',
