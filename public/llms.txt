@@ -32,6 +32,34 @@ Vitrine supports any type of physical or digital collection, including:
 coins, stamps, trading cards, sports cards, vinyl records, comic books,
 LEGO sets, toys, books, wine, watches, art, photography, and more.
 
+## Collection Type Landing Pages
+
+- [Trading Card Collection App](https://vitrinecms.com/for/trading-card-collection-app)
+- [Coin Collection App](https://vitrinecms.com/for/coin-collection-app)
+- [Vinyl Record Collection App](https://vitrinecms.com/for/vinyl-record-collection-app)
+- [Book Collection App](https://vitrinecms.com/for/book-collection-app)
+- [LEGO & Toy Collection App](https://vitrinecms.com/for/lego-toy-collection-app)
+- [Comic Book Collection App](https://vitrinecms.com/for/comic-book-collection-app)
+- [Wine Collection App](https://vitrinecms.com/for/wine-collection-app)
+- [Watch Collection App](https://vitrinecms.com/for/watch-collection-app)
+- [Stamp Collection App](https://vitrinecms.com/for/stamp-collection-app)
+- [Art Collection App](https://vitrinecms.com/for/art-collection-app)
+
+## Comparisons & Alternatives
+
+- [Best Delicious Library Alternative](https://vitrinecms.com/compare/delicious-library-alternative)
+- [Best CatalogIt Alternative](https://vitrinecms.com/compare/catalogit-alternative)
+- [Best Sortly Alternative for Collectors](https://vitrinecms.com/compare/sortly-alternative)
+- [Best CLZ Alternative](https://vitrinecms.com/compare/clz-alternative)
+- [Spreadsheet Alternative for Collections](https://vitrinecms.com/compare/spreadsheet-alternative)
+- [Best iCollect Everything Alternative](https://vitrinecms.com/compare/icollect-everything-alternative)
+- [Best Collectify Alternative](https://vitrinecms.com/compare/collectify-alternative)
+
+## Blog
+
+- [Best Collection Management Software in 2026](https://vitrinecms.com/blog/best-collection-management-software-2026): Honest comparison of every major tool available for hobbyist collectors
+- [How to Catalog a Collection: A Complete Beginner's Guide](https://vitrinecms.com/blog/how-to-catalog-your-collection): Step-by-step guide to cataloguing any collection type from scratch
+
 ## Legal
 
 - [Privacy Policy](https://vitrinecms.com/privacy)

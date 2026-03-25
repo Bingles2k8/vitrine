@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
 import { segments } from "@/lib/segments";
 import { competitors } from "@/lib/competitors";
+import { getAllPosts } from "@/lib/blog";
 
 const BASE = "https://vitrinecms.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const posts = getAllPosts();
   return [
     {
       url: BASE,
@@ -63,6 +65,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...competitors.map((c) => ({
       url: `${BASE}/compare/${c.slug}`,
       lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+    {
+      url: `${BASE}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    ...posts.map((p) => ({
+      url: `${BASE}/blog/${p.slug}`,
+      lastModified: new Date(p.updatedAt),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
