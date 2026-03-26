@@ -1,11 +1,17 @@
 export const COLLECTION_CATEGORIES = [
+  'Antiques & Collectibles',
+  'Archives & Documents',
   'Art & Paintings',
+  'Automobilia & Vehicles',
   'Books & Manuscripts',
   'Ceramics & Pottery',
   'Clocks & Watches',
   'Coins & Medals',
+  'Comics & Graphic Novels',
   'Fashion & Clothing',
+  'Film & Entertainment',
   'Furniture',
+  'Glassware & Crystal',
   'Jewellery',
   'Maps & Prints',
   'Militaria & Arms',
@@ -17,8 +23,13 @@ export const COLLECTION_CATEGORIES = [
   'Silver & Metalwork',
   'Sports & Games',
   'Stamps & Ephemera',
+  'Textiles & Rugs',
   'Toys & Models',
+  'Trading Cards & TCGs',
   'Tribal & Ethnographic',
+  'Video Games & Consoles',
+  'Vintage Electronics & Tech',
+  'Wine & Spirits',
 ] as const
 
 export type CollectionCategory = typeof COLLECTION_CATEGORIES[number]

@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import PublicFooter from '@/components/PublicFooter'
+import PublicNav from '@/components/PublicNav'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
@@ -29,7 +31,7 @@ const faqs = [
   {
     question: 'How much does Vitrine cost?',
     answer:
-      'Vitrine offers four plans. Community is free for small collections. Hobbyist costs £5/month and includes unlimited items, a public website, and full cataloguing tools. Professional costs £79/month and adds analytics, event ticketing, compliance tools, and staff roles. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
+      'Vitrine offers four plans. Community is free for up to 100 items. Hobbyist costs £5/month and includes up to 500 items, a public website, and full cataloguing tools. Professional costs £79/month and adds analytics, event ticketing, compliance tools, and staff roles. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
   },
   {
     question: 'Is there a free plan?',
@@ -39,12 +41,12 @@ const faqs = [
   {
     question: 'How do I start cataloguing my collection?',
     answer:
-      'Sign up for a free account at vitrinecms.com, create your first collection, and begin adding items. Each item can include a title, description, images, condition notes, acquisition date, value estimate, and custom fields. You can add items one by one or import them in bulk via CSV.',
+      'Sign up for a free account at vitrinecms.com, create your first collection, and begin adding items. Each item can include a title, description, images, condition notes, acquisition date, value estimate, and custom fields. You can add items one by one, or bulk-import via CSV on Professional and above.',
   },
   {
     question: 'Can I import my existing collection data?',
     answer:
-      'Yes. Vitrine supports bulk import via CSV, making it straightforward to migrate from a spreadsheet or another collection management tool. The import tool maps your columns to Vitrine fields and flags any rows that need review before committing.',
+      'Yes, on Professional plans and above. Vitrine supports bulk import via CSV, making it straightforward to migrate from a spreadsheet or another collection management tool. The import tool maps your columns to Vitrine fields and flags any rows that need review before committing. Community and Hobbyist users can add items individually.',
   },
   {
     question: 'Can I export my collection data?',
@@ -141,28 +143,7 @@ export default function FAQPage() {
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif text-xl italic">
-            Vitrine<span className="text-amber-500">.</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">Discover</Link>
-            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
-            <Link href="/#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</Link>
-            <Link href="/#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono">
-              Sign in
-            </Link>
-            <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
-              Start free →
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
         {/* Breadcrumb */}
@@ -176,7 +157,7 @@ export default function FAQPage() {
 
         {/* Header */}
         <div className="mb-12">
-          <h1 className="font-serif text-5xl italic font-normal leading-tight mb-4">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl italic font-normal leading-tight mb-4">
             Frequently asked<br />
             <span className="text-amber-500">questions</span>
           </h1>
@@ -224,17 +205,7 @@ export default function FAQPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 text-sm text-stone-500">
-          <span className="font-serif italic">Vitrine<span className="text-amber-500">.</span></span>
-          <div className="flex gap-6">
-            <Link href="/about" className="hover:text-stone-300 transition-colors">About</Link>
-            <Link href="/privacy" className="hover:text-stone-300 transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-stone-300 transition-colors">Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

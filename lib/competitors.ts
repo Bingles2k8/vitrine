@@ -123,7 +123,8 @@ export const competitors: Competitor[] = [
       'CatalogIt is designed for museums and institutional collections, with pricing and complexity to match. Vitrine is the best CatalogIt alternative for hobbyist collectors: a modern web app with the same core cataloguing features at a fraction of the cost. Free to start, with paid plans from £5/month.',
     featureComparison: [
       { feature: 'Target user', vitrine: 'Hobbyists & small museums', competitor: 'Museums & institutions' },
-      { feature: 'Starting price', vitrine: 'Free', competitor: '$360+/year' },
+      { feature: 'Personal starting price', vitrine: 'Free', competitor: '$149.99/year' },
+      { feature: 'Museum starting price', vitrine: '£79/month', competitor: '$540/year' },
       { feature: 'Public collection page', vitrine: 'Included', competitor: 'Add-on / higher tier' },
       { feature: 'Custom fields', vitrine: 'Yes', competitor: 'Yes' },
       { feature: 'CSV import', vitrine: 'Professional plan', competitor: 'Yes' },
@@ -133,15 +134,15 @@ export const competitors: Competitor[] = [
     weaknesses: [
       {
         heading: 'Priced for museums, not individuals',
-        body: 'CatalogIt starts at around $360/year — a reasonable line item for an institution, but hard to justify for a personal coin or stamp collection. Vitrine\'s Hobbyist plan is £5/month with a free tier to start.',
+        body: 'CatalogIt\'s personal plans start at $149.99/year — workable for some, but still a meaningful commitment for a hobbyist testing whether the software fits. Museum and organisation plans start at $540/year. Vitrine\'s Hobbyist plan is £5/month with a genuinely free tier to explore first.',
       },
       {
         heading: 'Built for professional cataloguers',
         body: 'CatalogIt\'s feature depth is genuinely impressive for institutions with staff cataloguers and compliance requirements. For hobbyists, most of that complexity becomes friction. Adding a coin or trading card takes more steps than it needs to.',
       },
       {
-        heading: 'No free tier for exploration',
-        body: 'CatalogIt does not offer a free plan. Evaluating the platform requires committing to a paid subscription before you know whether it fits your collection.',
+        heading: 'Free tier is very limited',
+        body: 'CatalogIt offers a free tier capped at 50 entries — useful for a brief trial, but not enough to catalogue a real collection. Moving beyond it requires a paid subscription.',
       },
     ],
     whySwitchPoints: [
@@ -158,8 +159,8 @@ export const competitors: Competitor[] = [
         body: 'Vitrine gives every account a public-facing collection website that looks good enough to share with anyone. CatalogIt\'s public sharing is limited or gated behind higher tiers.',
       },
     ],
-    competitorPrice: '$360',
-    competitorPriceNote: 'per year (entry tier)',
+    competitorPrice: '$149.99',
+    competitorPriceNote: 'per year (personal tier)',
     migrationSteps: [
       {
         heading: 'Export from CatalogIt',
@@ -214,7 +215,7 @@ export const competitors: Competitor[] = [
       { feature: 'Condition & grading fields', vitrine: 'Yes', competitor: 'No' },
       { feature: 'Value tracking', vitrine: 'Yes', competitor: 'Purchase price only' },
       { feature: 'Free tier', vitrine: 'Up to 100 items', competitor: 'Up to 100 items (limited)' },
-      { feature: 'Starting paid price', vitrine: '£5/month', competitor: '$24/month' },
+      { feature: 'Starting paid price', vitrine: '£5/month', competitor: '$49/month' },
       { feature: 'Collection sharing', vitrine: 'Public page per account', competitor: 'None' },
     ],
     weaknesses: [
@@ -228,7 +229,7 @@ export const competitors: Competitor[] = [
       },
       {
         heading: 'Expensive for what collectors actually need',
-        body: 'Sortly\'s paid plans start at $24/month, priced for business use. Collector-specific features you\'d need — condition tracking, value history, public sharing — are simply absent at any price point.',
+        body: 'Sortly\'s paid plans start at $49/month, priced for business use. Collector-specific features you\'d need — condition tracking, value history, public sharing — are simply absent at any price point.',
       },
     ],
     whySwitchPoints: [
@@ -242,10 +243,10 @@ export const competitors: Competitor[] = [
       },
       {
         heading: 'A fraction of the price',
-        body: 'Vitrine\'s Hobbyist plan is £5/month. Sortly costs $24/month for equivalent item limits — nearly five times more — with none of the collector-specific features.',
+        body: 'Vitrine\'s Hobbyist plan is £5/month. Sortly\'s entry paid plan is $49/month — around ten times more — with none of the collector-specific features.',
       },
     ],
-    competitorPrice: '$24',
+    competitorPrice: '$49',
     competitorPriceNote: 'per month (entry paid tier)',
     migrationSteps: [
       {
@@ -272,7 +273,7 @@ export const competitors: Competitor[] = [
       },
       {
         question: 'Is Vitrine cheaper than Sortly?',
-        answer: 'Yes — significantly. Vitrine\'s Hobbyist plan is £5/month versus Sortly\'s $24/month entry tier. Vitrine also has a free Community plan for up to 100 items.',
+        answer: 'Yes — significantly. Vitrine\'s Hobbyist plan is £5/month versus Sortly\'s $49/month entry paid tier. Vitrine also has a free Community plan for up to 100 items.',
       },
     ],
   },
@@ -294,7 +295,7 @@ export const competitors: Competitor[] = [
     featureComparison: [
       { feature: 'Platform', vitrine: 'Web (any browser)', competitor: 'Desktop + mobile apps' },
       { feature: 'Collection types in one app', vitrine: 'All types', competitor: 'One per app/subscription' },
-      { feature: 'Public collection page', vitrine: 'Yes', competitor: 'CLZ Cloud (extra cost)' },
+      { feature: 'Public collection page', vitrine: 'Yes', competitor: 'CLZ Web (extra subscription)' },
       { feature: 'Barcode scanning', vitrine: 'Roadmap', competitor: 'Yes' },
       { feature: 'Starting price', vitrine: 'Free', competitor: '$20–30/year per app' },
       { feature: 'Modern UI', vitrine: 'Yes', competitor: 'Dated' },
@@ -305,8 +306,8 @@ export const competitors: Competitor[] = [
         body: 'CLZ offers individual apps for comics (CLZ Comics), books (CLZ Books), movies (CLZ Movies), music (CLZ Music), and games (CLZ Games). Each carries its own subscription cost. A collector with three different interests pays three times.',
       },
       {
-        heading: 'Desktop-first, web as an afterthought',
-        body: 'CLZ\'s core products are desktop and mobile apps. Web access (CLZ Cloud) is a secondary offering — and an additional expense. There is no single modern web interface that covers everything.',
+        heading: 'Web access costs extra on top of your app subscription',
+        body: 'CLZ\'s core products are mobile apps. CLZ Cloud (backup and sync) is free and included, but if you want to access your collection in a browser, that requires CLZ Web — a separate subscription per collection type, on top of what you\'re already paying for the mobile app.',
       },
       {
         heading: 'Interface shows its age',
@@ -319,12 +320,12 @@ export const competitors: Competitor[] = [
         body: 'Vitrine handles comics, books, movies, games, music, trading cards, coins, stamps, vinyl, and any other collection in one account. No separate apps, no per-category subscriptions.',
       },
       {
-        heading: 'Web-native from day one',
-        body: 'Vitrine is built for the web. It works in any browser, on any device, with no software to install. Your collections are accessible from your phone, your laptop, or a library computer.',
+        heading: 'Web-native from day one — no extra subscription',
+        body: 'Vitrine is built for the web. It works in any browser, on any device, with no software to install and no separate web subscription on top of your mobile one.',
       },
       {
         heading: 'A public collection page worth sharing',
-        body: 'Every Vitrine account includes a public collection website. Share your comic long-box, your book library, or your vinyl collection with anyone — no extra subscription required.',
+        body: 'Every Vitrine account includes a public collection website. Share your comic long-box, your book library, or your vinyl collection with anyone — included in your plan, not bolted on.',
       },
     ],
     competitorPrice: '$20–30',
@@ -460,45 +461,45 @@ export const competitors: Competitor[] = [
     ],
     h1: 'Best iCollect Everything Alternative (2026)',
     answerCapsule:
-      'iCollect Everything is an iOS-only collection management app that works well on iPhone and iPad but leaves Android users and desktop collectors without an option. Vitrine is the best iCollect Everything alternative: a fully web-based collection manager that works on every device, every browser, and every operating system. Free to start.',
+      'iCollect Everything is a native app for iOS, Android, Mac, and Windows — but managing multiple collection types requires separate one-time purchases or an annual Pro subscription, and the free tier caps you at 15 items per collection. Vitrine is the best iCollect Everything alternative: a web-based collection manager with a generous free tier and no per-type charges. Free to start.',
     featureComparison: [
-      { feature: 'Platform', vitrine: 'Web (any device)', competitor: 'iOS only' },
-      { feature: 'Android support', vitrine: 'Yes (browser)', competitor: 'No' },
-      { feature: 'Desktop access', vitrine: 'Yes (browser)', competitor: 'No' },
+      { feature: 'Platform', vitrine: 'Web (any browser)', competitor: 'iOS, Android, Mac, Windows apps' },
+      { feature: 'No install required', vitrine: 'Yes', competitor: 'No — app install required per platform' },
       { feature: 'Public collection page', vitrine: 'Yes', competitor: 'Limited' },
-      { feature: 'Collection types', vitrine: 'Any type', competitor: 'Many types (separate modules)' },
-      { feature: 'Free tier', vitrine: 'Yes — up to 100 items', competitor: 'Freemium (very limited)' },
+      { feature: 'Free tier', vitrine: 'Up to 100 items', competitor: '15 items per collection type' },
+      { feature: 'All collection types in one plan', vitrine: 'Yes', competitor: 'Separate purchase per type, or Pro subscription' },
+      { feature: 'Pro subscription price', vitrine: '£5/month', competitor: '$69.99/year (~$5.83/month)' },
     ],
     weaknesses: [
       {
-        heading: 'iOS only — Android and desktop users are excluded',
-        body: 'iCollect Everything is an App Store app. If you use an Android phone, a Windows PC, or any non-Apple device, you simply cannot use it. Your collection data is locked to the iOS ecosystem.',
+        heading: 'Paying per collection type adds up',
+        body: 'iCollect Everything\'s free tier limits you to 15 items per collection type. To unlock unlimited items you either pay per collection type (~$29 each, one-time) or subscribe to the Pro plan at $69.99/year. A collector with three hobbies pays for three unlocks, or commits to the annual subscription.',
       },
       {
-        heading: 'Separate modules for separate collection types',
-        body: 'iCollect Everything offers separate apps or in-app modules for different collection types, each with its own purchase or subscription. Managing multiple collection types gets complicated and expensive quickly.',
+        heading: 'App installs required on every device',
+        body: 'iCollect Everything requires installing a native app on each device you want to use. Vitrine works in any browser — no installs, no updates to manage, and accessible on any device you happen to be using.',
       },
       {
-        heading: 'Limited cloud sync and sharing',
-        body: 'Sharing your collection publicly or syncing across multiple Apple devices requires additional setup. There is no dedicated public collection page to share with non-app users.',
+        heading: 'Limited public sharing',
+        body: 'Sharing your collection publicly or syncing across devices requires the Pro subscription. There is no dedicated public collection page to share with non-app users on the free tier.',
       },
     ],
     whySwitchPoints: [
       {
-        heading: 'Works everywhere, not just on iPhone',
-        body: 'Vitrine is a web app. It works on iPhone, Android, Mac, Windows, Linux — any device with a browser. Your collection is accessible everywhere without an app install.',
+        heading: 'One subscription covers every collection type',
+        body: 'Vitrine\'s Hobbyist plan at £5/month covers all your collections in one place — coins, cards, comics, vinyl, LEGO, stamps, and more. No per-type purchases.',
       },
       {
-        heading: 'All your collections in one place',
-        body: 'Every collection type lives in the same Vitrine account: coins, cards, comics, vinyl, LEGO, stamps, and more. One login, one interface, one subscription.',
+        heading: 'Nothing to install',
+        body: 'Vitrine is a web app. It works on iPhone, Android, Mac, Windows, Linux — any device with a browser. No app downloads, no App Store updates, no platform restrictions.',
       },
       {
         heading: 'Share with anyone, instantly',
         body: 'Your Vitrine collection page is public and shareable via a link. Anyone can view it without installing an app or creating an account.',
       },
     ],
-    competitorPrice: 'Freemium',
-    competitorPriceNote: 'with per-type paid modules',
+    competitorPrice: '$69.99',
+    competitorPriceNote: 'per year (Pro subscription) or ~$29 per collection type one-time',
     migrationSteps: [
       {
         heading: 'Export from iCollect Everything',
@@ -519,8 +520,8 @@ export const competitors: Competitor[] = [
         answer: 'Vitrine is a web app optimised for mobile browsers — it works well on iPhone and Android without an app install. A native mobile app is on the roadmap.',
       },
       {
-        question: 'Can I use Vitrine on Android?',
-        answer: 'Yes. Vitrine works in any modern browser, including Chrome and Firefox on Android. iCollect Everything is iOS only.',
+        question: 'How does Vitrine\'s pricing compare to iCollect Everything?',
+        answer: 'iCollect Everything\'s Pro plan is $69.99/year; individual collection type unlocks are around $29 each. Vitrine\'s Hobbyist plan is £5/month and covers every collection type in one account. Vitrine also has a free Community plan for up to 100 items.',
       },
       {
         question: 'Is Vitrine free to try?',

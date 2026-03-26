@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import PublicFooter from '@/components/PublicFooter'
+import PublicNav from '@/components/PublicNav'
 import { Suspense } from 'react'
 import DiscoverFilters from './DiscoverFilters'
+import DiscoverCategoryScroll from './DiscoverCategoryScroll'
+import DiscoverMobileFilters from './DiscoverMobileFilters'
 import { buildPageMetadata } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
@@ -74,26 +78,7 @@ export default async function DiscoverPage({
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/discover" className="text-sm text-amber-400 font-mono">Discover</Link>
-            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
-            <a href="/#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</a>
-            <a href="/#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</a>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono">
-              Sign in
-            </Link>
-            <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
-              Start free →
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav activePath="/discover" />
 
       <div className="max-w-7xl mx-auto px-6 pt-28 pb-16">
 
@@ -110,19 +95,26 @@ export default async function DiscoverPage({
         <div className="flex gap-10">
 
           {/* Sidebar */}
-          <aside className="w-56 flex-shrink-0 hidden lg:block">
+          <aside className="w-56 flex-shrink-0 hidden lg:flex flex-col gap-6 sticky top-20 max-h-[calc(100vh-5rem)]">
+            {/* Search — always visible */}
             <Suspense>
-              <DiscoverFilters selectedCategories={selectedCategories} query={query} />
+              <DiscoverFilters selectedCategories={selectedCategories} query={query} hideCategories />
             </Suspense>
+            {/* Categories — independently scrollable, fade disappears at bottom */}
+            <DiscoverCategoryScroll className="flex-1 min-h-0">
+              <Suspense>
+                <DiscoverFilters selectedCategories={selectedCategories} query={query} hideSearch />
+              </Suspense>
+            </DiscoverCategoryScroll>
           </aside>
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
 
-            {/* Mobile filters (search only) */}
+            {/* Mobile filters */}
             <div className="lg:hidden mb-6">
               <Suspense>
-                <DiscoverFilters selectedCategories={selectedCategories} query={query} />
+                <DiscoverMobileFilters selectedCategories={selectedCategories} query={query} />
               </Suspense>
             </div>
 
@@ -194,6 +186,8 @@ export default async function DiscoverPage({
           </div>
         </div>
       </div>
+
+      <PublicFooter />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import PublicFooter from '@/components/PublicFooter'
+import PublicNav from '@/components/PublicNav'
 import { segments, getSegment } from '@/lib/segments'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
@@ -79,28 +81,7 @@ export default async function SegmentPage({
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={faqSchema} />
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif text-xl italic">
-            Vitrine<span className="text-amber-500">.</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">Discover</Link>
-            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
-            <Link href="/#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</Link>
-            <Link href="/#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono">
-              Sign in
-            </Link>
-            <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
-              Start free →
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       <main className="max-w-4xl mx-auto px-6 pt-32 pb-24">
 
@@ -117,7 +98,7 @@ export default async function SegmentPage({
 
         {/* Hero */}
         <section className="mb-16">
-          <h1 className="font-serif text-5xl md:text-6xl italic font-normal leading-tight mb-6">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl italic font-normal leading-tight mb-6">
             {data.h1}
           </h1>
           <p className="text-lg text-stone-300 leading-relaxed max-w-2xl mb-8">
@@ -285,18 +266,7 @@ export default async function SegmentPage({
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 text-sm text-stone-500">
-          <span className="font-serif italic">Vitrine<span className="text-amber-500">.</span></span>
-          <div className="flex flex-wrap gap-6">
-            <Link href="/about" className="hover:text-stone-300 transition-colors">About</Link>
-            <Link href="/faq" className="hover:text-stone-300 transition-colors">FAQ</Link>
-            <Link href="/privacy" className="hover:text-stone-300 transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-stone-300 transition-colors">Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

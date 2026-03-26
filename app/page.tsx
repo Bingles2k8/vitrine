@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import PublicFooter from '@/components/PublicFooter'
+import PublicNav from '@/components/PublicNav'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
@@ -53,26 +55,7 @@ export default function Home() {
     <div className="min-h-screen bg-stone-950 text-stone-100">
       <JsonLd data={organizationSchema} />
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></span>
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">Discover</Link>
-            <Link href="/blog" className="text-sm text-stone-400 hover:text-white transition-colors">Blog</Link>
-            <a href="#features" className="text-sm text-stone-400 hover:text-white transition-colors">Features</a>
-            <a href="#pricing" className="text-sm text-stone-400 hover:text-white transition-colors">Pricing</a>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono">
-              Sign in
-            </Link>
-            <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
-              Start free →
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       {/* Hero */}
       <section className="pt-40 pb-28 px-6 relative overflow-hidden">
@@ -83,7 +66,7 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto relative flex flex-col lg:flex-row lg:items-center lg:gap-12">
           <div className="max-w-3xl lg:max-w-xl lg:flex-shrink-0">
-            <h1 className="font-serif text-6xl md:text-8xl italic font-normal leading-none tracking-tight mb-6">
+            <h1 className="font-serif text-4xl sm:text-6xl lg:text-8xl italic font-normal leading-none tracking-tight mb-6">
               Your collection,<br />
               <span className="text-amber-500">beautifully</span><br />
               managed.
@@ -372,17 +355,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <span className="font-serif italic text-stone-600">Vitrine<span className="text-amber-500">.</span></span>
-          <div className="flex gap-5">
-            <Link href="/privacy" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-xs text-stone-600 hover:text-stone-400 font-mono transition-colors">Terms</Link>
-          </div>
-          <span className="text-xs text-stone-700 font-mono">© 2026 Composition Limited.</span>
-        </div>
-      </footer>
+      <PublicFooter />
 
     </div>
   )
