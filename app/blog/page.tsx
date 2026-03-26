@@ -10,8 +10,10 @@ export const metadata = buildPageMetadata({
   keywords: ['collection management blog', 'collector guides', 'how to catalog a collection', 'collection tips'],
 })
 
-export default function BlogIndex() {
-  const posts = getAllPosts()
+export const revalidate = 3600
+
+export default async function BlogIndex() {
+  const posts = await getAllPosts()
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',

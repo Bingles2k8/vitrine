@@ -1,8 +1,9 @@
-import fs from 'fs'
-import path from 'path'
-import matter from 'gray-matter'
+import { createClient } from '@supabase/supabase-js'
 
-const BLOG_DIR = path.join(process.cwd(), 'content/blog')
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
 
 export type PostFrontmatter = {
   title: string
@@ -17,26 +18,41 @@ export type PostMeta = PostFrontmatter & {
 }
 
 export type Post = PostMeta & {
+  id: string
   content: string
 }
 
-export function getAllPosts(): PostMeta[] {
-  if (!fs.existsSync(BLOG_DIR)) return []
-  const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith('.mdx'))
-  return files
-    .map((file) => {
-      const slug = file.replace(/\.mdx$/, '')
-      const raw = fs.readFileSync(path.join(BLOG_DIR, file), 'utf8')
-      const { data } = matter(raw)
-      return { slug, ...(data as PostFrontmatter) }
-    })
-    .sort((a, b) => (a.publishedAt > b.publishedAt ? -1 : 1))
+export async function getAllPosts(): Promise<PostMeta[]> {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('slug, title, description, published_at, updated_at, keywords')
+    .order('published_at', { ascending: false })
+  if (error || !data) return []
+  return data.map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    description: row.description,
+    publishedAt: row.published_at,
+    updatedAt: row.updated_at,
+    keywords: row.keywords ?? [],
+  }))
 }
 
-export function getPost(slug: string): Post | undefined {
-  const filePath = path.join(BLOG_DIR, `${slug}.mdx`)
-  if (!fs.existsSync(filePath)) return undefined
-  const raw = fs.readFileSync(filePath, 'utf8')
-  const { data, content } = matter(raw)
-  return { slug, ...(data as PostFrontmatter), content }
+export async function getPost(slug: string): Promise<Post | undefined> {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('id, slug, title, description, content, published_at, updated_at, keywords')
+    .eq('slug', slug)
+    .single()
+  if (error || !data) return undefined
+  return {
+    id: data.id,
+    slug: data.slug,
+    title: data.title,
+    description: data.description,
+    content: data.content,
+    publishedAt: data.published_at,
+    updatedAt: data.updated_at,
+    keywords: data.keywords ?? [],
+  }
 }

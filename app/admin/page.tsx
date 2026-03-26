@@ -114,6 +114,16 @@ export default async function AdminPage() {
           </div>
         )}
 
+        {/* Quick links */}
+        <div className="mb-6">
+          <a
+            href="/admin/blog"
+            className="inline-block text-sm text-gray-600 border border-gray-200 rounded px-4 py-2 hover:bg-gray-50 transition-colors"
+          >
+            Manage Blog Posts →
+          </a>
+        </div>
+
         {/* Table */}
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full text-sm">

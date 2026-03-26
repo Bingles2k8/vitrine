@@ -5,8 +5,11 @@ import { getAllPosts, getPost } from '@/lib/blog'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }))
+export const revalidate = 3600
+
+export async function generateStaticParams() {
+  const posts = await getAllPosts()
+  return posts.map((p) => ({ slug: p.slug }))
 }
 
 export async function generateMetadata({
@@ -15,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = await getPost(slug)
   if (!post) return {}
   return buildPageMetadata({
     title: post.title,
@@ -42,7 +45,7 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = await getPost(slug)
   if (!post) notFound()
 
   const pageUrl = `${SITE_URL}/blog/${post.slug}`
