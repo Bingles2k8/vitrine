@@ -214,6 +214,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       <nav className="p-3 flex-1 overflow-y-auto">
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Objects')}
+        {planInfo?.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted')}
 
         {simple ? (
           <>

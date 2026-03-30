@@ -18,6 +18,7 @@ interface MuseumSidebarProps {
   pageBg: string
   hasEvents: boolean
   hasVisitInfo: boolean
+  hasWanted: boolean
   socialLinks: { url: string; icon: React.ReactNode }[]
 }
 
@@ -35,18 +36,21 @@ export default function MuseumSidebar({
   pageBg,
   hasEvents,
   hasVisitInfo,
+  hasWanted,
   socialLinks,
 }: MuseumSidebarProps) {
   const pathname = usePathname()
-  const isCollection = !pathname.includes('/visit') && !pathname.includes('/events')
+  const isCollection = !pathname.includes('/visit') && !pathname.includes('/events') && !pathname.includes('/wanted')
   const isEvents = pathname.includes('/events')
   const isVisit = pathname.includes('/visit')
+  const isWanted = pathname.includes('/wanted')
   const [open, setOpen] = useState(false)
 
   const navItems = [
     { href: `/museum/${slug}`, label: 'Collection', active: isCollection, always: true },
     { href: `/museum/${slug}/events`, label: 'Events', active: isEvents, always: hasEvents },
     { href: `/museum/${slug}/visit`, label: 'Visit', active: isVisit, always: hasVisitInfo },
+    { href: `/museum/${slug}/wanted`, label: 'Wanted', active: isWanted, always: hasWanted },
   ].filter(i => i.always)
 
   const logoBlock = (

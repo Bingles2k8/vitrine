@@ -130,6 +130,8 @@ export default function SiteBuilder() {
     collection_label: '',
     collecting_since: '',
     collector_bio: '',
+    show_wanted: false,
+    show_collection_value: false,
   })
 
   useEffect(() => {
@@ -175,6 +177,8 @@ export default function SiteBuilder() {
         collection_label: museum.collection_label || '',
         collecting_since: museum.collecting_since || '',
         collector_bio: museum.collector_bio || '',
+        show_wanted: museum.show_wanted ?? false,
+        show_collection_value: museum.show_collection_value ?? false,
       })
       setLoading(false)
     }
@@ -871,6 +875,62 @@ export default function SiteBuilder() {
                   </button>
                 </div>
               )}
+            </CollapsibleSection>
+
+            {/* Wanted List — Community & Hobbyist only */}
+            {getPlan(museum?.plan).wishlist && (
+              <CollapsibleSection title="Wanted List">
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">
+                    Show what you&apos;re actively looking for on your public collection site. Visitors who own items on your list can reach out directly.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => set('show_wanted', !form.show_wanted)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                      form.show_wanted
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                        : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                    }`}
+                  >
+                    <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_wanted ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_wanted ? 'left-4' : 'left-0.5'}`} />
+                    </span>
+                    {form.show_wanted ? 'Wanted list visible on public site' : 'Show wanted list on public site'}
+                  </button>
+                  {form.show_wanted && museum?.slug && (
+                    <p className="text-xs text-stone-400 dark:text-stone-500">
+                      Accessible at <span className="font-mono">/museum/{museum.slug}/wanted</span>
+                    </p>
+                  )}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Collection Value */}
+            <CollapsibleSection title="Collection Value">
+              <div className="space-y-3">
+                <p className="text-xs text-stone-400 dark:text-stone-500">
+                  Optionally display your total estimated collection value on the public site. Individual object values are never shown publicly.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => set('show_collection_value', !form.show_collection_value)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                    form.show_collection_value
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                      : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                  }`}
+                >
+                  <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_collection_value ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_collection_value ? 'left-4' : 'left-0.5'}`} />
+                  </span>
+                  {form.show_collection_value ? 'Collection value visible on public site' : 'Show collection value on public site'}
+                </button>
+                <p className="text-xs text-stone-400 dark:text-stone-500">
+                  Enter estimated values on individual objects via the <span className="font-mono">Valuation</span> tab on each object record.
+                </p>
+              </div>
             </CollapsibleSection>
 
             {/* Embed on Website — Professional+ */}

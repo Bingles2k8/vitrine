@@ -17,17 +17,19 @@ interface MuseumNavProps {
   headingStyle: React.CSSProperties
   hasEvents: boolean
   hasVisitInfo: boolean
+  hasWanted: boolean
 }
 
 export default function MuseumNav({
   slug, museumName, logoEmoji, logoImageUrl,
   navClass, navTextClass, navLinkClass, navBg,
-  accent, headingStyle, hasEvents, hasVisitInfo,
+  accent, headingStyle, hasEvents, hasVisitInfo, hasWanted,
 }: MuseumNavProps) {
   const pathname = usePathname()
   const isCollection = pathname === `/museum/${slug}`
   const isEvents = pathname.startsWith(`/museum/${slug}/events`)
   const isVisit = pathname === `/museum/${slug}/visit`
+  const isWanted = pathname === `/museum/${slug}/wanted`
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function linkClass(active: boolean) {
@@ -64,6 +66,16 @@ export default function MuseumNav({
           onClick={() => setMobileOpen(false)}
         >
           Plan Your Visit
+        </Link>
+      )}
+      {hasWanted && (
+        <Link
+          href={`/museum/${slug}/wanted`}
+          className={linkClass(isWanted)}
+          style={isWanted ? { borderColor: accent } : {}}
+          onClick={() => setMobileOpen(false)}
+        >
+          Wanted
         </Link>
       )}
     </>
@@ -133,10 +145,20 @@ export default function MuseumNav({
             {hasVisitInfo && (
               <Link
                 href={`/museum/${slug}/visit`}
-                className={`py-3 text-sm ${isVisit ? navTextClass : navLinkClass}`}
+                className={`py-3 text-sm border-b ${isVisit ? navTextClass : navLinkClass}`}
+                style={{ borderColor: 'rgba(128,128,128,0.1)' }}
                 onClick={() => setMobileOpen(false)}
               >
                 Plan Your Visit
+              </Link>
+            )}
+            {hasWanted && (
+              <Link
+                href={`/museum/${slug}/wanted`}
+                className={`py-3 text-sm ${isWanted ? navTextClass : navLinkClass}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                Wanted
               </Link>
             )}
           </div>

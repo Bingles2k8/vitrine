@@ -14,6 +14,7 @@ export const PLANS: Record<PlanId, {
   advancedCustomisation: boolean  // Social links, SEO, footer text, featured objects
   documentStorageMb: number | null  // null = unlimited
   depositorTracking: boolean  // Donor info, Entry By, GDPR, receipt & terms in entry records
+  wishlist: boolean  // Wanted/wishlist feature — Community & Hobbyist only
   features: string[]
 }> = {
   community: {
@@ -30,7 +31,8 @@ export const PLANS: Record<PlanId, {
     advancedCustomisation: true,
     documentStorageMb: 0,
     depositorTracking: false,
-    features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation'],
+    wishlist: true,
+    features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking'],
   },
   hobbyist: {
     label: 'Hobbyist',
@@ -46,7 +48,8 @@ export const PLANS: Record<PlanId, {
     advancedCustomisation: true,
     documentStorageMb: 0,
     depositorTracking: false,
-    features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation'],
+    wishlist: true,
+    features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list'],
   },
   professional: {
     label: 'Professional',
@@ -62,6 +65,7 @@ export const PLANS: Record<PlanId, {
     advancedCustomisation: true,
     documentStorageMb: 1024,
     depositorTracking: true,
+    wishlist: false,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '1 GB document storage'],
   },
   institution: {
@@ -78,6 +82,7 @@ export const PLANS: Record<PlanId, {
     advancedCustomisation: true,
     documentStorageMb: 10240,
     depositorTracking: true,
+    wishlist: false,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support', '10 GB document storage'],
   },
   enterprise: {
@@ -94,6 +99,7 @@ export const PLANS: Record<PlanId, {
     advancedCustomisation: true,
     documentStorageMb: null,
     depositorTracking: true,
+    wishlist: false,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations', 'Unlimited document storage'],
   },
 }

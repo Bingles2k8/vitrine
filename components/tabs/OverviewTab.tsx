@@ -164,19 +164,17 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         )}
 
         {/* Status */}
-        {getPlan(museum.plan).fullMode && (
-          <div>
-            <label className={labelCls}>Status</label>
-            <div className="flex gap-2 flex-wrap">
-              {STATUSES.map(s => (
-                <button key={s} type="button" onClick={() => set('status', s)}
-                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
+        <div>
+          <label className={labelCls}>Status</label>
+          <div className="flex gap-2 flex-wrap">
+            {STATUSES.map(s => (
+              <button key={s} type="button" onClick={() => set('status', s)}
+                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                {s}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Condition + Location */}
         {form.condition_grade && (

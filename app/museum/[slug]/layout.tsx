@@ -64,6 +64,7 @@ export default async function MuseumLayout({
 
   const hasEvents = (eventCount ?? 0) > 0
   const hasVisitInfo = getPlan(museum.plan).visitInfo
+  const hasWanted = museum.show_wanted === true
   const isPaid = getPlan(museum.plan).advancedCustomisation
 
   const { pageBg, font, navStyle, accent, headingStyle, content } = getMuseumStyles(museum)
@@ -145,6 +146,7 @@ export default async function MuseumLayout({
           pageBg={pageBg}
           hasEvents={hasEvents}
           hasVisitInfo={hasVisitInfo}
+          hasWanted={hasWanted}
           socialLinks={socialLinks}
         />
         <main className="flex-1 min-w-0 pt-14 md:pt-0 md:ml-[240px]">
@@ -181,6 +183,7 @@ export default async function MuseumLayout({
         headingStyle={headingStyle}
         hasEvents={hasEvents}
         hasVisitInfo={hasVisitInfo}
+        hasWanted={hasWanted}
       />
 
       {children}

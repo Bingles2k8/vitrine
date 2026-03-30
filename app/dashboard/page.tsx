@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulking, setBulking] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const [duplicateObjectIds, setDuplicateObjectIds] = useState<Set<string>>(new Set())
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -104,11 +106,12 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
           supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
+          supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
         ])
 
         setMuseum(museum)
@@ -117,6 +120,7 @@ export default function Dashboard() {
         setDiscoverable(museum.discoverable ?? false)
         setCollectionCategory(museum.collection_category || '')
         setTrashedCount(trashed ?? 0)
+        setDuplicateObjectIds(new Set((dupeLinks || []).map((d: any) => d.object_id)))
         setObjects(objects || [])
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
@@ -191,8 +195,19 @@ export default function Dashboard() {
     { label: 'Deaccessioned', filterKey: 'Deaccessioned',value: statusCount('Deaccessioned'), sub: '—' },
   ]
 
-  const visibleObjects = filter ? objects.filter(a => a.status === filter) : objects
+  const visibleObjects = objects
+    .filter(a => filter ? a.status === filter : true)
+    .filter(a => showDuplicatesOnly ? duplicateObjectIds.has(a.id) : true)
   const fullMode = getPlan(museum?.plan).fullMode
+
+  const totalPaid = objects.reduce((sum, o) => sum + (o.acquisition_value ? parseFloat(o.acquisition_value) : 0), 0)
+  const totalEstimated = objects.reduce((sum, o) => sum + (o.estimated_value ? parseFloat(o.estimated_value) : 0), 0)
+  const showValueTiles = totalPaid > 0 || totalEstimated > 0
+  const valueDiff = totalEstimated - totalPaid
+  const defaultCurrency = objects.find(o => o.acquisition_currency || o.estimated_value_currency)?.acquisition_currency || objects.find(o => o.estimated_value_currency)?.estimated_value_currency || 'GBP'
+  function fmtCurrency(amount: number, currency: string) {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
+  }
   const objectLimit = getPlan(museum?.plan).objects
   const nearLimit = objectLimit !== null && objects.length >= objectLimit * 0.8
 
@@ -239,6 +254,29 @@ export default function Dashboard() {
               )
             })}
           </div>
+
+          {/* Collection value tiles */}
+          {showValueTiles && (
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Paid</div>
+                <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{totalPaid > 0 ? fmtCurrency(totalPaid, defaultCurrency) : '—'}</div>
+                <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Purchase prices recorded</div>
+              </div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Est. Value</div>
+                <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{totalEstimated > 0 ? fmtCurrency(totalEstimated, defaultCurrency) : '—'}</div>
+                {totalPaid > 0 && totalEstimated > 0 && (
+                  <div className={`text-xs mt-1 font-mono ${valueDiff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                    {valueDiff >= 0 ? '↑' : '↓'} {fmtCurrency(Math.abs(valueDiff), defaultCurrency)} {valueDiff >= 0 ? 'gain' : 'loss'}
+                  </div>
+                )}
+                {!(totalPaid > 0 && totalEstimated > 0) && (
+                  <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Your estimated current value</div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Near object limit warning */}
           {nearLimit && trashedCount > 0 && (
@@ -332,13 +370,26 @@ export default function Dashboard() {
           ) : (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {/* Filter bar */}
-              {filter && selectedIds.size === 0 && (
+              {(filter || showDuplicatesOnly) && selectedIds.size === 0 && (
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
-                    Showing {visibleObjects.length} {visibleObjects.length === 1 ? 'object' : 'objects'} — {filter}
+                    Showing {visibleObjects.length} {visibleObjects.length === 1 ? 'object' : 'objects'}
+                    {filter ? ` — ${filter}` : ''}
+                    {showDuplicatesOnly ? ' — Duplicates only' : ''}
                   </span>
-                  <button onClick={() => setFilter(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                  <button onClick={() => { setFilter(null); setShowDuplicatesOnly(false) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                     Show all objects ×
+                  </button>
+                </div>
+              )}
+              {/* Duplicates filter toggle */}
+              {duplicateObjectIds.size > 0 && !filter && selectedIds.size === 0 && (
+                <div className="px-6 py-2 border-b border-stone-100 dark:border-stone-800 flex items-center gap-2">
+                  <button
+                    onClick={() => setShowDuplicatesOnly(v => !v)}
+                    className={`text-xs font-mono px-2.5 py-1 rounded border transition-colors ${showDuplicatesOnly ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400' : 'border-stone-200 dark:border-stone-700 text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                  >
+                    {showDuplicatesOnly ? '✓ ' : ''}Show duplicates only ({duplicateObjectIds.size})
                   </button>
                 </div>
               )}
@@ -402,8 +453,13 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">{a.emoji}</div>
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</span>
+                              {duplicateObjectIds.has(a.id) && (
+                                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                  Duplicate
+                                </span>
+                              )}
                               {a.hazard_note && (
                                 <div className="relative group/hz inline-block">
                                   <span className="text-sm cursor-default select-none">⚠️</span>

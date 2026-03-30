@@ -91,7 +91,7 @@ const faqs = [
   {
     question: 'Can I track the value of my collection over time?',
     answer:
-      'Yes. Each item has a valuation field where you can record current estimated value. Vitrine tracks these over time so you can see how your collection\'s total value has changed.',
+      'Yes, on all plans. Each item has fields for purchase price and your own estimated current value. Your dashboard shows total paid vs estimated value across the collection. Professional and above also support formal recorded valuations with date, valuer, method, and supporting documents.',
   },
   {
     question: 'What happens to my data if I cancel?',

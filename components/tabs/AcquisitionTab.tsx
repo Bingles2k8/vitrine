@@ -1,6 +1,6 @@
 'use client'
 
-import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS, CURRENCIES } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS } from '@/components/tabs/shared'
 import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface AcquisitionTabProps {
@@ -138,20 +138,6 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           </div>
         </div>
 
-        {(form.acquisition_method === 'Purchase' || form.acquisition_method === 'Exchange' || form.acquisition_method === 'Bequest') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Purchase Price / Agreed Value</label>
-              <input type="number" step="0.01" min="0" value={form.acquisition_value || ''} onChange={e => set('acquisition_value', e.target.value ? parseFloat(e.target.value) : '')} placeholder="0.00" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Currency</label>
-              <select value={form.acquisition_currency || 'GBP'} onChange={e => set('acquisition_currency', e.target.value)} className={inputCls}>
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
 
         <div>
           <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">

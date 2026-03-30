@@ -17,9 +17,12 @@ interface ValuationTabProps {
   supabase: any
   logActivity: (actionType: string, description: string) => Promise<void>
   setLatestValuation: (v: any) => void
+  form: Record<string, any>
+  set: (field: string, value: any) => void
+  saving: boolean
 }
 
-export default function ValuationTab({ canEdit, object, museum, supabase, logActivity, setLatestValuation }: ValuationTabProps) {
+export default function ValuationTab({ canEdit, object, museum, supabase, logActivity, setLatestValuation, form, set, saving }: ValuationTabProps) {
   const [valuations, setValuations] = useState<any[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
@@ -70,9 +73,61 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
 
   return (
     <>
+      {/* Purchase Price */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+        <div className={sectionTitle}>Purchase Price</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <label className={labelCls}>Value</label>
+            <input type="number" step="0.01" min="0" value={form.acquisition_value}
+              onChange={e => set('acquisition_value', e.target.value)}
+              placeholder="0.00" className={inputCls} disabled={!canEdit || saving} />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">What you paid, or the agreed value at acquisition.</p>
+          </div>
+          <div>
+            <label className={labelCls}>Currency</label>
+            <select value={form.acquisition_currency} onChange={e => set('acquisition_currency', e.target.value)} className={inputCls} disabled={!canEdit || saving}>
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        {canEdit && (
+          <button type="submit" disabled={saving}
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            {saving ? 'Saving\u2026' : 'Save \u2192'}
+          </button>
+        )}
+      </div>
+
+      {/* Estimated Current Value */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+        <div className={sectionTitle}>Estimated Current Value</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <label className={labelCls}>Estimated value</label>
+            <input type="number" step="0.01" min="0" value={form.estimated_value}
+              onChange={e => set('estimated_value', e.target.value)}
+              placeholder="0.00" className={inputCls} disabled={!canEdit || saving} />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Your own estimate — update it any time. <span className="italic">(Internal — never shown publicly.)</span></p>
+          </div>
+          <div>
+            <label className={labelCls}>Currency</label>
+            <select value={form.estimated_value_currency} onChange={e => set('estimated_value_currency', e.target.value)} className={inputCls} disabled={!canEdit || saving}>
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        {canEdit && (
+          <button type="submit" disabled={saving}
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            {saving ? 'Saving\u2026' : 'Save \u2192'}
+          </button>
+        )}
+      </div>
+
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Record Valuation</div>
+          <div className={sectionTitle}>Official Recorded Valuation</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="col-span-2">
               <label className={labelCls}>Value <span className="text-red-400">*</span></label>

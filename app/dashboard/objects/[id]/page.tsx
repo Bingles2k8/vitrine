@@ -21,6 +21,7 @@ import RightsTab from '@/components/tabs/RightsTab'
 import AuditTab from '@/components/tabs/AuditTab'
 import ValuationTab from '@/components/tabs/ValuationTab'
 import RiskTab from '@/components/tabs/RiskTab'
+import DuplicateSearchModal from '@/components/DuplicateSearchModal'
 import DamageTab from '@/components/tabs/DamageTab'
 import ExitsTab from '@/components/tabs/ExitsTab'
 import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
@@ -41,7 +42,7 @@ const TABS = [
   { id: 'exits',        label: 'Exits' },
 ]
 
-const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition']
+const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition', 'valuation']
 
 export default function ObjectDetail() {
   const [object, setObject] = useState<any>(null)
@@ -53,6 +54,8 @@ export default function ObjectDetail() {
   const [deleting, setDeleting] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
   const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+  const [linkedDuplicates, setLinkedDuplicates] = useState<any[]>([])
   const { toast } = useToast()
   const router = useRouter()
   const params = useParams()
@@ -100,6 +103,7 @@ export default function ObjectDetail() {
     is_featured: false,
     acquisition_justification: '', acquisition_documentation_ref: '',
     acquisition_value: '', acquisition_currency: 'GBP',
+    estimated_value: '', estimated_value_currency: 'GBP',
     category: '',
   })
 
@@ -209,15 +213,21 @@ export default function ObjectDetail() {
         acquisition_documentation_ref: object.acquisition_documentation_ref || '',
         acquisition_value: object.acquisition_value ?? '',
         acquisition_currency: object.acquisition_currency || 'GBP',
+        estimated_value: object.estimated_value ?? '',
+        estimated_value_currency: object.estimated_value_currency || 'GBP',
         category: object.category || '',
       })
-      const [{ data: lv }, { data: locs }] = await Promise.all([
+      const [{ data: lv }, { data: locs }, { data: dupes }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
           .eq('object_id', object.id).order('valuation_date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('locations').select('*').eq('museum_id', museum.id).eq('status', 'Active').order('name'),
+        supabase.from('object_duplicates')
+          .select('id, duplicate_of_id, objects!object_duplicates_duplicate_of_id_fkey(id, title, emoji)')
+          .eq('object_id', object.id).eq('museum_id', museum.id),
       ])
       setLatestValuation(lv || null)
       setLocations(locs || [])
+      setLinkedDuplicates(dupes || [])
       setLoading(false)
     }
     load()
@@ -256,6 +266,7 @@ export default function ObjectDetail() {
       // Insurance & acquisition value
       insured_value: formToSave.insured_value ? parseFloat(formToSave.insured_value) : null,
       acquisition_value: formToSave.acquisition_value ? parseFloat(formToSave.acquisition_value) : null,
+      estimated_value: formToSave.estimated_value ? parseFloat(formToSave.estimated_value) : null,
     }).eq('id', params.id)
 
     if (error) { toast(error.message, 'error') } else {
@@ -328,6 +339,16 @@ export default function ObjectDetail() {
     })
   }
 
+  async function handleUnlinkDuplicate(duplicateObjectId: string) {
+    const res = await fetch(`/api/objects/${params.id}/duplicates/${duplicateObjectId}`, { method: 'DELETE' })
+    if (res.ok) {
+      setLinkedDuplicates(prev => prev.filter(d => d.duplicate_of_id !== duplicateObjectId))
+      toast('Duplicate link removed')
+    } else {
+      toast('Failed to unlink', 'error')
+    }
+  }
+
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const fullMode = getPlan(museum?.plan).fullMode
 
@@ -381,6 +402,12 @@ export default function ObjectDetail() {
               </button>
             )}
             {canEdit && (
+              <button onClick={() => setDuplicateModalOpen(true)}
+                className="hidden sm:inline text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                Link duplicate
+              </button>
+            )}
+            {canEdit && (
               <button onClick={handleDelete} disabled={deleting}
                 className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
                 {deleting ? 'Moving…' : 'Move to bin'}
@@ -409,6 +436,37 @@ export default function ObjectDetail() {
           {!canEdit && (
             <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
               View only — contact an Editor or Admin to make changes.
+            </div>
+          )}
+
+          {/* Duplicate links */}
+          {linkedDuplicates.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {linkedDuplicates.map(d => {
+                const linked = d.objects as any
+                return (
+                  <div key={d.id} className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded px-3 py-1.5 text-xs">
+                    <span className="text-amber-600 dark:text-amber-400 font-mono">Duplicate of:</span>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/dashboard/objects/${linked.id}`)}
+                      className="text-amber-700 dark:text-amber-300 hover:underline font-medium"
+                    >
+                      {linked.emoji} {linked.title}
+                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => handleUnlinkDuplicate(d.duplicate_of_id)}
+                        className="ml-1 text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 leading-none"
+                        title="Unlink"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
 
@@ -449,7 +507,7 @@ export default function ObjectDetail() {
           )}
 
           {activeTab === 'valuation' && (
-            <ValuationTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} setLatestValuation={setLatestValuation} />
+            <ValuationTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} setLatestValuation={setLatestValuation} form={form} set={set} saving={saving} />
           )}
 
           {activeTab === 'risk' && (
@@ -513,6 +571,22 @@ export default function ObjectDetail() {
             object={{ id: params.id as string, title: form.title, accession_no: form.accession_no, show_on_site: form.show_on_site }}
             museum={{ slug: museum.slug, name: museum.name }}
             onClose={() => setQrModalOpen(false)}
+          />
+        )}
+        {duplicateModalOpen && museum && (
+          <DuplicateSearchModal
+            objectId={params.id as string}
+            museumId={museum.id}
+            existingDuplicateIds={linkedDuplicates.map(d => d.duplicate_of_id)}
+            onClose={() => setDuplicateModalOpen(false)}
+            onLinked={(linked) => {
+              setLinkedDuplicates(prev => [...prev, {
+                id: `${params.id}-${linked.id}`,
+                duplicate_of_id: linked.id,
+                objects: linked,
+              }])
+              setDuplicateModalOpen(false)
+            }}
           />
         )}
     </DashboardShell>

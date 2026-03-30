@@ -32,6 +32,10 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const distinctCategories = new Set(allObjects.map((o: any) => o.medium).filter(Boolean)).size
   const distinctOrigins = new Set(allObjects.map((o: any) => o.culture).filter(Boolean)).size
 
+  const totalEstimatedValue = allObjects.reduce((sum: number, o: any) => sum + (o.estimated_value ? parseFloat(o.estimated_value) : 0), 0)
+  const valueCurrency = allObjects.find((o: any) => o.estimated_value_currency)?.estimated_value_currency || 'GBP'
+  const showValueBadge = museum.show_collection_value && totalEstimatedValue > 0
+
   const isPaid = getPlan(museum.plan).advancedCustomisation
   const isFullMode = getPlan(museum.plan).fullMode
   const { data: featuredObjects } = isPaid ? await supabase
@@ -58,8 +62,12 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     card_metadata: museum.card_metadata || tmpl.card_metadata,
   }
 
+  const formattedValue = showValueBadge
+    ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: valueCurrency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalEstimatedValue)
+    : null
+
   const statsLine = allObjects.length > 0 && (
-    <div className="max-w-6xl mx-auto px-6 pt-8">
+    <div className="max-w-6xl mx-auto px-6 pt-8 flex flex-wrap items-center gap-4">
       <p className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.5)' }}>
         {[
           `${allObjects.length} pieces`,
@@ -68,6 +76,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           museum.collecting_since ? `Since ${museum.collecting_since}` : null,
         ].filter(Boolean).join(' · ')}
       </p>
+      {showValueBadge && (
+        <span className="text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+          Collection value: approx. {formattedValue}
+        </span>
+      )}
     </div>
   )
 
