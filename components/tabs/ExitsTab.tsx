@@ -20,9 +20,10 @@ const TRANSPORT_METHODS = ['Hand carry', 'Courier', 'Post / carrier', 'Museum tr
 
 export default function ExitsTab({ canEdit, object, museum, supabase, logActivity }: ExitsTabProps) {
   const [exitHistory, setExitHistory] = useState<any[]>([])
+  const [activeLoans, setActiveLoans] = useState<any[]>([])
   const [exitLoaded, setExitLoaded] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
-  const [exitForm, setExitForm] = useState({ exit_date: today, exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
+  const [exitForm, setExitForm] = useState({ exit_date: today, exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' })
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
@@ -32,13 +33,15 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
   useEffect(() => {
     supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
       .then(({ data }: any) => { setExitHistory(data || []); setExitLoaded(true) })
+    supabase.from('loans').select('id, loan_number, direction, borrowing_institution').eq('object_id', object.id).in('status', ['Requested', 'Agreed', 'Active'])
+      .then(({ data }: any) => setActiveLoans(data || []))
   }, [object.id])
 
   async function addExit() {
     if (!exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
-    const exitNumber = `EX-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
+    const exitNumber = `OE-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
     const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
     const { error } = await supabase.from('object_exits').insert({
       museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
@@ -53,8 +56,20 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       signed_receipt_date: exitForm.signed_receipt ? (exitForm.signed_receipt_date || today) : null,
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
       exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
+      related_loan_id: exitForm.related_loan_id || null,
     })
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+
+    // Spectrum 3 & 6: update object's current location and log movement on exit
+    const newLocation = exitForm.destination_address?.trim() || 'Off-site'
+    await supabase.from('objects').update({ current_location: newLocation }).eq('id', object.id)
+    await supabase.from('location_history').insert({
+      museum_id: museum.id, object_id: object.id,
+      location: newLocation, moved_by: exitForm.exit_authorised_by,
+      reason: exitForm.exit_reason, move_type: isTemp ? 'Temporary' : 'Permanent',
+      expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
+    })
+
     if (stagedDocs.length > 0) {
       const newRecord = await supabase.from('object_exits').select('id').eq('exit_number', exitNumber).single()
       if (newRecord.data) {
@@ -63,7 +78,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
         setStagedDocs([])
       }
     }
-    setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '' })
+    setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' })
     const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
     setExitHistory(data || [])
     logActivity('exit_created', `Exit record ${exitNumber} created for "${object.title}" (${exitForm.exit_reason})`)
@@ -153,6 +168,17 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
             <label className={labelCls}>Notes</label>
             <textarea rows={2} value={exitForm.notes} onChange={e => setExitForm(f => ({ ...f, notes: e.target.value }))} className={`${inputCls} resize-none`} />
           </div>
+          {activeLoans.length > 0 && (
+            <div>
+              <label className={labelCls}>Linked Loan <span className="text-stone-400 font-normal normal-case text-xs">(optional)</span></label>
+              <select value={exitForm.related_loan_id} onChange={e => setExitForm(f => ({ ...f, related_loan_id: e.target.value }))} className={inputCls}>
+                <option value="">— None —</option>
+                {activeLoans.map(l => (
+                  <option key={l.id} value={l.id}>{l.loan_number} — Loan {l.direction} to {l.borrowing_institution}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {canAttach && (
             <div>
               <label className={labelCls}>Supporting Documents</label>

@@ -105,6 +105,15 @@ export default function ObjectDetail() {
     acquisition_value: '', acquisition_currency: 'GBP',
     estimated_value: '', estimated_value_currency: 'GBP',
     category: '',
+    // Gap 2: Accession distinction
+    formally_accessioned: true,
+    non_accession_reason: '',
+    // Gap 5: Cataloguing attribution
+    record_source: '', attributed_to: '', attribution_notes: '', record_completeness: '',
+    // Proc 5 visual description fields
+    colour: '', shape: '', surface_treatment: '',
+    other_names: '', provenance_date_range: '', field_collection_info: '',
+    rarity: '',
   })
 
   useEffect(() => {
@@ -216,6 +225,22 @@ export default function ObjectDetail() {
         estimated_value: object.estimated_value ?? '',
         estimated_value_currency: object.estimated_value_currency || 'GBP',
         category: object.category || '',
+        // Gap 2: Accession distinction
+        formally_accessioned: object.formally_accessioned ?? true,
+        non_accession_reason: object.non_accession_reason || '',
+        // Gap 5: Cataloguing attribution
+        record_source: object.record_source || '',
+        attributed_to: object.attributed_to || '',
+        attribution_notes: object.attribution_notes || '',
+        record_completeness: object.record_completeness || '',
+        // Proc 5 visual description fields
+        colour: object.colour || '',
+        shape: object.shape || '',
+        surface_treatment: object.surface_treatment || '',
+        other_names: object.other_names || '',
+        provenance_date_range: object.provenance_date_range || '',
+        field_collection_info: object.field_collection_info || '',
+        rarity: object.rarity || '',
       })
       const [{ data: lv }, { data: locs }, { data: dupes }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')

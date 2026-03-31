@@ -148,7 +148,37 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
               {COPYRIGHT_OPTIONS.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
+          <div>
+            <label className={labelCls}>Rights Type</label>
+            <select value={form.rights_type || ''} onChange={e => set('rights_type', e.target.value)} className={inputCls} disabled={!canEdit}>
+              <option value="">— Select —</option>
+              {RIGHTS_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} disabled={!canEdit} /></div>
+          <div><label className={labelCls}>Rights Holder Contact</label><input value={form.rights_holder_contact || ''} onChange={e => set('rights_holder_contact', e.target.value)} placeholder="Email or postal address" className={inputCls} disabled={!canEdit} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Rights Expiry Date</label>
+            <input type="date" value={form.rights_expiry_date || ''} onChange={e => set('rights_expiry_date', e.target.value)} className={inputCls} disabled={!canEdit} />
+          </div>
+          <div>
+            <label className={labelCls}>Licence Type / Terms</label>
+            <input value={form.licence_type_terms || ''} onChange={e => set('licence_type_terms', e.target.value)} placeholder="e.g. CC BY-NC 4.0, All rights reserved" className={inputCls} disabled={!canEdit} />
+          </div>
+        </div>
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+            <input type="checkbox" checked={!!form.rights_in_obtained} onChange={e => set('rights_in_obtained', e.target.checked)} disabled={!canEdit} className="rounded border-stone-300" />
+            Rights In obtained (museum holds licence)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+            <input type="checkbox" checked={!!form.rights_out_granted} onChange={e => set('rights_out_granted', e.target.checked)} disabled={!canEdit} className="rounded border-stone-300" />
+            Rights Out granted (licensed to others)
+          </label>
         </div>
         <div>
           <label className={labelCls}>Use &amp; Reproduction Restrictions</label>

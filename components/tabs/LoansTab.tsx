@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, INSURANCE_TYPES, LOAN_STATUSES } from '@/components/tabs/shared'
 import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
@@ -24,7 +24,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   const searchParams = useSearchParams()
   const [loanHistory, setLoanHistory] = useState<any[]>([])
   const [loanLoaded, setLoanLoaded] = useState(false)
-  const [loanForm, setLoanForm] = useState({ direction: searchParams.get('direction') === 'In' ? 'In' : 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
+  const [loanForm, setLoanForm] = useState({ direction: searchParams.get('direction') === 'In' ? 'In' : 'Out', status: 'Requested', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
@@ -48,16 +48,18 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
     setSubmitting(true)
     const year = new Date().getFullYear()
     const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
-    const { data: newLoan, error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null }).select('id').single()
+    const { data: newLoan, error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, status: loanForm.status || 'Requested', loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null }).select('id').single()
     if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
-    await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
-    set('status', 'On Loan')
+    if (loanForm.status === 'Active') {
+      await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
+      set('status', 'On Loan')
+    }
     if (stagedDocs.length > 0) {
       const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'loan', newLoan.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }
-    setLoanForm({ direction: 'Out', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
+    setLoanForm({ direction: 'Out', status: 'Requested', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
     const { data } = await supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setLoanHistory(data || [])
     router.refresh()
@@ -111,6 +113,17 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           </div>
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{loanForm.direction === 'Out' ? 'We lend this object to another institution' : 'Another institution lends this object to us'}</p>
         </div>
+        <div>
+          <label className={labelCls}>Status</label>
+          <div className="flex gap-2 flex-wrap">
+            {LOAN_STATUSES.filter(s => s !== 'Cancelled' && s !== 'Returned').map(s => (
+              <button key={s} type="button" onClick={() => setLoanForm(f => ({ ...f, status: s }))}
+                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${loanForm.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Institution *</label><input value={loanForm.borrowing_institution} onChange={e => setLoanForm(f => ({ ...f, borrowing_institution: e.target.value }))} className={inputCls} /></div>
           <div><label className={labelCls}>Contact Name</label><input value={loanForm.contact_name} onChange={e => setLoanForm(f => ({ ...f, contact_name: e.target.value }))} className={inputCls} /></div>
@@ -160,6 +173,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
         </div>
         <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
         <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
+        <div><label className={labelCls}>Purpose of Loan</label><textarea value={loanForm.purpose} onChange={e => setLoanForm(f => ({ ...f, purpose: e.target.value }))} rows={2} placeholder="e.g. Exhibition loan for summer 2026 display" className={`${inputCls} resize-none`} /></div>
         {canAttach && (
           <div>
             <label className={labelCls}>Supporting Documents</label>
@@ -194,7 +208,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.borrowing_institution}</div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs font-mono px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">Loan {selectedRecord.direction}</span>
-                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${selectedRecord.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : selectedRecord.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{selectedRecord.status}</span>
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${selectedRecord.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : selectedRecord.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : selectedRecord.status === 'Agreed' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400' : selectedRecord.status === 'Cancelled' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{selectedRecord.status}</span>
                   {selectedRecord.loan_number && <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{selectedRecord.loan_number}</span>}
                 </div>
               </div>
@@ -331,11 +345,17 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                       {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{l.status}</span>
+                      <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : l.status === 'Agreed' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400' : l.status === 'Cancelled' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{l.status}</span>
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
-                        {l.status === 'Active' && (
+                        {canEdit && l.status === 'Requested' && (
+                          <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Agreed' }).eq('id', l.id); setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Agreed' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Agreed →</button>
+                        )}
+                        {canEdit && l.status === 'Agreed' && (
+                          <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Active' }).eq('id', l.id); await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id); set('status', 'On Loan'); setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Active' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Active →</button>
+                        )}
+                        {canEdit && l.status === 'Active' && (
                           endingLoanId === l.id
                             ? <button type="button" onClick={() => setEndingLoanId(null)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
                             : <button type="button" onClick={() => promptEndLoan(l.id)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">End loan →</button>

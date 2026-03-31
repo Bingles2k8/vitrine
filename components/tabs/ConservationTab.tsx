@@ -8,6 +8,7 @@ import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 import AutocompleteInput from '@/components/AutocompleteInput'
+import ImageUpload from '@/components/ImageUpload'
 
 interface ConservationTabProps {
   form: Record<string, any>
@@ -27,7 +28,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   const [conservationForm, setConservationForm] = useState({
     treatment_type: '', other_treatment_type: '', conservator: '',
     start_date: '', end_date: '', description: '', condition_description: '',
-    outcome: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '',
+    materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '',
+    before_image_url: '', after_image_url: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [selectedTreatment, setSelectedTreatment] = useState<any>(null)
@@ -62,6 +64,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null,
       cost_currency: conservationForm.cost_currency || null,
       recommendation_future: conservationForm.recommendation_future || null,
+      before_image_url: conservationForm.before_image_url || null,
+      after_image_url: conservationForm.after_image_url || null,
       object_id: object.id,
       museum_id: museum.id,
       treatment_reference: treatmentRef,
@@ -74,7 +78,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }
-    setConservationForm({ treatment_type: '', other_treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', condition_description: '', outcome: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '' })
+    setConservationForm({ treatment_type: '', other_treatment_type: '', conservator: '', start_date: '', end_date: '', description: '', condition_description: '', materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '', before_image_url: '', after_image_url: '' })
     const { data } = await supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setConservationHistory(data || [])
     logActivity('conservation_added', `Added ${effectiveType} treatment`)
@@ -145,6 +149,17 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         <div>
           <label className={labelCls}>Condition Description</label>
           <textarea value={conservationForm.condition_description} onChange={e => setConservationForm(f => ({ ...f, condition_description: e.target.value }))} rows={2} placeholder="Condition of object at time of treatment..." className={`${inputCls} resize-none`} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Before Image</label>
+            <ImageUpload currentUrl={conservationForm.before_image_url} onUpload={url => setConservationForm(f => ({ ...f, before_image_url: url }))} />
+          </div>
+          <div>
+            <label className={labelCls}>After Image</label>
+            <ImageUpload currentUrl={conservationForm.after_image_url} onUpload={url => setConservationForm(f => ({ ...f, after_image_url: url }))} />
+          </div>
         </div>
 
         <div>
@@ -296,6 +311,22 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Condition Description</div>
                   <div className="text-sm text-stone-700 dark:text-stone-300">{selectedTreatment.condition_before}</div>
+                </div>
+              )}
+              {(selectedTreatment.before_image_url || selectedTreatment.after_image_url) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedTreatment.before_image_url && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Before</div>
+                      <img src={selectedTreatment.before_image_url} alt="Before treatment" className="w-full rounded border border-stone-200 dark:border-stone-700 object-cover" />
+                    </div>
+                  )}
+                  {selectedTreatment.after_image_url && (
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">After</div>
+                      <img src={selectedTreatment.after_image_url} alt="After treatment" className="w-full rounded border border-stone-200 dark:border-stone-700 object-cover" />
+                    </div>
+                  )}
                 </div>
               )}
               {selectedTreatment.description && (

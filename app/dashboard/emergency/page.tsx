@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -9,6 +9,12 @@ import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
 
 const PLAN_TYPES = ['General', 'Fire', 'Flood', 'Theft', 'Pest', 'Environmental', 'Structural']
+const EVENT_TYPES = ['Fire', 'Flood', 'Theft', 'Vandalism', 'Pest', 'Environmental Incident', 'Structural Damage', 'Power Failure', 'Water Damage', 'Other']
+
+const EMPTY_EVENT = {
+  event_reference: '', event_type: 'Fire', event_date: '', plan_id: '',
+  description: '', response_taken: '', damage_summary: '', lessons_learned: '', status: 'Open', notes: '',
+}
 
 const STATUS_STYLES: Record<string, string> = {
   Draft:            'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400',
@@ -29,11 +35,20 @@ export default function EmergencyPage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [plans, setPlans] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [allObjects, setAllObjects] = useState<any[]>([])
+  const [eventObjects, setEventObjects] = useState<Record<string, any[]>>({})
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
+  const [objectPickerEventId, setObjectPickerEventId] = useState<string | null>(null)
+  const [objectSearchQ, setObjectSearchQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Draft' | 'Active' | 'Under Review' | 'Archived'>('All')
   const [showForm, setShowForm] = useState(false)
+  const [showEventForm, setShowEventForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [eventForm, setEventForm] = useState(EMPTY_EVENT)
   const [saving, setSaving] = useState(false)
+  const [savingEvent, setSavingEvent] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -44,15 +59,25 @@ export default function EmergencyPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: plans } = await supabase
-        .from('emergency_plans')
-        .select('*')
-        .eq('museum_id', museum.id)
-        .order('created_at', { ascending: false })
+      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }] = await Promise.all([
+        supabase.from('emergency_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false }),
+        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
+        supabase.from('emergency_event_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
+      ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setPlans(plans || [])
+      setEvents(evts || [])
+      setAllObjects(objs || [])
+      // build map: event_id → [object records]
+      const map: Record<string, any[]> = {}
+      for (const link of (eoLinks || [])) {
+        if (!map[link.event_id]) map[link.event_id] = []
+        map[link.event_id].push(link)
+      }
+      setEventObjects(map)
       setLoading(false)
     }
     load()
@@ -86,6 +111,36 @@ export default function EmergencyPage() {
   async function updateStatus(id: string, status: string) {
     await supabase.from('emergency_plans').update({ status }).eq('id', id)
     setPlans(p => p.map(x => x.id === id ? { ...x, status } : x))
+  }
+
+  async function addEvent() {
+    if (!eventForm.event_reference || !eventForm.event_date || !eventForm.description) return
+    setSavingEvent(true)
+    await supabase.from('emergency_events').insert({
+      ...eventForm,
+      plan_id: eventForm.plan_id || null,
+      response_taken: eventForm.response_taken || null,
+      damage_summary: eventForm.damage_summary || null,
+      lessons_learned: eventForm.lessons_learned || null,
+      notes: eventForm.notes || null,
+      museum_id: museum.id,
+    })
+    const { data } = await supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false })
+    setEvents(data || [])
+    setEventForm(EMPTY_EVENT)
+    setShowEventForm(false)
+    setSavingEvent(false)
+  }
+
+  async function addObjectToEvent(eventId: string, objectId: string) {
+    await supabase.from('emergency_event_objects').insert({ event_id: eventId, object_id: objectId, museum_id: museum.id })
+    const obj = allObjects.find(o => o.id === objectId)
+    if (obj) setEventObjects(m => ({ ...m, [eventId]: [...(m[eventId] || []), { event_id: eventId, object_id: objectId, objects: obj }] }))
+  }
+
+  async function removeObjectFromEvent(eventId: string, objectId: string) {
+    await supabase.from('emergency_event_objects').delete().eq('event_id', eventId).eq('object_id', objectId)
+    setEventObjects(m => ({ ...m, [eventId]: (m[eventId] || []).filter(l => l.object_id !== objectId) }))
   }
 
   if (loading) return (
@@ -135,6 +190,168 @@ export default function EmergencyPage() {
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
+          {/* Emergency Events */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Emergency Events</h2>
+              {canEdit && (
+                <button onClick={() => setShowEventForm(s => !s)}
+                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                  {showEventForm ? 'Cancel' : '+ Log event'}
+                </button>
+              )}
+            </div>
+
+            {showEventForm && canEdit && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+                <div className="text-sm font-mono text-stone-500 dark:text-stone-400">Log emergency event</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Reference *</label>
+                    <input value={eventForm.event_reference} onChange={e => setEventForm(f => ({ ...f, event_reference: e.target.value }))} placeholder="e.g. EVT-2026-001" className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Event Type *</label>
+                    <select value={eventForm.event_type} onChange={e => setEventForm(f => ({ ...f, event_type: e.target.value }))} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400">
+                      {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Event Date *</label>
+                    <input type="date" value={eventForm.event_date} onChange={e => setEventForm(f => ({ ...f, event_date: e.target.value }))} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Description *</label>
+                  <textarea value={eventForm.description} onChange={e => setEventForm(f => ({ ...f, description: e.target.value }))} rows={2} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Response Taken</label>
+                    <textarea value={eventForm.response_taken} onChange={e => setEventForm(f => ({ ...f, response_taken: e.target.value }))} rows={2} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Damage Summary</label>
+                    <textarea value={eventForm.damage_summary} onChange={e => setEventForm(f => ({ ...f, damage_summary: e.target.value }))} rows={2} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Lessons Learned</label>
+                  <textarea value={eventForm.lessons_learned} onChange={e => setEventForm(f => ({ ...f, lessons_learned: e.target.value }))} rows={2} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Linked Plan</label>
+                    <select value={eventForm.plan_id} onChange={e => setEventForm(f => ({ ...f, plan_id: e.target.value }))} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400">
+                      <option value="">— None —</option>
+                      {plans.map(p => <option key={p.id} value={p.id}>{p.plan_title}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Status</label>
+                    <select value={eventForm.status} onChange={e => setEventForm(f => ({ ...f, status: e.target.value }))} className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400">
+                      {['Open', 'Under Investigation', 'Resolved', 'Closed'].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button onClick={addEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
+                    className="px-4 py-2 text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                    {savingEvent ? 'Saving…' : 'Log event'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {events.length > 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Event</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
+                      <th className="px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map(ev => {
+                      const affectedObjects = eventObjects[ev.id] || []
+                      const isExpanded = expandedEventId === ev.id
+                      const showPicker = objectPickerEventId === ev.id
+                      const filteredObjs = allObjects.filter(o => {
+                        const already = affectedObjects.some(a => a.object_id === o.id)
+                        if (already) return false
+                        if (!objectSearchQ) return true
+                        return o.title?.toLowerCase().includes(objectSearchQ.toLowerCase()) || o.accession_no?.toLowerCase().includes(objectSearchQ.toLowerCase())
+                      })
+                      return (
+                        <Fragment key={ev.id}>
+                          <tr className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : ev.id)}>
+                            <td className="px-6 py-3">
+                              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{ev.event_reference}</div>
+                              <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{ev.description}</div>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{ev.event_type}</td>
+                            <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-GB') : '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-mono px-2 py-1 rounded-full ${ev.status === 'Closed' || ev.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : ev.status === 'Open' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{ev.status}</span>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{affectedObjects.length || '—'}</td>
+                            <td className="px-4 py-3 text-right text-xs font-mono text-stone-400">{isExpanded ? '▲' : '▼'}</td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                              <td colSpan={6} className="px-6 py-4 space-y-3">
+                                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Affected Objects</div>
+                                {affectedObjects.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 mb-2">
+                                    {affectedObjects.map(link => (
+                                      <div key={link.object_id} className="flex items-center gap-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded px-2 py-1">
+                                        <span className="text-xs text-stone-700 dark:text-stone-300">{link.objects?.emoji} {link.objects?.title}</span>
+                                        {canEdit && <button type="button" onClick={() => removeObjectFromEvent(ev.id, link.object_id)} className="text-stone-400 hover:text-red-500 ml-1 text-xs">×</button>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {canEdit && (
+                                  showPicker ? (
+                                    <div className="space-y-2">
+                                      <input value={objectSearchQ} onChange={e => setObjectSearchQ(e.target.value)} placeholder="Search objects…" className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none" />
+                                      <div className="max-h-40 overflow-y-auto space-y-1">
+                                        {filteredObjs.slice(0, 20).map(o => (
+                                          <button key={o.id} type="button" onClick={() => { addObjectToEvent(ev.id, o.id); setObjectPickerEventId(null); setObjectSearchQ('') }} className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300">
+                                            {o.emoji} {o.title} {o.accession_no && <span className="text-stone-400 font-mono text-xs ml-1">{o.accession_no}</span>}
+                                          </button>
+                                        ))}
+                                        {filteredObjs.length === 0 && <div className="text-xs text-stone-400 px-3 py-2">No matching objects</div>}
+                                      </div>
+                                      <button type="button" onClick={() => { setObjectPickerEventId(null); setObjectSearchQ('') }} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
+                                    </div>
+                                  ) : (
+                                    <button type="button" onClick={() => { setObjectPickerEventId(ev.id); setObjectSearchQ(''); setExpandedEventId(ev.id) }} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Add affected object</button>
+                                  )
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {events.length === 0 && !showEventForm && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center justify-center py-10 text-center">
+                <p className="text-sm text-stone-400 dark:text-stone-500">No emergency events logged. Use the Log event button to record an incident.</p>
+              </div>
+            )}
+          </div>
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[

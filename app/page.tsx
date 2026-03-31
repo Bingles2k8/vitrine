@@ -154,8 +154,14 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-mono text-stone-600 uppercase tracking-widest text-center mb-8">Designed for institutions of all sizes</p>
           <div className="flex flex-wrap items-center justify-center gap-12">
-            {['National museums','Regional galleries','Local heritage centres','University collections','Independent museums'].map(name => (
-              <span key={name} className="font-serif italic text-stone-600 text-lg">{name}</span>
+            {([
+              ['National museums', '/for/museum-collection-management-software'],
+              ['Regional galleries', '/for/art-collection-app'],
+              ['Local heritage centres', '/for/local-history-society-collection-app'],
+              ['University collections', '/for/university-archive-management'],
+              ['Independent museums', '/for/museum-collection-management-software'],
+            ] as [string, string][]).map(([name, href]) => (
+              <Link key={name} href={href} className="font-serif italic text-stone-600 text-lg hover:text-stone-400 transition-colors">{name}</Link>
             ))}
           </div>
         </div>
@@ -195,6 +201,11 @@ export default function Home() {
             <div>
               <h2 className="font-serif text-4xl italic font-normal mb-3">Want to see it in action?</h2>
               <p className="text-stone-400 font-light max-w-lg">Step-by-step guides that walk you through every feature — from adding your first object to selling tickets for an event.</p>
+              <p className="mt-3 text-sm text-stone-500">
+                Or read the{' '}
+                <Link href="/blog" className="text-amber-400 hover:text-amber-300 transition-colors">Vitrine blog</Link>
+                {' '}for tips, comparisons, and collection management advice.
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

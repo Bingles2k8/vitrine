@@ -151,7 +151,9 @@ export default function LoansPage() {
   }
 
   const today = new Date().toISOString().slice(0, 10)
+  const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const isOverdue = (l: any) => l.status === 'Active' && l.loan_end_date && l.loan_end_date < today
+  const isDueSoon = (l: any) => l.status === 'Active' && l.loan_end_date && l.loan_end_date >= today && l.loan_end_date <= in30Days
 
   const active = loans.filter(l => l.status === 'Active')
   const activeOut = active.filter(l => l.direction === 'Out')
@@ -193,6 +195,32 @@ export default function LoansPage() {
         </div>
 
         <div className="p-4 md:p-8 space-y-6">
+          {/* Due-soon / overdue banners */}
+          {(() => {
+            const overdueLoans = loans.filter(isOverdue)
+            const dueSoonLoans = loans.filter(isDueSoon)
+            return (
+              <>
+                {overdueLoans.length > 0 && (
+                  <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+                    <strong>{overdueLoans.length} overdue loan{overdueLoans.length > 1 ? 's' : ''}</strong> — expected return date has passed:{' '}
+                    {overdueLoans.map((l, i) => (
+                      <span key={l.id}>{i > 0 ? ', ' : ''}<button className="underline" onClick={() => router.push(`/dashboard/objects/${l.object_id}?tab=loans`)}>{l.objects?.title || l.borrowing_institution}</button></span>
+                    ))}
+                  </div>
+                )}
+                {dueSoonLoans.length > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+                    <strong>{dueSoonLoans.length} loan{dueSoonLoans.length > 1 ? 's' : ''} due within 30 days</strong>:{' '}
+                    {dueSoonLoans.map((l, i) => (
+                      <span key={l.id}>{i > 0 ? ', ' : ''}<button className="underline" onClick={() => router.push(`/dashboard/objects/${l.object_id}?tab=loans`)}>{l.objects?.title || l.borrowing_institution}</button> ({new Date(l.loan_end_date).toLocaleDateString('en-GB')})</span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -373,6 +401,8 @@ export default function LoansPage() {
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${
                             l.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' :
                             l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' :
+                            l.status === 'Agreed' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400' :
+                            l.status === 'Cancelled' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400' :
                             'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                           }`}>{l.status}</span>
                         </td>

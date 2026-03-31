@@ -230,6 +230,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             {navItem('/dashboard/conservation', '⚗', 'Conservation')}
             {navItem('/dashboard/audit', '◎', 'Audit & Inventory')}
             {navItem('/dashboard/exits', '↗', 'Object Exit')}
+            {navItem('/dashboard/locations', '◎', 'Location Register')}
             {navItem('/dashboard/valuation', '◈', 'Valuation Register')}
             {navItem('/dashboard/risk', '⚑', 'Risk Register')}
             {navItem('/dashboard/emergency', '⚡', 'Emergency Plans')}

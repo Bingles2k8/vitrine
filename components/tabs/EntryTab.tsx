@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
@@ -17,6 +18,7 @@ interface EntryTabProps {
 
 export default function EntryTab({ object, museum, canEdit, supabase }: EntryTabProps) {
   const { toast } = useToast()
+  const router = useRouter()
   const [entryRecord, setEntryRecord] = useState<any>(null)
   const [entryLoaded, setEntryLoaded] = useState(false)
   const [savingEntry, setSavingEntry] = useState(false)
@@ -44,6 +46,10 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
     entry_method: '',
     scheduled_return_date: '',
     condition_on_entry: '',
+    depositor_signed: false,
+    depositor_signed_date: '',
+    digital_acknowledgement: false,
+    digital_acknowledgement_date: '',
   })
 
   const today = new Date().toISOString().slice(0, 10)
@@ -91,6 +97,10 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           entry_method: data.entry_method || '',
           scheduled_return_date: data.scheduled_return_date || '',
           condition_on_entry: data.condition_on_entry || '',
+          depositor_signed: data.depositor_signed || false,
+          depositor_signed_date: data.depositor_signed_date || '',
+          digital_acknowledgement: data.digital_acknowledgement || false,
+          digital_acknowledgement_date: data.digital_acknowledgement_date || '',
         })
       }
       setEntryLoaded(true)
@@ -287,6 +297,37 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
               )}
             </div>
           </div>
+
+          {/* Signature */}
+          <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
+            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Signature</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                  <input type="checkbox" checked={entryForm.depositor_signed} onChange={e => setE('depositor_signed', e.target.checked)} />
+                  Signed in person
+                </label>
+                {entryForm.depositor_signed && (
+                  <div className="mt-2">
+                    <label className={labelCls}>Signature date</label>
+                    <input type="date" value={entryForm.depositor_signed_date} onChange={e => setE('depositor_signed_date', e.target.value)} className={inputCls} />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                  <input type="checkbox" checked={entryForm.digital_acknowledgement} onChange={e => setE('digital_acknowledgement', e.target.checked)} />
+                  Digital acknowledgement sent
+                </label>
+                {entryForm.digital_acknowledgement && (
+                  <div className="mt-2">
+                    <label className={labelCls}>Acknowledgement date</label>
+                    <input type="date" value={entryForm.digital_acknowledgement_date} onChange={e => setE('digital_acknowledgement_date', e.target.value)} className={inputCls} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -331,11 +372,17 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
 
       {/* Save button */}
       {canEdit && (
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center flex-wrap">
           <button type="button" onClick={saveEntry} disabled={savingEntry}
             className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {savingEntry ? 'Saving…' : 'Save entry record →'}
           </button>
+          {entryRecord && (
+            <button type="button" onClick={() => router.push(`/dashboard/entry/${entryRecord.id}/receipt`)}
+              className="text-sm font-mono border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 px-4 py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+              Print receipt →
+            </button>
+          )}
         </div>
       )}
     </>

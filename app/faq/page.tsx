@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import PublicFooter from '@/components/PublicFooter'
 import PublicNav from '@/components/PublicNav'
@@ -17,7 +18,7 @@ export const metadata = buildPageMetadata({
   ],
 })
 
-const faqs = [
+const faqs: { question: string; answer: React.ReactNode }[] = [
   {
     question: 'What is Vitrine?',
     answer:
@@ -25,8 +26,22 @@ const faqs = [
   },
   {
     question: 'What types of collections can I manage with Vitrine?',
-    answer:
-      'Vitrine supports any type of physical or digital collection. Popular use cases include coins, stamps, trading cards, sports cards, vinyl records, comic books, LEGO sets, toys, books, wine, watches, art, photography, antiques, and museum objects. If you can describe it, you can catalogue it in Vitrine.',
+    answer: (
+      <>
+        Vitrine supports any type of physical or digital collection. Popular use cases include{' '}
+        <Link href="/for/coin-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">coins</Link>,{' '}
+        <Link href="/for/trading-card-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">trading cards</Link>,{' '}
+        <Link href="/for/vinyl-record-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">vinyl records</Link>,{' '}
+        <Link href="/for/book-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">books</Link>,{' '}
+        <Link href="/for/wine-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">wine</Link>,{' '}
+        <Link href="/for/watch-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">watches</Link>,{' '}
+        <Link href="/for/art-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">art</Link>,{' '}
+        <Link href="/for/photography-archive-management" className="text-amber-400 hover:text-amber-300 transition-colors">photography</Link>,{' '}
+        <Link href="/for/antique-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">antiques</Link>, and{' '}
+        <Link href="/for/museum-collection-management-software" className="text-amber-400 hover:text-amber-300 transition-colors">museum objects</Link>.{' '}
+        If you can describe it, you can catalogue it in Vitrine.
+      </>
+    ),
   },
   {
     question: 'How much does Vitrine cost?',
@@ -60,13 +75,22 @@ const faqs = [
   },
   {
     question: 'Is Vitrine suitable for professional museums and galleries?',
-    answer:
-      'Yes. The Professional and Institution plans are designed for organisations that need staff role management, analytics dashboards, event ticketing, compliance and risk tools, conservation records, loans management, and more. The Institution plan mirrors the feature set of much more expensive museum CMS tools, at a fraction of the cost.',
+    answer: (
+      <>
+        Yes. The Professional and Institution plans are designed for organisations that need staff role management, analytics dashboards, event ticketing,{' '}
+        <Link href="/compliance" className="text-amber-400 hover:text-amber-300 transition-colors">compliance and risk tools</Link>,
+        conservation records, loans management, and more. The Institution plan mirrors the feature set of much more expensive museum CMS tools, at a fraction of the cost.
+      </>
+    ),
   },
   {
     question: 'How is Vitrine different from using a spreadsheet?',
-    answer:
-      'Spreadsheets are flexible but lack images, structured fields, access control, a public website, valuation tracking, and audit trails. Vitrine gives you all of these, with a purpose-built interface for collections. It also scales as your collection grows — thousands of items remain just as easy to search and filter as ten.',
+    answer: (
+      <>
+        Spreadsheets are flexible but lack images, structured fields, access control, a public website, valuation tracking, and audit trails. Vitrine gives you all of these, with a purpose-built interface for collections. It also scales as your collection grows — thousands of items remain just as easy to search and filter as ten.{' '}
+        <Link href="/compare/spreadsheet-alternative" className="text-amber-400 hover:text-amber-300 transition-colors">See a detailed comparison →</Link>
+      </>
+    ),
   },
   {
     question: 'Does Vitrine support multiple users and staff roles?',
@@ -85,8 +109,12 @@ const faqs = [
   },
   {
     question: 'Does Vitrine help with insurance documentation?',
-    answer:
-      'Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time.',
+    answer: (
+      <>
+        Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time.{' '}
+        <Link href="/compliance" className="text-amber-400 hover:text-amber-300 transition-colors">See all compliance tools →</Link>
+      </>
+    ),
   },
   {
     question: 'Can I track the value of my collection over time?',
@@ -194,6 +222,12 @@ export default function FAQPage() {
               className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-5 py-2.5 rounded transition-colors"
             >
               Read the guide
+            </Link>
+            <Link
+              href="/blog"
+              className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-5 py-2.5 rounded transition-colors"
+            >
+              Visit the blog
             </Link>
             <Link
               href="/signup"

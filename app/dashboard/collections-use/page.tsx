@@ -30,7 +30,9 @@ export default function CollectionsUsePage() {
     request_date: new Date().toISOString().slice(0, 10),
     use_date_start: '',
     use_date_end: '',
+    location_of_use: '',
     purpose: '',
+    information_generated: '',
     conditions: '',
     approved_by: '',
     notes: '',
@@ -128,6 +130,8 @@ export default function CollectionsUsePage() {
         use_date_start: form.use_date_start || null,
         use_date_end: form.use_date_end || null,
         purpose: form.purpose || null,
+        location_of_use: form.location_of_use || null,
+        information_generated: form.information_generated || null,
         conditions: form.conditions || null,
         approved_by: form.approved_by || null,
         notes: form.notes || null,
@@ -144,7 +148,9 @@ export default function CollectionsUsePage() {
         request_date: new Date().toISOString().slice(0, 10),
         use_date_start: '',
         use_date_end: '',
+        location_of_use: '',
         purpose: '',
+        information_generated: '',
         conditions: '',
         approved_by: '',
         notes: '',
@@ -283,6 +289,28 @@ export default function CollectionsUsePage() {
                 <textarea
                   value={form.purpose}
                   onChange={e => setForm({ ...form, purpose: e.target.value })}
+                  className={inputCls}
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Location of Use</label>
+                <input
+                  type="text"
+                  value={form.location_of_use}
+                  onChange={e => setForm({ ...form, location_of_use: e.target.value })}
+                  placeholder="Where the collection will be accessed or used"
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Information Generated</label>
+                <textarea
+                  value={form.information_generated}
+                  onChange={e => setForm({ ...form, information_generated: e.target.value })}
+                  placeholder="Publications, research outputs, or knowledge generated through this access…"
                   className={inputCls}
                   rows={2}
                 />

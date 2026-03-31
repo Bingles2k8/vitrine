@@ -130,8 +130,24 @@ export default function ForIndex() {
           })}
         </div>
 
+        {/* Also explore */}
+        <div className="mt-12 grid sm:grid-cols-3 gap-4">
+          <Link href="/compare" className="group border border-white/8 rounded-xl p-5 hover:border-white/20 hover:bg-white/3 transition-all">
+            <div className="text-sm font-medium text-white mb-1 group-hover:text-amber-400 transition-colors">Compare alternatives →</div>
+            <p className="text-xs text-stone-500">See how Vitrine stacks up against other collection apps</p>
+          </Link>
+          <Link href="/compliance" className="group border border-white/8 rounded-xl p-5 hover:border-white/20 hover:bg-white/3 transition-all">
+            <div className="text-sm font-medium text-white mb-1 group-hover:text-amber-400 transition-colors">Compliance tools →</div>
+            <p className="text-xs text-stone-500">Professional and institution-grade collection management standards</p>
+          </Link>
+          <Link href="/discover" className="group border border-white/8 rounded-xl p-5 hover:border-white/20 hover:bg-white/3 transition-all">
+            <div className="text-sm font-medium text-white mb-1 group-hover:text-amber-400 transition-colors">Discover collections →</div>
+            <p className="text-xs text-stone-500">Browse public collections from museums and collectors on Vitrine</p>
+          </Link>
+        </div>
+
         {/* CTA */}
-        <section className="mt-16 p-8 border border-white/10 rounded-lg text-center">
+        <section className="mt-8 p-8 border border-white/10 rounded-lg text-center">
           <h2 className="text-2xl font-medium text-white mb-3">
             Don&apos;t see your collection type?
           </h2>

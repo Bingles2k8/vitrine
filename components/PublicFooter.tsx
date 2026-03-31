@@ -8,8 +8,12 @@ export default function PublicFooter() {
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/about" className="hover:text-stone-300 transition-colors">About</Link>
           <Link href="/faq" className="hover:text-stone-300 transition-colors">FAQ</Link>
+          <Link href="/blog" className="hover:text-stone-300 transition-colors">Blog</Link>
+          <Link href="/discover" className="hover:text-stone-300 transition-colors">Discover</Link>
+          <Link href="/guide/essentials" className="hover:text-stone-300 transition-colors">Guide</Link>
           <Link href="/for" className="hover:text-stone-300 transition-colors">Who is Vitrine for?</Link>
           <Link href="/compare" className="hover:text-stone-300 transition-colors">Compare</Link>
+          <Link href="/compliance" className="hover:text-stone-300 transition-colors">Compliance</Link>
           <Link href="/privacy" className="hover:text-stone-300 transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-stone-300 transition-colors">Terms</Link>
         </div>

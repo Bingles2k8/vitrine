@@ -95,11 +95,16 @@ export const MAKER_ROLES = ['Artist', 'Maker', 'Manufacturer', 'Designer', 'Attr
 export const DATE_QUALIFIERS = ['Exact', 'Circa', 'Before', 'After', 'Between']
 export const DIMENSION_UNITS = ['cm', 'mm', 'in', 'm']
 export const WEIGHT_UNITS = ['kg', 'g', 'lb', 'oz']
+export const COLOURS = ['Polychrome', 'Monochrome', 'Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Gold', 'Silver', 'Brown', 'Natural', 'Cream', 'Grey', 'Orange', 'Purple', 'Pink', 'Multi-coloured', 'Other']
+export const SHAPES = ['Rectangular', 'Square', 'Circular', 'Oval', 'Cylindrical', 'Conical', 'Spherical', 'Triangular', 'Irregular', 'Figurative', 'Abstract', 'Other']
 
 // ── Rights constants (Proc 18) ───────────────────────────────────────
 export const RIGHTS_TYPES = ['Copyright', 'Reproduction', 'Moral rights', 'Intellectual property', 'Publication', 'Performance', 'Database rights', 'Other']
 export const RIGHTS_STATUSES = ['Active', 'Expired', 'Under review', 'Disputed', 'Unknown']
 export const REPRODUCTION_TYPES = ['Digital photograph', 'Film scan', 'Photocopy', '3D scan', 'Cast / mould', 'Print', 'Other']
+
+// ── Loan constants (Procs 7 & 8) ────────────────────────────────────
+export const LOAN_STATUSES = ['Requested', 'Agreed', 'Active', 'Returned', 'Cancelled']
 
 export const DAMAGE_SEVERITY_STYLES: Record<string, string> = {
   'Total Loss':  'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -33,6 +33,11 @@ export default function InsurancePage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [policies, setPolicies] = useState<any[]>([])
+  const [allObjects, setAllObjects] = useState<any[]>([])
+  const [policyObjects, setPolicyObjects] = useState<Record<string, any[]>>({})
+  const [expandedPolicyId, setExpandedPolicyId] = useState<string | null>(null)
+  const [objectPickerPolicyId, setObjectPickerPolicyId] = useState<string | null>(null)
+  const [objectSearchQ, setObjectSearchQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Active' | 'Expired' | 'Pending Renewal' | 'Cancelled'>('All')
   const [showForm, setShowForm] = useState(false)
@@ -48,15 +53,22 @@ export default function InsurancePage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: policies } = await supabase
-        .from('insurance_policies')
-        .select('*')
-        .eq('museum_id', museum.id)
-        .order('created_at', { ascending: false })
+      const [{ data: policies }, { data: objs }, { data: poLinks }] = await Promise.all([
+        supabase.from('insurance_policies').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
+        supabase.from('insurance_policy_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
+      ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setPolicies(policies || [])
+      setAllObjects(objs || [])
+      const map: Record<string, any[]> = {}
+      for (const link of (poLinks || [])) {
+        if (!map[link.policy_id]) map[link.policy_id] = []
+        map[link.policy_id].push(link)
+      }
+      setPolicyObjects(map)
       setLoading(false)
     }
     load()
@@ -92,6 +104,17 @@ export default function InsurancePage() {
   async function updateStatus(id: string, status: string) {
     await supabase.from('insurance_policies').update({ status }).eq('id', id)
     setPolicies(p => p.map(x => x.id === id ? { ...x, status } : x))
+  }
+
+  async function addObjectToPolicy(policyId: string, objectId: string) {
+    await supabase.from('insurance_policy_objects').insert({ policy_id: policyId, object_id: objectId, museum_id: museum.id })
+    const obj = allObjects.find(o => o.id === objectId)
+    if (obj) setPolicyObjects(m => ({ ...m, [policyId]: [...(m[policyId] || []), { policy_id: policyId, object_id: objectId, objects: obj }] }))
+  }
+
+  async function removeObjectFromPolicy(policyId: string, objectId: string) {
+    await supabase.from('insurance_policy_objects').delete().eq('policy_id', policyId).eq('object_id', objectId)
+    setPolicyObjects(m => ({ ...m, [policyId]: (m[policyId] || []).filter(l => l.object_id !== objectId) }))
   }
 
   if (loading) return (
@@ -330,6 +353,7 @@ export default function InsurancePage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Coverage</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
                     {canEdit && <th className="px-4 py-3"></th>}
                   </tr>
                 </thead>
@@ -339,8 +363,18 @@ export default function InsurancePage() {
                       const d = (new Date(p.renewal_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
                       return d <= 30 && d >= 0
                     })()
+                    const coveredObjects = policyObjects[p.id] || []
+                    const isExpanded = expandedPolicyId === p.id
+                    const showPicker = objectPickerPolicyId === p.id
+                    const filteredObjs = allObjects.filter(o => {
+                      const already = coveredObjects.some(a => a.object_id === o.id)
+                      if (already) return false
+                      if (!objectSearchQ) return true
+                      return o.title?.toLowerCase().includes(objectSearchQ.toLowerCase()) || o.accession_no?.toLowerCase().includes(objectSearchQ.toLowerCase())
+                    })
                     return (
-                      <tr key={p.id} className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${expiringSoon ? 'bg-amber-50/20' : ''}`}>
+                      <Fragment key={p.id}>
+                      <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${expiringSoon ? 'bg-amber-50/20' : ''}`}>
                         <td className="px-6 py-3">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{p.policy_number}</div>
                           <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{p.coverage_type}</div>
@@ -365,6 +399,12 @@ export default function InsurancePage() {
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[p.status] || STATUS_STYLES.Active}`}>
                             {p.status}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button type="button" onClick={() => setExpandedPolicyId(isExpanded ? null : p.id)}
+                            className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">
+                            {coveredObjects.length} {isExpanded ? '▲' : '▼'}
+                          </button>
                         </td>
                         {canEdit && (
                           <td className="px-4 py-3 text-right">
@@ -391,6 +431,42 @@ export default function InsurancePage() {
                           </td>
                         )}
                       </tr>
+                      {isExpanded && (
+                        <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                          <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 space-y-3">
+                            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Objects Covered</div>
+                            {coveredObjects.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {coveredObjects.map(link => (
+                                  <div key={link.object_id} className="flex items-center gap-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded px-2 py-1">
+                                    <span className="text-xs text-stone-700 dark:text-stone-300">{link.objects?.emoji} {link.objects?.title}</span>
+                                    {canEdit && <button type="button" onClick={() => removeObjectFromPolicy(p.id, link.object_id)} className="text-stone-400 hover:text-red-500 ml-1 text-xs">×</button>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {canEdit && (
+                              showPicker ? (
+                                <div className="space-y-2">
+                                  <input value={objectSearchQ} onChange={e => setObjectSearchQ(e.target.value)} placeholder="Search objects…" className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none" />
+                                  <div className="max-h-40 overflow-y-auto space-y-1">
+                                    {filteredObjs.slice(0, 20).map(o => (
+                                      <button key={o.id} type="button" onClick={() => { addObjectToPolicy(p.id, o.id); setObjectPickerPolicyId(null); setObjectSearchQ('') }} className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300">
+                                        {o.emoji} {o.title} {o.accession_no && <span className="text-stone-400 font-mono text-xs ml-1">{o.accession_no}</span>}
+                                      </button>
+                                    ))}
+                                    {filteredObjs.length === 0 && <div className="text-xs text-stone-400 px-3 py-2">No matching objects</div>}
+                                  </div>
+                                  <button type="button" onClick={() => { setObjectPickerPolicyId(null); setObjectSearchQ('') }} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
+                                </div>
+                              ) : (
+                                <button type="button" onClick={() => { setObjectPickerPolicyId(p.id); setObjectSearchQ('') }} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Add object to policy</button>
+                              )
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     )
                   })}
                 </tbody>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, PRODUCTION_PLACES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, PRODUCTION_PLACES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS, COLOURS, SHAPES } from '@/components/tabs/shared'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageUpload from '@/components/ImageUpload'
@@ -155,6 +155,35 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <div><label className={labelCls}>Number of Parts</label><input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} /></div>
         </div>
 
+        {/* Accession distinction — Spectrum 5.1 Proc 2 */}
+        {getPlan(museum.plan).fullMode && (
+          <div className="space-y-2">
+            <label className={labelCls}>Accession Status</label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: 'Formally accessioned', value: true },
+                { label: 'Not formally accessioned', value: false },
+              ].map(opt => {
+                const isActive = form.formally_accessioned === opt.value || (opt.value === true && form.formally_accessioned == null)
+                return (
+                  <button key={String(opt.value)} type="button" onClick={() => set('formally_accessioned', opt.value)}
+                    className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${isActive ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+            {form.formally_accessioned === false && (
+              <div className="mt-2">
+                <label className={labelCls}>Reason not formally accessioned</label>
+                <textarea value={form.non_accession_reason || ''} onChange={e => set('non_accession_reason', e.target.value)} rows={2}
+                  placeholder="e.g. Found in collection, transferred informally, pre-accession object…"
+                  className={textareaCls} />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Object Components (sub-parts) */}
         {parseInt(form.number_of_parts) > 1 && object?.id && (
           <div>
@@ -237,13 +266,78 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             className={textareaCls} />
         </div>
 
-        {/* Provenance + doc upload */}
+        {/* Other Names — Spectrum 5.1 Proc 5 */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Provenance</label>
-            <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
-              placeholder="Known ownership history prior to acquisition…"
-              className={textareaCls} />
+            <label className={labelCls}>Other Names / Also Known As</label>
+            <input value={form.other_names || ''} onChange={e => set('other_names', e.target.value)}
+              placeholder="Alternative titles, former names, popular names…"
+              className={inputCls} />
+          </div>
+        )}
+
+        {/* Physical Description — Spectrum 5.1 Proc 5 */}
+        {getPlan(museum.plan).fullMode && (
+          <div className="space-y-3">
+            <div className={sectionTitle} style={{marginTop: '0.5rem'}}>Physical Description</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Colour</label>
+                <AutocompleteInput
+                  value={form.colour || ''}
+                  onChange={v => set('colour', v)}
+                  museumId={museum.id}
+                  field="colour"
+                  staticList={COLOURS}
+                  placeholder="e.g. Polychrome, Blue, Gold…"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Shape</label>
+                <AutocompleteInput
+                  value={form.shape || ''}
+                  onChange={v => set('shape', v)}
+                  museumId={museum.id}
+                  field="shape"
+                  staticList={SHAPES}
+                  placeholder="e.g. Rectangular, Cylindrical…"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Surface Treatment</label>
+              <input value={form.surface_treatment || ''} onChange={e => set('surface_treatment', e.target.value)}
+                placeholder="e.g. Glazed, Gilded, Varnished, Patinated…"
+                className={inputCls} />
+            </div>
+          </div>
+        )}
+
+        {/* Provenance + doc upload */}
+        {getPlan(museum.plan).fullMode && (
+          <div className="space-y-3">
+            <div>
+              <label className={labelCls}>Provenance</label>
+              <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
+                placeholder="Known ownership history prior to acquisition…"
+                className={textareaCls} />
+            </div>
+            {form.provenance && (
+              <div>
+                <label className={labelCls}>Provenance Date Range</label>
+                <input value={form.provenance_date_range || ''} onChange={e => set('provenance_date_range', e.target.value)}
+                  placeholder="e.g. 1850–1920, pre-1945"
+                  className={inputCls} />
+              </div>
+            )}
+            <div>
+              <label className={labelCls}>Field Collection Information</label>
+              <textarea value={form.field_collection_info || ''} onChange={e => set('field_collection_info', e.target.value)} rows={2}
+                placeholder="Archaeological site, field collector, collection date, context…"
+                className={textareaCls} />
+            </div>
             {object?.id && museum?.id && (
               <div className="mt-3 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Provenance Documents</div>
@@ -416,6 +510,40 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <div><label className={labelCls}>Associated Organisation</label><input value={form.associated_organisation} onChange={e => set('associated_organisation', e.target.value)} placeholder="e.g. commission, guild" className={inputCls} /></div>
           <div><label className={labelCls}>Associated Place</label><input value={form.associated_place} onChange={e => set('associated_place', e.target.value)} placeholder="e.g. depicted location" className={inputCls} /></div>
         </div>
+
+        {/* Record Attribution — Spectrum 5.1 Proc 5 */}
+        {getPlan(museum.plan).fullMode && (
+          <>
+            <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Record Attribution</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Record Source</label>
+                <input value={form.record_source || ''} onChange={e => set('record_source', e.target.value)}
+                  placeholder="e.g. Donor, Staff, Published catalogue…"
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Record Completeness</label>
+                <select value={form.record_completeness || ''} onChange={e => set('record_completeness', e.target.value)} className={inputCls}>
+                  <option value="">— Select —</option>
+                  {['Minimal', 'Partial', 'Substantial', 'Complete'].map(l => <option key={l}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Attributed To</label>
+              <input value={form.attributed_to || ''} onChange={e => set('attributed_to', e.target.value)}
+                placeholder="Person or organisation responsible for this catalogue record"
+                className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Attribution Notes</label>
+              <textarea value={form.attribution_notes || ''} onChange={e => set('attribution_notes', e.target.value)} rows={2}
+                placeholder="Uncertainty, conflicting sources, research still required…"
+                className={textareaCls} />
+            </div>
+          </>
+        )}
       </div>
 
       {canEdit && <SaveBar saving={saving} onCancel={() => router.push('/dashboard')} />}
