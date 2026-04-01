@@ -65,7 +65,7 @@ const PLAN_DETAILS: Record<PlanId, {
   },
   institution: {
     tagline: 'Built for serious collections.',
-    desc: 'Scale to 100,000 objects, bring your whole team, and get the advanced analytics and priority support that national-level institutions depend on.',
+    desc: 'Scale to 100,000 objects with unlimited staff accounts and 10 GB document storage — built for regional and national collections.',
     ctaHref: '/signup',
     cta: 'Get started →',
     priceDisplay: '£349',
@@ -73,7 +73,7 @@ const PLAN_DETAILS: Record<PlanId, {
   },
   enterprise: {
     tagline: 'No limits. Full service.',
-    desc: 'Unlimited objects, unlimited staff, dedicated support, and custom integrations built around how your institution works. Talk to us about what you need.',
+    desc: 'Unlimited objects, unlimited staff, and unlimited document storage. Talk to us about what you need.',
     ctaHref: '/contact/enterprise',
     cta: 'Contact us →',
     priceDisplay: 'Custom',
@@ -460,7 +460,6 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const hasCompliance = plan.compliance
   const hasTicketing = plan.ticketing
   const hasVisitInfo = plan.visitInfo
-  const hasAdvancedAnalytics = planId === 'institution' || planId === 'enterprise'
   const hasStaff = (plan.staff === null || (plan.staff !== null && plan.staff > 1))
 
   const pageUrl = `${SITE_URL}/plans/${planId}`
@@ -643,28 +642,14 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
           {hasAnalytics && (
             <FeatureSection
               label="Analytics"
-              title={hasAdvancedAnalytics ? 'Deep insight into your audience.' : 'Understand who visits your site.'}
-              desc={
-                hasAdvancedAnalytics
-                  ? 'Advanced analytics give you page-level traffic, object popularity, traffic source breakdowns, and trend data over time — everything you need to make informed decisions.'
-                  : 'See how many people are visiting your collection site, which objects are most popular, and how your audience is growing week on week.'
-              }
-              bullets={
-                hasAdvancedAnalytics
-                  ? [
-                      'Page views and unique visitors',
-                      'Per-object popularity rankings',
-                      'Traffic source breakdown',
-                      'Weekly and monthly trend charts',
-                      'Exportable reports',
-                    ]
-                  : [
-                      'Page views and visitor counts',
-                      'Most-viewed objects',
-                      'Weekly trend charts',
-                    ]
-              }
-              mockup={<AnalyticsMockup advanced={hasAdvancedAnalytics} />}
+              title="Understand who visits your site."
+              desc="See how many people are visiting your collection site, which objects are most popular, and how your audience is growing week on week."
+              bullets={[
+                'Page views and visitor counts',
+                'Most-viewed objects',
+                'Weekly trend charts',
+              ]}
+              mockup={<AnalyticsMockup advanced={false} />}
               flip={hasCompliance}
             />
           )}

@@ -423,7 +423,7 @@ export default function PlanPage() {
                   { label: 'Collections compliance tools', values: [false, false, true, true, true] },
                   { label: 'Analytics', values: [false, false, true, true, true] },
                   { label: 'Staff management', values: [false, false, true, true, true] },
-                  { label: 'Priority support', values: [false, false, false, true, true] },
+                  { label: 'Event ticketing', values: [false, false, true, true, true] },
                   { label: 'Document storage', values: ['—', '—', '1 GB', '10 GB', 'Unlimited'] },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">

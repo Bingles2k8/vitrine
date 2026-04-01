@@ -27,7 +27,7 @@ const breadcrumbSchema = {
   ],
 }
 
-type Tier = 'professional' | 'institution' | 'split'
+type Tier = 'professional'
 
 interface Procedure {
   id: number
@@ -126,7 +126,7 @@ const PRIMARY: Procedure[] = [
     location: 'Audit dashboard → inventory statistics and object grid',
     dashboardLink: '/dashboard/audit',
     dashboardLabel: 'Audit & Inventory',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 5,
@@ -154,10 +154,10 @@ const PRIMARY: Procedure[] = [
       'Attribution notes',
       'Record completeness level',
     ],
-    location: 'Object detail → Overview tab (basic on Professional; full attribution fields on Institution)',
+    location: 'Object detail → Overview tab',
     dashboardLink: '/dashboard/objects',
     dashboardLabel: 'Object Records',
-    tier: 'split',
+    tier: 'professional',
   },
   {
     id: 6,
@@ -237,7 +237,7 @@ const SECONDARY: Procedure[] = [
     location: 'Dashboard administration settings',
     dashboardLink: '/dashboard/audit',
     dashboardLabel: 'Audit & Inventory',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 10,
@@ -258,7 +258,7 @@ const SECONDARY: Procedure[] = [
     location: 'Collections Use dashboard',
     dashboardLink: '/dashboard/collections-use',
     dashboardLabel: 'Collections Use',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 11,
@@ -403,7 +403,7 @@ const SECONDARY: Procedure[] = [
     location: 'Disposal dashboard',
     dashboardLink: '/dashboard/disposal',
     dashboardLabel: 'Disposal',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 18,
@@ -424,7 +424,7 @@ const SECONDARY: Procedure[] = [
     location: 'Object detail → Rights tab',
     dashboardLink: '/dashboard/objects',
     dashboardLabel: 'Object Records',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 19,
@@ -443,7 +443,7 @@ const SECONDARY: Procedure[] = [
     location: 'Object detail → Rights tab (alongside rights records)',
     dashboardLink: '/dashboard/objects',
     dashboardLabel: 'Object Records',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 20,
@@ -463,7 +463,7 @@ const SECONDARY: Procedure[] = [
     location: 'Collections Review dashboard',
     dashboardLink: '/dashboard/collections-review',
     dashboardLabel: 'Collections Review',
-    tier: 'institution',
+    tier: 'professional',
   },
   {
     id: 21,
@@ -485,25 +485,11 @@ const SECONDARY: Procedure[] = [
     location: 'Audit dashboard',
     dashboardLink: '/dashboard/audit',
     dashboardLabel: 'Audit & Inventory',
-    tier: 'institution',
+    tier: 'professional',
   },
 ]
 
-function TierBadge({ tier }: { tier: Tier }) {
-  if (tier === 'institution') {
-    return (
-      <span className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded border bg-white/5 text-stone-300 border-white/10">
-        Institution
-      </span>
-    )
-  }
-  if (tier === 'split') {
-    return (
-      <span className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20">
-        Professional+ <span className="text-stone-500">/ Institution (full)</span>
-      </span>
-    )
-  }
+function TierBadge({ tier: _ }: { tier: Tier }) {
   return (
     <span className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20">
       Professional+
@@ -585,17 +571,11 @@ export default function CompliancePage() {
         {/* Tier legend */}
         <div className="mb-16 flex flex-wrap gap-4 items-center p-5 border border-white/5 rounded-xl bg-white/2">
           <span className="text-sm text-stone-400 font-mono uppercase tracking-wider shrink-0">Plan key:</span>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <TierBadge tier="professional" />
-              <span className="text-sm text-stone-400">Included from Professional plan and above</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <TierBadge tier="institution" />
-              <span className="text-sm text-stone-400">Institution plan only</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <TierBadge tier="professional" />
+            <span className="text-sm text-stone-400">Included from Professional plan and above</span>
           </div>
-          <Link href="/plans" className="ml-auto font-mono text-xs text-stone-500 hover:text-stone-300 transition-colors shrink-0">
+          <Link href="/#pricing" className="ml-auto font-mono text-xs text-stone-500 hover:text-stone-300 transition-colors shrink-0">
             Compare plans →
           </Link>
         </div>
@@ -617,7 +597,7 @@ export default function CompliancePage() {
         <section className="mb-20">
           <div className="mb-8">
             <h2 className="text-2xl font-medium text-white mb-2">Secondary procedures</h2>
-            <p className="text-stone-400">Specialist workflows for compliance, rights, risk, and governance. Most require the Institution plan.</p>
+            <p className="text-stone-400">Specialist workflows for compliance, rights, risk, and governance. Available on all Professional plans and above.</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {SECONDARY.map((proc) => (
@@ -660,7 +640,7 @@ export default function CompliancePage() {
         <section className="p-8 border border-white/10 rounded-lg">
           <h2 className="text-xl font-medium text-white mb-2">Ready to get started?</h2>
           <p className="text-stone-400 mb-6 max-w-xl">
-            Try Vitrine free — no credit card required. Professional plan starts at £12/month and includes all 16 primary and secondary procedures.
+            Try Vitrine free — no credit card required. Professional plan starts at £79/month and includes all 21 primary and secondary procedures.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -676,7 +656,7 @@ export default function CompliancePage() {
               Read the guide
             </Link>
             <Link
-              href="/plans"
+              href="/#pricing"
               className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-5 py-2.5 rounded transition-colors"
             >
               Compare plans

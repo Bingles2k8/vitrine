@@ -83,7 +83,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: 10240,
     depositorTracking: true,
     wishlist: false,
-    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Priority support', '10 GB document storage'],
+    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
   },
   enterprise: {
     label: 'Enterprise',
@@ -100,7 +100,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: null,
     depositorTracking: true,
     wishlist: false,
-    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Advanced analytics', 'Event ticketing', 'Dedicated support', 'Custom integrations', 'Unlimited document storage'],
+    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
   },
 }
 
