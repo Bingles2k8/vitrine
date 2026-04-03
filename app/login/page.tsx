@@ -24,6 +24,7 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      router.refresh()
       router.push('/dashboard')
     }
   }
@@ -37,7 +38,7 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8">
-          <form className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
                 Email
@@ -78,7 +79,7 @@ export default function LoginPage() {
             )}
 
             <button
-              onClick={handleLogin}
+              type="submit"
               disabled={loading}
               className="w-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded py-2 text-sm font-mono disabled:opacity-50 mt-2"
             >

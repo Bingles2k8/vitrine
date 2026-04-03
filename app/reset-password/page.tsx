@@ -33,6 +33,7 @@ export default function ResetPasswordPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      router.refresh()
       router.push('/dashboard')
     }
   }
