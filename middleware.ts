@@ -16,6 +16,18 @@ function isCsrfExempt(pathname: string): boolean {
   return false
 }
 
+// Paths that bypass the beta gate entirely
+function isBetaExempt(pathname: string): boolean {
+  if (pathname.startsWith('/beta')) return true
+  if (pathname.startsWith('/login')) return true
+  if (pathname.startsWith('/signup')) return true
+  if (pathname.startsWith('/auth')) return true
+  // Public API routes
+  if (CSRF_EXEMPT_PATHS.has(pathname)) return true
+  if (pathname.startsWith('/api/tickets/')) return true
+  return false
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -39,6 +51,35 @@ export async function middleware(request: NextRequest) {
       }
     } catch {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
+  // ── Beta gate ────────────────────────────────────────────────────────
+  // Block all access unless the visitor has the beta_access cookie or is
+  // already logged in. Only active when BETA_PASSWORD is set.
+  if (process.env.BETA_PASSWORD && !isBetaExempt(pathname)) {
+    const betaCookie = request.cookies.get('beta_access')?.value
+    const hasAccess = betaCookie === process.env.BETA_PASSWORD
+
+    if (!hasAccess) {
+      // Check for an active Supabase session before redirecting
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() { return request.cookies.getAll() },
+            setAll() {},
+          },
+        }
+      )
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        const url = new URL('/beta', request.url)
+        url.searchParams.set('next', pathname)
+        return NextResponse.redirect(url)
+      }
     }
   }
 
@@ -74,5 +115,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/print/:path*', '/admin/:path*', '/admin', '/api/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|.*\\.png$|.*\\.svg$|.*\\.ico$).*)'],
 }

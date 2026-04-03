@@ -1,6 +1,6 @@
 # Vitrine — Spectrum 5.1 Compliance Mapping
 
-> Last updated: March 2026 (gaps 1–3, 5 resolved)
+> Last updated: April 2026
 > Spectrum version: 5.1 (Collections Trust)
 > App version: current `main` branch
 
@@ -41,8 +41,8 @@ Table: `entry_records`
 | `condition_on_entry` | Free text condition note |
 | `depositor_name` | Who brought the object |
 | `depositor_contact` | Contact details |
-| `depositor_gdpr_consent` | GDPR consent flag |
-| `depositor_gdpr_consent_date` | When consent was given |
+| `gdpr_consent` | GDPR consent flag |
+| `gdpr_consent_date` | When consent was given |
 | `object_description` | Description at point of entry |
 | `object_count` | Number of items |
 | `legal_owner` | Legal owner if different from depositor |
@@ -50,7 +50,7 @@ Table: `entry_records`
 | `terms_accepted` | Terms and conditions accepted flag |
 | `terms_accepted_date` | When terms were signed |
 | `receipt_issued` | Receipt issued flag |
-| `receipt_issued_date` | Date receipt sent |
+| `receipt_date` | Date receipt sent |
 | `quarantine_required` | Risk/biosecurity flag |
 | `risk_notes` | Risk assessment notes |
 | `outcome` | Final outcome of entry |
@@ -83,7 +83,7 @@ Fields on `objects` table:
 
 | Field | Notes |
 |-------|-------|
-| `accession_number` | Unique accession reference |
+| `accession_no` | Unique accession reference |
 | `accession_date` | Date formally accessioned |
 | `acquisition_method` | Purchase / Gift / Bequest / Loan / etc. |
 | `acquisition_source` | Where acquired from |
@@ -119,12 +119,12 @@ Table: `location_history`
 | Field | Notes |
 |-------|-------|
 | `object_id` | Object reference |
-| `location_id` | FK to `locations` |
+| `location` | Location (free text or structured name) |
 | `moved_at` | Date/time of move |
 | `moved_by` | Staff member |
 | `move_type` | Permanent / Temporary / Return |
 | `expected_return_date` | For temporary moves |
-| `notes` | Movement notes |
+| `reason` | Movement reason/notes |
 
 Table: `locations`
 
@@ -132,7 +132,11 @@ Table: `locations`
 |-------|-------|
 | `location_code` | Mandatory unique code (Spectrum requirement) |
 | `name` | Human-readable name |
-| `parent_id` | Hierarchical location structure |
+| `building` | Building within site |
+| `floor` | Floor level |
+| `room` | Room identifier |
+| `unit` | Shelving unit, cabinet, etc. |
+| `position` | Specific shelf, bin, or slot |
 
 ### UI
 
@@ -158,11 +162,11 @@ Table: `audit_records` — per-object audit check records
 | Field | Notes |
 |-------|-------|
 | `object_id` | Object checked |
-| `checked_at` | Date of check |
-| `checked_by` | Staff member |
-| `location_confirmed` | Location verified flag |
-| `condition_noted` | Condition at check |
-| `discrepancy_noted` | Any discrepancy flag |
+| `inventoried_at` | Date of check |
+| `inventoried_by` | Staff member |
+| `location_confirmed` | Location verified (text) |
+| `condition_confirmed` | Condition at check |
+| `discrepancy` | Any discrepancy noted |
 | `notes` | Free text notes |
 
 ### UI
@@ -192,7 +196,7 @@ Fields on `objects` table (Spectrum-specific selection):
 | `maker_role` | Artist / Maker / Publisher / etc. |
 | `production_date_early` | Date range start |
 | `production_date_late` | Date range end |
-| `date_qualifier` | Circa / After / Before / etc. |
+| `production_date_qualifier` | Circa / After / Before / etc. |
 | `production_place` | Place of production |
 | `physical_materials` | Materials used |
 | `technique` | Production technique |
@@ -202,21 +206,25 @@ Fields on `objects` table (Spectrum-specific selection):
 | `surface_treatment` | Surface treatment notes |
 | `other_names` | Alternative titles/names |
 | `full_description` | Long catalogue description |
-| `height_cm`, `width_cm`, `depth_cm` | Physical dimensions |
-| `weight_kg` | Weight |
-| `dimensions_notes` | Measurement notes/method |
+| `dimension_height` | Height measurement |
+| `dimension_width` | Width measurement |
+| `dimension_depth` | Depth measurement |
+| `dimension_weight` | Weight |
+| `dimension_unit` | Unit for dimensions (cm/mm/in) |
+| `dimension_weight_unit` | Unit for weight (kg/g/lb) |
+| `dimension_notes` | Measurement notes/method |
 | `object_type` | Type classification |
 | `culture` | Cultural origin |
 | `provenance` | Provenance narrative |
 | `provenance_date_range` | Date range for provenance |
 | `field_collection_info` | Archaeological/field collection details |
-| `marks_inscriptions` | Marks, signatures, inscriptions |
+| `inscription` | Marks, signatures, inscriptions |
 | `historical_context` | Historical background |
 | `associated_person` | Associated individual |
 | `associated_organisation` | Associated organisation |
 | `associated_place` | Associated place |
 | `credit_line` | Display credit line |
-| `parts` | Number of parts/components |
+| `number_of_parts` | Number of parts/components |
 | `record_source` | Who or what provided the catalogue record |
 | `attributed_to` | Person/organisation responsible for the record |
 | `attribution_notes` | Uncertainty, conflicting sources, research gaps |
@@ -249,14 +257,14 @@ Table: `object_exits`
 | `exit_date` | Date of exit |
 | `exit_reason` | Loan / Return / Sale / Disposal / etc. |
 | `recipient_name` | Who received the object |
-| `recipient_address` | Destination address |
+| `destination_address` | Destination address |
 | `transport_method` | How it was transported |
 | `insurance_indemnity_confirmed` | Insurance check flag |
 | `packing_notes` | Packing/condition notes |
-| `condition_at_exit` | Condition when it left |
-| `signed_receipt_obtained` | Receipt flag |
+| `exit_condition` | Condition when it left |
+| `signed_receipt` | Receipt obtained flag |
 | `expected_return_date` | For temporary exits |
-| `authorization` | Who authorised the exit |
+| `exit_authorised_by` | Who authorised the exit |
 
 ### UI
 
@@ -282,10 +290,10 @@ Table: `loans` (direction = 'In')
 |-------|-------|
 | `loan_number` | Auto-generated (LN-YYYY-NNN) |
 | `direction` | 'In' |
-| `lending_institution` | Who is lending to us |
+| `borrowing_institution` | Institution we are borrowing from |
 | `contact_name` / `contact_email` | Lender contact |
 | `loan_start_date` | When loan begins |
-| `expected_return_date` | When loan ends |
+| `loan_end_date` | When loan ends / expected return |
 | `purpose` | Why we are borrowing |
 | `insurance_value` | Declared value |
 | `borrower_address` | Our address for legal record |
@@ -294,10 +302,10 @@ Table: `loans` (direction = 'In')
 | `facility_report_reference` | Facility report reference |
 | `environmental_requirements` | Climate/light requirements |
 | `display_requirements` | Display specification |
-| `courier_arrangements` | Transport/courier details |
-| `condition_at_arrival` | Condition when received |
-| `special_conditions` | Any special terms |
-| `status` | Requested / Agreed / Active / Returned |
+| `courier_transport_arrangements` | Transport/courier details |
+| `condition_arrival` | Condition when received |
+| `conditions` | Any special terms |
+| `status` | Requested / Active / Returned / Extended / Cancelled |
 
 ### UI
 
@@ -323,14 +331,12 @@ Table: `loans` (direction = 'Out') — same fields as Loans In, plus:
 | Field | Notes |
 |-------|-------|
 | `direction` | 'Out' |
-| `borrowing_institution` | Who we are lending to |
-| `condition_at_return` | Condition when returned |
-| `return_location_id` | Where it came back to |
+| `condition_return` | Condition when returned |
 
 ### UI
 
 - **Central register:** `/dashboard/loans/` — shared with Loans In, filtered by direction
-- **Per-object:** `LoansTab.tsx` — direction selector, end loan workflow with return condition/location
+- **Per-object:** `LoansTab.tsx` — direction selector, end loan workflow with return condition
 - **Document attachments:** Supported
 
 ### Gaps
@@ -346,15 +352,17 @@ None identified.
 
 ### Database
 
-Tables: `documentation_plans`, `documentation_plan_backlogs`
+Table: `documentation_plans` (one record per museum)
 
 | Field | Notes |
 |-------|-------|
-| `plan_title` | Name of the documentation programme |
-| `scope` | What collections are covered |
-| `target_completion_date` | When it should be done |
-| `responsible_staff` | Who is accountable |
-| Backlog junction | Objects not yet catalogued |
+| `plan_reference` | Reference number for the plan |
+| `plan_date` | Date the plan was created/updated |
+| `responsible_person` | Who is accountable |
+| `documentation_standards` | Standards in use (default: 'Museum standards') |
+| `systems_in_use` | CMS/systems used (default: 'Vitrine') |
+| `review_date` | When plan is next due for review |
+| `backlog_notes` | Free text backlog and outstanding tasks |
 
 ### UI
 
@@ -381,10 +389,10 @@ Table: `collection_use_records`
 | `object_id` | Object being used |
 | `use_type` | Research / Exhibition / Photography / etc. |
 | `requester_name` | Who is using it |
-| `requester_contact` | Contact details |
+| `requester_org` | Requester's organisation |
 | `purpose` | Stated purpose |
-| `use_start_date` / `use_end_date` | Duration |
-| `approval_status` | Pending / Approved / In Use / Completed |
+| `use_date_start` / `use_date_end` | Duration |
+| `status` | Pending / Approved / In Use / Completed |
 | `approved_by` | Who approved |
 | `location_of_use` | Where it will be used |
 | `information_generated` | Notes on research output |
@@ -413,16 +421,16 @@ Table: `condition_assessments`
 |-------|-------|
 | `assessment_reference` | Reference number |
 | `object_id` | Object assessed |
-| `assessed_by` | Conservator/assessor |
-| `assessment_date` | When assessed |
-| `condition_grade` | Good / Fair / Poor / Critical |
+| `assessor` | Conservator/assessor |
+| `assessed_at` | When assessed |
+| `grade` | Good / Fair / Poor / Critical |
 | `long_description` | Full condition description |
 | `specific_issues` | Specific problems noted |
 | `hazard_note` | Safety/handling hazard |
 | `recommendations` | Recommended action |
 | `next_check_date` | When to reassess |
 
-Object-level: `condition` (current grade), `hazard_note`
+Object-level: `condition_grade` (current grade snapshot), `hazard_note`
 
 ### UI
 
@@ -557,6 +565,8 @@ Table: `emergency_plans`
 | `status` | Draft / Active / Under Review / Archived |
 | `description` | Plan details |
 | `contact_list` | Emergency contacts |
+| `plan_last_tested` | Date plan was last tested |
+| `salvage_equipment_location` | Where salvage kit is stored |
 
 Table: `emergency_salvage_priorities` — ranked object list per plan
 Table: `emergency_events` — incident records
@@ -593,15 +603,16 @@ Table: `damage_reports`
 | Field | Notes |
 |-------|-------|
 | `object_id` | Object damaged/lost |
-| `report_date` | When reported |
+| `incident_date` | When the incident occurred |
+| `discovered_date` | When damage was discovered |
 | `damage_type` | Loss / Theft / Vandalism / Accidental / etc. |
 | `description` | What happened |
-| `severity` | Low / Medium / High / Critical |
+| `severity` | Minor / Moderate / Significant / Severe / Total Loss |
 | `repair_estimate` | Cost to repair |
 | `police_report_ref` | Police report reference |
 | `insurance_claim_outcome` | Outcome of insurance claim |
 | `reported_to_governing_body` | Governance notification flag |
-| `status` | Open / In Progress / Resolved / Closed |
+| `status` | Open / Under Investigation / Repaired / Claimed / Closed / Write-off |
 
 ### UI
 
@@ -628,12 +639,12 @@ Table: `disposal_records`
 | `object_id` | Object being deaccessioned |
 | `disposal_method` | Sale / Donation / Destruction / Transfer / etc. |
 | `disposal_reason` | Why it is being disposed of |
-| `disposal_justification` | Detailed justification |
+| `justification` | Detailed justification |
 | `deaccession_date` | Date of formal deaccession |
-| `authorization` | Who authorised |
-| `proceeds` | Money received (if sold) |
-| `governance_approval` | Governance body sign-off flag |
-| `public_notice` | Whether public notice given |
+| `authorised_by` | Who authorised |
+| `proceeds_amount` | Money received (if sold) |
+| `governing_body_approval` | Governance body sign-off flag |
+| `public_notice` | Public notice text/reference |
 | `status` | Proposed / Approved / Completed |
 
 Object-level: `deaccession_protected` flag prevents accidental disposal
@@ -738,10 +749,10 @@ Table: `collection_reviews`
 | `scope` | What collections are being reviewed |
 | `reviewer` | Who is conducting the review |
 | `criteria` | Review criteria |
-| `start_date` / `end_date` | Review period |
-| `objects_reviewed_count` | How many objects assessed |
-| `disposal_recommendations` | Objects recommended for disposal |
-| `governance_reporting` | Governance body notified flag |
+| `review_date_start` / `review_date_end` | Review period |
+| `objects_reviewed` | How many objects assessed |
+| `objects_recommended_disposal` | Objects recommended for disposal |
+| `governing_body_reported` | Governance body notified flag |
 | `status` | In Progress / Completed |
 
 ### UI
@@ -766,12 +777,12 @@ Table: `audit_exercises`
 | Field | Notes |
 |-------|-------|
 | `audit_reference` | Auto-generated (AUD-YYYY-NNN) |
-| `audit_title` | Name of the audit |
-| `audit_method` | How audit was conducted |
-| `start_date` / `end_date` | Audit period |
-| `conducted_by` | Staff/team responsible |
-| `objects_audited_count` | How many objects checked |
-| `discrepancies_found` | Number of discrepancies |
+| `scope` | Scope of the audit |
+| `method` | How audit was conducted |
+| `date_started` / `date_completed` | Audit period |
+| `auditor` | Staff/team responsible |
+| `objects_checked` | How many objects checked |
+| `discrepancies` | Number of discrepancies |
 | `governance_reported` | Reported to governance flag |
 | `actions_required` | Actions arising from audit |
 | `actions_completed` | Whether actions are done |
@@ -792,7 +803,7 @@ None identified.
 
 ### Risk Management
 
-Table: `risk_registers`
+Table: `risk_register`
 
 - **Central dashboard:** `/dashboard/risk/` — risk register with severity, status, and due-date tracking
 - Object-level risk notes on entry records (quarantine flags)
@@ -812,6 +823,35 @@ All Spectrum tables are protected by Supabase RLS policies, isolating data by mu
 ### Multi-Currency Support
 
 Valuations, insurance, acquisition value, conservation costs, and disposal proceeds all support configurable currency codes.
+
+### Wishlist / Wanted Items
+
+Table: `wanted_items`
+
+- Columns: `title`, `year`, `medium`, `notes`, `priority` (low/medium/high), `acquired_at`, `converted_object_id`
+- **Plan gate:** Community & Hobbyist tiers only (inverted gate — not available on Professional+)
+- **UI page:** `/dashboard/wanted/`
+- Optional public wishlist page when `museums.show_wanted = true`
+
+### Object Duplicates
+
+Table: `object_duplicates`
+
+- Junction table linking `object_id` → `duplicate_of_id` within the same museum
+- **Plan gate:** All tiers
+- Used for duplicate detection and collection cleanup
+
+### Estimated Object Value
+
+Fields on `objects`: `estimated_value`, `estimated_value_currency`
+
+- Lightweight per-object value field distinct from formal `valuations` table entries
+- Displayed in collection aggregate view when `museums.show_collection_value = true`
+- **Plan gate:** Community & Hobbyist tiers only
+
+### Learn Mode
+
+`data-learn="table.field"` attributes are attached to all form labels across the dashboard, paired with `lib/learn-descriptions.ts`. When enabled, hovering a field label shows a tooltip explaining its purpose and Spectrum relevance.
 
 ---
 
