@@ -142,7 +142,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
         <div className={sectionTitle}>Rights Management</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Copyright Status</label>
+            <label className={labelCls} data-learn="rights.copyright_status">Copyright Status</label>
             <select value={form.copyright_status} onChange={e => set('copyright_status', e.target.value)} className={inputCls} disabled={!canEdit}>
               <option value="">— Select —</option>
               {COPYRIGHT_OPTIONS.map(c => <option key={c}>{c}</option>)}
@@ -157,7 +157,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} disabled={!canEdit} /></div>
+          <div><label className={labelCls} data-learn="rights.holder">Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} disabled={!canEdit} /></div>
           <div><label className={labelCls}>Rights Holder Contact</label><input value={form.rights_holder_contact || ''} onChange={e => set('rights_holder_contact', e.target.value)} placeholder="Email or postal address" className={inputCls} disabled={!canEdit} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -181,7 +181,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
           </label>
         </div>
         <div>
-          <label className={labelCls}>Use &amp; Reproduction Restrictions</label>
+          <label className={labelCls} data-learn="rights.notes">Use &amp; Reproduction Restrictions</label>
           <textarea rows={3} value={form.rights_notes} onChange={e => set('rights_notes', e.target.value)} className={inputCls} disabled={!canEdit} placeholder="e.g. Permission required for commercial reproduction. Attribution must include artist name and museum." />
         </div>
       </div>

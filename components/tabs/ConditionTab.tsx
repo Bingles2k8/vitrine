@@ -111,7 +111,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Condition Grade <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="condition.grade">Condition Grade <span className="text-red-400">*</span></label>
             <select
               value={conditionForm.grade}
               onChange={e => setConditionForm(f => ({ ...f, grade: e.target.value }))}
@@ -123,7 +123,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
             </select>
           </div>
           <div>
-            <label className={labelCls}>Assessment Date <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="condition.assessed_at">Assessment Date <span className="text-red-400">*</span></label>
             <input
               type="date"
               value={conditionForm.assessed_at}
@@ -135,7 +135,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         </div>
 
         <div>
-          <label className={labelCls}>Assessor</label>
+          <label className={labelCls} data-learn="condition.assessor">Assessor</label>
           <input
             value={conditionForm.assessor}
             onChange={e => setConditionForm(f => ({ ...f, assessor: e.target.value }))}
@@ -147,7 +147,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         {getPlan(museum.plan).fullMode && (
           <>
             <div>
-              <label className={labelCls}>Reason for Check</label>
+              <label className={labelCls} data-learn="condition.reason_for_check">Reason for Check</label>
               <select value={conditionForm.reason_for_check} onChange={e => setConditionForm(f => ({ ...f, reason_for_check: e.target.value, other_reason: '' }))} className={inputCls} disabled={!canEdit}>
                 <option value="">— Select —</option>
                 {REASONS_FOR_CHECK.map(r => <option key={r} value={r}>{r}</option>)}
@@ -170,27 +170,27 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         )}
 
         <div>
-          <label className={labelCls}>Detailed Description</label>
+          <label className={labelCls} data-learn="condition.long_description">Detailed Description</label>
           <textarea value={conditionForm.long_description} onChange={e => setConditionForm(f => ({ ...f, long_description: e.target.value }))} rows={2} placeholder="Detailed condition description..." className={`${inputCls} resize-none`} disabled={!canEdit} />
         </div>
 
         <div>
-          <label className={labelCls}>Hazard Note</label>
+          <label className={labelCls} data-learn="condition.hazard_note">Hazard Note</label>
           <input value={conditionForm.hazard_note} onChange={e => setConditionForm(f => ({ ...f, hazard_note: e.target.value }))} placeholder="Any hazardous materials or handling risks" className={inputCls} disabled={!canEdit} />
         </div>
 
         <div>
-          <label className={labelCls}>Recommendations</label>
+          <label className={labelCls} data-learn="condition.recommendations">Recommendations</label>
           <textarea value={conditionForm.recommendations} onChange={e => setConditionForm(f => ({ ...f, recommendations: e.target.value }))} rows={2} placeholder="Recommended actions..." className={`${inputCls} resize-none`} disabled={!canEdit} />
         </div>
 
         <div>
-          <label className={labelCls}>Next Check Date</label>
+          <label className={labelCls} data-learn="condition.next_check_date">Next Check Date</label>
           <input type="date" value={conditionForm.next_check_date} onChange={e => setConditionForm(f => ({ ...f, next_check_date: e.target.value }))} className={inputCls} disabled={!canEdit} />
         </div>
 
         <div>
-          <label className={labelCls}>Notes</label>
+          <label className={labelCls} data-learn="condition.notes">Notes</label>
           <textarea
             value={conditionForm.notes}
             onChange={e => setConditionForm(f => ({ ...f, notes: e.target.value }))}

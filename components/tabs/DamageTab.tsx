@@ -81,39 +81,39 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
           <div className={sectionTitle}>Report Damage</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Incident Date <span className="text-red-400">*</span></label>
+              <label className={labelCls} data-learn="damage.incident_date">Incident Date <span className="text-red-400">*</span></label>
               <input type="date" value={damageForm.incident_date} onChange={e => setDamageForm(f => ({ ...f, incident_date: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Discovered Date</label>
+              <label className={labelCls} data-learn="damage.discovered_date">Discovered Date</label>
               <input type="date" value={damageForm.discovered_date} onChange={e => setDamageForm(f => ({ ...f, discovered_date: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Discovered By <span className="text-red-400">*</span></label>
+              <label className={labelCls} data-learn="damage.discovered_by">Discovered By <span className="text-red-400">*</span></label>
               <input value={damageForm.discovered_by} onChange={e => setDamageForm(f => ({ ...f, discovered_by: e.target.value }))} placeholder="Name" className={inputCls} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Damage Type</label>
+              <label className={labelCls} data-learn="damage.type">Damage Type</label>
               <select value={damageForm.damage_type} onChange={e => setDamageForm(f => ({ ...f, damage_type: e.target.value }))} className={inputCls}>
                 {DAMAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Severity</label>
+              <label className={labelCls} data-learn="damage.severity">Severity</label>
               <select value={damageForm.severity} onChange={e => setDamageForm(f => ({ ...f, severity: e.target.value }))} className={inputCls}>
                 {DAMAGE_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className={labelCls}>Description <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="damage.description">Description <span className="text-red-400">*</span></label>
             <textarea value={damageForm.description} onChange={e => setDamageForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Describe the damage or loss…" className={`${inputCls} resize-none`} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Cause</label>
+              <label className={labelCls} data-learn="damage.cause">Cause</label>
               <input value={damageForm.cause} onChange={e => setDamageForm(f => ({ ...f, cause: e.target.value }))} placeholder="Known or suspected cause" className={inputCls} />
             </div>
             <div>
@@ -123,7 +123,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Repair Estimate</label>
+              <label className={labelCls} data-learn="damage.repair_estimate">Repair Estimate</label>
               <input type="number" step="0.01" min="0" value={damageForm.repair_estimate} onChange={e => setDamageForm(f => ({ ...f, repair_estimate: e.target.value }))} placeholder="0.00" className={inputCls} />
             </div>
             <div>
@@ -135,7 +135,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Insurance Claim Ref</label>
+              <label className={labelCls} data-learn="damage.insurance_claim_ref">Insurance Claim Ref</label>
               <input value={damageForm.insurance_claim_ref} onChange={e => setDamageForm(f => ({ ...f, insurance_claim_ref: e.target.value }))} placeholder="Claim reference" className={inputCls} />
             </div>
             <div>

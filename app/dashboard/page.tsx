@@ -188,11 +188,11 @@ export default function Dashboard() {
 
   // null = show all; a status string = show only that status
   const CARDS = [
-    { label: 'Total Objects', filterKey: null,           value: objects.length + trashedCount, sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection` },
-    { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: objects.length ? `${Math.round(statusCount('On Display')/objects.length*100)}% of collection` : '—' },
-    { label: 'On Loan',       filterKey: 'On Loan',      value: statusCount('On Loan'),       sub: '—' },
-    { label: 'In Restoration',filterKey: 'Restoration',  value: statusCount('Restoration'),   sub: '—' },
-    { label: 'Deaccessioned', filterKey: 'Deaccessioned',value: statusCount('Deaccessioned'), sub: '—' },
+    { label: 'Total Objects', filterKey: null,           value: objects.length + trashedCount, sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection`, learnKey: 'dashboard.total_objects' },
+    { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: objects.length ? `${Math.round(statusCount('On Display')/objects.length*100)}% of collection` : '—', learnKey: 'dashboard.on_display' },
+    { label: 'On Loan',       filterKey: 'On Loan',      value: statusCount('On Loan'),       sub: '—', learnKey: 'dashboard.on_loan' },
+    { label: 'In Restoration',filterKey: 'Restoration',  value: statusCount('Restoration'),   sub: '—', learnKey: 'dashboard.in_restoration' },
+    { label: 'Deaccessioned', filterKey: 'Deaccessioned',value: statusCount('Deaccessioned'), sub: '—', learnKey: 'dashboard.deaccessioned' },
   ]
 
   const visibleObjects = objects
@@ -226,7 +226,7 @@ export default function Dashboard() {
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
           {canEdit && fullMode && (
-            <button onClick={() => setShowImport(true)} className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">
+            <button onClick={() => setShowImport(true)} className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors" data-learn="action.import_csv">
               Import CSV
             </button>
           )}
@@ -241,6 +241,7 @@ export default function Dashboard() {
                   key={card.label}
                   type="button"
                   onClick={() => setFilter(card.filterKey)}
+                  data-learn={card.learnKey}
                   className={`text-left rounded-lg p-5 border transition-all ${
                     active
                       ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white'
@@ -258,12 +259,12 @@ export default function Dashboard() {
           {/* Collection value tiles */}
           {showValueTiles && (
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5" data-learn="dashboard.total_paid">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Paid</div>
                 <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{totalPaid > 0 ? fmtCurrency(totalPaid, defaultCurrency) : '—'}</div>
                 <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Purchase prices recorded</div>
               </div>
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5" data-learn="dashboard.estimated_value">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Est. Value</div>
                 <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{totalEstimated > 0 ? fmtCurrency(totalEstimated, defaultCurrency) : '—'}</div>
                 {totalPaid > 0 && totalEstimated > 0 && (
@@ -363,6 +364,7 @@ export default function Dashboard() {
               <button
                 onClick={() => router.push('/dashboard/entry')}
                 className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
+                data-learn="action.new_entry"
               >
                 + New Entry Record
               </button>
@@ -426,10 +428,10 @@ export default function Dashboard() {
                         />
                       </th>
                     )}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Year</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Medium</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3" data-learn="dashboard.col.object">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.year">Year</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.medium">Medium</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.status">Status</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -33,25 +33,25 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Acquisition Method</label>
+            <label className={labelCls} data-learn="acquisition.method">Acquisition Method</label>
             <select value={form.acquisition_method || ''} onChange={e => set('acquisition_method', e.target.value)} className={inputCls}>
               <option value="">— Select —</option>
               {ACQ_METHODS.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Acquisition Date</label>
+            <label className={labelCls} data-learn="acquisition.date">Acquisition Date</label>
             <input type="date" value={form.acquisition_date || ''} onChange={e => set('acquisition_date', e.target.value)} className={inputCls} />
           </div>
         </div>
 
         <div>
-          <label className={labelCls}>Acquisition Source</label>
+          <label className={labelCls} data-learn="acquisition.source">Acquisition Source</label>
           <input value={form.acquisition_source || ''} onChange={e => set('acquisition_source', e.target.value)} placeholder="Donor name, auction house…" className={inputCls} />
         </div>
 
         <div>
-          <label className={labelCls}>Acquisition Justification <span className="text-red-400">*</span></label>
+          <label className={labelCls} data-learn="acquisition.justification">Acquisition Justification <span className="text-red-400">*</span></label>
           <textarea value={form.acquisition_justification || ''} onChange={e => set('acquisition_justification', e.target.value)} rows={3}
             placeholder="How this object fits the collecting policy — rationale for acquisition…"
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
@@ -59,13 +59,13 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         <div>
-          <label className={labelCls}>Acquisition Notes</label>
+          <label className={labelCls} data-learn="acquisition.notes">Acquisition Notes</label>
           <textarea value={form.acquisition_note || ''} onChange={e => set('acquisition_note', e.target.value)} rows={4}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
         <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-3">
-          <label className={labelCls}>Associated Documentation <span className="text-red-400">*</span></label>
+          <label className={labelCls} data-learn="acquisition.documentation_ref">Associated Documentation <span className="text-red-400">*</span></label>
           <textarea value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
             placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…"
             rows={4}
@@ -87,13 +87,13 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         <div>
-          <label className={labelCls}>Accession Date</label>
+          <label className={labelCls} data-learn="acquisition.accession_date">Accession Date</label>
           <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
         </div>
 
         <div>
-          <label className={labelCls}>Conditions Attached to Acquisition</label>
+          <label className={labelCls} data-learn="acquisition.conditions">Conditions Attached to Acquisition</label>
           <textarea value={form.conditions_attached_to_acquisition || ''} onChange={e => set('conditions_attached_to_acquisition', e.target.value)} rows={2}
             placeholder="Any restrictions or conditions from the donor/seller…"
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
@@ -111,29 +111,29 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Source Contact Details</label>
+            <label className={labelCls} data-learn="acquisition.source_contact">Source Contact Details</label>
             <input value={form.acquisition_source_contact || ''} onChange={e => set('acquisition_source_contact', e.target.value)} placeholder="Email, phone or address of donor / vendor" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Authorised By</label>
+            <label className={labelCls} data-learn="acquisition.authorised_by">Authorised By</label>
             <input value={form.acquisition_authorised_by || ''} onChange={e => set('acquisition_authorised_by', e.target.value)} placeholder="Name and role of authorising person or body" className={inputCls} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className={labelCls}>Authority Date</label>
+            <label className={labelCls} data-learn="acquisition.authority_date">Authority Date</label>
             <input type="date" value={form.acquisition_authority_date || ''} onChange={e => set('acquisition_authority_date', e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Title / Legal Basis</label>
+            <label className={labelCls} data-learn="acquisition.title_guarantee">Title / Legal Basis</label>
             <select value={form.acquisition_title_guarantee || ''} onChange={e => set('acquisition_title_guarantee', e.target.value)} className={inputCls}>
               <option value="">— Select —</option>
               {TITLE_GUARANTEE_OPTIONS.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Number of Objects</label>
+            <label className={labelCls} data-learn="acquisition.object_count">Number of Objects</label>
             <input type="number" min={1} value={form.acquisition_object_count || ''} onChange={e => set('acquisition_object_count', parseInt(e.target.value) || '')} className={inputCls} />
           </div>
         </div>

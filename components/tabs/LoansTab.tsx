@@ -102,7 +102,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
       {canEdit && <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Add Loan Record</div>
         <div>
-          <label className={labelCls}>Direction</label>
+          <label className={labelCls} data-learn="loans.direction">Direction</label>
           <div className="flex gap-2">
             {['Out','In'].map(d => (
               <button key={d} type="button" onClick={() => setLoanForm(f => ({ ...f, direction: d }))}
@@ -114,7 +114,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{loanForm.direction === 'Out' ? 'We lend this object to another institution' : 'Another institution lends this object to us'}</p>
         </div>
         <div>
-          <label className={labelCls}>Status</label>
+          <label className={labelCls} data-learn="loans.status">Status</label>
           <div className="flex gap-2 flex-wrap">
             {LOAN_STATUSES.filter(s => s !== 'Cancelled' && s !== 'Returned').map(s => (
               <button key={s} type="button" onClick={() => setLoanForm(f => ({ ...f, status: s }))}
@@ -125,20 +125,20 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Institution *</label><input value={loanForm.borrowing_institution} onChange={e => setLoanForm(f => ({ ...f, borrowing_institution: e.target.value }))} className={inputCls} /></div>
-          <div><label className={labelCls}>Contact Name</label><input value={loanForm.contact_name} onChange={e => setLoanForm(f => ({ ...f, contact_name: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.borrowing_institution">Institution *</label><input value={loanForm.borrowing_institution} onChange={e => setLoanForm(f => ({ ...f, borrowing_institution: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.contact_name">Contact Name</label><input value={loanForm.contact_name} onChange={e => setLoanForm(f => ({ ...f, contact_name: e.target.value }))} className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Contact Email</label><input type="email" value={loanForm.contact_email} onChange={e => setLoanForm(f => ({ ...f, contact_email: e.target.value }))} className={inputCls} /></div>
-          <div><label className={labelCls}>Insurance Value (£)</label><input type="number" value={loanForm.insurance_value} onChange={e => setLoanForm(f => ({ ...f, insurance_value: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.contact_email">Contact Email</label><input type="email" value={loanForm.contact_email} onChange={e => setLoanForm(f => ({ ...f, contact_email: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.insurance_value">Insurance Value (£)</label><input type="number" value={loanForm.insurance_value} onChange={e => setLoanForm(f => ({ ...f, insurance_value: e.target.value }))} className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Borrower Address</label><textarea value={loanForm.borrower_address} onChange={e => setLoanForm(f => ({ ...f, borrower_address: e.target.value }))} rows={2} placeholder="Full postal address" className={`${inputCls} resize-none`} /></div>
           <div><label className={labelCls}>Borrower Phone</label><input value={loanForm.borrower_phone} onChange={e => setLoanForm(f => ({ ...f, borrower_phone: e.target.value }))} placeholder="Phone number" className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Loan Start</label><input type="date" value={loanForm.loan_start_date} onChange={e => setLoanForm(f => ({ ...f, loan_start_date: e.target.value }))} className={inputCls} /></div>
-          <div><label className={labelCls}>Expected Return</label><input type="date" value={loanForm.loan_end_date} onChange={e => setLoanForm(f => ({ ...f, loan_end_date: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.loan_start_date">Loan Start</label><input type="date" value={loanForm.loan_start_date} onChange={e => setLoanForm(f => ({ ...f, loan_start_date: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="loans.loan_end_date">Expected Return</label><input type="date" value={loanForm.loan_end_date} onChange={e => setLoanForm(f => ({ ...f, loan_end_date: e.target.value }))} className={inputCls} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls}>Agreement Reference</label><input value={loanForm.agreement_reference} onChange={e => setLoanForm(f => ({ ...f, agreement_reference: e.target.value }))} placeholder="Loan agreement document ref" className={inputCls} /></div>
@@ -172,8 +172,8 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           <div><label className={labelCls}>Approved By</label><input value={loanForm.approved_by} onChange={e => setLoanForm(f => ({ ...f, approved_by: e.target.value }))} placeholder="Authorising person or body" className={inputCls} /></div>
         </div>
         <div><label className={labelCls}>Condition at {loanForm.direction === 'In' ? 'Arrival' : 'Exit'}</label><textarea value={loanForm.condition_arrival} onChange={e => setLoanForm(f => ({ ...f, condition_arrival: e.target.value }))} rows={2} placeholder="Record condition when object left / arrived" className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
-        <div><label className={labelCls}>Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
-        <div><label className={labelCls}>Purpose of Loan</label><textarea value={loanForm.purpose} onChange={e => setLoanForm(f => ({ ...f, purpose: e.target.value }))} rows={2} placeholder="e.g. Exhibition loan for summer 2026 display" className={`${inputCls} resize-none`} /></div>
+        <div><label className={labelCls} data-learn="loans.conditions">Special Conditions</label><textarea value={loanForm.conditions} onChange={e => setLoanForm(f => ({ ...f, conditions: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" /></div>
+        <div><label className={labelCls} data-learn="loans.purpose">Purpose of Loan</label><textarea value={loanForm.purpose} onChange={e => setLoanForm(f => ({ ...f, purpose: e.target.value }))} rows={2} placeholder="e.g. Exhibition loan for summer 2026 display" className={`${inputCls} resize-none`} /></div>
         {canAttach && (
           <div>
             <label className={labelCls}>Supporting Documents</label>

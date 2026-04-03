@@ -147,7 +147,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Entry Number</label>
+            <label className={labelCls} data-learn="entry.number">Entry Number</label>
             {isFullMode ? (
               <input value={entryForm.entry_number} onChange={e => setE('entry_number', e.target.value)} className={inputCls} />
             ) : (
@@ -155,7 +155,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
             )}
           </div>
           <div>
-            <label className={labelCls}>Entry Date</label>
+            <label className={labelCls} data-learn="entry.date">Entry Date</label>
             <input type="date" value={entryForm.entry_date} onChange={e => setE('entry_date', e.target.value)} className={inputCls} />
           </div>
         </div>
@@ -164,14 +164,14 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Entry Reason</label>
+                <label className={labelCls} data-learn="entry.reason">Entry Reason</label>
                 <select value={entryForm.entry_reason} onChange={e => setE('entry_reason', e.target.value)} className={inputCls}>
                   <option value="">— Select —</option>
                   {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Outcome</label>
+                <label className={labelCls} data-learn="entry.outcome">Outcome</label>
                 <select value={entryForm.outcome} onChange={e => setE('outcome', e.target.value)} className={inputCls}>
                   <option value="">— Select —</option>
                   {ENTRY_OUTCOMES.map(o => <option key={o}>{o}</option>)}
@@ -196,7 +196,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
         )}
 
         <div>
-          <label className={labelCls}>Condition on Entry</label>
+          <label className={labelCls} data-learn="entry.condition_on_entry">Condition on Entry</label>
           <textarea value={entryForm.condition_on_entry} onChange={e => setE('condition_on_entry', e.target.value)} rows={2}
             placeholder="Condition on entry…"
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
@@ -223,11 +223,11 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Donor Name</label>
+              <label className={labelCls} data-learn="entry.donor_name">Donor Name</label>
               <input value={entryForm.depositor_name} onChange={e => setE('depositor_name', e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Donor Contact</label>
+              <label className={labelCls} data-learn="entry.donor_contact">Donor Contact</label>
               <input value={entryForm.depositor_contact} onChange={e => setE('depositor_contact', e.target.value)} className={inputCls} />
             </div>
           </div>
@@ -351,7 +351,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
         </div>
 
         <div>
-          <label className={labelCls}>Notes</label>
+          <label className={labelCls} data-learn="entry.notes">Notes</label>
           <textarea value={entryForm.notes} onChange={e => setE('notes', e.target.value)} rows={2}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>

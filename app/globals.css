@@ -123,3 +123,9 @@ body {
 .glow-correct {
   animation: glow-correct 1.2s ease-out forwards;
 }
+
+/* Learn mode — subtle outlines on annotated elements */
+.learn-mode [data-learn] {
+  outline: 1px dashed rgba(16,185,129,0.25);
+  outline-offset: 2px;
+}

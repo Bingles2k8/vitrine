@@ -93,23 +93,23 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
           <div className={sectionTitle}>Record Exit</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Exit Date *</label>
+              <label className={labelCls} data-learn="exits.exit_date">Exit Date *</label>
               <input type="date" value={exitForm.exit_date} onChange={e => setExitForm(f => ({ ...f, exit_date: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Exit Reason *</label>
+              <label className={labelCls} data-learn="exits.exit_reason">Exit Reason *</label>
               <select value={exitForm.exit_reason} onChange={e => setExitForm(f => ({ ...f, exit_reason: e.target.value }))} className={inputCls}>
                 {EXIT_REASONS.map(r => <option key={r}>{r}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Exit Authorised By *</label>
+              <label className={labelCls} data-learn="exits.exit_authorised_by">Exit Authorised By *</label>
               <input value={exitForm.exit_authorised_by} onChange={e => setExitForm(f => ({ ...f, exit_authorised_by: e.target.value }))} placeholder="Staff member or governing body" className={inputCls} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Recipient Name *</label>
+              <label className={labelCls} data-learn="exits.recipient_name">Recipient Name *</label>
               <input value={exitForm.recipient_name} onChange={e => setExitForm(f => ({ ...f, recipient_name: e.target.value }))} placeholder="Who received the object" className={inputCls} />
             </div>
             <div>

@@ -54,7 +54,7 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
           <div className={sectionTitle}>Add Risk</div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Risk Type <span className="text-red-400">*</span></label>
+              <label className={labelCls} data-learn="risk.type">Risk Type <span className="text-red-400">*</span></label>
               <select value={riskForm.risk_type} onChange={e => setRiskForm(f => ({ ...f, risk_type: e.target.value }))} className={inputCls}>
                 <option value="">Select type…</option>
                 {RISK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -66,29 +66,29 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
             </div>
           </div>
           <div>
-            <label className={labelCls}>Description <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="risk.description">Description <span className="text-red-400">*</span></label>
             <textarea value={riskForm.description} onChange={e => setRiskForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Describe the risk…" className={`${inputCls} resize-none`} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Severity</label>
+              <label className={labelCls} data-learn="risk.severity">Severity</label>
               <select value={riskForm.severity} onChange={e => setRiskForm(f => ({ ...f, severity: e.target.value }))} className={inputCls}>
                 {RISK_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Likelihood</label>
+              <label className={labelCls} data-learn="risk.likelihood">Likelihood</label>
               <select value={riskForm.likelihood} onChange={e => setRiskForm(f => ({ ...f, likelihood: e.target.value }))} className={inputCls}>
                 {RISK_LIKELIHOODS.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Review Date</label>
+              <label className={labelCls} data-learn="risk.review_date">Review Date</label>
               <input type="date" value={riskForm.review_date} onChange={e => setRiskForm(f => ({ ...f, review_date: e.target.value }))} className={inputCls} />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Mitigation</label>
+            <label className={labelCls} data-learn="risk.mitigation">Mitigation</label>
             <textarea value={riskForm.mitigation} onChange={e => setRiskForm(f => ({ ...f, mitigation: e.target.value }))} rows={2} placeholder="Steps taken or planned to mitigate…" className={`${inputCls} resize-none`} />
           </div>
           <div>

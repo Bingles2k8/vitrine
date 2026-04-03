@@ -69,7 +69,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
       {/* Icon */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-        <label className={labelCls}>Icon</label>
+        <label className={labelCls} data-learn="objects.icon">Icon</label>
         <div className="flex gap-2 flex-wrap">
           {EMOJIS.map(e => (
             <button key={e} type="button" onClick={() => set('emoji', e)}
@@ -86,19 +86,19 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Title */}
         <div>
-          <label className={labelCls}>Title *</label>
+          <label className={labelCls} data-learn="objects.title">Title *</label>
           <input value={form.title} onChange={e => set('title', e.target.value)} className={inputCls} />
         </div>
 
         {/* Artist + Date */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div><label className={labelCls}>Artist / Maker</label><input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="objects.artist">Artist / Maker</label><input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} /></div>
           <div>
-            <label className={labelCls}>Date (Cataloguing)</label>
+            <label className={labelCls} data-learn="objects.production_date">Date (Cataloguing)</label>
             <input value={form.production_date || ''} onChange={e => set('production_date', e.target.value)} placeholder="e.g. 1850, c.1920–1930" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Date Qualifier</label>
+            <label className={labelCls} data-learn="objects.production_date_qualifier">Date Qualifier</label>
             <select value={form.production_date_qualifier} onChange={e => set('production_date_qualifier', e.target.value)} className={inputCls}>
               <option value="">{'\u2014'} Select {'\u2014'}</option>
               {DATE_QUALIFIERS.map(q => <option key={q} value={q}>{q}</option>)}
@@ -109,7 +109,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Medium + Object Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Medium</label>
+            <label className={labelCls} data-learn="objects.medium">Medium</label>
             <AutocompleteInput
               value={form.medium}
               onChange={v => set('medium', v)}
@@ -121,7 +121,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             />
           </div>
           <div>
-            <label className={labelCls}>Object Type</label>
+            <label className={labelCls} data-learn="objects.object_type">Object Type</label>
             <AutocompleteInput
               value={form.object_type}
               onChange={v => set('object_type', v)}
@@ -136,7 +136,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Culture/Origin */}
         <div>
-          <label className={labelCls}>Culture / Origin</label>
+          <label className={labelCls} data-learn="objects.culture">Culture / Origin</label>
           <AutocompleteInput
             value={form.culture}
             onChange={v => set('culture', v)}
@@ -150,15 +150,15 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Accession No. + Rarity + Number of Parts */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div><label className={labelCls}>Accession No.</label><input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} /></div>
-          <div><label className={labelCls}>Edition / Rarity</label><input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)} placeholder="e.g. 1 of 500, First Edition" className={inputCls} /></div>
-          <div><label className={labelCls}>Number of Parts</label><input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="objects.accession_no">Accession No.</label><input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} /></div>
+          <div><label className={labelCls} data-learn="objects.rarity">Edition / Rarity</label><input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)} placeholder="e.g. 1 of 500, First Edition" className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="objects.number_of_parts">Number of Parts</label><input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} /></div>
         </div>
 
         {/* Accession distinction — Spectrum 5.1 Proc 2 */}
         {getPlan(museum.plan).fullMode && (
           <div className="space-y-2">
-            <label className={labelCls}>Accession Status</label>
+            <label className={labelCls} data-learn="objects.formally_accessioned">Accession Status</label>
             <div className="flex gap-2 flex-wrap">
               {[
                 { label: 'Formally accessioned', value: true },
@@ -194,7 +194,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Status */}
         <div>
-          <label className={labelCls}>Status</label>
+          <label className={labelCls} data-learn="objects.status">Status</label>
           <div className="flex gap-2 flex-wrap">
             {STATUSES.map(s => (
               <button key={s} type="button" onClick={() => set('status', s)}
@@ -208,7 +208,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Condition + Location */}
         {form.condition_grade && (
           <div>
-            <label className={labelCls}>Condition</label>
+            <label className={labelCls} data-learn="objects.condition_grade">Condition</label>
             <div className="flex items-center gap-3">
               <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>{form.condition_grade}</span>
               {form.condition_date && <span className="text-xs text-stone-400 dark:text-stone-500">Assessed {new Date(form.condition_date).toLocaleDateString('en-GB')}</span>}
@@ -217,14 +217,14 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </div>
         )}
         <div>
-          <label className={labelCls}>Current Location</label>
+          <label className={labelCls} data-learn="objects.current_location">Current Location</label>
           <p className="text-sm text-stone-900 dark:text-stone-100 py-2">{form.current_location || <span className="text-stone-400">{'\u2014'}</span>}</p>
           <button type="button" onClick={() => setActiveTab('location')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Location tab {'\u2192'}</button>
         </div>
 
         {/* Dimensions */}
         <div>
-          <label className={labelCls}>Dimensions</label>
+          <label className={labelCls} data-learn="objects.dimensions">Dimensions</label>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             <div><input type="number" step="0.1" min="0" value={form.dimension_height} onChange={e => set('dimension_height', e.target.value)} placeholder="H" className={inputCls} /></div>
             <div><input type="number" step="0.1" min="0" value={form.dimension_width} onChange={e => set('dimension_width', e.target.value)} placeholder="W" className={inputCls} /></div>
@@ -246,13 +246,13 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Description */}
         <div>
-          <label className={labelCls}>Description</label>
+          <label className={labelCls} data-learn="objects.description">Description</label>
           <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} className={textareaCls} />
         </div>
 
         {/* Historical Context */}
         <div>
-          <label className={labelCls}>Historical Context</label>
+          <label className={labelCls} data-learn="objects.historical_context">Historical Context</label>
           <textarea value={form.historical_context || ''} onChange={e => set('historical_context', e.target.value)} rows={3}
             placeholder="Historical background, significance, or context of the object…"
             className={textareaCls} />
@@ -260,7 +260,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Marks and Inscriptions (merged) */}
         <div>
-          <label className={labelCls}>Marks and Inscriptions</label>
+          <label className={labelCls} data-learn="objects.inscription">Marks and Inscriptions</label>
           <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={3}
             placeholder="Inscriptions, hallmarks, maker's marks, stamps, signatures…"
             className={textareaCls} />
@@ -269,7 +269,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Other Names — Spectrum 5.1 Proc 5 */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Other Names / Also Known As</label>
+            <label className={labelCls} data-learn="objects.other_names">Other Names / Also Known As</label>
             <input value={form.other_names || ''} onChange={e => set('other_names', e.target.value)}
               placeholder="Alternative titles, former names, popular names…"
               className={inputCls} />
@@ -282,7 +282,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             <div className={sectionTitle} style={{marginTop: '0.5rem'}}>Physical Description</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Colour</label>
+                <label className={labelCls} data-learn="objects.colour">Colour</label>
                 <AutocompleteInput
                   value={form.colour || ''}
                   onChange={v => set('colour', v)}
@@ -294,7 +294,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
                 />
               </div>
               <div>
-                <label className={labelCls}>Shape</label>
+                <label className={labelCls} data-learn="objects.shape">Shape</label>
                 <AutocompleteInput
                   value={form.shape || ''}
                   onChange={v => set('shape', v)}
@@ -307,7 +307,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
               </div>
             </div>
             <div>
-              <label className={labelCls}>Surface Treatment</label>
+              <label className={labelCls} data-learn="objects.surface_treatment">Surface Treatment</label>
               <input value={form.surface_treatment || ''} onChange={e => set('surface_treatment', e.target.value)}
                 placeholder="e.g. Glazed, Gilded, Varnished, Patinated…"
                 className={inputCls} />
@@ -319,21 +319,21 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {getPlan(museum.plan).fullMode && (
           <div className="space-y-3">
             <div>
-              <label className={labelCls}>Provenance</label>
+              <label className={labelCls} data-learn="objects.provenance">Provenance</label>
               <textarea value={form.provenance} onChange={e => set('provenance', e.target.value)} rows={3}
                 placeholder="Known ownership history prior to acquisition…"
                 className={textareaCls} />
             </div>
             {form.provenance && (
               <div>
-                <label className={labelCls}>Provenance Date Range</label>
+                <label className={labelCls} data-learn="objects.provenance_date_range">Provenance Date Range</label>
                 <input value={form.provenance_date_range || ''} onChange={e => set('provenance_date_range', e.target.value)}
                   placeholder="e.g. 1850–1920, pre-1945"
                   className={inputCls} />
               </div>
             )}
             <div>
-              <label className={labelCls}>Field Collection Information</label>
+              <label className={labelCls} data-learn="objects.field_collection_info">Field Collection Information</label>
               <textarea value={form.field_collection_info || ''} onChange={e => set('field_collection_info', e.target.value)} rows={2}
                 placeholder="Archaeological site, field collector, collection date, context…"
                 className={textareaCls} />
@@ -357,7 +357,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Credit Line */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Credit Line</label>
+            <label className={labelCls} data-learn="objects.credit_line">Credit Line</label>
             <input value={form.credit_line || ''} onChange={e => set('credit_line', e.target.value)} placeholder="How the donor wishes to be credited. Leave blank if they don't require credit." className={inputCls} />
           </div>
         )}
@@ -365,7 +365,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Materials & Techniques */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Materials &amp; Techniques</label>
+            <label className={labelCls} data-learn="objects.physical_materials">Materials &amp; Techniques</label>
             <input value={form.physical_materials} onChange={e => set('physical_materials', e.target.value)} placeholder="e.g. oil on canvas, gilt wood frame; hand-thrown" className={inputCls} />
           </div>
         )}
@@ -373,7 +373,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Production */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Production Place</label>
+            <label className={labelCls} data-learn="objects.production_place">Production Place</label>
             <AutocompleteInput
               value={form.production_place}
               onChange={v => set('production_place', v)}
@@ -389,7 +389,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Purchase or Gift */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Purchase or Gift</label>
+            <label className={labelCls} data-learn="objects.is_gift">Purchase or Gift</label>
             <div className="flex gap-2 flex-wrap">
               {[
                 { label: 'Not specified', value: null },
@@ -411,7 +411,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Insured Value (Internal) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Insured Value {internalLabel}</label>
+            <label className={labelCls} data-learn="objects.insured_value">Insured Value {internalLabel}</label>
             <input type="number" step="0.01" min="0" value={form.insured_value || ''} onChange={e => set('insured_value', e.target.value)} placeholder="0.00" className={inputCls} />
           </div>
           <div>
@@ -437,7 +437,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Public site toggle */}
         <div>
-          <label className={labelCls}>Public Site</label>
+          <label className={labelCls} data-learn="objects.show_on_site">Public Site</label>
           <button
             type="button"
             onClick={() => set('show_on_site', !form.show_on_site)}
@@ -479,7 +479,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Discovery category override */}
         <div>
-          <label className={labelCls}>Discovery Category</label>
+          <label className={labelCls} data-learn="objects.category">Discovery Category</label>
           <select
             value={form.category || ''}
             onChange={e => set('category', e.target.value || null)}
@@ -496,7 +496,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Full Description (Internal) */}
         {getPlan(museum.plan).fullMode && (
           <div>
-            <label className={labelCls}>Full Description {internalLabel}</label>
+            <label className={labelCls} data-learn="objects.full_description">Full Description {internalLabel}</label>
             <textarea value={form.full_description} onChange={e => set('full_description', e.target.value)} rows={3}
               placeholder="Detailed internal catalogue description…"
               className={textareaCls} />

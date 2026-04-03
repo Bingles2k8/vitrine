@@ -130,12 +130,12 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           <div className={sectionTitle}>Official Recorded Valuation</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="col-span-2">
-              <label className={labelCls}>Value <span className="text-red-400">*</span></label>
+              <label className={labelCls} data-learn="valuation.value">Value <span className="text-red-400">*</span></label>
               <input type="number" step="0.01" min="0" value={valuationForm.value} onChange={e => setValuationForm(f => ({ ...f, value: e.target.value }))}
                 placeholder="0.00" className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Currency</label>
+              <label className={labelCls} data-learn="valuation.currency">Currency</label>
               <select value={valuationForm.currency} onChange={e => setValuationForm(f => ({ ...f, currency: e.target.value }))} className={inputCls}>
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -143,24 +143,24 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Valuation Date <span className="text-red-400">*</span></label>
+              <label className={labelCls} data-learn="valuation.date">Valuation Date <span className="text-red-400">*</span></label>
               <input type="date" value={valuationForm.valuation_date} onChange={e => setValuationForm(f => ({ ...f, valuation_date: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Valuer</label>
+              <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
               <input value={valuationForm.valuer} onChange={e => setValuationForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Method</label>
+              <label className={labelCls} data-learn="valuation.method">Method</label>
               <select value={valuationForm.method} onChange={e => setValuationForm(f => ({ ...f, method: e.target.value }))} className={inputCls}>
                 <option value="">— Select —</option>
                 {VALUATION_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Purpose</label>
+              <label className={labelCls} data-learn="valuation.purpose">Purpose</label>
               <select value={valuationForm.purpose} onChange={e => setValuationForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
                 <option value="">— Select —</option>
                 {VALUATION_PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -169,14 +169,14 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Valuation Basis</label>
+              <label className={labelCls} data-learn="valuation.basis">Valuation Basis</label>
               <select value={valuationForm.valuation_basis} onChange={e => setValuationForm(f => ({ ...f, valuation_basis: e.target.value }))} className={inputCls}>
                 <option value="">— Select —</option>
                 {VALUATION_BASES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Validity Date</label>
+              <label className={labelCls} data-learn="valuation.validity_date">Validity Date</label>
               <input type="date" value={valuationForm.validity_date} onChange={e => setValuationForm(f => ({ ...f, validity_date: e.target.value }))} className={inputCls} />
               <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date until which this valuation is valid</p>
             </div>

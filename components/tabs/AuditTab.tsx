@@ -57,8 +57,8 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
       {canEdit && <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Record Inventory Check</div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
-          <div><label className={labelCls}>Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="audit.date">Date *</label><input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="audit.inventoried_by">Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>
         </div>
         <div>
           <label className={labelCls}>Inventory Exercise</label>
@@ -71,9 +71,9 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Link this audit to a formal inventory exercise</p>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={labelCls}>Location Confirmed</label><input value={auditForm.location_confirmed} onChange={e => setAuditForm(f => ({ ...f, location_confirmed: e.target.value }))} placeholder="Actual location found" className={inputCls} /></div>
+          <div><label className={labelCls} data-learn="audit.location_confirmed">Location Confirmed</label><input value={auditForm.location_confirmed} onChange={e => setAuditForm(f => ({ ...f, location_confirmed: e.target.value }))} placeholder="Actual location found" className={inputCls} /></div>
           <div>
-            <label className={labelCls}>Condition Confirmed</label>
+            <label className={labelCls} data-learn="audit.condition_confirmed">Condition Confirmed</label>
             <select value={auditForm.condition_confirmed} onChange={e => setAuditForm(f => ({ ...f, condition_confirmed: e.target.value }))} className={inputCls}>
               <option value="">— Not assessed —</option>
               {CONDITION_GRADES.map(g => <option key={g}>{g}</option>)}
@@ -81,7 +81,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           </div>
         </div>
         <div>
-          <label className={labelCls}>Inventory Outcome *</label>
+          <label className={labelCls} data-learn="audit.outcome">Inventory Outcome *</label>
           <div className="flex gap-2 flex-wrap">
             {INVENTORY_OUTCOMES.map(o => (
               <button key={o} type="button" onClick={() => setAuditForm(f => ({ ...f, inventory_outcome: o }))}
@@ -121,7 +121,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
         <div>
-          <label className={labelCls}>Notes</label>
+          <label className={labelCls} data-learn="audit.notes">Notes</label>
           <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>

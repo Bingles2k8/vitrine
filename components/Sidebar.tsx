@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect, useRef } from 'react'
 import { getPlan } from '@/lib/plans'
+import { useLearnMode } from '@/components/LearnModeProvider'
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -27,6 +28,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [discoverable, setDiscoverable] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const { learnMode, setLearnMode } = useLearnMode()
 
   // Sync discoverable from museum prop (museum may be null on first render)
   useEffect(() => {
@@ -90,7 +92,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     await supabase.from('museums').update({ discoverable: next }).eq('id', museum.id)
   }
 
-  function navItem(path: string, icon: string, label: string) {
+  function navItem(path: string, icon: string, label: string, learnKey?: string) {
     const active = activePath === path
     return (
       <div
@@ -100,6 +102,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
             ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900'
             : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-800'
         }`}
+        {...(learnKey ? { 'data-learn': learnKey } : {})}
       >
         <span>{icon}</span> {label}
       </div>
@@ -194,7 +197,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   }
 
   return (
-    <aside className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
+    <aside data-sidebar className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
       <div className="p-5 border-b border-stone-200 dark:border-stone-800">
         <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
@@ -213,50 +216,50 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
-        {navItem('/dashboard', '⬡', 'Objects')}
-        {planInfo?.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted')}
+        {navItem('/dashboard', '⬡', 'Objects', 'nav.objects')}
+        {planInfo?.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted', 'nav.wanted')}
 
         {simple ? (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Record</div>
-            {navItem('/dashboard/entry', '🗂', 'Add Object')}
+            {navItem('/dashboard/entry', '🗂', 'Add Object', 'nav.entry')}
           </>
         ) : (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Object Management</div>
-            {navItem('/dashboard/entry', '🗂', 'Object Entry')}
-            {navItem('/dashboard/register', '📋', 'Accession Register')}
-            {navItem('/dashboard/loans', '⇄', 'Loans Register')}
-            {navItem('/dashboard/conservation', '⚗', 'Conservation')}
-            {navItem('/dashboard/audit', '◎', 'Audit & Inventory')}
-            {navItem('/dashboard/exits', '↗', 'Object Exit')}
-            {navItem('/dashboard/locations', '◎', 'Location Register')}
-            {navItem('/dashboard/valuation', '◈', 'Valuation Register')}
-            {navItem('/dashboard/risk', '⚑', 'Risk Register')}
-            {navItem('/dashboard/emergency', '⚡', 'Emergency Plans')}
-            {navItem('/dashboard/insurance', '🛡', 'Insurance')}
-            {navItem('/dashboard/damage', '⚠', 'Damage Reports')}
-            {navItem('/dashboard/collections-use', '⊞', 'Use of Collections')}
-            {navItem('/dashboard/disposal', '⊘', 'Disposal')}
-            {navItem('/dashboard/collections-review', '⊡', 'Collections Review')}
-            {navItem('/dashboard/docs', '✓', 'Documentation Plan')}
-            {navItem('/dashboard/trash', '🗑', 'Deleted Objects')}
+            {navItem('/dashboard/entry', '🗂', 'Object Entry', 'nav.entry')}
+            {navItem('/dashboard/register', '📋', 'Accession Register', 'nav.register')}
+            {navItem('/dashboard/loans', '⇄', 'Loans Register', 'nav.loans')}
+            {navItem('/dashboard/conservation', '⚗', 'Conservation', 'nav.conservation')}
+            {navItem('/dashboard/audit', '◎', 'Audit & Inventory', 'nav.audit')}
+            {navItem('/dashboard/exits', '↗', 'Object Exit', 'nav.exits')}
+            {navItem('/dashboard/locations', '◎', 'Location Register', 'nav.locations')}
+            {navItem('/dashboard/valuation', '◈', 'Valuation Register', 'nav.valuation')}
+            {navItem('/dashboard/risk', '⚑', 'Risk Register', 'nav.risk')}
+            {navItem('/dashboard/emergency', '⚡', 'Emergency Plans', 'nav.emergency')}
+            {navItem('/dashboard/insurance', '🛡', 'Insurance', 'nav.insurance')}
+            {navItem('/dashboard/damage', '⚠', 'Damage Reports', 'nav.damage')}
+            {navItem('/dashboard/collections-use', '⊞', 'Use of Collections', 'nav.collections-use')}
+            {navItem('/dashboard/disposal', '⊘', 'Disposal', 'nav.disposal')}
+            {navItem('/dashboard/collections-review', '⊡', 'Collections Review', 'nav.collections-review')}
+            {navItem('/dashboard/docs', '✓', 'Documentation Plan', 'nav.docs')}
+            {navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
           </>
         )}
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
-        {navItem('/dashboard/site', '◫', 'Site Builder')}
-        {planInfo?.ticketing && navItem('/dashboard/events', '◎', 'Events')}
+        {navItem('/dashboard/site', '◫', 'Site Builder', 'nav.site')}
+        {planInfo?.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
 
         {!simple && (isOwner || staffAccess === 'Admin') && (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">People</div>
-            {navItem('/dashboard/staff', '◉', 'Staff & Roles')}
+            {navItem('/dashboard/staff', '◉', 'Staff & Roles', 'nav.staff')}
           </>
         )}
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Data</div>
-        {navItem('/dashboard/analytics', '▦', 'Analytics')}
+        {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
       </nav>
 
       {/* Settings footer */}
@@ -278,7 +281,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
               {/* Appearance */}
               <div>
                 <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Appearance</div>
-                <div className="flex gap-1">
+                <div className="flex gap-1" data-learn="settings.theme">
                   {(['system', 'light', 'dark'] as Theme[]).map(t => (
                     <button
                       key={t}
@@ -297,7 +300,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
               {/* Interface */}
               {museum && (
-                <div>
+                <div data-learn="settings.ui_mode">
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Interface</div>
                   {communityLocked ? (
                     <span className="text-xs font-mono text-stone-300 dark:text-stone-600">
@@ -314,6 +317,25 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </div>
               )}
 
+              {/* Learn Mode */}
+              <div>
+                <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Learn Mode</div>
+                <button
+                  onClick={() => setLearnMode(!learnMode)}
+                  className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
+                    learnMode
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                  data-learn="settings.learn_mode"
+                >
+                  <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${learnMode ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                    <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${learnMode ? 'left-3.5' : 'left-0.5'}`} />
+                  </span>
+                  {learnMode ? 'Tooltips active' : 'Show field tooltips'}
+                </button>
+              </div>
+
               {/* Directory (Professional+ owners and admins) */}
               {museum && (isOwner || staffAccess === 'Admin') && planInfo?.fullMode && (
                 <div>
@@ -325,6 +347,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                     }`}
+                    data-learn="settings.discoverable"
                   >
                     <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${discoverable ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
                       <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${discoverable ? 'left-3.5' : 'left-0.5'}`} />

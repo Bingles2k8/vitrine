@@ -247,7 +247,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>New Location <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="location.new_location">New Location <span className="text-red-400">*</span></label>
             <AutocompleteInput
               value={locationForm.location}
               onChange={handleLocationNameChange}
@@ -257,7 +257,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             />
           </div>
           <div>
-            <label className={labelCls}>Location Code <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="location.code">Location Code <span className="text-red-400">*</span></label>
             <AutocompleteInput
               value={locationForm.location_code}
               onChange={v => setLocationForm(f => ({ ...f, location_code: v }))}
@@ -271,7 +271,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <label className={labelCls}>Building</label>
+            <label className={labelCls} data-learn="location.building">Building</label>
             <AutocompleteInput
               value={locationForm.building}
               onChange={v => setLocationForm(f => ({ ...f, building: v }))}
@@ -280,7 +280,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             />
           </div>
           <div>
-            <label className={labelCls}>Floor</label>
+            <label className={labelCls} data-learn="location.floor">Floor</label>
             <AutocompleteInput
               value={locationForm.floor}
               onChange={v => setLocationForm(f => ({ ...f, floor: v }))}
@@ -289,7 +289,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             />
           </div>
           <div>
-            <label className={labelCls}>Room</label>
+            <label className={labelCls} data-learn="location.room">Room</label>
             <AutocompleteInput
               value={locationForm.room}
               onChange={v => setLocationForm(f => ({ ...f, room: v }))}
@@ -298,7 +298,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             />
           </div>
           <div>
-            <label className={labelCls}>Unit / Position</label>
+            <label className={labelCls} data-learn="location.unit">Unit / Position</label>
             <AutocompleteInput
               value={locationForm.unit}
               onChange={v => setLocationForm(f => ({ ...f, unit: v }))}
@@ -310,17 +310,17 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className={labelCls}>Type</label>
+            <label className={labelCls} data-learn="location.type">Type</label>
             <select value={locationForm.location_type} onChange={e => setLocationForm(f => ({ ...f, location_type: e.target.value }))} className={inputCls}>
               {LOCATION_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Moved By</label>
+            <label className={labelCls} data-learn="location.moved_by">Moved By</label>
             <input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} disabled={!canEdit} />
           </div>
           <div>
-            <label className={labelCls}>Date of Move</label>
+            <label className={labelCls} data-learn="location.moved_at">Date of Move</label>
             <input type="date" value={locationForm.moved_at} onChange={e => setLocationForm(f => ({ ...f, moved_at: e.target.value }))} className={inputCls} max={today} disabled={!canEdit} />
           </div>
         </div>

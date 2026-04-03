@@ -110,14 +110,14 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         <div className={sectionTitle}>Add Conservation Treatment</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Treatment Type <span className="text-red-400">*</span></label>
+            <label className={labelCls} data-learn="conservation.treatment_type">Treatment Type <span className="text-red-400">*</span></label>
             <select value={conservationForm.treatment_type} onChange={e => setConservationForm(f => ({ ...f, treatment_type: e.target.value, other_treatment_type: '' }))} className={inputCls}>
               <option value="">— Select —</option>
               {TREATMENT_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Conservator</label>
+            <label className={labelCls} data-learn="conservation.conservator">Conservator</label>
             <input value={conservationForm.conservator} onChange={e => setConservationForm(f => ({ ...f, conservator: e.target.value }))} className={inputCls} />
           </div>
         </div>
@@ -137,17 +137,17 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Start Date</label>
+            <label className={labelCls} data-learn="conservation.start_date">Start Date</label>
             <input type="date" value={conservationForm.start_date} onChange={e => setConservationForm(f => ({ ...f, start_date: e.target.value }))} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>End Date <span className="text-stone-400 font-normal normal-case text-xs">(leave blank if ongoing)</span></label>
+            <label className={labelCls} data-learn="conservation.end_date">End Date <span className="text-stone-400 font-normal normal-case text-xs">(leave blank if ongoing)</span></label>
             <input type="date" value={conservationForm.end_date} onChange={e => setConservationForm(f => ({ ...f, end_date: e.target.value }))} className={inputCls} />
           </div>
         </div>
 
         <div>
-          <label className={labelCls}>Condition Description</label>
+          <label className={labelCls} data-learn="conservation.condition_description">Condition Description</label>
           <textarea value={conservationForm.condition_description} onChange={e => setConservationForm(f => ({ ...f, condition_description: e.target.value }))} rows={2} placeholder="Condition of object at time of treatment..." className={`${inputCls} resize-none`} />
         </div>
 
@@ -163,13 +163,13 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         </div>
 
         <div>
-          <label className={labelCls}>Materials Used</label>
+          <label className={labelCls} data-learn="conservation.materials_used">Materials Used</label>
           <input value={conservationForm.materials_used} onChange={e => setConservationForm(f => ({ ...f, materials_used: e.target.value }))} placeholder="Conservation materials and chemicals used" className={inputCls} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Cost</label>
+            <label className={labelCls} data-learn="conservation.cost">Cost</label>
             <input type="number" step="0.01" min="0" value={conservationForm.cost} onChange={e => setConservationForm(f => ({ ...f, cost: e.target.value }))} placeholder="0.00" className={inputCls} />
           </div>
           <div>
@@ -181,13 +181,13 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         </div>
 
         <div>
-          <label className={labelCls}>Description</label>
+          <label className={labelCls} data-learn="conservation.description">Description</label>
           <textarea value={conservationForm.description} onChange={e => setConservationForm(f => ({ ...f, description: e.target.value }))} rows={3}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
         </div>
 
         <div>
-          <label className={labelCls}>Future Recommendations</label>
+          <label className={labelCls} data-learn="conservation.recommendation_future">Future Recommendations</label>
           <textarea value={conservationForm.recommendation_future} onChange={e => setConservationForm(f => ({ ...f, recommendation_future: e.target.value }))} rows={2} placeholder="Recommendations for future conservation..." className={`${inputCls} resize-none`} />
         </div>
 
