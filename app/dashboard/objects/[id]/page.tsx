@@ -557,13 +557,6 @@ export default function ObjectDetail() {
               sections={[
                 { id: 'overview',    label: 'Overview',       complete: !!form.title,
                   fields: [{ label: 'Title', complete: !!form.title }] },
-                { id: 'entry',       label: 'Entry',
-                  complete: !!(object?.entry_number && object?.entry_date && object?.received_by),
-                  fields: [
-                    { label: 'Entry number', complete: !!object?.entry_number },
-                    { label: 'Entry date',   complete: !!object?.entry_date },
-                    { label: 'Entry by',     complete: !!object?.received_by },
-                  ] },
                 { id: 'acquisition', label: 'Acquisition',
                   complete: !!(form.acquisition_method && form.acquisition_date && form.acquisition_justification && (form.ethics_art_loss_register || form.ethics_cites || form.ethics_dealing_act || form.ethics_human_remains)),
                   fields: [
