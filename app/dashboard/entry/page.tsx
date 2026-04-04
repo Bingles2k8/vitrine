@@ -416,13 +416,15 @@ export default function EntryRegisterPage() {
                 >
                   {submitting ? 'Recording…' : 'Record Entry'}
                 </button>
-                <button
-                  onClick={() => handleCreateEntry('continue')}
-                  disabled={submitting}
-                  className="text-sm font-mono bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Recording…' : 'Record & Add Details →'}
-                </button>
+                {!getPlan(museum?.plan).fullMode && (
+                  <button
+                    onClick={() => handleCreateEntry('continue')}
+                    disabled={submitting}
+                    className="text-sm font-mono bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors disabled:opacity-50"
+                  >
+                    {submitting ? 'Recording…' : 'Record & Add Details →'}
+                  </button>
+                )}
               </div>
             </div>
           )}
