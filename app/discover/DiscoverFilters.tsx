@@ -4,9 +4,10 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 
-export default function DiscoverFilters({ selectedCategories, query, hideSearch = false, hideCategories = false }: {
+export default function DiscoverFilters({ selectedCategories, query, museumQuery = '', hideSearch = false, hideCategories = false }: {
   selectedCategories: string[]
   query: string
+  museumQuery?: string
   hideSearch?: boolean
   hideCategories?: boolean
 }) {
@@ -33,6 +34,10 @@ export default function DiscoverFilters({ selectedCategories, query, hideSearch 
     updateParams({ q: e.target.value || null })
   }
 
+  function handleMuseumSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    updateParams({ museum: e.target.value || null })
+  }
+
   function toggleCategory(cat: string) {
     const next = selectedCategories.includes(cat)
       ? selectedCategories.filter(c => c !== cat)
@@ -44,23 +49,37 @@ export default function DiscoverFilters({ selectedCategories, query, hideSearch 
     startTransition(() => router.push(pathname))
   }
 
-  const hasFilters = query || selectedCategories.length > 0
+  const hasFilters = query || museumQuery || selectedCategories.length > 0
 
   return (
     <div className="flex flex-col gap-6">
       {/* Search bar */}
       {!hideSearch && (
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="search"
-            defaultValue={query}
-            onChange={handleSearch}
-            placeholder="Search the Vitrine collection…"
-            className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
-          />
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="search"
+              defaultValue={query}
+              onChange={handleSearch}
+              placeholder="Search objects…"
+              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
+            />
+          </div>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <input
+              type="search"
+              defaultValue={museumQuery}
+              onChange={handleMuseumSearch}
+              placeholder="Search by museum…"
+              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
+            />
+          </div>
         </div>
       )}
 

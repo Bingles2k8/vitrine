@@ -72,8 +72,11 @@ export default function Home() {
               managed.
             </h1>
 
-            <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-10">
-              Vitrine gives every museum — large or small — a professional collection CMS and public-facing website. No technical knowledge required.
+            <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-4">
+              Vitrine gives every collection, large or small, a professional Collection Management System and Public-Facing website.
+            </p>
+            <p className="text-base text-stone-500 font-light leading-relaxed max-w-xl mb-10">
+              Built for individual collectors and small museums. No technical knowledge required — just your collection.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">

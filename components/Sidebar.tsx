@@ -216,7 +216,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
-        {navItem('/dashboard', '⬡', 'Objects', 'nav.objects')}
+        {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
         {planInfo?.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted', 'nav.wanted')}
 
         {simple ? (
@@ -226,7 +226,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           </>
         ) : (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Object Management</div>
+            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Collection Management</div>
             {navItem('/dashboard/entry', '🗂', 'Object Entry', 'nav.entry')}
             {navItem('/dashboard/register', '📋', 'Accession Register', 'nav.register')}
             {navItem('/dashboard/loans', '⇄', 'Loans Register', 'nav.loans')}

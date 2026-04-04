@@ -177,7 +177,7 @@ export default function EntryRegisterPage() {
     if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     if (mode === 'continue') {
-      router.push(`/dashboard/objects/${newObject.id}`)
+      router.push(`/dashboard`)
     } else {
       setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_title, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
       setNewEntry(defaultEntry())

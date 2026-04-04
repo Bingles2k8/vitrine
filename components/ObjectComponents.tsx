@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast'
 interface Component {
   id: string
   component_number: number
+  part_number_label: string | null
   component_accession_no: string | null
   title: string | null
   notes: string | null
@@ -23,9 +24,9 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
   const [components, setComponents] = useState<Component[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<{ title: string; notes: string }>({ title: '', notes: '' })
+  const [editForm, setEditForm] = useState<{ part_number_label: string; title: string; notes: string }>({ part_number_label: '', title: '', notes: '' })
   const [adding, setAdding] = useState(false)
-  const [newForm, setNewForm] = useState({ title: '', notes: '' })
+  const [newForm, setNewForm] = useState({ part_number_label: '', title: '', notes: '' })
 
   useEffect(() => {
     fetch(`/api/objects/${objectId}/components`)
@@ -46,7 +47,7 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
     if (!res.ok) { toast('Failed to add part', 'error'); return }
     const created: Component = await res.json()
     setComponents(prev => [...prev, created])
-    setNewForm({ title: '', notes: '' })
+    setNewForm({ part_number_label: '', title: '', notes: '' })
     setAdding(false)
     toast('Part added')
   }
@@ -83,7 +84,11 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
         <div key={c.id} className="border border-stone-100 dark:border-stone-800 rounded-lg p-3 space-y-2">
           {editingId === c.id ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className={labelCls}>Part Number</label>
+                  <input value={editForm.part_number_label} onChange={e => setEditForm(f => ({ ...f, part_number_label: e.target.value }))} placeholder="e.g. 1, 1a, B" className={inputCls} />
+                </div>
                 <div>
                   <label className={labelCls}>Title</label>
                   <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} className={inputCls} />
@@ -102,7 +107,9 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500">Part {c.component_number}</span>
+                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                    Part {c.part_number_label || c.component_number}
+                  </span>
                   {c.component_accession_no && (
                     <span className="text-xs font-mono text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded px-1.5 py-0.5">{c.component_accession_no}</span>
                   )}
@@ -113,7 +120,7 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
               {canEdit && (
                 <div className="flex gap-2 shrink-0">
                   <button
-                    onClick={() => { setEditingId(c.id); setEditForm({ title: c.title || '', notes: c.notes || '' }) }}
+                    onClick={() => { setEditingId(c.id); setEditForm({ part_number_label: c.part_number_label || '', title: c.title || '', notes: c.notes || '' }) }}
                     className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
                   >Edit</button>
                   <button
@@ -129,10 +136,14 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
 
       {adding && (
         <div className="border border-stone-100 dark:border-stone-800 rounded-lg p-3 space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label className={labelCls}>Part Number</label>
+              <input value={newForm.part_number_label} onChange={e => setNewForm(f => ({ ...f, part_number_label: e.target.value }))} placeholder="e.g. 1, 1a, B" className={inputCls} />
+            </div>
             <div>
               <label className={labelCls}>Title</label>
-              <input value={newForm.title} onChange={e => setNewForm(f => ({ ...f, title: e.target.value }))} placeholder={`e.g. Left ${accessionNo ? `(${accessionNo}.${components.length + 1})` : ''}`} className={inputCls} />
+              <input value={newForm.title} onChange={e => setNewForm(f => ({ ...f, title: e.target.value }))} placeholder={`e.g. Left shoe`} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Notes</label>
@@ -141,7 +152,7 @@ export default function ObjectComponents({ objectId, accessionNo, canEdit }: Pro
           </div>
           <div className="flex gap-2">
             <button onClick={addComponent} className="text-xs font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1 hover:bg-stone-50 dark:hover:bg-stone-800">Add Part</button>
-            <button onClick={() => { setAdding(false); setNewForm({ title: '', notes: '' }) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700">Cancel</button>
+            <button onClick={() => { setAdding(false); setNewForm({ part_number_label: '', title: '', notes: '' }) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700">Cancel</button>
           </div>
         </div>
       )}

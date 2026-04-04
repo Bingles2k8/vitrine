@@ -119,11 +119,15 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
         if (newLoc) setLocations((prev: any[]) => [...prev, newLoc])
       }
 
-      // Record the movement
+      // Record the movement — use current timestamp to avoid same-day ordering collisions
+      const movedAtIso = locationForm.moved_at === today
+        ? new Date().toISOString()
+        : `${locationForm.moved_at}T12:00:00`
       await supabase.from('location_history').insert({
         location: locationForm.location,
+        location_code: locationForm.location_code || null,
         moved_by: locationForm.moved_by || null,
-        moved_at: locationForm.moved_at ? `${locationForm.moved_at}T12:00:00` : new Date().toISOString(),
+        moved_at: movedAtIso,
         object_id: object.id,
         museum_id: museum.id,
       })
@@ -346,7 +350,8 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
               <thead>
                 <tr className="border-b border-stone-200 dark:border-stone-700">
                   <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
-                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Location</th>
+                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">New Location</th>
+                  <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Location Code</th>
                   <th className="text-left py-2 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Moved By</th>
                 </tr>
               </thead>
@@ -355,6 +360,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                   <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{new Date(h.moved_at).toLocaleDateString('en-GB')}</td>
                     <td className="py-2 pr-4 text-stone-900 dark:text-stone-100">{h.location}</td>
+                    <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{h.location_code || '—'}</td>
                     <td className="py-2 text-stone-500 dark:text-stone-400">{h.moved_by}</td>
                   </tr>
                 ))}

@@ -4,9 +4,10 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 
-export default function DiscoverMobileFilters({ selectedCategories, query }: {
+export default function DiscoverMobileFilters({ selectedCategories, query, museumQuery = '' }: {
   selectedCategories: string[]
   query: string
+  museumQuery?: string
 }) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
@@ -32,6 +33,10 @@ export default function DiscoverMobileFilters({ selectedCategories, query }: {
     updateParams({ q: e.target.value || null })
   }
 
+  function handleMuseumSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    updateParams({ museum: e.target.value || null })
+  }
+
   function toggleCategory(cat: string) {
     const next = selectedCategories.includes(cat)
       ? selectedCategories.filter(c => c !== cat)
@@ -48,17 +53,31 @@ export default function DiscoverMobileFilters({ selectedCategories, query }: {
     <>
       {/* Search + filter button row */}
       <div className="flex gap-2">
-        <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="search"
-            defaultValue={query}
-            onChange={handleSearch}
-            placeholder="Search collections…"
-            className="w-full pl-8 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
-          />
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="search"
+              defaultValue={query}
+              onChange={handleSearch}
+              placeholder="Search objects…"
+              className="w-full pl-8 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
+            />
+          </div>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <input
+              type="search"
+              defaultValue={museumQuery}
+              onChange={handleMuseumSearch}
+              placeholder="Search by museum…"
+              className="w-full pl-8 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-xs text-stone-100 placeholder:text-stone-500 outline-none focus:border-white/20 transition-colors font-mono"
+            />
+          </div>
         </div>
         <button
           onClick={() => setOpen(true)}

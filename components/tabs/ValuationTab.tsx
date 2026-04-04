@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { inputCls, labelCls, sectionTitle, VALUATION_METHODS, VALUATION_PURPOSES, CURRENCIES } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, CURRENCIES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
@@ -25,7 +25,8 @@ interface ValuationTabProps {
 export default function ValuationTab({ canEdit, object, museum, supabase, logActivity, setLatestValuation, form, set, saving }: ValuationTabProps) {
   const [valuations, setValuations] = useState<any[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
-  const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
+  const today = new Date().toISOString().split('T')[0]
+  const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' })
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
@@ -38,7 +39,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   }, [object.id])
 
   async function addValuation() {
-    if (!valuationForm.value || !valuationForm.valuation_date || submitting) return
+    if (!valuationForm.value || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
     const count = valuations.filter(v => v.valuation_reference?.startsWith(`VL-${year}-`)).length
@@ -49,7 +50,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       object_id: object.id,
       museum_id: museum.id,
       valuation_reference: valRef,
-      valuation_basis: valuationForm.valuation_basis || null,
+      valuation_basis: null,
       validity_date: valuationForm.validity_date || null,
     })
     if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
@@ -61,7 +62,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     }
     const lv = { value: valuationForm.value, currency: valuationForm.currency, valuation_date: valuationForm.valuation_date }
     setLatestValuation(lv)
-    setValuationForm({ value: '', currency: 'GBP', valuation_date: '', valuer: '', method: '', purpose: '', notes: '', valuation_basis: '', validity_date: '' })
+    setValuationForm({ value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' })
     const { data } = await supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
     setValuations(data || [])
     logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${object.title}"`)
@@ -99,31 +100,33 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
         )}
       </div>
 
-      {/* Estimated Current Value */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Estimated Current Value</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="col-span-2">
-            <label className={labelCls}>Estimated value</label>
-            <input type="number" step="0.01" min="0" value={form.estimated_value}
-              onChange={e => set('estimated_value', e.target.value)}
-              placeholder="0.00" className={inputCls} disabled={!canEdit || saving} />
-            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Your own estimate — update it any time. <span className="italic">(Internal — never shown publicly.)</span></p>
+      {/* Estimated Current Value — Community / Hobbyist tiers only */}
+      {!getPlan(museum.plan).fullMode && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+          <div className={sectionTitle}>Estimated Current Value</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <label className={labelCls}>Estimated value</label>
+              <input type="number" step="0.01" min="0" value={form.estimated_value}
+                onChange={e => set('estimated_value', e.target.value)}
+                placeholder="0.00" className={inputCls} disabled={!canEdit || saving} />
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Your own estimate — update it any time. <span className="italic">(Internal — never shown publicly.)</span></p>
+            </div>
+            <div>
+              <label className={labelCls}>Currency</label>
+              <select value={form.estimated_value_currency} onChange={e => set('estimated_value_currency', e.target.value)} className={inputCls} disabled={!canEdit || saving}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className={labelCls}>Currency</label>
-            <select value={form.estimated_value_currency} onChange={e => set('estimated_value_currency', e.target.value)} className={inputCls} disabled={!canEdit || saving}>
-              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+          {canEdit && (
+            <button type="submit" disabled={saving}
+              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+              {saving ? 'Saving\u2026' : 'Save \u2192'}
+            </button>
+          )}
         </div>
-        {canEdit && (
-          <button type="submit" disabled={saving}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {saving ? 'Saving\u2026' : 'Save \u2192'}
-          </button>
-        )}
-      </div>
+      )}
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
@@ -143,37 +146,8 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls} data-learn="valuation.date">Valuation Date <span className="text-red-400">*</span></label>
-              <input type="date" value={valuationForm.valuation_date} onChange={e => setValuationForm(f => ({ ...f, valuation_date: e.target.value }))} className={inputCls} />
-            </div>
-            <div>
               <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
               <input value={valuationForm.valuer} onChange={e => setValuationForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls} data-learn="valuation.method">Method</label>
-              <select value={valuationForm.method} onChange={e => setValuationForm(f => ({ ...f, method: e.target.value }))} className={inputCls}>
-                <option value="">— Select —</option>
-                {VALUATION_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls} data-learn="valuation.purpose">Purpose</label>
-              <select value={valuationForm.purpose} onChange={e => setValuationForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
-                <option value="">— Select —</option>
-                {VALUATION_PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls} data-learn="valuation.basis">Valuation Basis</label>
-              <select value={valuationForm.valuation_basis} onChange={e => setValuationForm(f => ({ ...f, valuation_basis: e.target.value }))} className={inputCls}>
-                <option value="">— Select —</option>
-                {VALUATION_BASES.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
             </div>
             <div>
               <label className={labelCls} data-learn="valuation.validity_date">Validity Date</label>
@@ -191,7 +165,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
               <StagedDocumentPicker relatedToType="valuation" value={stagedDocs} onChange={setStagedDocs} />
             </div>
           )}
-          <button type="button" onClick={addValuation} disabled={!valuationForm.value || !valuationForm.valuation_date || submitting}
+          <button type="button" onClick={addValuation} disabled={!valuationForm.value || submitting}
             className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {submitting ? 'Saving\u2026' : 'Save valuation \u2192'}
           </button>

@@ -9,6 +9,16 @@ import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
+const COPYRIGHT_TOOLTIPS: Record<string, string> = {
+  'In Copyright': 'Someone holds the copyright and permission is needed to reproduce it',
+  'Out of Copyright': 'The copyright term has expired',
+  'Public Domain': 'Free to use by anyone without restriction',
+  'CC BY': 'Creative Commons — free to use with credit to the creator',
+  'CC BY-SA': 'Creative Commons — free to use with credit; derivatives must use the same licence',
+  'CC BY-NC': 'Creative Commons — free to use with credit for non-commercial purposes only',
+  'Unknown': 'Copyright status has not been determined',
+}
+
 interface RightsTabProps {
   form: Record<string, any>
   set: (field: string, value: any) => void
@@ -48,6 +58,9 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
   const [selectedRepro, setSelectedRepro] = useState<any>(null)
   const [stagedReproDocs, setStagedReproDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [showRightsForm, setShowRightsForm] = useState(false)
+  const [showRightsHistory, setShowRightsHistory] = useState(false)
+  const [showReproForm, setShowReproForm] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -140,13 +153,20 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
       {/* Copyright & Rights Overview */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Rights Management</div>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Record the copyright status and any known rights holders for this object. This information is Spectrum-compliant and helps ensure proper attribution when the object is reproduced or displayed publicly.</p>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls} data-learn="rights.copyright_status">Copyright Status</label>
             <select value={form.copyright_status} onChange={e => set('copyright_status', e.target.value)} className={inputCls} disabled={!canEdit}>
               <option value="">— Select —</option>
-              {COPYRIGHT_OPTIONS.map(c => <option key={c}>{c}</option>)}
+              {Object.entries(COPYRIGHT_TOOLTIPS).map(([val, tip]) => (
+                <option key={val} value={val} title={tip}>{val}</option>
+              ))}
             </select>
+            {form.copyright_status && COPYRIGHT_TOOLTIPS[form.copyright_status] && (
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{COPYRIGHT_TOOLTIPS[form.copyright_status]}</p>
+            )}
           </div>
           <div>
             <label className={labelCls}>Rights Type</label>
@@ -156,6 +176,12 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
             </select>
           </div>
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400 cursor-pointer">
+          <input type="checkbox" checked={!!form.copyright_status_checked} onChange={e => set('copyright_status_checked', e.target.checked)} disabled={!canEdit} className="rounded border-stone-300" />
+          Copyright status checked and confirmed
+        </label>
+
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls} data-learn="rights.holder">Rights Holder</label><input value={form.rights_holder} onChange={e => set('rights_holder', e.target.value)} placeholder="Name of copyright owner" className={inputCls} disabled={!canEdit} /></div>
           <div><label className={labelCls}>Rights Holder Contact</label><input value={form.rights_holder_contact || ''} onChange={e => set('rights_holder_contact', e.target.value)} placeholder="Email or postal address" className={inputCls} disabled={!canEdit} /></div>
@@ -182,16 +208,24 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
         </div>
         <div>
           <label className={labelCls} data-learn="rights.notes">Use &amp; Reproduction Restrictions</label>
-          <textarea rows={3} value={form.rights_notes} onChange={e => set('rights_notes', e.target.value)} className={inputCls} disabled={!canEdit} placeholder="e.g. Permission required for commercial reproduction. Attribution must include artist name and museum." />
+          <textarea rows={3} value={form.rights_notes} onChange={e => set('rights_notes', e.target.value)} className={`${inputCls} resize-none`} disabled={!canEdit} placeholder="e.g. Permission required for commercial reproduction. Attribution must include artist name and museum." />
         </div>
       </div>
 
       {/* Rights Records */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Rights Records</div>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Use this section to log formal rights agreements, licences, and restrictions. Each record tracks who holds the rights and any expiry dates — Spectrum compliant.</p>
 
         {canEdit && (
-          <div className="space-y-4">
+          <div>
+            {!showRightsForm ? (
+              <button type="button" onClick={() => setShowRightsForm(true)}
+                className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">
+                + Add rights record
+              </button>
+            ) : (
+              <div className="space-y-4 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Rights Type *</label>
@@ -244,15 +278,29 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
                 <StagedDocumentPicker relatedToType="rights" value={stagedRightsDocs} onChange={setStagedRightsDocs} />
               </div>
             )}
-            <button type="button" onClick={addRightsRecord} disabled={submitting}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-              {submitting ? 'Saving…' : 'Add rights record →'}
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={addRightsRecord} disabled={submitting}
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                {submitting ? 'Saving…' : 'Add rights record →'}
+              </button>
+              <button type="button" onClick={() => setShowRightsForm(false)}
+                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 transition-colors px-3">
+                Cancel
+              </button>
+            </div>
+            </div>
+            )}
           </div>
         )}
 
         {rightsLoaded && rightsRecords.length > 0 && (
-          <div className="mt-4 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+          <div>
+            <button type="button" onClick={() => setShowRightsHistory(v => !v)}
+              className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors mb-3">
+              {showRightsHistory ? 'Hide rights records ↑' : `View ${rightsRecords.length} rights record${rightsRecords.length !== 1 ? 's' : ''} →`}
+            </button>
+          {showRightsHistory && (
+          <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
             <table className="w-full">
               <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                 <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Ref</th>
@@ -280,19 +328,27 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
               </tbody>
             </table>
           </div>
+          )}
+          </div>
         )}
         {rightsLoaded && rightsRecords.length === 0 && (
-          <div className="border border-stone-100 dark:border-stone-800 rounded-lg flex flex-col items-center justify-center py-10 text-center">
-            <p className="text-xs text-stone-400 dark:text-stone-500">No rights records for this object.</p>
-          </div>
+          <p className="text-xs text-stone-400 dark:text-stone-500">No rights records yet.</p>
         )}
       </div>
 
       {/* Reproduction Requests */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Reproduction Requests</div>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Track requests from third parties to photograph, reproduce, or publish images of this object — including approvals, fees, and licence terms.</p>
         {canEdit && (
-          <div className="space-y-4">
+          <div>
+            {!showReproForm ? (
+              <button type="button" onClick={() => setShowReproForm(true)}
+                className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">
+                + Log reproduction request
+              </button>
+            ) : (
+            <div className="space-y-4 border border-stone-100 dark:border-stone-800 rounded-lg p-4">
             <div className="grid grid-cols-2 gap-4">
               <div><label className={labelCls}>Requester Name *</label><input value={reproductionForm.requester_name} onChange={e => setReproductionForm(f => ({ ...f, requester_name: e.target.value }))} placeholder="Name of person or organisation" className={inputCls} /></div>
               <div><label className={labelCls}>Organisation</label><input value={reproductionForm.requester_org} onChange={e => setReproductionForm(f => ({ ...f, requester_org: e.target.value }))} placeholder="Publisher, university, etc." className={inputCls} /></div>
@@ -350,10 +406,18 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
                 <StagedDocumentPicker relatedToType="reproduction" value={stagedReproDocs} onChange={setStagedReproDocs} />
               </div>
             )}
-            <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date || submitting}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-              {submitting ? 'Saving…' : 'Log reproduction request →'}
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date || submitting}
+                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                {submitting ? 'Saving…' : 'Log reproduction request →'}
+              </button>
+              <button type="button" onClick={() => setShowReproForm(false)}
+                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 transition-colors px-3">
+                Cancel
+              </button>
+            </div>
+            </div>
+            )}
           </div>
         )}
 

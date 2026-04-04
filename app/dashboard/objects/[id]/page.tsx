@@ -11,8 +11,8 @@ import { Skeleton, FormSkeleton } from '@/components/Skeleton'
 
 import QRLabelModal from '@/components/QRLabelModal'
 import OverviewTab from '@/components/tabs/OverviewTab'
-import EntryTab from '@/components/tabs/EntryTab'
 import AcquisitionTab from '@/components/tabs/AcquisitionTab'
+import DocumentsTab from '@/components/tabs/DocumentsTab'
 import LocationTab from '@/components/tabs/LocationTab'
 import ConditionTab from '@/components/tabs/ConditionTab'
 import ConservationTab from '@/components/tabs/ConservationTab'
@@ -28,7 +28,6 @@ import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
-  { id: 'entry',        label: 'Object Entry' },
   { id: 'acquisition',  label: 'Acquisition' },
   { id: 'location',     label: 'Location' },
   { id: 'condition',    label: 'Condition' },
@@ -36,13 +35,14 @@ const TABS = [
   { id: 'valuation',    label: 'Valuation' },
   { id: 'conservation', label: 'Conservation' },
   { id: 'loans',        label: 'Loans' },
+  { id: 'documents',    label: 'Documents' },
   { id: 'audit',        label: 'Audit' },
   { id: 'risk',         label: 'Risk' },
   { id: 'damage',       label: 'Damage' },
   { id: 'exits',        label: 'Exits' },
 ]
 
-const SIMPLE_TABS = ['overview', 'entry', 'location', 'condition', 'valuation']
+const SIMPLE_TABS = ['overview', 'location', 'condition', 'valuation']
 
 export default function ObjectDetail() {
   const [object, setObject] = useState<any>(null)
@@ -68,7 +68,7 @@ export default function ObjectDetail() {
   const [locations, setLocations] = useState<any[]>([])
 
   const [form, setForm] = useState<Record<string, any>>({
-    title: '', artist: '', year: '', medium: 'Oil on canvas', culture: '',
+    title: '', artist: '', year: '', medium: '', culture: '',
     accession_no: '', dimensions: '', description: '', emoji: '🖼️',
     status: 'On Display', image_url: '',
     object_type: '', inscription: '', marks: '', provenance: '',
@@ -114,6 +114,8 @@ export default function ObjectDetail() {
     colour: '', shape: '', surface_treatment: '',
     other_names: '', provenance_date_range: '', field_collection_info: '',
     rarity: '',
+    physical_description: '',
+    acquisition_ethics_notes: '',
   })
 
   useEffect(() => {
@@ -140,7 +142,7 @@ export default function ObjectDetail() {
         title: object.title || '',
         artist: object.artist || '',
         year: object.year || '',
-        medium: object.medium || 'Oil on canvas',
+        medium: object.medium || '',
         culture: object.culture || '',
         accession_no: object.accession_no || '',
         dimensions: object.dimensions || '',
@@ -241,6 +243,8 @@ export default function ObjectDetail() {
         provenance_date_range: object.provenance_date_range || '',
         field_collection_info: object.field_collection_info || '',
         rarity: object.rarity || '',
+        physical_description: object.physical_description || '',
+        acquisition_ethics_notes: object.acquisition_ethics_notes || '',
       })
       const [{ data: lv }, { data: locs }, { data: dupes }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
@@ -499,10 +503,6 @@ export default function ObjectDetail() {
             <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
           )}
 
-          {activeTab === 'entry' && (
-            <EntryTab object={object} museum={museum} canEdit={canEdit} supabase={supabase} />
-          )}
-
           {activeTab === 'acquisition' && (
             <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} objectId={object?.id} museumId={museum?.id} canAttach={getPlan(museum?.plan).compliance} />
           )}
@@ -545,6 +545,10 @@ export default function ObjectDetail() {
 
           {activeTab === 'exits' && (
             <ExitsTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
+          )}
+
+          {activeTab === 'documents' && (
+            <DocumentsTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} />
           )}
 
         </form>

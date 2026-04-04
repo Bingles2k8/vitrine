@@ -1,7 +1,6 @@
 'use client'
 
 import { inputCls, labelCls, sectionTitle, ACQ_METHODS, TITLE_GUARANTEE_OPTIONS } from '@/components/tabs/shared'
-import DocumentAttachments from '@/components/DocumentAttachments'
 
 interface AcquisitionTabProps {
   form: Record<string, any>
@@ -24,6 +23,8 @@ function SaveBar({ saving }: { saving: boolean }) {
   )
 }
 
+const textareaCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+
 export default function AcquisitionTab({ form, set, canEdit, saving, objectId, museumId, canAttach }: AcquisitionTabProps) {
   return (
     <>
@@ -31,16 +32,25 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Acquisition</div>
 
+        {/* Justification first */}
+        <div>
+          <label className={labelCls} data-learn="acquisition.justification">Acquisition Justification <span className="text-red-400">*</span></label>
+          <textarea value={form.acquisition_justification || ''} onChange={e => set('acquisition_justification', e.target.value)} rows={3}
+            placeholder="How this object fits the collecting policy — rationale for acquisition…"
+            className={textareaCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation</p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls} data-learn="acquisition.method">Acquisition Method</label>
+            <label className={labelCls} data-learn="acquisition.method">Method</label>
             <select value={form.acquisition_method || ''} onChange={e => set('acquisition_method', e.target.value)} className={inputCls}>
               <option value="">— Select —</option>
               {ACQ_METHODS.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls} data-learn="acquisition.date">Acquisition Date</label>
+            <label className={labelCls} data-learn="acquisition.date">Date</label>
             <input type="date" value={form.acquisition_date || ''} onChange={e => set('acquisition_date', e.target.value)} className={inputCls} />
           </div>
         </div>
@@ -51,52 +61,23 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         <div>
-          <label className={labelCls} data-learn="acquisition.justification">Acquisition Justification <span className="text-red-400">*</span></label>
-          <textarea value={form.acquisition_justification || ''} onChange={e => set('acquisition_justification', e.target.value)} rows={3}
-            placeholder="How this object fits the collecting policy — rationale for acquisition…"
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation</p>
+          <label className={labelCls} data-learn="acquisition.conditions">Conditions Attached to ACCESSION</label>
+          <textarea value={form.conditions_attached_to_acquisition || ''} onChange={e => set('conditions_attached_to_acquisition', e.target.value)} rows={2}
+            placeholder="Any restrictions or conditions from the donor/seller…"
+            className={textareaCls} />
         </div>
 
         <div>
           <label className={labelCls} data-learn="acquisition.notes">Acquisition Notes</label>
-          <textarea value={form.acquisition_note || ''} onChange={e => set('acquisition_note', e.target.value)} rows={4}
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+          <textarea value={form.acquisition_note || ''} onChange={e => set('acquisition_note', e.target.value)} rows={3}
+            className={textareaCls} />
         </div>
 
-        <div className="border border-stone-200 dark:border-stone-700 rounded-lg p-4 space-y-3">
-          <label className={labelCls} data-learn="acquisition.documentation_ref">Associated Documentation <span className="text-red-400">*</span></label>
-          <textarea value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
-            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…"
-            rows={4}
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-          <p className="text-xs text-stone-400 dark:text-stone-500">Required for Accreditation — deeds of gift, purchase receipts, correspondence</p>
-          {objectId && museumId && (
-            <>
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 pt-1">Associated Documentation Supporting Documents</div>
-              <DocumentAttachments
-                objectId={objectId}
-                museumId={museumId}
-                relatedToType="acquisition_deed"
-                relatedToId={null}
-                canEdit={canEdit}
-                canAttach={canAttach}
-              />
-            </>
-          )}
-        </div>
-
+        {/* Credit Line — synced with Overview tab (same field on objects table) */}
         <div>
-          <label className={labelCls} data-learn="acquisition.accession_date">Accession Date</label>
-          <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
-        </div>
-
-        <div>
-          <label className={labelCls} data-learn="acquisition.conditions">Conditions Attached to Acquisition</label>
-          <textarea value={form.conditions_attached_to_acquisition || ''} onChange={e => set('conditions_attached_to_acquisition', e.target.value)} rows={2}
-            placeholder="Any restrictions or conditions from the donor/seller…"
-            className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+          <label className={labelCls} data-learn="acquisition.credit_line">Credit Line</label>
+          <input value={form.credit_line || ''} onChange={e => set('credit_line', e.target.value)} placeholder="How the donor wishes to be credited" className={inputCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Synced with the Credit Line field on the Overview tab.</p>
         </div>
 
         <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
@@ -138,6 +119,22 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
           </div>
         </div>
 
+        {/* Accession Date moved to governance */}
+        <div>
+          <label className={labelCls} data-learn="acquisition.accession_date">Accession Date</label>
+          <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
+        </div>
+
+        {/* Associated Documentation moved to governance */}
+        <div>
+          <label className={labelCls} data-learn="acquisition.documentation_ref">Associated Documentation <span className="text-red-400">*</span></label>
+          <textarea value={form.acquisition_documentation_ref || ''} onChange={e => set('acquisition_documentation_ref', e.target.value)}
+            placeholder="e.g. Deed of Gift ref, Bill of Sale, purchase receipt filename…"
+            rows={3}
+            className={textareaCls} />
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Required for Accreditation — deeds of gift, purchase receipts, correspondence</p>
+        </div>
 
         <div>
           <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
@@ -175,22 +172,15 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
             Human Remains — guidance followed if object contains human material
           </label>
         </div>
-      </div>
 
-      {/* Card 4 — Supporting Documents */}
-      {objectId && museumId && (
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-          <div className={sectionTitle}>Supporting Documents</div>
-          <DocumentAttachments
-            objectId={objectId}
-            museumId={museumId}
-            relatedToType="acquisition"
-            relatedToId={null}
-            canEdit={canEdit}
-            canAttach={canAttach}
-          />
+        {/* Notes at bottom of Legal & Ethics */}
+        <div>
+          <label className={labelCls}>Ethics Notes</label>
+          <textarea value={form.acquisition_ethics_notes || ''} onChange={e => set('acquisition_ethics_notes', e.target.value)} rows={3}
+            placeholder="Any additional notes on ethics checks, caveats, or follow-up required…"
+            className={textareaCls} />
         </div>
-      )}
+      </div>
 
       {canEdit && <SaveBar saving={saving} />}
     </>

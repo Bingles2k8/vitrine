@@ -38,11 +38,11 @@ export async function PUT(
   if (!museum) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await request.json()
-  const { title, notes } = body
+  const { title, notes, part_number_label } = body
 
   const { data, error } = await supabase
     .from('object_components')
-    .update({ title: title ?? null, notes: notes ?? null })
+    .update({ title: title ?? null, notes: notes ?? null, part_number_label: part_number_label ?? null })
     .eq('id', componentId)
     .eq('museum_id', museum.id)
     .select()

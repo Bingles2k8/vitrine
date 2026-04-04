@@ -94,6 +94,10 @@ export default function SiteBuilder() {
   const [error, setError] = useState('')
   const [uploadingField, setUploadingField] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [slugInput, setSlugInput] = useState('')
+  const [slugSaving, setSlugSaving] = useState(false)
+  const [slugError, setSlugError] = useState('')
+  const [slugSaved, setSlugSaved] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -144,6 +148,7 @@ export default function SiteBuilder() {
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
+      setSlugInput(museum.slug || '')
       setForm({
         name: museum.name || '',
         tagline: museum.tagline || '',
@@ -253,6 +258,33 @@ export default function SiteBuilder() {
       setTimeout(() => setSaved(false), 2000)
     }
     setSaving(false)
+  }
+
+  async function handleSaveSlug() {
+    const newSlug = slugInput.trim().toLowerCase()
+    if (!newSlug) { setSlugError('URL cannot be empty'); return }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(newSlug)) {
+      setSlugError('Only lowercase letters, numbers, and hyphens allowed — no spaces or special characters')
+      return
+    }
+    if (newSlug === museum.slug) { setSlugError(''); return }
+    setSlugSaving(true)
+    setSlugError('')
+    const { data: existing } = await supabase.from('museums').select('id').eq('slug', newSlug).neq('id', museum.id).maybeSingle()
+    if (existing) {
+      setSlugError('This URL is already taken — please choose a different one')
+      setSlugSaving(false)
+      return
+    }
+    const { error } = await supabase.from('museums').update({ slug: newSlug }).eq('id', museum.id)
+    if (error) {
+      setSlugError(error.message)
+    } else {
+      setMuseum((m: any) => ({ ...m, slug: newSlug }))
+      setSlugSaved(true)
+      setTimeout(() => setSlugSaved(false), 2000)
+    }
+    setSlugSaving(false)
   }
 
   const emojis = ['🏛️','🖼️','🏺','🗿','🔮','🎨','📜','🌿','💎','🦋','🏯','⛩️','🗽','🎭']
@@ -484,6 +516,26 @@ export default function SiteBuilder() {
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum Name</label>
                 <input value={form.name} onChange={e => set('name', e.target.value)}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum URL</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-400 dark:text-stone-500 font-mono shrink-0">vitrine.museum/museum/</span>
+                  <input
+                    value={slugInput}
+                    onChange={e => { setSlugInput(e.target.value); setSlugError('') }}
+                    placeholder="your-museum-name"
+                    className="flex-1 min-w-0 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950"
+                  />
+                  <button type="button" onClick={handleSaveSlug} disabled={slugSaving || slugInput === museum?.slug}
+                    className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 py-2 rounded disabled:opacity-40 shrink-0">
+                    {slugSaving ? 'Saving…' : slugSaved ? 'Saved' : 'Update'}
+                  </button>
+                </div>
+                {slugError && <p className="text-xs text-red-500 font-mono mt-1">{slugError}</p>}
+                {slugInput !== museum?.slug && !slugError && slugInput && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Warning: changing your URL will break any existing links to your museum page.</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Tagline</label>

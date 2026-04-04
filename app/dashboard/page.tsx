@@ -40,6 +40,10 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState(false)
   const [duplicateObjectIds, setDuplicateObjectIds] = useState<Set<string>>(new Set())
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
+  const [conditionDueIds, setConditionDueIds] = useState<Set<string>>(new Set())
+  const [showConditionDue, setShowConditionDue] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -81,6 +85,13 @@ export default function Dashboard() {
     setBulking(false)
   }
 
+  async function handleDeleteObject(id: string, title: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!confirm(`Move "${title}" to bin?\n\nItems in the bin are permanently deleted after 90 days.`)) return
+    await supabase.from('objects').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    setObjects(prev => prev.filter(a => a.id !== id))
+  }
+
   async function bulkDelete() {
     if (!selectedIds.size || !canEdit) return
     if (!confirm(`Move ${selectedIds.size} object${selectedIds.size === 1 ? '' : 's'} to bin?\n\nItems in the bin are permanently deleted after 90 days.`)) return
@@ -106,12 +117,13 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
           supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
           supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
+          supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
         ])
 
         setMuseum(museum)
@@ -121,6 +133,7 @@ export default function Dashboard() {
         setCollectionCategory(museum.collection_category || '')
         setTrashedCount(trashed ?? 0)
         setDuplicateObjectIds(new Set((dupeLinks || []).map((d: any) => d.object_id)))
+        setConditionDueIds(new Set((conditionDue || []).map((c: any) => c.object_id)))
         setObjects(objects || [])
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
@@ -198,6 +211,13 @@ export default function Dashboard() {
   const visibleObjects = objects
     .filter(a => filter ? a.status === filter : true)
     .filter(a => showDuplicatesOnly ? duplicateObjectIds.has(a.id) : true)
+    .filter(a => showConditionDue ? conditionDueIds.has(a.id) : true)
+    .filter(a => searchQuery.trim() ? (
+      a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.accession_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.artist?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.medium?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) : true)
   const fullMode = getPlan(museum?.plan).fullMode
 
   const totalPaid = objects.reduce((sum, o) => sum + (o.acquisition_value ? parseFloat(o.acquisition_value) : 0), 0)
@@ -370,6 +390,63 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
+            <>
+              {/* Search and filter bar */}
+              <div className="flex items-center gap-2 mb-3">
+                {/* Filter button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowFilterPanel(v => !v)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded border text-xs font-mono transition-colors flex-shrink-0 ${
+                      showConditionDue
+                        ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400'
+                        : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500'
+                    }`}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+                    </svg>
+                    Filter
+                    {showConditionDue && <span className="bg-amber-500 text-stone-950 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">1</span>}
+                  </button>
+                  {showFilterPanel && (
+                    <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg p-3 w-56">
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Filters</div>
+                      <label className="flex items-center gap-2 cursor-pointer py-1.5">
+                        <input
+                          type="checkbox"
+                          checked={showConditionDue}
+                          onChange={e => setShowConditionDue(e.target.checked)}
+                          className="rounded border-stone-300 dark:border-stone-600"
+                        />
+                        <span className="text-xs font-mono text-stone-700 dark:text-stone-300">Condition Check Due</span>
+                        {conditionDueIds.size > 0 && <span className="ml-auto text-xs font-mono text-stone-400 dark:text-stone-500">{conditionDueIds.size}</span>}
+                      </label>
+                      {showConditionDue && (
+                        <button
+                          onClick={() => { setShowConditionDue(false); setShowFilterPanel(false) }}
+                          className="mt-2 text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                        >
+                          Clear filters ×
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Search bar */}
+                <div className="relative flex-1 max-w-xs">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search objects…"
+                    className="w-full pl-8 pr-3 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                  />
+                </div>
+              </div>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {/* Filter bar */}
               {(filter || showDuplicatesOnly) && selectedIds.size === 0 && (
@@ -432,6 +509,7 @@ export default function Dashboard() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.year">Year</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.medium">Medium</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.status">Status</th>
+                    {canEdit && <th className="w-10 px-2 py-3" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -508,18 +586,32 @@ export default function Dashboard() {
                           )
                         })()}
                       </td>
+                      {canEdit && (
+                        <td className="px-2 py-3 w-10" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={e => handleDeleteObject(a.id, a.title, e)}
+                            className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                            title="Move to bin"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                            </svg>
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {visibleObjects.length === 0 && (
                     <tr>
-                      <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
-                        No objects with status "{filter}"
+                      <td colSpan={canEdit ? 6 : 4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
+                        {searchQuery || showConditionDue ? 'No objects match your filters.' : `No objects with status "${filter}"`}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+            </>
           )}
           {activityLog.length > 0 && (
             <div className="mt-8">

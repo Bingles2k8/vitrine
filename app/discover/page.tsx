@@ -20,10 +20,11 @@ export const metadata = buildPageMetadata({
 export default async function DiscoverPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; categories?: string }>
+  searchParams: Promise<{ q?: string; categories?: string; museum?: string }>
 }) {
-  const { q, categories } = await searchParams
+  const { q, categories, museum } = await searchParams
   const query = q?.trim() || ''
+  const museumQuery = museum?.trim() || ''
   const selectedCategories = categories ? categories.split(',').filter(Boolean) : []
 
   // Service role client — bypasses RLS so we can query across all discoverable museums
@@ -39,7 +40,10 @@ export default async function DiscoverPage({
     .select('id, name, slug, collection_category')
     .eq('discoverable', true)
 
-  const museumIds = (museums || []).map(m => m.id)
+  const filteredMuseums = museumQuery
+    ? (museums || []).filter(m => m.name.toLowerCase().includes(museumQuery.toLowerCase()))
+    : (museums || [])
+  const museumIds = filteredMuseums.map(m => m.id)
   const museumMap = Object.fromEntries((museums || []).map(m => [m.id, m]))
 
   let objectsQuery = supabase
@@ -98,12 +102,12 @@ export default async function DiscoverPage({
           <aside className="w-56 flex-shrink-0 hidden lg:flex flex-col gap-6 sticky top-20 max-h-[calc(100vh-5rem)]">
             {/* Search — always visible */}
             <Suspense>
-              <DiscoverFilters selectedCategories={selectedCategories} query={query} hideCategories />
+              <DiscoverFilters selectedCategories={selectedCategories} query={query} museumQuery={museumQuery} hideCategories />
             </Suspense>
             {/* Categories — independently scrollable, fade disappears at bottom */}
             <DiscoverCategoryScroll className="flex-1 min-h-0">
               <Suspense>
-                <DiscoverFilters selectedCategories={selectedCategories} query={query} hideSearch />
+                <DiscoverFilters selectedCategories={selectedCategories} query={query} museumQuery={museumQuery} hideSearch />
               </Suspense>
             </DiscoverCategoryScroll>
           </aside>
@@ -114,7 +118,7 @@ export default async function DiscoverPage({
             {/* Mobile filters */}
             <div className="lg:hidden mb-6">
               <Suspense>
-                <DiscoverMobileFilters selectedCategories={selectedCategories} query={query} />
+                <DiscoverMobileFilters selectedCategories={selectedCategories} query={query} museumQuery={museumQuery} />
               </Suspense>
             </div>
 
@@ -125,6 +129,7 @@ export default async function DiscoverPage({
                 : `${allObjects.length} object${allObjects.length === 1 ? '' : 's'}`}
               {selectedCategories.length > 0 && ` in ${selectedCategories.join(', ')}`}
               {query && ` matching "${query}"`}
+              {museumQuery && ` from museums matching "${museumQuery}"`}
             </div>
 
             {/* Grid */}

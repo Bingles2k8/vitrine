@@ -70,7 +70,7 @@ export async function POST(
   if (!object) return NextResponse.json({ error: 'Object not found' }, { status: 404 })
 
   const body = await request.json()
-  const { title, notes } = body
+  const { title, notes, part_number_label } = body
 
   // Get next component number
   const { data: existing } = await supabase
@@ -93,6 +93,7 @@ export async function POST(
       parent_object_id: objectId,
       component_number: componentNumber,
       component_accession_no: componentAccessionNo,
+      part_number_label: part_number_label || null,
       title: title || null,
       notes: notes || null,
     })
