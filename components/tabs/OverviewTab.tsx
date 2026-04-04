@@ -297,15 +297,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <input value={form.dimension_notes} onChange={e => set('dimension_notes', e.target.value)} placeholder="Dimension notes (e.g. framed, with base)" className={`${inputCls} mt-2`} />
         </div>
 
-        {/* Acquisition Source (renamed from Record Source) */}
-        {fullMode && (
-          <div>
-            <label className={labelCls} data-learn="objects.record_source">Acquisition Source</label>
-            <input value={form.record_source || ''} onChange={e => set('record_source', e.target.value)}
-              placeholder="e.g. Donor, Staff, Published catalogue…"
-              className={inputCls} />
-          </div>
-        )}
+
 
         {/* Credit Line — directly below Acquisition Source */}
         {fullMode && (

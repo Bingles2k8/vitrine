@@ -109,7 +109,7 @@ export default function ObjectDetail() {
     formally_accessioned: true,
     non_accession_reason: '',
     // Gap 5: Cataloguing attribution
-    record_source: '', attributed_to: '', attribution_notes: '', record_completeness: '',
+    attributed_to: '', attribution_notes: '', record_completeness: '',
     // Proc 5 visual description fields
     colour: '', shape: '', surface_treatment: '',
     other_names: '', provenance_date_range: '', field_collection_info: '',
@@ -231,7 +231,6 @@ export default function ObjectDetail() {
         formally_accessioned: object.formally_accessioned ?? true,
         non_accession_reason: object.non_accession_reason || '',
         // Gap 5: Cataloguing attribution
-        record_source: object.record_source || '',
         attributed_to: object.attributed_to || '',
         attribution_notes: object.attribution_notes || '',
         record_completeness: object.record_completeness || '',
