@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { DeleteUserButton } from './DeleteUserModal'
 
 const PLAN_ORDER = ['community', 'hobbyist', 'professional', 'institution'] as const
 const PLAN_COLOURS: Record<string, string> = {
@@ -137,6 +138,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3">Signed up</th>
                 <th className="px-4 py-3">Last active</th>
                 <th className="px-4 py-3 text-center">Discoverable</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -176,12 +178,20 @@ export default async function AdminPage() {
                         : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
+                    <td className="px-4 py-3 text-right">
+                      <DeleteUserButton
+                        museumId={m.id}
+                        museumName={m.name ?? m.slug}
+                        slug={m.slug}
+                        ownerEmail={emailByOwnerId.get(m.owner_id) ?? '—'}
+                      />
+                    </td>
                   </tr>
                 )
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
                 </tr>
               )}
             </tbody>
