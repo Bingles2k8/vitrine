@@ -684,7 +684,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
               desc="Create events, set capacity limits, and accept online bookings directly through your Vitrine website. Track attendance and send confirmation emails — all included."
               bullets={[
                 'Unlimited events',
-                'Capacity management and waiting lists',
+                'Capacity management',
                 'Online booking via your public site',
                 'Automated confirmation emails',
                 'Attendance tracking dashboard',

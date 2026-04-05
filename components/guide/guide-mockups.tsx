@@ -655,7 +655,7 @@ export function NewEventFormMockup() {
               <div className="w-4 h-4 rounded bg-amber-500 flex items-center justify-center flex-shrink-0">
                 <span className="text-stone-950 text-xs">✓</span>
               </div>
-              <span className="text-xs text-stone-400">Enable waiting list when capacity is reached</span>
+              <span className="text-xs text-stone-400">Booking form closes when capacity is reached</span>
             </div>
           </div>
         </div>
