@@ -10,6 +10,7 @@ import { TableSkeleton } from '@/components/Skeleton'
 
 const COVERAGE_TYPES = ['All Risks', 'Named Perils', 'Government Indemnity', 'Transit', 'Exhibition']
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
+const INSURANCE_DOC_TYPES = ['Policy Document', 'Insurance Certificate', 'Valuation Report', 'Claims Record', 'Renewal Notice', 'Schedule of Values', 'Other']
 
 const STATUS_STYLES: Record<string, string> = {
   Active:             'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
@@ -43,6 +44,13 @@ export default function InsurancePage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [policyDocs, setPolicyDocs] = useState<Record<string, any[]>>({})
+  const [showDocForm, setShowDocForm] = useState<string | null>(null)
+  const [docLabel, setDocLabel] = useState('')
+  const [docType, setDocType] = useState('')
+  const [docNotes, setDocNotes] = useState('')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [docUploading, setDocUploading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -53,10 +61,11 @@ export default function InsurancePage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: policies }, { data: objs }, { data: poLinks }] = await Promise.all([
+      const [{ data: policies }, { data: objs }, { data: poLinks }, { data: pDocs }] = await Promise.all([
         supabase.from('insurance_policies').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
         supabase.from('insurance_policy_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
+        supabase.from('insurance_policy_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
@@ -69,6 +78,12 @@ export default function InsurancePage() {
         map[link.policy_id].push(link)
       }
       setPolicyObjects(map)
+      const docsMap: Record<string, any[]> = {}
+      for (const d of (pDocs || [])) {
+        if (!docsMap[d.policy_id]) docsMap[d.policy_id] = []
+        docsMap[d.policy_id].push(d)
+      }
+      setPolicyDocs(docsMap)
       setLoading(false)
     }
     load()
@@ -77,6 +92,34 @@ export default function InsurancePage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function uploadInsuranceDoc(policyId: string) {
+    if (!docFile) return
+    if (docFile.size > 20 * 1024 * 1024) return
+    setDocUploading(true)
+    const ext = docFile.name.split('.').pop()
+    const path = `${museum.id}/insurance/documents/${Date.now()}.${ext}`
+    const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
+    if (stErr) { setDocUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    const { data: doc } = await supabase.from('insurance_policy_documents').insert({
+      policy_id: policyId, museum_id: museum.id,
+      label: docLabel || docFile.name, document_type: docType || 'Other',
+      notes: docNotes || null, file_url: publicUrl, file_name: docFile.name,
+      file_size: docFile.size, mime_type: docFile.type,
+      uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    }).select().single()
+    if (doc) setPolicyDocs(m => ({ ...m, [policyId]: [doc, ...(m[policyId] || [])] }))
+    setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null)
+    setShowDocForm(null); setDocUploading(false)
+  }
+
+  async function deleteInsuranceDoc(doc: any) {
+    const path = doc.file_url.split('/object-documents/')[1]
+    if (path) await supabase.storage.from('object-documents').remove([path])
+    await supabase.from('insurance_policy_documents').delete().eq('id', doc.id)
+    setPolicyDocs(m => ({ ...m, [doc.policy_id]: (m[doc.policy_id] || []).filter((d: any) => d.id !== doc.id) }))
   }
 
   async function addPolicy() {
@@ -463,6 +506,62 @@ export default function InsurancePage() {
                                 <button type="button" onClick={() => { setObjectPickerPolicyId(p.id); setObjectSearchQ('') }} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Add object to policy</button>
                               )
                             )}
+                            <div className="pt-3 border-t border-stone-200 dark:border-stone-700">
+                              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
+                              {(policyDocs[p.id] || []).length > 0 && (
+                                <div className="space-y-1.5 mb-3">
+                                  {(policyDocs[p.id] || []).map((doc: any) => (
+                                    <div key={doc.id} className="flex items-center gap-2">
+                                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                        className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">
+                                        <span className="text-stone-400">📎</span>
+                                        <span className="truncate">{doc.label || doc.file_name}</span>
+                                        {doc.document_type && <span className="ml-auto text-stone-300 dark:text-stone-600 shrink-0">{doc.document_type}</span>}
+                                      </a>
+                                      {canEdit && (
+                                        <button type="button" onClick={() => deleteInsuranceDoc(doc)}
+                                          className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0">Remove</button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {canEdit && (
+                                showDocForm === p.id ? (
+                                  <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded p-3 space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Label</label>
+                                        <input value={docLabel} onChange={e => setDocLabel(e.target.value)} placeholder={docFile?.name || 'Document label'} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Type</label>
+                                        <select value={docType} onChange={e => setDocType(e.target.value)} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100">
+                                          <option value="">— Optional —</option>
+                                          {INSURANCE_DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <input value={docNotes} onChange={e => setDocNotes(e.target.value)} placeholder="Notes (optional)" className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                    <div className="flex items-center gap-2">
+                                      <label className="flex-1 flex items-center gap-2 border border-dashed border-stone-300 dark:border-stone-600 rounded px-2 py-1.5 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                                        <span className="text-xs font-mono text-stone-400">{docFile ? docFile.name : 'Choose file…'}</span>
+                                        <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
+                                      </label>
+                                      <button type="button" onClick={() => uploadInsuranceDoc(p.id)} disabled={!docFile || docUploading}
+                                        className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                        {docUploading ? 'Uploading…' : 'Upload'}
+                                      </button>
+                                      <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}
+                                        className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 shrink-0">Cancel</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button type="button" onClick={() => setShowDocForm(p.id)}
+                                    className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Attach document</button>
+                                )
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )}

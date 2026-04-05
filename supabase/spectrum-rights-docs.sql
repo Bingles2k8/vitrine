@@ -63,7 +63,15 @@ ALTER TABLE documentation_plans
   ADD COLUMN IF NOT EXISTS scope_documented_pct    numeric(5,2),
   ADD COLUMN IF NOT EXISTS priority_order          text,
   ADD COLUMN IF NOT EXISTS target_completion_dates text,
-  ADD COLUMN IF NOT EXISTS resources_allocated     text;
+  ADD COLUMN IF NOT EXISTS resources_allocated     text,
+  ADD COLUMN IF NOT EXISTS accreditation_scheme    text,
+  ADD COLUMN IF NOT EXISTS legal_framework         text,
+  ADD COLUMN IF NOT EXISTS ethical_framework       text,
+  ADD COLUMN IF NOT EXISTS system_maintenance      text,
+  ADD COLUMN IF NOT EXISTS access_permissions      text,
+  ADD COLUMN IF NOT EXISTS collection_overview     text,
+  ADD COLUMN IF NOT EXISTS documentation_gaps      text,
+  ADD COLUMN IF NOT EXISTS specific_objectives     text;
 
 CREATE TABLE IF NOT EXISTS documentation_plan_backlogs (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,6 +107,48 @@ CREATE POLICY "Users can update own museum doc plan backlogs"
   ));
 CREATE POLICY "Users can delete own museum doc plan backlogs"
   ON documentation_plan_backlogs FOR DELETE
+  USING (museum_id IN (
+    SELECT id FROM museums WHERE owner_id = auth.uid()
+    UNION SELECT museum_id FROM staff_members WHERE user_id = auth.uid()
+  ));
+
+-- ── Proc 9: Documentation Plan Supporting Documents ─────────────────────
+CREATE TABLE IF NOT EXISTS documentation_plan_documents (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_id       uuid        NOT NULL REFERENCES documentation_plans(id) ON DELETE CASCADE,
+  museum_id     uuid        NOT NULL REFERENCES museums(id) ON DELETE CASCADE,
+  section       text,
+  label         text        NOT NULL,
+  document_type text,
+  file_url      text        NOT NULL,
+  file_name     text        NOT NULL,
+  file_size     bigint,
+  mime_type     text,
+  notes         text,
+  uploaded_by   uuid        REFERENCES auth.users(id),
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  deleted_at    timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS doc_plan_documents_plan_idx   ON documentation_plan_documents(plan_id);
+CREATE INDEX IF NOT EXISTS doc_plan_documents_museum_idx ON documentation_plan_documents(museum_id);
+
+ALTER TABLE documentation_plan_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own museum doc plan documents"
+  ON documentation_plan_documents FOR SELECT
+  USING (museum_id IN (
+    SELECT id FROM museums WHERE owner_id = auth.uid()
+    UNION SELECT museum_id FROM staff_members WHERE user_id = auth.uid()
+  ));
+CREATE POLICY "Users can insert own museum doc plan documents"
+  ON documentation_plan_documents FOR INSERT
+  WITH CHECK (museum_id IN (
+    SELECT id FROM museums WHERE owner_id = auth.uid()
+    UNION SELECT museum_id FROM staff_members WHERE user_id = auth.uid()
+  ));
+CREATE POLICY "Users can delete own museum doc plan documents"
+  ON documentation_plan_documents FOR DELETE
   USING (museum_id IN (
     SELECT id FROM museums WHERE owner_id = auth.uid()
     UNION SELECT museum_id FROM staff_members WHERE user_id = auth.uid()

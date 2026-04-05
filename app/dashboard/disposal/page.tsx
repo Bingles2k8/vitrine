@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -11,6 +11,7 @@ const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded p
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 const DISPOSAL_METHODS = ['Sale', 'Transfer', 'Destruction', 'Return to Owner', 'Exchange', 'Gift to another museum']
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
+const DISPOSAL_DOC_TYPES = ['Authorisation Letter', 'Governing Body Minutes', 'Transfer Agreement', 'Sale Receipt', 'Public Notice', 'Deaccession Form', 'Correspondence', 'Other']
 
 export default function DisposalPage() {
   const [museum, setMuseum] = useState<any>(null)
@@ -23,6 +24,14 @@ export default function DisposalPage() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [specificSearch, setSpecificSearch] = useState(false)
+  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null)
+  const [recordDocs, setRecordDocs] = useState<Record<string, any[]>>({})
+  const [showDocForm, setShowDocForm] = useState<string | null>(null)
+  const [docLabel, setDocLabel] = useState('')
+  const [docType, setDocType] = useState('')
+  const [docNotes, setDocNotes] = useState('')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [docUploading, setDocUploading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,15 +50,22 @@ export default function DisposalPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: recs }, { data: arts }] = await Promise.all([
+      const [{ data: recs }, { data: arts }, { data: dDocs }] = await Promise.all([
         supabase.from('disposal_records').select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
+        supabase.from('disposal_record_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setRecords(recs || [])
       setObjects(arts || [])
+      const docsMap: Record<string, any[]> = {}
+      for (const d of (dDocs || [])) {
+        if (!docsMap[d.disposal_id]) docsMap[d.disposal_id] = []
+        docsMap[d.disposal_id].push(d)
+      }
+      setRecordDocs(docsMap)
       setLoading(false)
     }
     load()
@@ -58,6 +74,34 @@ export default function DisposalPage() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
 
   async function handleSignOut() { await supabase.auth.signOut(); router.push('/login') }
+
+  async function uploadDisposalDoc(disposalId: string) {
+    if (!docFile) return
+    if (docFile.size > 20 * 1024 * 1024) return
+    setDocUploading(true)
+    const ext = docFile.name.split('.').pop()
+    const path = `${museum.id}/disposal/documents/${Date.now()}.${ext}`
+    const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
+    if (stErr) { setDocUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    const { data: doc } = await supabase.from('disposal_record_documents').insert({
+      disposal_id: disposalId, museum_id: museum.id,
+      label: docLabel || docFile.name, document_type: docType || 'Other',
+      notes: docNotes || null, file_url: publicUrl, file_name: docFile.name,
+      file_size: docFile.size, mime_type: docFile.type,
+      uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    }).select().single()
+    if (doc) setRecordDocs(m => ({ ...m, [disposalId]: [doc, ...(m[disposalId] || [])] }))
+    setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null)
+    setShowDocForm(null); setDocUploading(false)
+  }
+
+  async function deleteDisposalDoc(doc: any) {
+    const path = doc.file_url.split('/object-documents/')[1]
+    if (path) await supabase.storage.from('object-documents').remove([path])
+    await supabase.from('disposal_record_documents').delete().eq('id', doc.id)
+    setRecordDocs(m => ({ ...m, [doc.disposal_id]: (m[doc.disposal_id] || []).filter((d: any) => d.id !== doc.id) }))
+  }
 
   async function addRecord() {
     if (!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting) return
@@ -303,8 +347,11 @@ export default function DisposalPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRecords.map(r => (
-                    <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800">
+                  {filteredRecords.map(r => {
+                    const isExpanded = expandedRecordId === r.id
+                    return (
+                    <Fragment key={r.id}>
+                    <tr className="border-b border-stone-100 dark:border-stone-800">
                       <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.disposal_reference}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -331,11 +378,74 @@ export default function DisposalPage() {
                             {r.status === 'Proposed' && <button type="button" onClick={() => updateStatus(r.id, 'Approved')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Approve</button>}
                             {r.status === 'Approved' && <button type="button" onClick={() => updateStatus(r.id, 'In Progress')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Begin</button>}
                             {r.status === 'In Progress' && <button type="button" onClick={() => updateStatus(r.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Complete</button>}
+                            <button type="button" onClick={() => setExpandedRecordId(isExpanded ? null : r.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">{isExpanded ? '▲' : '▼'}</button>
                           </div>
                         </td>
                       )}
                     </tr>
-                  ))}
+                    {isExpanded && (
+                      <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                        <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 space-y-3">
+                          <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
+                          {(recordDocs[r.id] || []).length > 0 && (
+                            <div className="space-y-1.5 mb-3">
+                              {(recordDocs[r.id] || []).map((doc: any) => (
+                                <div key={doc.id} className="flex items-center gap-2">
+                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                    className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">
+                                    <span className="text-stone-400">📎</span>
+                                    <span className="truncate">{doc.label || doc.file_name}</span>
+                                    {doc.document_type && <span className="ml-auto text-stone-300 dark:text-stone-600 shrink-0">{doc.document_type}</span>}
+                                  </a>
+                                  {canEdit && (
+                                    <button type="button" onClick={() => deleteDisposalDoc(doc)}
+                                      className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0">Remove</button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {canEdit && (
+                            showDocForm === r.id ? (
+                              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded p-3 space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Label</label>
+                                    <input value={docLabel} onChange={e => setDocLabel(e.target.value)} placeholder={docFile?.name || 'Document label'} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Type</label>
+                                    <select value={docType} onChange={e => setDocType(e.target.value)} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100">
+                                      <option value="">— Optional —</option>
+                                      {DISPOSAL_DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                  </div>
+                                </div>
+                                <input value={docNotes} onChange={e => setDocNotes(e.target.value)} placeholder="Notes (optional)" className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                <div className="flex items-center gap-2">
+                                  <label className="flex-1 flex items-center gap-2 border border-dashed border-stone-300 dark:border-stone-600 rounded px-2 py-1.5 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                                    <span className="text-xs font-mono text-stone-400">{docFile ? docFile.name : 'Choose file…'}</span>
+                                    <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
+                                  </label>
+                                  <button type="button" onClick={() => uploadDisposalDoc(r.id)} disabled={!docFile || docUploading}
+                                    className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                    {docUploading ? 'Uploading…' : 'Upload'}
+                                  </button>
+                                  <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}
+                                    className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 shrink-0">Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => setShowDocForm(r.id)}
+                                className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Attach document</button>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

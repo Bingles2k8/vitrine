@@ -7,6 +7,9 @@ const DOC_TYPES: Record<string, string[]> = {
   conservation_treatment: ['Treatment Report', 'Condition Survey', 'Materials Safety Sheet', 'Specification', 'Other'],
   condition_assessment:   ['Condition Report', 'Hazard Assessment', 'Photography Record', 'Other'],
   entry_record:           ['Entry Form', 'Depositor Agreement', 'Receipt', 'Correspondence', 'Other'],
+  audit_record:           ['Condition Report', 'Photograph', 'Correspondence', 'Other'],
+  risk:                   ['Risk Assessment', 'Mitigation Report', 'Inspection Record', 'Other'],
+  doc_plan:               ['Documentation Plan', 'Policy Document', 'Procedures Manual', 'Legal Policy', 'Data Protection Policy', 'Freedom of Information Policy', 'Accreditation Evidence', 'System Documentation', 'Training Record', 'Audit Report', 'Ethics Policy', 'Other'],
 }
 
 const ACCEPTED = '.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv'

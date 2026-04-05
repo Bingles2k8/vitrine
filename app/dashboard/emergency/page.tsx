@@ -9,6 +9,7 @@ import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
 
 const PLAN_TYPES = ['General', 'Fire', 'Flood', 'Theft', 'Pest', 'Environmental', 'Structural']
+const EMERGENCY_DOC_TYPES = ['Emergency Plan Document', 'Evacuation Map', 'Salvage Priority List', 'Contact List', 'Recovery Procedures', 'Training Record', 'Drill Report', 'Other']
 const EVENT_TYPES = ['Fire', 'Flood', 'Theft', 'Vandalism', 'Pest', 'Environmental Incident', 'Structural Damage', 'Power Failure', 'Water Damage', 'Other']
 
 const EMPTY_EVENT = {
@@ -39,6 +40,7 @@ export default function EmergencyPage() {
   const [allObjects, setAllObjects] = useState<any[]>([])
   const [eventObjects, setEventObjects] = useState<Record<string, any[]>>({})
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [objectPickerEventId, setObjectPickerEventId] = useState<string | null>(null)
   const [objectSearchQ, setObjectSearchQ] = useState('')
   const [loading, setLoading] = useState(true)
@@ -49,6 +51,13 @@ export default function EmergencyPage() {
   const [eventForm, setEventForm] = useState(EMPTY_EVENT)
   const [saving, setSaving] = useState(false)
   const [savingEvent, setSavingEvent] = useState(false)
+  const [planDocs, setPlanDocs] = useState<Record<string, any[]>>({})
+  const [showDocForm, setShowDocForm] = useState<string | null>(null)
+  const [docLabel, setDocLabel] = useState('')
+  const [docType, setDocType] = useState('')
+  const [docNotes, setDocNotes] = useState('')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [docUploading, setDocUploading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -59,11 +68,12 @@ export default function EmergencyPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }] = await Promise.all([
+      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }] = await Promise.all([
         supabase.from('emergency_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
         supabase.from('emergency_event_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
+        supabase.from('emergency_plan_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
@@ -78,6 +88,12 @@ export default function EmergencyPage() {
         map[link.event_id].push(link)
       }
       setEventObjects(map)
+      const docsMap: Record<string, any[]> = {}
+      for (const d of (eDocs || [])) {
+        if (!docsMap[d.plan_id]) docsMap[d.plan_id] = []
+        docsMap[d.plan_id].push(d)
+      }
+      setPlanDocs(docsMap)
       setLoading(false)
     }
     load()
@@ -86,6 +102,34 @@ export default function EmergencyPage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function uploadEmergencyDoc(planId: string) {
+    if (!docFile) return
+    if (docFile.size > 20 * 1024 * 1024) return
+    setDocUploading(true)
+    const ext = docFile.name.split('.').pop()
+    const path = `${museum.id}/emergency/documents/${Date.now()}.${ext}`
+    const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
+    if (stErr) { setDocUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    const { data: doc } = await supabase.from('emergency_plan_documents').insert({
+      plan_id: planId, museum_id: museum.id,
+      label: docLabel || docFile.name, document_type: docType || 'Other',
+      notes: docNotes || null, file_url: publicUrl, file_name: docFile.name,
+      file_size: docFile.size, mime_type: docFile.type,
+      uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    }).select().single()
+    if (doc) setPlanDocs(m => ({ ...m, [planId]: [doc, ...(m[planId] || [])] }))
+    setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null)
+    setShowDocForm(null); setDocUploading(false)
+  }
+
+  async function deleteEmergencyDoc(doc: any) {
+    const path = doc.file_url.split('/object-documents/')[1]
+    if (path) await supabase.storage.from('object-documents').remove([path])
+    await supabase.from('emergency_plan_documents').delete().eq('id', doc.id)
+    setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter((d: any) => d.id !== doc.id) }))
   }
 
   async function addPlan() {
@@ -494,8 +538,10 @@ export default function EmergencyPage() {
                 <tbody>
                   {filtered.map(p => {
                     const overdue = p.next_review_date && p.next_review_date <= today && p.status !== 'Archived'
+                    const isPlanExpanded = expandedPlanId === p.id
                     return (
-                      <tr key={p.id} className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${overdue ? 'bg-amber-50/20' : ''}`}>
+                      <Fragment key={p.id}>
+                      <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${overdue ? 'bg-amber-50/20' : ''}`}>
                         <td className="px-6 py-3">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{p.plan_title}</div>
                           {p.notes && <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{p.notes}</div>}
@@ -542,10 +588,75 @@ export default function EmergencyPage() {
                                   Archive
                                 </button>
                               )}
+                              <button type="button" onClick={() => setExpandedPlanId(isPlanExpanded ? null : p.id)}
+                                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                                {isPlanExpanded ? '▲' : '▼'}
+                              </button>
                             </div>
                           </td>
                         )}
                       </tr>
+                      {isPlanExpanded && (
+                        <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
+                          <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 space-y-3">
+                            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
+                            {(planDocs[p.id] || []).length > 0 && (
+                              <div className="space-y-1.5 mb-3">
+                                {(planDocs[p.id] || []).map((doc: any) => (
+                                  <div key={doc.id} className="flex items-center gap-2">
+                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                      className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">
+                                      <span className="text-stone-400">📎</span>
+                                      <span className="truncate">{doc.label || doc.file_name}</span>
+                                      {doc.document_type && <span className="ml-auto text-stone-300 dark:text-stone-600 shrink-0">{doc.document_type}</span>}
+                                    </a>
+                                    {canEdit && (
+                                      <button type="button" onClick={() => deleteEmergencyDoc(doc)}
+                                        className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0">Remove</button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {canEdit && (
+                              showDocForm === p.id ? (
+                                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded p-3 space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Label</label>
+                                      <input value={docLabel} onChange={e => setDocLabel(e.target.value)} placeholder={docFile?.name || 'Document label'} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-stone-400 dark:text-stone-500 mb-1">Type</label>
+                                      <select value={docType} onChange={e => setDocType(e.target.value)} className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100">
+                                        <option value="">— Optional —</option>
+                                        {EMERGENCY_DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <input value={docNotes} onChange={e => setDocNotes(e.target.value)} placeholder="Notes (optional)" className="w-full border border-stone-200 dark:border-stone-700 rounded px-2 py-1.5 text-xs outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+                                  <div className="flex items-center gap-2">
+                                    <label className="flex-1 flex items-center gap-2 border border-dashed border-stone-300 dark:border-stone-600 rounded px-2 py-1.5 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                                      <span className="text-xs font-mono text-stone-400">{docFile ? docFile.name : 'Choose file…'}</span>
+                                      <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
+                                    </label>
+                                    <button type="button" onClick={() => uploadEmergencyDoc(p.id)} disabled={!docFile || docUploading}
+                                      className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                      {docUploading ? 'Uploading…' : 'Upload'}
+                                    </button>
+                                    <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}
+                                      className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 shrink-0">Cancel</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button type="button" onClick={() => setShowDocForm(p.id)}
+                                  className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800">+ Attach document</button>
+                              )
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     )
                   })}
                 </tbody>

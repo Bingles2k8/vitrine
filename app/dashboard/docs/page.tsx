@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
+import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -33,6 +34,22 @@ function ProgressBar({ pct }: { pct: number }) {
   )
 }
 
+const PLAN_SECTIONS = [
+  { value: '', label: '— No specific section —' },
+  { value: 'identity', label: 'Plan Identity' },
+  { value: 'standards', label: 'Standards & Legal Framework' },
+  { value: 'systems', label: 'Systems & Infrastructure' },
+  { value: 'assessment', label: 'Current State Assessment' },
+  { value: 'improvement', label: 'Improvement Plan' },
+]
+
+const PLAN_DOC_TYPES = [
+  'Documentation Plan', 'Policy Document', 'Procedures Manual',
+  'Legal Policy', 'Data Protection Policy', 'Freedom of Information Policy',
+  'Accreditation Evidence', 'System Documentation', 'Training Record',
+  'Audit Report', 'Ethics Policy', 'Other',
+]
+
 const BACKLOG_PROCEDURES = [
   'Proc 1 — Object Entry', 'Proc 2 — Acquisition', 'Proc 3 — Location',
   'Proc 4 — Inventory', 'Proc 5 — Cataloguing', 'Proc 6 — Object Exit',
@@ -47,7 +64,10 @@ export default function DocumentationPlanPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
+  const [allPlans, setAllPlans] = useState<any[]>([])
   const [plan, setPlan] = useState<any>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ identity: true, standards: true, systems: true, assessment: true, improvement: true })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -55,19 +75,41 @@ export default function DocumentationPlanPage() {
   const [backlogs, setBacklogs] = useState<any[]>([])
   const [backlogForm, setBacklogForm] = useState({ procedure_name: BACKLOG_PROCEDURES[0], backlog_count: '', target_date: '', priority: 'Medium', notes: '' })
 
-  const [planForm, setPlanForm] = useState({
+  const emptyPlanForm = {
     plan_reference: '',
     plan_date: '',
-    responsible_person: '',
-    documentation_standards: 'Museum standards',
-    systems_in_use: 'Vitrine',
     review_date: '',
-    backlog_notes: '',
+    responsible_person: '',
+    documentation_standards: '',
+    accreditation_scheme: '',
+    legal_framework: '',
+    ethical_framework: '',
+    systems_in_use: '',
+    system_maintenance: '',
+    access_permissions: '',
     scope_documented_pct: '',
+    collection_overview: '',
+    documentation_gaps: '',
+    backlog_notes: '',
+    specific_objectives: '',
     priority_order: '',
-    target_completion_dates: '',
     resources_allocated: '',
-  })
+    target_completion_dates: '',
+  }
+
+  const [planForm, setPlanForm] = useState(emptyPlanForm)
+
+  const [planDocs, setPlanDocs] = useState<any[]>([])
+  const [planDocsLoaded, setPlanDocsLoaded] = useState(false)
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const [showDocForm, setShowDocForm] = useState(false)
+  const [docLabel, setDocLabel] = useState('')
+  const [docType, setDocType] = useState('')
+  const [docSection, setDocSection] = useState('')
+  const [docNotes, setDocNotes] = useState('')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [docUploading, setDocUploading] = useState(false)
+  const [docError, setDocError] = useState<string | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -109,7 +151,7 @@ export default function DocumentationPlanPage() {
         supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id),
         supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active'),
         supabase.from('object_exits').select('id, object_id').eq('museum_id', museum.id),
-        supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).maybeSingle(),
+        supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('valuations').select('object_id').eq('museum_id', museum.id),
         supabase.from('object_images').select('object_id').eq('museum_id', museum.id),
         supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open'),
@@ -226,7 +268,7 @@ export default function DocumentationPlanPage() {
         {
           procedure: '9 Documentation Plan',
           metric: 'Plan created',
-          numerator: docPlan ? 1 : 0,
+          numerator: (docPlan || []).some((p: any) => p.status === 'Active') ? 1 : 0,
           denominator: 1,
           link: '/dashboard/docs',
         },
@@ -328,30 +370,20 @@ export default function DocumentationPlanPage() {
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
 
-      if (docPlan) {
-        setPlan(docPlan)
-        setPlanForm({
-          plan_reference: docPlan.plan_reference || '',
-          plan_date: docPlan.plan_date || '',
-          responsible_person: docPlan.responsible_person || '',
-          documentation_standards: docPlan.documentation_standards || 'Museum standards',
-          systems_in_use: docPlan.systems_in_use || 'Vitrine',
-          review_date: docPlan.review_date || '',
-          backlog_notes: docPlan.backlog_notes || '',
-          scope_documented_pct: docPlan.scope_documented_pct?.toString() || '',
-          priority_order: docPlan.priority_order || '',
-          target_completion_dates: docPlan.target_completion_dates || '',
-          resources_allocated: docPlan.resources_allocated || '',
-        })
-
-        // Load backlogs
-        const { data: backlogData } = await supabase
-          .from('documentation_plan_backlogs')
-          .select('*')
-          .eq('plan_id', docPlan.id)
-          .order('priority', { ascending: true })
+      const plans = docPlan || []
+      setAllPlans(plans)
+      const activePlan = plans.find((p: any) => p.status === 'Active') || null
+      if (activePlan) {
+        setPlan(activePlan)
+        // Load backlogs and documents for the active plan
+        const [{ data: backlogData }, { data: docPlanDocs }] = await Promise.all([
+          supabase.from('documentation_plan_backlogs').select('*').eq('plan_id', activePlan.id).order('priority', { ascending: true }),
+          supabase.from('documentation_plan_documents').select('*').eq('plan_id', activePlan.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        ])
         setBacklogs(backlogData || [])
+        setPlanDocs(docPlanDocs || [])
       }
+      setPlanDocsLoaded(true)
       setLoading(false)
       } catch (err) {
         console.error('Documentation plan load error:', err)
@@ -361,9 +393,88 @@ export default function DocumentationPlanPage() {
     load()
   }, [])
 
+  useEffect(() => {
+    if (stagedDocs.length === 0) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [stagedDocs.length])
+
+  function handleBack() {
+    if (stagedDocs.length > 0) {
+      if (!window.confirm('You have unsaved documents staged. Discard them and go back?')) return
+      setStagedDocs([])
+    }
+    setEditMode(false)
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  function hydratePlanForm(p: any) {
+    setPlanForm({
+      plan_reference: p.plan_reference || '',
+      plan_date: p.plan_date || '',
+      review_date: p.review_date || '',
+      responsible_person: p.responsible_person || '',
+      documentation_standards: p.documentation_standards || '',
+      accreditation_scheme: p.accreditation_scheme || '',
+      legal_framework: p.legal_framework || '',
+      ethical_framework: p.ethical_framework || '',
+      systems_in_use: p.systems_in_use || '',
+      system_maintenance: p.system_maintenance || '',
+      access_permissions: p.access_permissions || '',
+      scope_documented_pct: p.scope_documented_pct?.toString() || '',
+      collection_overview: p.collection_overview || '',
+      documentation_gaps: p.documentation_gaps || '',
+      backlog_notes: p.backlog_notes || '',
+      specific_objectives: p.specific_objectives || '',
+      priority_order: p.priority_order || '',
+      resources_allocated: p.resources_allocated || '',
+      target_completion_dates: p.target_completion_dates || '',
+    })
+  }
+
+  function openAllSections() {
+    setOpenSections({ identity: true, standards: true, systems: true, assessment: true, improvement: true })
+  }
+
+  function startCreatePlan() {
+    setPlan(null)
+    setPlanForm(emptyPlanForm)
+    openAllSections()
+    setEditMode(true)
+    setPlanDocs([])
+    setStagedDocs([])
+    setBacklogs([])
+  }
+
+  async function startEditPlan(p: any) {
+    setPlan(p)
+    hydratePlanForm(p)
+    openAllSections()
+    setEditMode(true)
+    // Load backlogs and docs for this plan
+    const [{ data: backlogData }, { data: docPlanDocs }] = await Promise.all([
+      supabase.from('documentation_plan_backlogs').select('*').eq('plan_id', p.id).order('priority', { ascending: true }),
+      supabase.from('documentation_plan_documents').select('*').eq('plan_id', p.id).is('deleted_at', null).order('created_at', { ascending: false }),
+    ])
+    setBacklogs(backlogData || [])
+    setPlanDocs(docPlanDocs || [])
+  }
+
+  async function archivePlan(id: string) {
+    await supabase.from('documentation_plans').update({ status: 'Archived' }).eq('id', id)
+    setAllPlans(prev => prev.map(p => p.id === id ? { ...p, status: 'Archived' } : p))
+    if (plan?.id === id) { setPlan(null); setEditMode(false) }
+  }
+
+  function toggleSection(key: string) {
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   async function savePlan() {
@@ -372,14 +483,43 @@ export default function DocumentationPlanPage() {
     const payload = {
       ...planForm,
       museum_id: museum.id,
+      status: 'Active',
       updated_at: new Date().toISOString(),
       scope_documented_pct: planForm.scope_documented_pct ? parseFloat(planForm.scope_documented_pct) : null,
     }
     if (plan) {
       await supabase.from('documentation_plans').update(payload).eq('id', plan.id)
+      const updated = { ...plan, ...payload }
+      setPlan(updated)
+      setAllPlans(prev => prev.map(p => p.id === plan.id ? updated : p))
     } else {
       const { data } = await supabase.from('documentation_plans').insert(payload).select().single()
-      if (data) setPlan(data)
+      if (data) {
+        setPlan(data)
+        setAllPlans(prev => [data, ...prev])
+        if (stagedDocs.length > 0) {
+          const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+          const uploaded: any[] = []
+          for (const doc of stagedDocs) {
+            const ext = doc.file.name.split('.').pop()
+            const path = `${museum.id}/doc-plans/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
+            if (stErr) continue
+            const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+            const { data: docRecord } = await supabase.from('documentation_plan_documents').insert({
+              plan_id: data.id, museum_id: museum.id,
+              section: null,
+              label: doc.label || doc.file.name, document_type: doc.docType || 'Other',
+              file_url: publicUrl, file_name: doc.file.name,
+              file_size: doc.file.size, mime_type: doc.file.type,
+              uploaded_by: userId,
+            }).select().single()
+            if (docRecord) uploaded.push(docRecord)
+          }
+          setPlanDocs(uploaded)
+          setStagedDocs([])
+        }
+      }
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -406,6 +546,36 @@ export default function DocumentationPlanPage() {
   async function deleteBacklog(id: string) {
     await supabase.from('documentation_plan_backlogs').delete().eq('id', id)
     setBacklogs(prev => prev.filter(b => b.id !== id))
+  }
+
+  async function uploadPlanDoc() {
+    if (!docFile || !plan) return
+    if (docFile.size > 20 * 1024 * 1024) { setDocError('File exceeds 20 MB limit'); return }
+    setDocUploading(true); setDocError(null)
+    const ext = docFile.name.split('.').pop()
+    const path = `${museum.id}/doc-plans/documents/${Date.now()}.${ext}`
+    const { error: storageError } = await supabase.storage.from('object-documents').upload(path, docFile)
+    if (storageError) { setDocError(storageError.message); setDocUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    const { data: doc, error: dbError } = await supabase.from('documentation_plan_documents').insert({
+      plan_id: plan.id, museum_id: museum.id,
+      section: docSection || null,
+      label: docLabel || docFile.name, document_type: docType || 'Other',
+      notes: docNotes || null, file_url: publicUrl, file_name: docFile.name,
+      file_size: docFile.size, mime_type: docFile.type,
+      uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    }).select().single()
+    if (dbError) { setDocError(dbError.message); setDocUploading(false); return }
+    setPlanDocs(prev => [doc, ...prev])
+    setDocLabel(''); setDocType(''); setDocSection(''); setDocNotes(''); setDocFile(null)
+    setShowDocForm(false); setDocUploading(false)
+  }
+
+  async function deletePlanDoc(doc: any) {
+    const path = doc.file_url.split('/object-documents/')[1]
+    if (path) await supabase.storage.from('object-documents').remove([path])
+    await supabase.from('documentation_plan_documents').delete().eq('id', doc.id)
+    setPlanDocs(prev => prev.filter(d => d.id !== doc.id))
   }
 
   if (loading) return (
@@ -439,6 +609,8 @@ export default function DocumentationPlanPage() {
       </DashboardShell>
     )
   }
+
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
 
   const scorableMetrics = metrics.filter(m => m.denominator > 0)
   const overall = scorableMetrics.length > 0
@@ -526,78 +698,372 @@ export default function DocumentationPlanPage() {
             </table>
           </div>
 
-          {/* Documentation Plan Settings (Proc 9) */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-6">
-            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Procedure 9</div>
+          {/* Documentation Plan — summary card or create button */}
+          {!editMode && (
+            <>
+              {plan ? (
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-center justify-between gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">Active</span>
+                      <span className="font-serif italic text-stone-900 dark:text-stone-100">{plan.plan_reference || 'Documentation Plan'}</span>
+                    </div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 font-mono">
+                      {plan.plan_date && `Dated ${new Date(plan.plan_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                      {plan.responsible_person && ` · ${plan.responsible_person}`}
+                    </div>
+                    {plan.updated_at && (
+                      <div className="text-xs text-stone-300 dark:text-stone-600 font-mono">Last saved {new Date(plan.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                    )}
+                  </div>
+                  {canEdit && (
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button onClick={() => startEditPlan(plan)} className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                        Edit plan →
+                      </button>
+                      <button onClick={startCreatePlan} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-4 py-2 rounded transition-colors">
+                        + New plan
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : canEdit ? (
+                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8 text-center">
+                  <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">No documentation plan has been created yet. Create one to formally document your collection standards, systems, and improvement commitments.</p>
+                  <button onClick={startCreatePlan} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                    Create Documentation Plan →
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Plan Reference</label>
-                <input type="text" value={planForm.plan_reference} onChange={e => setPlanForm(f => ({ ...f, plan_reference: e.target.value }))} className={inputCls} placeholder="e.g. DOC-2025-01" />
+          {/* Documentation Plan — accordion form */}
+          {editMode && (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Documentation Plan — Procedure 9</div>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{plan ? `Editing ${plan.plan_reference || 'plan'}` : 'Creating new plan'}</p>
+                </div>
+                <button onClick={handleBack} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                  ← Back
+                </button>
               </div>
-              <div>
-                <label className={labelCls}>Plan Date</label>
-                <input type="date" value={planForm.plan_date} onChange={e => setPlanForm(f => ({ ...f, plan_date: e.target.value }))} className={inputCls} />
+
+              {/* Section: Plan Identity */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <button onClick={() => toggleSection('identity')} className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Plan Identity</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Reference, dates, and responsible person</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform shrink-0 ${openSections.identity ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {openSections.identity && (
+                  <div className="px-6 pb-6 space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className={labelCls}>Plan Reference</label>
+                        <input type="text" value={planForm.plan_reference} onChange={e => setPlanForm(f => ({ ...f, plan_reference: e.target.value }))} className={inputCls} placeholder="e.g. DOC-2026-01" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Plan Date</label>
+                        <input type="date" value={planForm.plan_date} onChange={e => setPlanForm(f => ({ ...f, plan_date: e.target.value }))} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Next Review Date</label>
+                        <input type="date" value={planForm.review_date} onChange={e => setPlanForm(f => ({ ...f, review_date: e.target.value }))} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Responsible Person</label>
+                        <input type="text" value={planForm.responsible_person} onChange={e => setPlanForm(f => ({ ...f, responsible_person: e.target.value }))} className={inputCls} placeholder="Name or role" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className={labelCls}>Next Review Date</label>
-                <input type="date" value={planForm.review_date} onChange={e => setPlanForm(f => ({ ...f, review_date: e.target.value }))} className={inputCls} />
+
+              {/* Section: Standards & Legal Framework */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <button onClick={() => toggleSection('standards')} className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Standards &amp; Legal Framework</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Documentation standards, accreditation, legal and ethical obligations</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform shrink-0 ${openSections.standards ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {openSections.standards && (
+                  <div className="px-6 pb-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Documentation Standards</label>
+                        <input type="text" value={planForm.documentation_standards} onChange={e => setPlanForm(f => ({ ...f, documentation_standards: e.target.value }))} className={inputCls} placeholder="e.g. Spectrum 5.1, MA Code of Ethics" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Accreditation Scheme</label>
+                        <input type="text" value={planForm.accreditation_scheme} onChange={e => setPlanForm(f => ({ ...f, accreditation_scheme: e.target.value }))} className={inputCls} placeholder="e.g. Arts Council England Accreditation" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Legal Obligations</label>
+                        <textarea rows={4} value={planForm.legal_framework} onChange={e => setPlanForm(f => ({ ...f, legal_framework: e.target.value }))} className={`${inputCls} resize-none`} placeholder="How the museum handles data protection, freedom of information, export controls, and other legal requirements relating to collections information…" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Ethical Obligations</label>
+                        <textarea rows={4} value={planForm.ethical_framework} onChange={e => setPlanForm(f => ({ ...f, ethical_framework: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Ethical framework applied to collections information, e.g. treatment of sensitive records, human remains, repatriation…" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Systems & Infrastructure */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <button onClick={() => toggleSection('systems')} className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Systems &amp; Infrastructure</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Documentation systems in use, maintenance, and access controls</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform shrink-0 ${openSections.systems ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {openSections.systems && (
+                  <div className="px-6 pb-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Systems in Use</label>
+                        <textarea rows={3} value={planForm.systems_in_use} onChange={e => setPlanForm(f => ({ ...f, systems_in_use: e.target.value }))} className={`${inputCls} resize-none`} placeholder="List all systems: CMS, paper registers, spreadsheets, databases, image stores…" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>System Maintenance</label>
+                        <textarea rows={3} value={planForm.system_maintenance} onChange={e => setPlanForm(f => ({ ...f, system_maintenance: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Backup schedules, security measures, software updates, data integrity checks…" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Access &amp; Permissions</label>
+                      <textarea rows={2} value={planForm.access_permissions} onChange={e => setPlanForm(f => ({ ...f, access_permissions: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Who has access to collection records and at what level, and how permissions are managed…" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Current State Assessment */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <button onClick={() => toggleSection('assessment')} className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Current State Assessment</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Scope of documentation, known gaps, and backlog summary</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform shrink-0 ${openSections.assessment ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {openSections.assessment && (
+                  <div className="px-6 pb-6 space-y-4">
+                    <div>
+                      <label className={labelCls}>Scope Documented (%)</label>
+                      <div className="flex items-center gap-3">
+                        <input type="number" step="0.01" min="0" max="100" value={planForm.scope_documented_pct} onChange={e => setPlanForm(f => ({ ...f, scope_documented_pct: e.target.value }))} className="w-32 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" placeholder="e.g. 65.50" />
+                        <p className="text-xs text-stone-400 dark:text-stone-500">Your own assessment of what percentage of the collection is adequately documented.</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Collection Overview</label>
+                      <textarea rows={3} value={planForm.collection_overview} onChange={e => setPlanForm(f => ({ ...f, collection_overview: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Describe the overall scope and nature of the collection, what documentation is held, and in what formats…" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Known Gaps &amp; Weaknesses</label>
+                      <textarea rows={4} value={planForm.documentation_gaps} onChange={e => setPlanForm(f => ({ ...f, documentation_gaps: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Known gaps in documentation, areas of weakness, and records that are incomplete or not to current standards…" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Backlog Summary</label>
+                      <textarea rows={3} value={planForm.backlog_notes} onChange={e => setPlanForm(f => ({ ...f, backlog_notes: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Prose summary of documentation backlogs by procedure area. Use the Backlog by Procedure section below to log specific counts and targets." />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Improvement Plan */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <button onClick={() => toggleSection('improvement')} className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Improvement Plan</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Objectives, priorities, resources, and target dates</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-stone-400 transition-transform shrink-0 ${openSections.improvement ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {openSections.improvement && (
+                  <div className="px-6 pb-6 space-y-4">
+                    <div>
+                      <label className={labelCls}>Specific Objectives</label>
+                      <textarea rows={4} value={planForm.specific_objectives} onChange={e => setPlanForm(f => ({ ...f, specific_objectives: e.target.value }))} className={`${inputCls} resize-none`} placeholder="What will be achieved — specific, measurable objectives for the plan period…" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Priority Order</label>
+                        <input type="text" value={planForm.priority_order} onChange={e => setPlanForm(f => ({ ...f, priority_order: e.target.value }))} className={inputCls} placeholder="e.g. Cataloguing > Inventory > Location records" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Resources Allocated</label>
+                        <input type="text" value={planForm.resources_allocated} onChange={e => setPlanForm(f => ({ ...f, resources_allocated: e.target.value }))} className={inputCls} placeholder="e.g. 2 FTE, £5,000 budget, 3 volunteers" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Target Completion Dates</label>
+                      <textarea rows={3} value={planForm.target_completion_dates} onChange={e => setPlanForm(f => ({ ...f, target_completion_dates: e.target.value }))} className={`${inputCls} resize-none`} placeholder="Key milestones and target completion dates for each objective…" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Supporting Documents */}
+              <div className="border-b border-stone-100 dark:border-stone-800">
+                <div className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Supporting Documents</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Written plan, policy documents, procedures manuals, accreditation evidence</div>
+                  </div>
+                  {plan && (
+                    <button onClick={() => setShowDocForm(v => !v)} className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors shrink-0 ml-4">
+                      {showDocForm ? 'Cancel' : '+ Add document'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Creating: stage docs now, upload on save */}
+                {!plan && (
+                  <div className="px-6 pb-6 space-y-3">
+                    <p className="text-xs text-stone-400 dark:text-stone-500">Attach files below — they'll be uploaded when you create the plan.</p>
+                    <StagedDocumentPicker relatedToType="doc_plan" value={stagedDocs} onChange={setStagedDocs} />
+                  </div>
+                )}
+
+                {/* Editing: immediate upload (plan already exists) */}
+                {plan && showDocForm && (
+                  <div className="px-6 pb-6 space-y-4 border-t border-stone-100 dark:border-stone-800 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Label *</label>
+                        <input value={docLabel} onChange={e => setDocLabel(e.target.value)} placeholder="e.g. Documentation Plan 2026" className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Document Type</label>
+                        <select value={docType} onChange={e => setDocType(e.target.value)} className={inputCls}>
+                          <option value="">— Select type —</option>
+                          {PLAN_DOC_TYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Section</label>
+                        <select value={docSection} onChange={e => setDocSection(e.target.value)} className={inputCls}>
+                          {PLAN_SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>File</label>
+                        <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv"
+                          onChange={e => setDocFile(e.target.files?.[0] || null)}
+                          className="w-full text-xs text-stone-500 dark:text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-mono file:bg-stone-100 file:text-stone-700 dark:file:bg-stone-800 dark:file:text-stone-300 hover:file:bg-stone-200 dark:hover:file:bg-stone-700 cursor-pointer" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Notes</label>
+                      <input value={docNotes} onChange={e => setDocNotes(e.target.value)} placeholder="Optional notes about this document…" className={inputCls} />
+                    </div>
+                    {docError && <p className="text-xs text-red-500">{docError}</p>}
+                    <button onClick={uploadPlanDoc} disabled={!docFile || docUploading}
+                      className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
+                      {docUploading ? 'Uploading…' : 'Upload document →'}
+                    </button>
+                  </div>
+                )}
+                {plan && planDocs.length === 0 && !showDocForm && (
+                  <div className="px-6 pb-6 text-xs text-stone-400 dark:text-stone-500">No documents attached yet.</div>
+                )}
+                {plan && planDocs.length > 0 && (
+                  <div className="px-6 pb-4 space-y-2">
+                    {planDocs.map(d => (
+                      <div key={d.id} className="flex items-center justify-between py-2 border-t border-stone-100 dark:border-stone-800 first:border-t-0">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-stone-900 dark:text-stone-100 hover:underline truncate">{d.label}</a>
+                            {d.section && (
+                              <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 shrink-0">
+                                {PLAN_SECTIONS.find(s => s.value === d.section)?.label || d.section}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{d.document_type || ''}{d.file_size ? ` · ${Math.round(d.file_size / 1024)} KB` : ''}</div>
+                        </div>
+                        <button onClick={() => deletePlanDoc(d)} className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors ml-4 shrink-0">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Save footer */}
+              <div className="flex items-center gap-4 px-6 py-4 bg-stone-50 dark:bg-stone-800/50">
+                <button onClick={savePlan} disabled={saving} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
+                  {saving ? 'Saving…' : plan ? 'Save changes' : 'Create Documentation Plan'}
+                </button>
+                {saved && <span className="text-xs font-mono text-emerald-600">Saved ✓</span>}
+                {plan?.updated_at && !saved && (
+                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                    Last saved {new Date(plan.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                )}
               </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Responsible Person</label>
-                <input type="text" value={planForm.responsible_person} onChange={e => setPlanForm(f => ({ ...f, responsible_person: e.target.value }))} className={inputCls} placeholder="Name or role" />
+          {/* All Documentation Plans — history table */}
+          {allPlans.length > 0 && (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">All Documentation Plans</div>
               </div>
-              <div>
-                <label className={labelCls}>Documentation Standards</label>
-                <input type="text" value={planForm.documentation_standards} onChange={e => setPlanForm(f => ({ ...f, documentation_standards: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Systems in Use</label>
-                <input type="text" value={planForm.systems_in_use} onChange={e => setPlanForm(f => ({ ...f, systems_in_use: e.target.value }))} className={inputCls} />
-              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Reference</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Responsible Person</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Last Updated</th>
+                    <th className="px-4 py-3 w-28"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allPlans.map(p => (
+                    <tr key={p.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50">
+                      <td className="px-6 py-3 text-sm text-stone-900 dark:text-stone-100 font-mono">{p.plan_reference || '—'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-mono px-2 py-1 rounded-full ${p.status === 'Active' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{p.plan_date ? new Date(p.plan_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{p.responsible_person || '—'}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-stone-400 dark:text-stone-500">{p.updated_at ? new Date(p.updated_at).toLocaleDateString('en-GB') : '—'}</td>
+                      <td className="px-4 py-3 text-right">
+                        {canEdit && (
+                          <div className="flex items-center justify-end gap-3">
+                            <button onClick={() => startEditPlan(p)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Edit</button>
+                            {p.status === 'Active' && (
+                              <button onClick={() => archivePlan(p.id)} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors">Archive</button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Scope Documented (%)</label>
-                <input type="number" step="0.01" min="0" max="100" value={planForm.scope_documented_pct} onChange={e => setPlanForm(f => ({ ...f, scope_documented_pct: e.target.value }))} className={inputCls} placeholder="e.g. 65.50" />
-              </div>
-              <div>
-                <label className={labelCls}>Priority Order</label>
-                <input type="text" value={planForm.priority_order} onChange={e => setPlanForm(f => ({ ...f, priority_order: e.target.value }))} className={inputCls} placeholder="e.g. Cataloguing > Inventory > Location" />
-              </div>
-              <div>
-                <label className={labelCls}>Resources Allocated</label>
-                <input type="text" value={planForm.resources_allocated} onChange={e => setPlanForm(f => ({ ...f, resources_allocated: e.target.value }))} className={inputCls} placeholder="e.g. 2 FTE, £5,000 budget" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Target Completion Dates</label>
-                <textarea rows={2} value={planForm.target_completion_dates} onChange={e => setPlanForm(f => ({ ...f, target_completion_dates: e.target.value }))} className={inputCls} placeholder="Key milestones and target dates…" />
-              </div>
-              <div>
-                <label className={labelCls}>Backlog Notes &amp; Priorities</label>
-                <textarea rows={2} value={planForm.backlog_notes} onChange={e => setPlanForm(f => ({ ...f, backlog_notes: e.target.value }))} className={inputCls} placeholder="Describe documentation backlogs by procedure…" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button onClick={savePlan} disabled={saving} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
-                {saving ? 'Saving…' : 'Save Documentation Plan'}
-              </button>
-              {saved && <span className="text-xs font-mono text-emerald-600">Saved ✓</span>}
-              {plan?.updated_at && !saved && (
-                <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
-                  Last saved {new Date(plan.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Backlog by Procedure */}
           {plan && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, RISK_TYPES, RISK_SEVERITIES, RISK_LIKELIHOODS, RISK_SEVERITY_STYLES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 
 interface RiskTabProps {
   canEdit: boolean
@@ -16,8 +17,10 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
   const [riskHistory, setRiskHistory] = useState<any[]>([])
   const [riskLoaded, setRiskLoaded] = useState(false)
   const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -25,15 +28,46 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
       .then(({ data }: any) => { setRiskHistory(data || []); setRiskLoaded(true) })
   }, [object.id])
 
+  useEffect(() => {
+    if (!selectedRecord) { setSelectedRecordDocs([]); return }
+    supabase.from('object_documents').select('*')
+      .eq('related_to_type', 'risk')
+      .eq('related_to_id', selectedRecord.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .then(({ data }: any) => setSelectedRecordDocs(data || []))
+  }, [selectedRecord?.id])
+
   async function addRisk() {
     if (!riskForm.risk_type || !riskForm.description || submitting) return
     setSubmitting(true)
-    const { error } = await supabase.from('risk_register').insert({
+    const { data: riskRecord, error } = await supabase.from('risk_register').insert({
       ...riskForm, review_date: riskForm.review_date || null,
       object_id: object.id, museum_id: museum.id,
-    })
+    }).select().single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+
+    if (stagedDocs.length > 0 && riskRecord) {
+      const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+      for (const doc of stagedDocs) {
+        const ext = doc.file.name.split('.').pop()
+        const path = `${museum.id}/risks/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
+        if (stErr) continue
+        const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+        await supabase.from('object_documents').insert({
+          object_id: object.id, museum_id: museum.id,
+          related_to_type: 'risk', related_to_id: riskRecord.id,
+          label: doc.label || doc.file.name, document_type: doc.docType || 'Other',
+          file_url: publicUrl, file_name: doc.file.name,
+          file_size: doc.file.size, mime_type: doc.file.type,
+          uploaded_by: userId,
+        })
+      }
+    }
+
     setRiskForm({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
+    setStagedDocs([])
     const { data } = await supabase.from('risk_register').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setRiskHistory(data || [])
     logActivity('risk_added', `Recorded ${riskForm.risk_type} risk for "${object.title}"`)
@@ -94,6 +128,10 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
           <div>
             <label className={labelCls}>Notes</label>
             <textarea value={riskForm.notes} onChange={e => setRiskForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+          </div>
+          <div>
+            <label className={labelCls}>Supporting Documents</label>
+            <StagedDocumentPicker relatedToType="risk" value={stagedDocs} onChange={setStagedDocs} />
           </div>
           <button type="button" onClick={addRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
             className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
@@ -194,6 +232,21 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Notes</div>
                   <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.notes}</div>
+                </div>
+              )}
+              {selectedRecordDocs.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
+                  <div className="space-y-1.5">
+                    {selectedRecordDocs.map(doc => (
+                      <a key={doc.id} href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <span className="text-stone-400">📎</span>
+                        <span className="truncate">{doc.label || doc.file_name}</span>
+                        {doc.document_type && <span className="ml-auto text-stone-300 dark:text-stone-600 shrink-0">{doc.document_type}</span>}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
               {canEdit && selectedRecord.status !== 'Closed' && (

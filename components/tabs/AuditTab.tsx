@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES, INVENTORY_OUTCOMES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
+import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 
 interface AuditTabProps {
   form: Record<string, any>
@@ -20,31 +21,64 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
   const [exercises, setExercises] = useState<any[]>([])
   const [exercisesLoaded, setExercisesLoaded] = useState(false)
   const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
+  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
       .then(({ data }: any) => { setAuditHistory(data || []); setAuditLoaded(true) })
-    supabase.from('inventory_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
+    supabase.from('audit_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
       .then(({ data }: any) => { setExercises(data || []); setExercisesLoaded(true) })
   }, [object.id])
+
+  useEffect(() => {
+    if (!selectedRecord) { setSelectedRecordDocs([]); return }
+    supabase.from('object_documents').select('*')
+      .eq('related_to_type', 'audit_record')
+      .eq('related_to_id', selectedRecord.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .then(({ data }: any) => setSelectedRecordDocs(data || []))
+  }, [selectedRecord?.id])
 
   async function addAudit() {
     if (!auditForm.inventoried_at || submitting) return
     setSubmitting(true)
-    const { error: auditErr } = await supabase.from('audit_records').insert({
+    const { data: auditRecord, error: auditErr } = await supabase.from('audit_records').insert({
       ...auditForm,
       object_id: object.id, museum_id: museum.id,
       exercise_id: auditForm.exercise_id || null,
       action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
-    })
+    }).select().single()
     if (auditErr) { toast(auditErr.message, 'error'); setSubmitting(false); return }
     await supabase.from('objects').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', object.id)
     set('last_inventoried', auditForm.inventoried_at)
     set('inventoried_by', auditForm.inventoried_by)
+
+    if (stagedDocs.length > 0 && auditRecord) {
+      const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+      for (const doc of stagedDocs) {
+        const ext = doc.file.name.split('.').pop()
+        const path = `${museum.id}/audits/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
+        if (stErr) continue
+        const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+        await supabase.from('object_documents').insert({
+          object_id: object.id, museum_id: museum.id,
+          related_to_type: 'audit_record', related_to_id: auditRecord.id,
+          label: doc.label || doc.file.name, document_type: doc.docType || 'Other',
+          file_url: publicUrl, file_name: doc.file.name,
+          file_size: doc.file.size, mime_type: doc.file.type,
+          uploaded_by: userId,
+        })
+      }
+    }
+
     setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
+    setStagedDocs([])
     const { data } = await supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
     setAuditHistory(data || [])
     logActivity('audit_recorded', `Audited "${object.title}"${auditForm.inventory_outcome ? ` — ${auditForm.inventory_outcome}` : ''}`)
@@ -61,14 +95,14 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           <div><label className={labelCls} data-learn="audit.inventoried_by">Inventoried By</label><input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} /></div>
         </div>
         <div>
-          <label className={labelCls}>Inventory Exercise</label>
+          <label className={labelCls}>Audit Exercise</label>
           <select value={auditForm.exercise_id} onChange={e => setAuditForm(f => ({ ...f, exercise_id: e.target.value }))} className={inputCls}>
             <option value="">— Not part of an exercise —</option>
             {exercises.map(ex => (
-              <option key={ex.id} value={ex.id}>{ex.exercise_reference} — {ex.scope || 'General'}</option>
+              <option key={ex.id} value={ex.id}>{ex.audit_reference} — {ex.scope || 'General'}</option>
             ))}
           </select>
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Link this audit to a formal inventory exercise</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Link this audit record to a formal audit exercise</p>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><label className={labelCls} data-learn="audit.location_confirmed">Location Confirmed</label><input value={auditForm.location_confirmed} onChange={e => setAuditForm(f => ({ ...f, location_confirmed: e.target.value }))} placeholder="Actual location found" className={inputCls} /></div>
@@ -124,6 +158,10 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           <label className={labelCls} data-learn="audit.notes">Notes</label>
           <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
             className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+        </div>
+        <div>
+          <label className={labelCls}>Supporting Documents</label>
+          <StagedDocumentPicker relatedToType="audit_record" value={stagedDocs} onChange={setStagedDocs} />
         </div>
         <button type="button" onClick={addAudit} disabled={submitting}
           className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
@@ -224,6 +262,21 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Notes</div>
                   <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedRecord.notes}</div>
+                </div>
+              )}
+              {selectedRecordDocs.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
+                  <div className="space-y-1.5">
+                    {selectedRecordDocs.map(doc => (
+                      <a key={doc.id} href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <span className="text-stone-400">📎</span>
+                        <span className="truncate">{doc.label || doc.file_name}</span>
+                        {doc.document_type && <span className="ml-auto text-stone-300 dark:text-stone-600 shrink-0">{doc.document_type}</span>}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
