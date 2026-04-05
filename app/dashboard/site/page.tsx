@@ -385,7 +385,7 @@ export default function SiteBuilder() {
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
                 <div className="grid grid-cols-3 gap-3">
                   {TEMPLATES.map(t => {
-                    const isLocked = museum?.plan === 'community' && !FREE_TIER_TEMPLATES.includes(t.id)
+                    const isLocked = ['community', 'hobbyist'].includes(museum?.plan ?? '') && !FREE_TIER_TEMPLATES.includes(t.id)
                     return (
                     <button key={t.id} onClick={() => !isLocked && selectTemplate(t.id)}
                       className={`text-left rounded-lg border-2 overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-default' : ''} ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 ' + (!isLocked ? 'hover:border-stone-400 dark:hover:border-stone-500' : '')}`}>
