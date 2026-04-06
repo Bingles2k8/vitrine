@@ -24,7 +24,7 @@ export default function ObjectProgressSidebar({ sections, activeTab, onTabChange
   return (
     <div className="space-y-1">
       <div className="text-xs font-mono text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-3">
-        {completedCount}/{sections.length} complete
+        Cataloging and Inventory
       </div>
       {sections.map(section => {
         const isActive = activeTab === section.id
@@ -37,29 +37,19 @@ export default function ObjectProgressSidebar({ sections, activeTab, onTabChange
               onClick={() => onTabChange(section.id)}
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
                 isActive
-                  ? 'bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 font-medium'
-                  : isDone
-                    ? 'text-stone-400 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-500'
-                    : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/50'
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium'
+                  : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'
               }`}
             >
-              <span className={`w-4 h-4 shrink-0 flex items-center justify-center rounded-full border text-xs ${
-                isDone
-                  ? 'border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'
-                  : isActive
-                    ? 'border-stone-400 dark:border-stone-500'
-                    : 'border-stone-300 dark:border-stone-600'
-              }`}>
-                {isDone && (
-                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                    <path d="M1.5 4L3 5.5L6.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </span>
-              <span className={isDone && !isActive ? 'line-through' : ''}>{section.label}</span>
+              {!isDone && (
+                <span className={`w-4 h-4 shrink-0 flex items-center justify-center rounded-full border text-xs ${
+                  isActive ? 'border-stone-400 dark:border-stone-500' : 'border-stone-300 dark:border-stone-600'
+                }`} />
+              )}
+              <span>{section.label}</span>
             </button>
 
-            {isActive && (
+            {isActive && !isDone && (
               <div className="ml-3 mt-1 mb-1 pl-4 border-l border-stone-200 dark:border-stone-700 space-y-1">
                 {section.fields.map(field => (
                   <div

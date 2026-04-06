@@ -8,6 +8,7 @@ export const PLANS: Record<PlanId, {
   imagesPerObject: number
   fullMode: boolean
   analytics: boolean
+  visitorAnalytics: boolean
   compliance: boolean
   ticketing: boolean
   visitInfo: boolean         // Visit page & About/Facilities in site builder
@@ -15,6 +16,7 @@ export const PLANS: Record<PlanId, {
   documentStorageMb: number | null  // null = unlimited
   depositorTracking: boolean  // Donor info, Entry By, GDPR, receipt & terms in entry records
   wishlist: boolean  // Wanted/wishlist feature — Community & Hobbyist only
+  changeSlug: boolean  // Allow changing the public URL slug after initial setup
   features: string[]
 }> = {
   community: {
@@ -25,6 +27,7 @@ export const PLANS: Record<PlanId, {
     imagesPerObject: 1,
     fullMode: false,
     analytics: false,
+    visitorAnalytics: false,
     compliance: false,
     ticketing: false,
     visitInfo: false,
@@ -32,6 +35,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: 0,
     depositorTracking: false,
     wishlist: true,
+    changeSlug: false,
     features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking'],
   },
   hobbyist: {
@@ -41,7 +45,8 @@ export const PLANS: Record<PlanId, {
     staff: 1,
     imagesPerObject: 3,
     fullMode: false,
-    analytics: false,
+    analytics: true,
+    visitorAnalytics: false,
     compliance: false,
     ticketing: false,
     visitInfo: false,
@@ -49,6 +54,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: 0,
     depositorTracking: false,
     wishlist: true,
+    changeSlug: true,
     features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list'],
   },
   professional: {
@@ -59,6 +65,7 @@ export const PLANS: Record<PlanId, {
     imagesPerObject: 10,
     fullMode: true,
     analytics: true,
+    visitorAnalytics: true,
     compliance: true,
     ticketing: true,
     visitInfo: true,
@@ -66,6 +73,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: 1024,
     depositorTracking: true,
     wishlist: false,
+    changeSlug: true,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '1 GB document storage'],
   },
   institution: {
@@ -76,6 +84,7 @@ export const PLANS: Record<PlanId, {
     imagesPerObject: 10,
     fullMode: true,
     analytics: true,
+    visitorAnalytics: true,
     compliance: true,
     ticketing: true,
     visitInfo: true,
@@ -83,6 +92,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: 10240,
     depositorTracking: true,
     wishlist: false,
+    changeSlug: true,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
   },
   enterprise: {
@@ -93,6 +103,7 @@ export const PLANS: Record<PlanId, {
     imagesPerObject: 10,
     fullMode: true,
     analytics: true,
+    visitorAnalytics: true,
     compliance: true,
     ticketing: true,
     visitInfo: true,
@@ -100,6 +111,7 @@ export const PLANS: Record<PlanId, {
     documentStorageMb: null,
     depositorTracking: true,
     wishlist: false,
+    changeSlug: true,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
   },
 }

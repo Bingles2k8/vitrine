@@ -492,7 +492,7 @@ export const segments: Segment[] = [
     features: [
       {
         name: 'Edition and publication fields',
-        description: 'Record publisher, edition, print run, year, ISBN, binding type, and format for every book.',
+        description: 'Record publisher, edition, print run, year, binding type, and format for every book.',
       },
       {
         name: 'Condition grading',
@@ -1116,7 +1116,7 @@ export const segments: Segment[] = [
       {
         question: 'How do I track box and papers status?',
         answer:
-          "Vitrine has a box and papers field where you record what's present: original box, inner box, outer box, warranty card, hang tags, and additional papers. You can add condition notes for each.",
+          "Use the notes and description fields to record box and papers status — original box, inner box, outer box, warranty card, hang tags, and additional papers. Add condition notes for each element alongside the main record.",
       },
       {
         question: 'How do I value my watch collection for insurance?',
@@ -1248,12 +1248,12 @@ export const segments: Segment[] = [
       {
         question: 'Which stamp catalogue system does Vitrine support?',
         answer:
-          'Vitrine has fields for Scott, Stanley Gibbons, and Michel catalogue numbers. You can fill in whichever system you use. Many collectors record numbers from two or more systems for the same stamp.',
+          'Record Scott, Stanley Gibbons, Michel, and Yvert catalogue numbers in the notes field. You can use whichever system you prefer. Many collectors record numbers from two or more systems for the same stamp.',
       },
       {
         question: 'How do I record MNH, LH, and hinged condition?',
         answer:
-          'Vitrine has a gum condition field with standard philatelic options: mint never hinged (MNH), original gum lightly hinged (OG LH), hinged (H), no gum (NG), and regummed. Add a condition note for anything more specific.',
+          'Use the condition and notes fields to record gum status: mint never hinged (MNH), original gum lightly hinged (OG LH), hinged (H), no gum (NG), or regummed. Add a more detailed condition note for anything specific.',
       },
       {
         question: 'Can I catalog a thematic collection?',
@@ -2455,7 +2455,7 @@ export const segments: Segment[] = [
     features: [
       {
         name: 'Base game and expansion tracking',
-        description: 'Catalog base games and link expansions, promo packs, and accessories to them. Know exactly what you own for each title.',
+        description: 'Catalog base games, expansions, promo packs, and accessories together. Use categories and notes to group everything belonging to the same title.',
       },
       {
         name: 'Completeness and condition tracking',
@@ -3098,7 +3098,7 @@ export const segments: Segment[] = [
       {
         question: 'Can I use Vitrine for a costume collection at a theatre or institution?',
         answer:
-          'Yes. Vitrine\'s Professional and Institution plans are suited to institutional costume collections, with staff accounts, loans tracking, and document storage.',
+          'Yes. Vitrine\'s Professional plan is suited to institutional costume collections, with staff accounts, loans tracking, and document storage.',
       },
     ],
     mockListItems: [
@@ -3152,7 +3152,7 @@ export const segments: Segment[] = [
       },
       {
         heading: 'Collections compliance requires proper documentation',
-        body: 'Provenance documentation, acquisition records, disposal registers, and loans agreements are legal and ethical requirements. Vitrine\'s Professional and Institution plans include dedicated compliance tools for each of these.',
+        body: 'Provenance documentation, acquisition records, disposal registers, and loans agreements are legal and ethical requirements. Vitrine\'s Professional plan includes dedicated compliance tools for each of these.',
       },
       {
         heading: 'Staff need different levels of access',
@@ -3226,7 +3226,7 @@ export const segments: Segment[] = [
       {
         question: 'Does Vitrine meet Spectrum or UKAD compliance requirements?',
         answer:
-          'Vitrine\'s Professional and Institution plans include the core records required for Spectrum compliance — acquisition, loans, disposal, condition checking, and collections review. We recommend reviewing these against your specific accreditation requirements.',
+          'Vitrine\'s Professional plan includes the core records required for Spectrum compliance — acquisition, loans, disposal, condition checking, and collections review. We recommend reviewing these against your specific accreditation requirements.',
       },
       {
         question: 'Can I migrate from our existing system?',
@@ -3236,7 +3236,7 @@ export const segments: Segment[] = [
       {
         question: 'How do staff accounts work?',
         answer:
-          'Invite staff by email. Assign them a role — Admin, Curator, Editor, or Viewer. Roles control what each person can see and change. Professional plans include up to 10 staff accounts; Institution plans have unlimited.',
+          'Invite staff by email. Assign them a role — Admin, Curator, Editor, or Viewer. Roles control what each person can see and change. Professional plans include up to 10 staff accounts.',
       },
       {
         question: 'Does Vitrine provide a public collection website?',
@@ -3424,7 +3424,7 @@ export const segments: Segment[] = [
     items: 'archive items',
     collectorNoun: 'archive',
     answerCapsule:
-      'Vitrine is collection management software for university archives, special collections departments, and academic libraries. Catalog rare books, manuscripts, institutional records, and research collections. Publish a public finding aid. Institution plans from £349/month.',
+      'Vitrine is collection management software for university archives, special collections departments, and academic libraries. Catalog rare books, manuscripts, institutional records, and research collections. Publish a public finding aid. Professional plans from £79/month.',
     schemaDescription:
       'Vitrine for university archives and special collections. Catalog rare books, manuscripts, and institutional records. Publish public finding aids.',
     painPoints: [
@@ -3438,13 +3438,13 @@ export const segments: Segment[] = [
       },
       {
         heading: 'Large collections need bulk import, not manual re-entry',
-        body: 'Migrating from spreadsheets, card catalogues, or legacy systems is painful if it requires re-entering every record by hand. Vitrine\'s CSV import on Professional and Institution plans handles bulk migration.',
+        body: 'Migrating from spreadsheets, card catalogues, or legacy systems is painful if it requires re-entering every record by hand. Vitrine\'s CSV import on Professional plans handles bulk migration.',
       },
     ],
     features: [
       {
         name: 'Full archival cataloguing',
-        description: 'Catalog at item, file, and series level. Record reference codes, dates, extent, scope and content, and access conditions.',
+        description: 'Catalog each item with reference codes, dates, extent, scope and content, and access conditions.',
       },
       {
         name: 'Access conditions and restrictions',
@@ -3452,7 +3452,7 @@ export const segments: Segment[] = [
       },
       {
         name: 'Staff accounts with role-based access',
-        description: 'Institution plans include unlimited staff accounts. Assign roles to archivists, cataloguers, supervisors, and readers separately.',
+        description: 'Professional plans include staff accounts. Assign roles to archivists, cataloguers, supervisors, and readers separately.',
       },
       {
         name: 'Public online finding aid',
@@ -3470,7 +3470,7 @@ export const segments: Segment[] = [
     steps: [
       {
         heading: 'Create your archive account',
-        body: 'Sign up at vitrinecms.com. Choose the Institution plan for unlimited staff accounts, document storage, and all compliance tools.',
+        body: 'Sign up at vitrinecms.com. Choose the Professional plan for staff accounts, document storage, and all compliance tools.',
       },
       {
         heading: 'Import your existing catalogue',
@@ -3513,7 +3513,7 @@ export const segments: Segment[] = [
       {
         question: 'Can we attach digitised images to catalogue records?',
         answer:
-          'Yes. Attach images and PDFs to individual records on Professional and Institution plans. Digitised surrogates stay permanently linked to the catalogue entry.',
+          'Yes. Attach images and PDFs to individual records on Professional plans. Digitised surrogates stay permanently linked to the catalogue entry.',
       },
       {
         question: 'How does the public finding aid work?',

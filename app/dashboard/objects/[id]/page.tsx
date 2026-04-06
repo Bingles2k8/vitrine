@@ -18,7 +18,6 @@ import ConditionTab from '@/components/tabs/ConditionTab'
 import ConservationTab from '@/components/tabs/ConservationTab'
 import LoansTab from '@/components/tabs/LoansTab'
 import RightsTab from '@/components/tabs/RightsTab'
-import AuditTab from '@/components/tabs/AuditTab'
 import ValuationTab from '@/components/tabs/ValuationTab'
 import RiskTab from '@/components/tabs/RiskTab'
 import DuplicateSearchModal from '@/components/DuplicateSearchModal'
@@ -36,7 +35,6 @@ const TABS = [
   { id: 'conservation', label: 'Conservation' },
   { id: 'loans',        label: 'Loans' },
   { id: 'documents',    label: 'Documents' },
-  { id: 'audit',        label: 'Audit' },
   { id: 'risk',         label: 'Risk' },
   { id: 'damage',       label: 'Damage' },
   { id: 'exits',        label: 'Exits' },
@@ -64,6 +62,7 @@ export default function ObjectDetail() {
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserName, setCurrentUserName] = useState<string>('')
   const [latestValuation, setLatestValuation] = useState<any>(null)
   const [locations, setLocations] = useState<any[]>([])
 
@@ -127,6 +126,13 @@ export default function ObjectDetail() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
+
+      if (!isOwner) {
+        const { data: sm } = await supabase.from('staff_members').select('name').eq('user_id', user.id).maybeSingle()
+        setCurrentUserName(sm?.name || '')
+      } else {
+        setCurrentUserName((user.user_metadata?.full_name || user.user_metadata?.name || '') as string)
+      }
 
       const { data: object } = await supabase
         .from('objects').select('*')
@@ -407,8 +413,6 @@ export default function ObjectDetail() {
               className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors shrink-0">
               ← Collection
             </button>
-            <span className="text-stone-200 dark:text-stone-700 shrink-0">/</span>
-            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100 truncate max-w-[160px] sm:max-w-none">{object.title}</span>
           </div>
           <div className="flex items-center gap-4">
             {fullMode && museum?.slug && (
@@ -444,18 +448,15 @@ export default function ObjectDetail() {
           </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-4 md:px-8 flex gap-1 overflow-x-auto">
-          {(museum?.ui_mode === 'simple' ? TABS.filter(t => SIMPLE_TABS.includes(t.id)) : TABS).map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-stone-900 dark:border-white text-stone-900 dark:text-white'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
-              }`}>
-              {tab.label}
-            </button>
-          ))}
+        {/* Object identity bar */}
+        <div className="bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-4 md:px-8 py-4 flex items-baseline gap-4 flex-wrap">
+          <span className="font-serif text-2xl italic text-stone-900 dark:text-stone-100">{object.title}</span>
+          {form.accession_no && (
+            <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{form.accession_no}</span>
+          )}
+          {form.current_location && (
+            <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{form.current_location}</span>
+          )}
         </div>
 
         <div className="flex gap-8 p-8">
@@ -507,7 +508,7 @@ export default function ObjectDetail() {
           )}
 
           {activeTab === 'location' && (
-            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} />
+            <LocationTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} supabase={supabase} logActivity={logActivity} locations={locations} setLocations={setLocations} currentUserName={currentUserName} />
           )}
 
           {activeTab === 'condition' && (
@@ -524,10 +525,6 @@ export default function ObjectDetail() {
 
           {activeTab === 'rights' && (
             <RightsTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
-          )}
-
-          {activeTab === 'audit' && (
-            <AuditTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'valuation' && (
@@ -551,7 +548,34 @@ export default function ObjectDetail() {
           )}
 
         </form>
-        {getPlan(museum?.plan).fullMode && <div className="hidden lg:block w-44 shrink-0">
+        {!getPlan(museum?.plan).fullMode && <div className="hidden lg:block w-44 shrink-0">
+          <div className="sticky top-20">
+            <div className="text-xs font-mono text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-3">
+              This Object
+            </div>
+            <div className="space-y-0.5">
+              {SIMPLE_TABS.map(tabId => {
+                const tab = TABS.find(t => t.id === tabId)!
+                return (
+                  <button
+                    key={tabId}
+                    type="button"
+                    onClick={() => setActiveTab(tabId)}
+                    className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                      activeTab === tabId
+                        ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium'
+                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>}
+
+        {getPlan(museum?.plan).fullMode && <div className="hidden lg:block w-52 shrink-0">
           <div className="sticky top-20">
             <ObjectProgressSidebar
               sections={[
@@ -584,6 +608,29 @@ export default function ObjectDetail() {
               activeTab={activeTab}
               onTabChange={setActiveTab}
             />
+            {museum?.ui_mode !== 'simple' && (
+              <div className="mt-4 pt-4 border-t border-stone-200 dark:border-stone-800">
+                <div className="text-xs font-mono text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-2">
+                  Further Procedures
+                </div>
+                <div className="space-y-0.5">
+                  {TABS.filter(t => !['overview', 'acquisition', 'location', 'condition', 'rights', 'valuation'].includes(t.id)).map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium'
+                          : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>}
         </div>

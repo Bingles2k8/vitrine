@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import QRCode from 'react-qr-code'
 
 interface QRLabelModalProps {
@@ -9,7 +10,10 @@ interface QRLabelModalProps {
 }
 
 export default function QRLabelModal({ object, museum, onClose }: QRLabelModalProps) {
-  const url = `${window.location.origin}/museum/${museum.slug}/object/${object.id}`
+  const [destination, setDestination] = useState<'public' | 'cms'>('public')
+  const publicUrl = `${window.location.origin}/museum/${museum.slug}/object/${object.id}`
+  const cmsUrl = `${window.location.origin}/dashboard/objects/${object.id}`
+  const url = destination === 'public' ? publicUrl : cmsUrl
 
   function downloadQR() {
     const svg = document.getElementById('qr-label-svg')
@@ -52,7 +56,22 @@ export default function QRLabelModal({ object, museum, onClose }: QRLabelModalPr
         </div>
 
         <div className="p-6 flex flex-col items-center gap-4">
-          {!object.show_on_site && (
+          <div className="flex w-full rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden text-xs font-mono">
+            <button
+              onClick={() => setDestination('public')}
+              className={`flex-1 py-2 transition-colors ${destination === 'public' ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+            >
+              Public site
+            </button>
+            <button
+              onClick={() => setDestination('cms')}
+              className={`flex-1 py-2 transition-colors ${destination === 'cms' ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+            >
+              CMS
+            </button>
+          </div>
+
+          {destination === 'public' && !object.show_on_site && (
             <div className="w-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
               This object is not published — the QR code will show a 404 until it is published on your site.
             </div>

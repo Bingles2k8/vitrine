@@ -17,6 +17,8 @@ interface ObjectItem {
   status: string
   emoji: string
   created_at: string
+  acquisition_value: number | null
+  estimated_value: number | null
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -175,7 +177,7 @@ export default function AnalyticsPage() {
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
       const [{ data: objects }, { data: views }, { count: trashed }] = await Promise.all([
-        supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('objects').select('id, title, artist, medium, culture, status, emoji, created_at, acquisition_value, estimated_value').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
         supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
       ])
@@ -216,6 +218,22 @@ export default function AnalyticsPage() {
       if (month) counts[month] = (counts[month] || 0) + 1
     })
     return Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0])).slice(-6)
+  }, [objects])
+
+  const byArtist = useMemo(() => {
+    const counts: Record<string, number> = {}
+    objects.forEach(a => { if (a.artist) counts[a.artist] = (counts[a.artist] || 0) + 1 })
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+  }, [objects])
+
+  const totalValue = useMemo(() => objects.reduce((sum, a) => sum + (a.estimated_value ?? 0), 0), [objects])
+  const totalCost = useMemo(() => objects.reduce((sum, a) => sum + (a.acquisition_value ?? 0), 0), [objects])
+
+  const topByValue = useMemo(() => {
+    return [...objects]
+      .filter(a => a.estimated_value != null && a.estimated_value > 0)
+      .sort((a, b) => (b.estimated_value ?? 0) - (a.estimated_value ?? 0))
+      .slice(0, 5)
   }, [objects])
 
   function formatMonth(ym: string) {
@@ -278,8 +296,8 @@ export default function AnalyticsPage() {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="text-5xl mb-5">◈</div>
-              <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Analytics is a Professional feature</h2>
-              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Understand your collection with status breakdowns, acquisition trends, medium analysis, and more. Available on Professional, Institution, and Enterprise plans.</p>
+              <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Analytics is a paid feature</h2>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Understand your collection with value tracking, status breakdowns, acquisition trends, and more. Available from £5/mo on the Hobbyist plan.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
                 className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
@@ -293,16 +311,21 @@ export default function AnalyticsPage() {
   }
 
   const maxMonth = Math.max(...byMonth.map(([, v]) => v), 1)
+  const plan = getPlan(museum?.plan)
+  const hasVisitorAnalytics = plan.visitorAnalytics  // Professional+
+  const hasExport = plan.visitorAnalytics            // Professional+
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
-          <button onClick={() => setShowExport(true)}
-            className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-            Export CSV ↓
-          </button>
+          {hasExport && (
+            <button onClick={() => setShowExport(true)}
+              className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+              Export CSV ↓
+            </button>
+          )}
         </div>
 
         {objects.length === 0 ? (
@@ -328,6 +351,23 @@ export default function AnalyticsPage() {
               ))}
             </div>
 
+            {(totalValue > 0 || totalCost > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Collection Value', value: totalValue },
+                  { label: 'Acquisition Cost', value: totalCost },
+                  { label: totalValue >= totalCost ? 'Total Gain' : 'Total Loss', value: Math.abs(totalValue - totalCost), gain: totalValue >= totalCost },
+                ].map(s => (
+                  <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
+                    <div className={`font-serif text-4xl ${s.gain === false ? 'text-red-500 dark:text-red-400' : s.gain === true ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-900 dark:text-stone-100'}`}>
+                      £{s.value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Collection Status</div>
               <div className="grid grid-cols-2 gap-x-12 gap-y-3">
@@ -351,6 +391,31 @@ export default function AnalyticsPage() {
               <BreakdownCard title="By Culture / Origin" data={byCulture} color="#92400e" />
             </div>
 
+            {byArtist.length > 0 && (
+              <BreakdownCard title="By Artist / Maker" data={byArtist} color="#4338ca" />
+            )}
+
+            {topByValue.length > 0 && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Top Objects by Value</div>
+                <div className="space-y-3">
+                  {topByValue.map((a, i) => (
+                    <div key={a.id} className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity" onClick={() => router.push(`/dashboard/objects/${a.id}`)}>
+                      <div className="w-5 text-xs font-mono text-stone-300 dark:text-stone-600 text-right flex-shrink-0">{i + 1}</div>
+                      <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base flex-shrink-0">{a.emoji}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-stone-900 dark:text-stone-100 truncate">{a.title}</div>
+                        {a.artist && <div className="text-xs text-stone-400 dark:text-stone-500 truncate">{a.artist}</div>}
+                      </div>
+                      <div className="text-sm font-mono text-stone-700 dark:text-stone-300 flex-shrink-0">
+                        £{(a.estimated_value ?? 0).toLocaleString('en-GB')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {byMonth.length > 1 && (
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Items Added by Month</div>
@@ -366,8 +431,8 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            {/* Visitor analytics */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+            {/* Visitor analytics — Professional+ only */}
+            {hasVisitorAnalytics && <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Public Site Visitors</div>
               <p className="text-xs text-stone-400 dark:text-stone-500 mb-5">Last 30 days. New visits start tracking once this section is live.</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -436,7 +501,7 @@ export default function AnalyticsPage() {
                   </div>
                 </>
               )}
-            </div>
+            </div>}
 
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800">

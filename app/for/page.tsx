@@ -21,7 +21,7 @@ const segmentMeta: Record<string, { emoji: string; tagline: string; displayName:
   'trading-card-collection-app': { emoji: '🃏', displayName: 'Trading Cards', tagline: 'Track sports cards, Pokémon cards, and graded slabs' },
   'coin-collection-app': { emoji: '🪙', displayName: 'Coin Collecting', tagline: 'Catalog coins with numismatic fields, grades, and values' },
   'vinyl-record-collection-app': { emoji: '🎵', displayName: 'Vinyl Records', tagline: 'Organise your records by label, pressing, and condition' },
-  'book-collection-app': { emoji: '📚', displayName: 'Book Libraries', tagline: 'Catalog your library with editions, ISBNs, and read status' },
+  'book-collection-app': { emoji: '📚', displayName: 'Book Libraries', tagline: 'Catalog your library with editions, condition, provenance, and value' },
   'lego-toy-collection-app': { emoji: '🧱', displayName: 'LEGO Sets', tagline: 'Track sets by theme, year, completeness, and value' },
   'comic-book-collection-app': { emoji: '💥', displayName: 'Comic Books', tagline: 'Manage issues, runs, and graded slabs in one place' },
   'wine-collection-app': { emoji: '🍷', displayName: 'Wine Cellars', tagline: 'Record vintages, cellars, tasting notes, and valuations' },

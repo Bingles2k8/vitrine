@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { checkStorageQuota } from '@/lib/storageUsage'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -79,6 +80,8 @@ export default function DisposalPage() {
     if (!docFile) return
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
+    const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
+    if (!withinQuota) { setError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/disposal/documents/${Date.now()}.${ext}`
     const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)

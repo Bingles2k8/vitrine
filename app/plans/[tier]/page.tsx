@@ -455,6 +455,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const stats = STAT_LABELS[planId]
 
   const isEnterprise = planId === 'enterprise'
+  const isComingSoon = planId === 'institution' || planId === 'enterprise'
   const hasFull = plan.fullMode
   const hasAnalytics = plan.analytics
   const hasCompliance = plan.compliance
@@ -528,12 +529,18 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
             </h1>
             <p className="text-xl font-light text-stone-300 mb-3">{details.tagline}</p>
             <p className="text-stone-400 font-light leading-relaxed mb-8">{details.desc}</p>
-            <Link
-              href={details.ctaHref}
-              className="inline-block bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-8 py-3 rounded transition-colors"
-            >
-              {details.cta}
-            </Link>
+            {isComingSoon ? (
+              <span className="inline-block font-mono text-sm px-8 py-3 rounded border border-white/10 text-stone-500 cursor-default">
+                Coming soon
+              </span>
+            ) : (
+              <Link
+                href={details.ctaHref}
+                className="inline-block bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-8 py-3 rounded transition-colors"
+              >
+                {details.cta}
+              </Link>
+            )}
           </div>
           <div className="lg:flex-1 min-w-0">
             <CollectionMockup />
@@ -726,14 +733,25 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
           <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">{plan.label}</p>
           <h2 className="font-serif text-5xl italic font-normal mb-4">Ready to get started?</h2>
           <p className="text-stone-400 font-light text-lg mb-8">Join museums and collectors already using Vitrine.</p>
-          <Link
-            href={details.ctaHref}
-            className="inline-block bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-10 py-3.5 rounded transition-colors"
-          >
-            {details.cta}
-          </Link>
-          {!isEnterprise && (
-            <p className="text-xs text-stone-600 mt-4 font-mono">No credit card required · Cancel any time</p>
+          {isComingSoon ? (
+            <>
+              <span className="inline-block font-mono text-sm px-10 py-3.5 rounded border border-white/10 text-stone-500 cursor-default">
+                Coming soon
+              </span>
+              <p className="text-xs text-stone-600 mt-4 font-mono">This plan is not yet available. Check back soon.</p>
+            </>
+          ) : (
+            <>
+              <Link
+                href={details.ctaHref}
+                className="inline-block bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-10 py-3.5 rounded transition-colors"
+              >
+                {details.cta}
+              </Link>
+              {!isEnterprise && (
+                <p className="text-xs text-stone-600 mt-4 font-mono">No credit card required · Cancel any time</p>
+              )}
+            </>
           )}
           <div className="mt-6">
             <Link href="/#pricing" className="text-xs font-mono text-stone-600 hover:text-stone-400 transition-colors">

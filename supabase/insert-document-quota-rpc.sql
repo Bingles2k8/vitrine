@@ -7,6 +7,9 @@
 -- TOCTOU race that exists when they are done separately in
 -- application code.
 --
+-- Reads storage_used_bytes from museums (kept in sync by triggers)
+-- rather than summing object_documents at query time.
+--
 -- Auth is pre-verified in the API route before this is called.
 -- SECURITY DEFINER lets the function lock the museums row and
 -- write to object_documents regardless of the caller's RLS context.
@@ -38,17 +41,13 @@ BEGIN
   -- Serialise concurrent uploads for the same museum.
   -- Any other call to this function for the same museum_id will
   -- block here until this transaction commits or rolls back.
-  PERFORM id FROM museums WHERE id = p_museum_id FOR UPDATE;
+  -- The FOR UPDATE lock also ensures storage_used_bytes is current.
+  SELECT storage_used_bytes INTO v_used
+  FROM museums WHERE id = p_museum_id FOR UPDATE;
 
   -- Quota check (skipped when limit is null = unlimited plan)
   IF p_limit_bytes IS NOT NULL THEN
-    SELECT COALESCE(SUM(file_size), 0)
-    INTO v_used
-    FROM object_documents
-    WHERE museum_id = p_museum_id
-      AND deleted_at IS NULL;
-
-    IF v_used + COALESCE(p_file_size, 0) > p_limit_bytes THEN
+    IF COALESCE(v_used, 0) + COALESCE(p_file_size, 0) > p_limit_bytes THEN
       RAISE EXCEPTION 'storage_limit_exceeded';
     END IF;
   END IF;

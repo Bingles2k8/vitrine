@@ -304,11 +304,12 @@ export default function Home() {
                 desc: 'For regional and national collections.',
                 features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
                 missing: [],
-                cta: 'Get started →',
-                ctaHref: '/signup',
+                cta: 'Coming soon',
+                ctaHref: null,
                 learnMoreHref: '/plans/institution',
                 featured: false,
                 muted: false,
+                comingSoon: true,
               },
               {
                 tier: 'Enterprise',
@@ -317,11 +318,12 @@ export default function Home() {
                 desc: 'For national institutions and large-scale collections.',
                 features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
                 missing: [],
-                cta: 'Contact us →',
-                ctaHref: '/contact/enterprise',
+                cta: 'Coming soon',
+                ctaHref: null,
                 learnMoreHref: '/plans/enterprise',
                 featured: false,
                 muted: true,
+                comingSoon: true,
               },
             ].map(p => (
               <div key={p.tier} className={`rounded-xl border relative flex flex-col ${p.muted ? 'p-6 scale-[0.97] origin-top' : 'p-8'} ${p.featured ? 'bg-stone-900 border-amber-500/30' : p.muted ? 'bg-stone-900/30 border-white/5' : 'bg-stone-900/50 border-white/8'}`}>
@@ -356,12 +358,18 @@ export default function Home() {
                   >
                     Learn more
                   </Link>
-                  <Link
-                    href={p.ctaHref}
-                    className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
-                  >
-                    {p.cta}
-                  </Link>
+                  {p.comingSoon ? (
+                    <span className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 text-stone-600 cursor-default">
+                      Coming soon
+                    </span>
+                  ) : (
+                    <Link
+                      href={p.ctaHref!}
+                      className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
+                    >
+                      {p.cta}
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

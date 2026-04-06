@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { checkStorageQuota } from '@/lib/storageUsage'
 import { TableSkeleton } from '@/components/Skeleton'
 
 const COVERAGE_TYPES = ['All Risks', 'Named Perils', 'Government Indemnity', 'Transit', 'Exhibition']
@@ -51,6 +52,7 @@ export default function InsurancePage() {
   const [docNotes, setDocNotes] = useState('')
   const [docFile, setDocFile] = useState<File | null>(null)
   const [docUploading, setDocUploading] = useState(false)
+  const [docError, setDocError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -98,6 +100,9 @@ export default function InsurancePage() {
     if (!docFile) return
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
+    setDocError(null)
+    const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
+    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/insurance/documents/${Date.now()}.${ext}`
     const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
@@ -552,9 +557,10 @@ export default function InsurancePage() {
                                         className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
                                         {docUploading ? 'Uploading…' : 'Upload'}
                                       </button>
-                                      <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}
+                                      <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}
                                         className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 shrink-0">Cancel</button>
                                     </div>
+                                    {docError && <p className="text-xs text-red-500 font-mono">{docError}</p>}
                                   </div>
                                 ) : (
                                   <button type="button" onClick={() => setShowDocForm(p.id)}

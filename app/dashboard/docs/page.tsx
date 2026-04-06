@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { checkStorageQuota } from '@/lib/storageUsage'
 import { TableSkeleton } from '@/components/Skeleton'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 
@@ -552,6 +553,8 @@ export default function DocumentationPlanPage() {
     if (!docFile || !plan) return
     if (docFile.size > 20 * 1024 * 1024) { setDocError('File exceeds 20 MB limit'); return }
     setDocUploading(true); setDocError(null)
+    const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
+    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/doc-plans/documents/${Date.now()}.${ext}`
     const { error: storageError } = await supabase.storage.from('object-documents').upload(path, docFile)
