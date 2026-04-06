@@ -385,7 +385,7 @@ export default function SiteBuilder() {
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
                 <div className="grid grid-cols-3 gap-3">
                   {TEMPLATES.map(t => {
-                    const isLocked = ['community', 'hobbyist'].includes(museum?.plan ?? '') && !FREE_TIER_TEMPLATES.includes(t.id)
+                    const isLocked = (museum?.plan ?? '') === 'community' && !FREE_TIER_TEMPLATES.includes(t.id)
                     return (
                     <button key={t.id} onClick={() => !isLocked && selectTemplate(t.id)}
                       className={`text-left rounded-lg border-2 overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-default' : ''} ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 ' + (!isLocked ? 'hover:border-stone-400 dark:hover:border-stone-500' : '')}`}>
@@ -469,7 +469,7 @@ export default function SiteBuilder() {
                         )}
                         {isLocked && (
                           <div className="absolute top-1 left-1 z-10">
-                            <span className="text-[9px] font-mono uppercase tracking-wide bg-stone-900 text-white px-1 py-0.5 rounded">Hobbyist+</span>
+                            <span className="text-[9px] font-mono uppercase tracking-wide bg-stone-900 text-white px-1 py-0.5 rounded">Hobbyist+ only</span>
                           </div>
                         )}
                         {form.template === t.id && (
@@ -517,26 +517,39 @@ export default function SiteBuilder() {
                 <input value={form.name} onChange={e => set('name', e.target.value)}
                   className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950" />
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum URL</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-stone-400 dark:text-stone-500 font-mono shrink-0">vitrine.museum/museum/</span>
-                  <input
-                    value={slugInput}
-                    onChange={e => { setSlugInput(e.target.value); setSlugError('') }}
-                    placeholder="your-museum-name"
-                    className="flex-1 min-w-0 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950"
-                  />
-                  <button type="button" onClick={handleSaveSlug} disabled={slugSaving || slugInput === museum?.slug}
-                    className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 py-2 rounded disabled:opacity-40 shrink-0">
-                    {slugSaving ? 'Saving…' : slugSaved ? 'Saved' : 'Update'}
+              {getPlan(museum?.plan).changeSlug ? (
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Museum URL</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-stone-400 dark:text-stone-500 font-mono shrink-0">vitrine.museum/museum/</span>
+                    <input
+                      value={slugInput}
+                      onChange={e => { setSlugInput(e.target.value); setSlugError('') }}
+                      placeholder="your-museum-name"
+                      className="flex-1 min-w-0 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono text-stone-900 dark:text-stone-100 outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-950"
+                    />
+                    <button type="button" onClick={handleSaveSlug} disabled={slugSaving || slugInput === museum?.slug}
+                      className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 py-2 rounded disabled:opacity-40 shrink-0">
+                      {slugSaving ? 'Saving…' : slugSaved ? 'Saved' : 'Update'}
+                    </button>
+                  </div>
+                  {slugError && <p className="text-xs text-red-500 font-mono mt-1">{slugError}</p>}
+                  {slugInput !== museum?.slug && !slugError && slugInput && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Warning: changing your URL will break any existing links to your museum page.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Museum URL</div>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Change your public URL at any time. Available on Hobbyist and above.</p>
+                  </div>
+                  <button onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors">
+                    Upgrade →
                   </button>
                 </div>
-                {slugError && <p className="text-xs text-red-500 font-mono mt-1">{slugError}</p>}
-                {slugInput !== museum?.slug && !slugError && slugInput && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Warning: changing your URL will break any existing links to your museum page.</p>
-                )}
-              </div>
+              )}
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Tagline</label>
                 <input value={form.tagline} onChange={e => set('tagline', e.target.value)}

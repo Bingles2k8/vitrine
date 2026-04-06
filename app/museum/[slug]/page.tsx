@@ -32,7 +32,10 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const distinctCategories = new Set(allObjects.map((o: any) => o.medium).filter(Boolean)).size
   const distinctOrigins = new Set(allObjects.map((o: any) => o.culture).filter(Boolean)).size
 
-  const totalEstimatedValue = allObjects.reduce((sum: number, o: any) => sum + (o.estimated_value ? parseFloat(o.estimated_value) : 0), 0)
+  const totalEstimatedValue = allObjects.reduce((sum: number, o: any) => {
+    const val = o.estimated_value ?? o.insured_value
+    return sum + (val ? parseFloat(val) : 0)
+  }, 0)
   const valueCurrency = allObjects.find((o: any) => o.estimated_value_currency)?.estimated_value_currency || 'GBP'
   const showValueBadge = museum.show_collection_value && totalEstimatedValue > 0
 
@@ -224,6 +227,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             </span>
             <div className="h-px w-16" style={{ background: content.border }} />
           </div>
+          {showValueBadge && (
+            <div className="mt-4 flex justify-center">
+              <span className="text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+                Collection value: approx. {formattedValue}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Thin separator */}
@@ -351,6 +361,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 isFullMode ? (onDisplay > 0 ? `${onDisplay} on display` : null) : `${allObjects.length} in collection`,
               ].filter(Boolean).join(' · ')}
             </p>
+          )}
+          {showValueBadge && (
+            <span className="inline-block mt-2 text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+              Collection value: approx. {formattedValue}
+            </span>
           )}
         </div>
 

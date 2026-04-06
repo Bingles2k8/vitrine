@@ -20,7 +20,7 @@ interface OverviewTabProps {
   setActiveTab: (tab: string) => void
 }
 
-const publicLabel = <span className="ml-1 text-xs font-mono text-emerald-600 dark:text-emerald-500 normal-case tracking-normal">(Public)</span>
+const publicLabel = <span className="ml-1 text-xs font-mono text-emerald-600 dark:text-amber-600 normal-case tracking-normal">(Public)</span>
 
 function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }) {
   return (
@@ -161,12 +161,14 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Accession No. + Rarity + Number of Parts */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={labelCls} data-learn="objects.accession_no">
-              {form.accession_no ? <>Accession Number {publicLabel}</> : 'Provisional Object Number'}
-            </label>
-            <input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} />
-          </div>
+          {fullMode && (
+            <div>
+              <label className={labelCls} data-learn="objects.accession_no">
+                {form.accession_no ? <>Accession Number {publicLabel}</> : 'Provisional Object Number'}
+              </label>
+              <input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} />
+            </div>
+          )}
           <div>
             <label className={labelCls} data-learn="objects.rarity">Edition / Rarity {publicLabel}</label>
             <input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)} placeholder="e.g. 1 of 500, First Edition" className={inputCls} />
@@ -218,7 +220,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         <div>
           <label className={labelCls} data-learn="objects.status">Status</label>
           <div className="flex gap-2 flex-wrap">
-            {STATUSES.map(s => (
+            {STATUSES.filter(s => fullMode || s !== 'Deaccessioned').map(s => (
               <button key={s} type="button" onClick={() => set('status', s)}
                 className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                 {s}
@@ -260,12 +262,14 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
 
         {/* Physical Description — merged colour/shape/surface_treatment */}
-        <div>
-          <label className={labelCls} data-learn="objects.physical_description">Physical Description {publicLabel}</label>
-          <textarea value={form.physical_description || ''} onChange={e => set('physical_description', e.target.value)} rows={3}
-            placeholder="Colour, shape, surface treatment, and other physical characteristics…"
-            className={textareaCls} />
-        </div>
+        {fullMode && (
+          <div>
+            <label className={labelCls} data-learn="objects.physical_description">Physical Description {publicLabel}</label>
+            <textarea value={form.physical_description || ''} onChange={e => set('physical_description', e.target.value)} rows={3}
+              placeholder="Colour, shape, surface treatment, and other physical characteristics…"
+              className={textareaCls} />
+          </div>
+        )}
 
         {/* Materials & Techniques */}
         {fullMode && (

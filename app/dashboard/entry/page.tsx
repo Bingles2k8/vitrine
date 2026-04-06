@@ -34,6 +34,7 @@ export default function EntryRegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const defaultEntry = () => ({
     entry_date: new Date().toISOString().slice(0, 10),
+    entry_number: '',
     object_title: '',
     depositor_name: '',
     depositor_contact: '',
@@ -123,9 +124,9 @@ export default function EntryRegisterPage() {
   }
 
   async function handleCreateEntry(mode: 'stay' | 'continue') {
-    const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by } = newEntry
+    const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
     const trackDepositor = getPlan(museum?.plan).depositorTracking
-    const requiredMissing = !entry_date || !object_title || !entry_reason || !object_description ||
+    const requiredMissing = !entry_date || !object_title || (fullMode && !entry_reason) || !object_description || !accession_no ||
       (trackDepositor && (!depositor_name || !received_by))
     if (requiredMissing) {
       toast('Please fill in all required fields.', 'error')
@@ -144,7 +145,7 @@ export default function EntryRegisterPage() {
     setSubmitting(true)
     const year = new Date(entry_date).getFullYear()
     const yearEntries = entries.filter(e => e.entry_number?.startsWith(`EN-${year}-`))
-    const entryNumber = `EN-${year}-${String(yearEntries.length + 1).padStart(3, '0')}`
+    const entryNumber = newEntry.entry_number.trim() || `EN-${year}-${String(yearEntries.length + 1).padStart(3, '0')}`
     const { data: created, error } = await supabase.from('entry_records').insert({
       museum_id: museum.id,
       entry_number: entryNumber,
@@ -199,6 +200,7 @@ export default function EntryRegisterPage() {
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
+  const fullMode = getPlan(museum?.plan).fullMode
   const trackDepositor = getPlan(museum?.plan).depositorTracking
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
@@ -239,9 +241,11 @@ export default function EntryRegisterPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Entries', value: entries.length },
-              { label: 'Pending Outcome', value: pending },
-              { label: 'Acquired', value: acquired },
-              { label: 'Returned', value: returned },
+              ...(fullMode ? [
+                { label: 'Pending Outcome', value: pending },
+                { label: 'Acquired', value: acquired },
+                { label: 'Returned', value: returned },
+              ] : []),
             ].map(s => (
               <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
@@ -340,6 +344,22 @@ export default function EntryRegisterPage() {
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
                   <input type="date" className={inputCls} value={newEntry.entry_date} onChange={e => setNewEntry(v => ({ ...v, entry_date: e.target.value }))} />
                 </div>
+                {fullMode && (
+                  <div>
+                    <label className={labelCls}>Entry Number</label>
+                    <input
+                      type="text"
+                      className={inputCls}
+                      placeholder={(() => {
+                        const year = new Date(newEntry.entry_date).getFullYear()
+                        const yearEntries = entries.filter(e => e.entry_number?.startsWith(`EN-${year}-`))
+                        return `EN-${year}-${String(yearEntries.length + 1).padStart(3, '0')} (auto)`
+                      })()}
+                      value={newEntry.entry_number}
+                      onChange={e => setNewEntry(v => ({ ...v, entry_number: e.target.value }))}
+                    />
+                  </div>
+                )}
                 {trackDepositor && (
                   <div>
                     <label className={labelCls}>Donor Name <span className="text-red-400">*</span></label>
@@ -366,13 +386,15 @@ export default function EntryRegisterPage() {
                     )}
                   </div>
                 )}
-                <div>
-                  <label className={labelCls}>Entry Reason <span className="text-red-400">*</span></label>
-                  <select className={inputCls} value={newEntry.entry_reason} onChange={e => setNewEntry(v => ({ ...v, entry_reason: e.target.value }))}>
-                    <option value="">Select reason…</option>
-                    {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </div>
+                {fullMode && (
+                  <div>
+                    <label className={labelCls}>Entry Reason <span className="text-red-400">*</span></label>
+                    <select className={inputCls} value={newEntry.entry_reason} onChange={e => setNewEntry(v => ({ ...v, entry_reason: e.target.value }))}>
+                      <option value="">Select reason…</option>
+                      {ENTRY_REASONS.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className={labelCls}>Entry Method</label>
                   <select className={inputCls} value={newEntry.entry_method} onChange={e => setNewEntry(v => ({ ...v, entry_method: e.target.value }))}>
@@ -396,7 +418,7 @@ export default function EntryRegisterPage() {
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
                   </div>
                   <div>
-                    <label className={labelCls}>Object Number</label>
+                    <label className={labelCls}>Object Number <span className="text-red-400">*</span></label>
                     <input type="text" className={inputCls} placeholder="e.g. 2026.001" value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
                   </div>
                   <div>
@@ -455,7 +477,7 @@ export default function EntryRegisterPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry Reason</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
                     {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry By</th>}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
+                    {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>}
                     {!simple && trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
                   </tr>
@@ -483,11 +505,13 @@ export default function EntryRegisterPage() {
                       <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.entry_reason}</td>
                       <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.object_count}</td>
                       {trackDepositor && <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{e.received_by}</td>}
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-mono px-2 py-1 rounded-full ${OUTCOME_STYLES[e.outcome] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
-                          {e.outcome || 'Pending'}
-                        </span>
-                      </td>
+                      {fullMode && (
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-mono px-2 py-1 rounded-full ${OUTCOME_STYLES[e.outcome] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
+                            {e.outcome || 'Pending'}
+                          </span>
+                        </td>
+                      )}
                       {!simple && trackDepositor && (
                         <td className="px-4 py-3">
                           {e.receipt_issued

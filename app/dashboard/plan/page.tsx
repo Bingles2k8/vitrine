@@ -94,23 +94,7 @@ export default function PlanPage() {
       setStaffCount((sCount ?? 0) + 1)
 
       if (getPlan(museum.plan).compliance) {
-        const { data: usage, error: usageErr } = await supabase
-          .from('object_documents')
-          .select('file_size.sum()')
-          .eq('museum_id', museum.id)
-          .is('deleted_at', null)
-          .single()
-        if (!usageErr && usage) {
-          setStorageUsedBytes((usage as any)?.sum ?? 0)
-        } else {
-          // Fallback: sum client-side (handles older PostgREST versions)
-          const { data: docs } = await supabase
-            .from('object_documents')
-            .select('file_size')
-            .eq('museum_id', museum.id)
-            .is('deleted_at', null)
-          setStorageUsedBytes((docs ?? []).reduce((s: number, d: any) => s + (d.file_size ?? 0), 0))
-        }
+        setStorageUsedBytes(museum.storage_used_bytes ?? 0)
       }
 
       setLoading(false)
@@ -255,10 +239,10 @@ export default function PlanPage() {
             </div>
             <div className="space-y-4">
               <UsageRow label="Objects" used={objectCount} limit={getPlan(currentPlan).objects} note={trashedCount > 0 ? `${(objectCount - trashedCount).toLocaleString()} in collection · ${trashedCount.toLocaleString()} in bin` : undefined} />
-              <UsageRow label="Staff accounts" used={staffCount} limit={getPlan(currentPlan).staff} />
+              {getPlan(currentPlan).fullMode && <UsageRow label="Staff accounts" used={staffCount} limit={getPlan(currentPlan).staff} />}
               {getPlan(currentPlan).compliance && (
                 <UsageRow
-                  label="Document storage"
+                  label="Storage"
                   used={storageUsedBytes}
                   limit={getPlan(currentPlan).documentStorageMb !== null ? getPlan(currentPlan).documentStorageMb! * 1024 * 1024 : null}
                   format={formatSize}
@@ -282,7 +266,7 @@ export default function PlanPage() {
             {PLAN_ORDER.map(id => {
               const p = PLANS[id]
               const isCurrent = currentPlan === id
-              const isEnterprise = id === 'enterprise'
+              const isComingSoon = id === 'institution' || id === 'enterprise'
               const isPendingTarget = museum?.pending_downgrade_plan === id
               const isDowngrade = PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan as PlanId)
 
@@ -331,13 +315,10 @@ export default function PlanPage() {
                           </button>
                         )}
                       </>
-                    ) : isEnterprise ? (
-                      <a
-                        href="/contact/enterprise"
-                        className="block w-full text-center text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
-                      >
-                        Contact us →
-                      </a>
+                    ) : isComingSoon ? (
+                      <span className="block w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 cursor-default">
+                        Coming soon
+                      </span>
                     ) : id === 'community' ? (
                       currentPlan !== 'community' && isOwner ? (
                         <>
@@ -424,7 +405,7 @@ export default function PlanPage() {
                   { label: 'Analytics', values: [false, false, true, true, true] },
                   { label: 'Staff management', values: [false, false, true, true, true] },
                   { label: 'Event ticketing', values: [false, false, true, true, true] },
-                  { label: 'Document storage', values: ['—', '—', '1 GB', '10 GB', 'Unlimited'] },
+                  { label: 'Storage', values: ['—', '—', '1 GB', '10 GB', 'Unlimited'] },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="px-6 py-3 text-stone-600 dark:text-stone-400">{row.label}</td>

@@ -171,15 +171,17 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
             </div>
           )}
 
-          <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
-            <Link
-              href={`/museum/${slug}/visit`}
-              className="inline-block text-sm font-mono px-6 py-3 rounded text-white transition-colors"
-              style={{ background: accent }}
-            >
-              Plan your visit to see this work
-            </Link>
-          </div>
+          {getPlan(museum.plan).visitInfo && (
+            <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
+              <Link
+                href={`/museum/${slug}/visit`}
+                className="inline-block text-sm font-mono px-6 py-3 rounded text-white transition-colors"
+                style={{ background: accent }}
+              >
+                Plan your visit to see this work
+              </Link>
+            </div>
+          )}
         </div>
 
       </div>
