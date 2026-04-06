@@ -120,7 +120,7 @@ export default function Dashboard() {
         const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
-          supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(20),
+          supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(200),
           supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
           supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
           supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
@@ -616,7 +616,7 @@ export default function Dashboard() {
           {activityLog.length > 0 && (
             <div className="mt-8">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Recent Activity</div>
-              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden" style={{ maxHeight: '440px', overflowY: 'auto' }}>
                 {activityLog.map((entry, i) => {
                   const ago = (() => {
                     const diff = Date.now() - new Date(entry.created_at).getTime()
@@ -632,7 +632,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-3">
                         <span className="text-stone-300 dark:text-stone-600 text-xs font-mono">◎</span>
                         <span className="text-stone-700 dark:text-stone-300">{entry.description}</span>
-                        {entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500">by {entry.user_name}</span>}
+                        {fullMode && entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500">by {entry.user_name}</span>}
                       </div>
                       <span className="text-xs font-mono text-stone-400 dark:text-stone-500 flex-shrink-0 ml-4">{ago}</span>
                     </div>

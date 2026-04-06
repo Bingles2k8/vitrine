@@ -285,8 +285,8 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   },
   'objects.status': {
     label: 'Status',
-    description: 'The current lifecycle status: Entry (just arrived), On Display, Storage, On Loan, Restoration, Conservation, or Deaccessioned. Drives dashboard statistics and filtering.',
-    technical: { column: 'objects.status', type: "text: Entry | On Display | Storage | On Loan | Restoration | Conservation | Deaccessioned", table: 'objects' },
+    description: 'The current lifecycle status: Entry (just arrived), On Display, Storage, On Loan, Restoration, or Conservation. Drives dashboard statistics and filtering.',
+    technical: { column: 'objects.status', type: "text: Entry | On Display | Storage | On Loan | Restoration | Conservation", table: 'objects' },
   },
   'objects.condition_grade': {
     label: 'Condition',

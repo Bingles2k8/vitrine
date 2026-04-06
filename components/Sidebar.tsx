@@ -17,12 +17,42 @@ interface SidebarProps {
   onNavigate?: () => void
 }
 
+type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; name: string; logo_emoji: string; plan: string }
+
 export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null, onNavigate }: SidebarProps) {
   const router = useRouter()
   const supabase = createClient()
   const simple = museum?.ui_mode === 'simple'
   const planInfo = museum ? getPlan(museum.plan) : null
   const communityLocked = planInfo ? !planInfo.fullMode : false
+
+  // Seed from cache so nav doesn't flash on each page load
+  const [navCache, setNavCache] = useState<NavCache | null>(() => {
+    if (typeof window === 'undefined') return null
+    try { return JSON.parse(localStorage.getItem('vitrine_nav') ?? 'null') } catch { return null }
+  })
+
+  // Write cache whenever museum resolves
+  useEffect(() => {
+    if (!museum || !planInfo) return
+    const next: NavCache = {
+      simple: museum.ui_mode === 'simple',
+      wishlist: planInfo.wishlist ?? false,
+      ticketing: planInfo.ticketing ?? false,
+      fullMode: planInfo.fullMode ?? false,
+      name: museum.name,
+      logo_emoji: museum.logo_emoji,
+      plan: museum.plan,
+    }
+    setNavCache(next)
+    localStorage.setItem('vitrine_nav', JSON.stringify(next))
+  }, [museum?.id, museum?.ui_mode, museum?.plan])
+
+  // Resolved nav values: use live data once available, fall back to cache, else hide
+  const nav = museum && planInfo
+    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan }
+    : navCache
+
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -199,25 +229,26 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       <div className="p-5 border-b border-stone-200 dark:border-stone-800">
         <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
-      {museum && (
+      {nav && (
         <div className="p-4 border-b border-stone-200 dark:border-stone-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-lg">
-              {museum.logo_emoji}
+              {nav.logo_emoji}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-stone-900 dark:text-stone-100 truncate">{museum.name}</div>
-              <div className="text-xs text-amber-600 tracking-wide uppercase">{museum.plan} plan</div>
+              <div className="text-xs font-medium text-stone-900 dark:text-stone-100 truncate">{nav.name}</div>
+              <div className="text-xs text-amber-600 tracking-wide uppercase">{nav.plan} plan</div>
             </div>
           </div>
         </div>
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
+        {nav && (<>
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
-        {planInfo?.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted', 'nav.wanted')}
+        {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted', 'nav.wanted')}
 
-        {simple ? (
+        {nav.simple ? (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Record</div>
             {navItem('/dashboard/entry', '🗂', 'Add Object', 'nav.entry')}
@@ -247,9 +278,9 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder', 'nav.site')}
-        {planInfo?.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
+        {nav.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
 
-        {!simple && (isOwner || staffAccess === 'Admin') && (
+        {!nav.simple && (isOwner || staffAccess === 'Admin') && (
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">People</div>
             {navItem('/dashboard/staff', '◉', 'Staff & Roles', 'nav.staff')}
@@ -258,6 +289,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
+        </>)}
       </nav>
 
       {/* Settings footer */}

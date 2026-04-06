@@ -13,12 +13,11 @@ interface ObjectItem {
   title: string
   artist: string
   medium: string
-  culture: string
   status: string
   emoji: string
   created_at: string
   acquisition_value: number | null
-  estimated_value: number | null
+  insured_value: number | null
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -177,7 +176,7 @@ export default function AnalyticsPage() {
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
       const [{ data: objects }, { data: views }, { count: trashed }] = await Promise.all([
-        supabase.from('objects').select('id, title, artist, medium, culture, status, emoji, created_at, acquisition_value, estimated_value').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('objects').select('id, title, artist, medium, status, emoji, created_at, acquisition_value, insured_value').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
         supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
       ])
@@ -199,18 +198,6 @@ export default function AnalyticsPage() {
     return order.filter(s => counts[s]).map(s => [s, counts[s]] as [string, number])
   }, [objects])
 
-  const byMedium = useMemo(() => {
-    const counts: Record<string, number> = {}
-    objects.forEach(a => { if (a.medium) counts[a.medium] = (counts[a.medium] || 0) + 1 })
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [objects])
-
-  const byCulture = useMemo(() => {
-    const counts: Record<string, number> = {}
-    objects.forEach(a => { if (a.culture) counts[a.culture] = (counts[a.culture] || 0) + 1 })
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [objects])
-
   const byMonth = useMemo(() => {
     const counts: Record<string, number> = {}
     objects.forEach(a => {
@@ -226,13 +213,13 @@ export default function AnalyticsPage() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
   }, [objects])
 
-  const totalValue = useMemo(() => objects.reduce((sum, a) => sum + (a.estimated_value ?? 0), 0), [objects])
+  const totalValue = useMemo(() => objects.reduce((sum, a) => sum + (a.insured_value ?? 0), 0), [objects])
   const totalCost = useMemo(() => objects.reduce((sum, a) => sum + (a.acquisition_value ?? 0), 0), [objects])
 
   const topByValue = useMemo(() => {
     return [...objects]
-      .filter(a => a.estimated_value != null && a.estimated_value > 0)
-      .sort((a, b) => (b.estimated_value ?? 0) - (a.estimated_value ?? 0))
+      .filter(a => a.insured_value != null && a.insured_value > 0)
+      .sort((a, b) => (b.insured_value ?? 0) - (a.insured_value ?? 0))
       .slice(0, 5)
   }, [objects])
 
@@ -337,18 +324,17 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="p-4 md:p-8 space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Objects', value: objects.length + trashedCount },
-                { label: 'On Display', value: objects.filter(a => a.status === 'On Display').length },
-                { label: 'Mediums', value: new Set(objects.map(a => a.medium).filter(Boolean)).size },
-                { label: 'Cultures', value: new Set(objects.map(a => a.culture).filter(Boolean)).size },
-              ].map(s => (
-                <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
-                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
-                  <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{s.value}</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Objects</div>
+                <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{objects.length + trashedCount}</div>
+              </div>
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Collection Value</div>
+                <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">
+                  {totalValue > 0 ? `£${totalValue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—'}
                 </div>
-              ))}
+              </div>
             </div>
 
             {(totalValue > 0 || totalCost > 0) && (
@@ -386,11 +372,6 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <BreakdownCard title="By Medium" data={byMedium} color="#1c1917" />
-              <BreakdownCard title="By Culture / Origin" data={byCulture} color="#92400e" />
-            </div>
-
             {byArtist.length > 0 && (
               <BreakdownCard title="By Artist / Maker" data={byArtist} color="#4338ca" />
             )}
@@ -408,7 +389,7 @@ export default function AnalyticsPage() {
                         {a.artist && <div className="text-xs text-stone-400 dark:text-stone-500 truncate">{a.artist}</div>}
                       </div>
                       <div className="text-sm font-mono text-stone-700 dark:text-stone-300 flex-shrink-0">
-                        £{(a.estimated_value ?? 0).toLocaleString('en-GB')}
+                        £{(a.insured_value ?? 0).toLocaleString('en-GB')}
                       </div>
                     </div>
                   ))}
