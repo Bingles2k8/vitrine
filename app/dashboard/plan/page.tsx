@@ -93,7 +93,7 @@ export default function PlanPage() {
         .eq('museum_id', museum.id)
       setStaffCount((sCount ?? 0) + 1)
 
-      if (getPlan(museum.plan).compliance) {
+      if (getPlan(museum.plan).documentStorageMb) {
         setStorageUsedBytes(museum.storage_used_bytes ?? 0)
       }
 
@@ -240,14 +240,14 @@ export default function PlanPage() {
             <div className="space-y-4">
               <UsageRow label="Objects" used={objectCount} limit={getPlan(currentPlan).objects} note={trashedCount > 0 ? `${(objectCount - trashedCount).toLocaleString()} in collection · ${trashedCount.toLocaleString()} in bin` : undefined} />
               {getPlan(currentPlan).fullMode && <UsageRow label="Staff accounts" used={staffCount} limit={getPlan(currentPlan).staff} />}
-              {getPlan(currentPlan).compliance && (
+              {getPlan(currentPlan).documentStorageMb ? (
                 <UsageRow
                   label="Storage"
                   used={storageUsedBytes}
                   limit={getPlan(currentPlan).documentStorageMb !== null ? getPlan(currentPlan).documentStorageMb! * 1024 * 1024 : null}
                   format={formatSize}
                 />
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -397,15 +397,33 @@ export default function PlanPage() {
               </thead>
               <tbody>
                 {[
-                  { label: 'Collection items', values: ['100', '500', '5,000', '100,000', 'Unlimited'] },
-                  { label: 'Staff accounts', values: ['1 (owner)', '1 (owner)', '10', 'Unlimited', 'Unlimited'] },
-                  { label: 'Public website', values: [true, true, true, true, true] },
-                  { label: 'Site customisation', values: ['Basic', 'Full', 'Full', 'Full', 'Full'] },
-                  { label: 'Collections compliance tools', values: [false, false, true, true, true] },
-                  { label: 'Analytics', values: [false, false, true, true, true] },
-                  { label: 'Staff management', values: [false, false, true, true, true] },
-                  { label: 'Event ticketing', values: [false, false, true, true, true] },
-                  { label: 'Storage', values: ['—', '—', '1 GB', '10 GB', 'Unlimited'] },
+                  {
+                    label: 'Collection items',
+                    values: PLAN_ORDER.map(id => PLANS[id].objects === null ? 'Unlimited' : PLANS[id].objects!.toLocaleString()),
+                  },
+                  {
+                    label: 'Staff accounts',
+                    values: PLAN_ORDER.map(id => PLANS[id].staff === null ? 'Unlimited' : PLANS[id].staff === 1 ? '1 (owner)' : `Up to ${PLANS[id].staff}`),
+                  },
+                  { label: 'Public website', values: PLAN_ORDER.map(() => true) },
+                  {
+                    label: 'Site customisation',
+                    values: PLAN_ORDER.map(id => PLANS[id].fullMode ? 'Full' : 'Basic'),
+                  },
+                  { label: 'Collections compliance tools', values: PLAN_ORDER.map(id => PLANS[id].compliance) },
+                  { label: 'Analytics', values: PLAN_ORDER.map(id => PLANS[id].visitorAnalytics) },
+                  { label: 'Staff management', values: PLAN_ORDER.map(id => PLANS[id].fullMode) },
+                  { label: 'Event ticketing', values: PLAN_ORDER.map(id => PLANS[id].ticketing) },
+                  {
+                    label: 'Storage',
+                    values: PLAN_ORDER.map(id => {
+                      const mb = PLANS[id].documentStorageMb
+                      if (mb === null) return 'Unlimited'
+                      if (mb === 0) return '—'
+                      if (mb >= 1024) return `${mb / 1024} GB`
+                      return `${mb} MB`
+                    }),
+                  },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                     <td className="px-6 py-3 text-stone-600 dark:text-stone-400">{row.label}</td>

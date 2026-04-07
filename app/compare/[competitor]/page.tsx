@@ -171,7 +171,7 @@ export default async function CompetitorPage({
               <p className="text-3xl font-medium text-white mb-1">Free</p>
               <p className="text-stone-400 text-sm mb-4">Community plan — up to 100 items</p>
               <p className="text-3xl font-medium text-white mb-1">£5<span className="text-lg text-stone-400">/month</span></p>
-              <p className="text-stone-400 text-sm">Hobbyist plan — up to 500 items</p>
+              <p className="text-stone-400 text-sm">Hobbyist plan — up to 1,000 items</p>
             </div>
             <div className="border border-white/10 rounded-lg p-6">
               <p className="text-xs uppercase tracking-widest text-stone-500 font-mono mb-3">{data.name}</p>

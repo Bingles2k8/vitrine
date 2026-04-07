@@ -15,7 +15,10 @@ describe('getPlan', () => {
 
   it('community plan has zero document storage', () => {
     expect(getPlan('community').documentStorageMb).toBe(0)
-    expect(getPlan('hobbyist').documentStorageMb).toBe(0)
+  })
+
+  it('hobbyist plan has 100 MB document storage', () => {
+    expect(getPlan('hobbyist').documentStorageMb).toBe(100)
   })
 
   it('paid plans have document storage limits', () => {

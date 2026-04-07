@@ -18,6 +18,9 @@ export const PLANS: Record<PlanId, {
   wishlist: boolean  // Wanted/wishlist feature — Community & Hobbyist only
   changeSlug: boolean  // Allow changing the public URL slug after initial setup
   features: string[]
+  missingFeatures: string[]  // Shown on homepage pricing cards as "not included"
+  featured: boolean          // Highlighted "most popular" card on homepage
+  comingSoon: boolean        // Plan not yet purchasable
 }> = {
   community: {
     label: 'Community',
@@ -37,13 +40,16 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: false,
     features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking'],
+    missingFeatures: ['Document storage', 'Wanted list', 'Premium templates', 'Visitor analytics'],
+    featured: false,
+    comingSoon: false,
   },
   hobbyist: {
     label: 'Hobbyist',
     price: '£5/mo',
-    objects: 500,
+    objects: 1000,
     staff: 1,
-    imagesPerObject: 3,
+    imagesPerObject: 5,
     fullMode: false,
     analytics: true,
     visitorAnalytics: false,
@@ -51,11 +57,14 @@ export const PLANS: Record<PlanId, {
     ticketing: false,
     visitInfo: false,
     advancedCustomisation: true,
-    documentStorageMb: 0,
+    documentStorageMb: 100,
     depositorTracking: false,
     wishlist: true,
     changeSlug: true,
-    features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list'],
+    features: ['Up to 1,000 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list', '100 MB document storage'],
+    missingFeatures: ['Visit & About pages', 'Collections compliance tools', 'Visitor analytics', 'Staff management'],
+    featured: false,
+    comingSoon: false,
   },
   professional: {
     label: 'Professional',
@@ -75,6 +84,9 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '1 GB document storage'],
+    missingFeatures: ['Unlimited objects', 'Unlimited staff', 'Unlimited storage'],
+    featured: true,
+    comingSoon: false,
   },
   institution: {
     label: 'Institution',
@@ -94,6 +106,9 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
+    missingFeatures: [],
+    featured: false,
+    comingSoon: true,
   },
   enterprise: {
     label: 'Enterprise',
@@ -113,11 +128,15 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
+    missingFeatures: [],
+    featured: false,
+    comingSoon: true,
   },
 }
 
 export const PLAN_ORDER: PlanId[] = ['community', 'hobbyist', 'professional', 'institution', 'enterprise']
 
+// Templates locked to the Community (free) plan only — Hobbyist and above have access to all templates
 export const FREE_TIER_TEMPLATES = ['minimal', 'dramatic', 'archival']
 
 export function getPlan(plan: string) {

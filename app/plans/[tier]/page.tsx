@@ -81,12 +81,22 @@ const PLAN_DETAILS: Record<PlanId, {
   },
 }
 
-const STAT_LABELS: Record<PlanId, Array<{ label: string; value: string }>> = {
-  community:    [{ label: 'Collection items', value: 'Up to 100' }, { label: 'Staff accounts', value: '1' }, { label: 'Images per object', value: '1' }],
-  hobbyist:     [{ label: 'Collection items', value: 'Up to 500' }, { label: 'Staff accounts', value: '1' }, { label: 'Images per object', value: '3' }],
-  professional: [{ label: 'Collection items', value: 'Up to 5,000' }, { label: 'Staff accounts', value: 'Up to 10' }, { label: 'Images per object', value: '10' }],
-  institution:  [{ label: 'Collection items', value: 'Up to 100,000' }, { label: 'Staff accounts', value: 'Unlimited' }, { label: 'Images per object', value: '10' }],
-  enterprise:   [{ label: 'Collection items', value: 'Unlimited' }, { label: 'Staff accounts', value: 'Unlimited' }, { label: 'Images per object', value: '10' }],
+function getStatLabels(planId: PlanId): Array<{ label: string; value: string }> {
+  const p = PLANS[planId]
+  return [
+    {
+      label: 'Collection items',
+      value: p.objects === null ? 'Unlimited' : `Up to ${p.objects.toLocaleString()}`,
+    },
+    {
+      label: 'Staff accounts',
+      value: p.staff === null ? 'Unlimited' : p.staff === 1 ? '1' : `Up to ${p.staff}`,
+    },
+    {
+      label: 'Images per object',
+      value: String(p.imagesPerObject),
+    },
+  ]
 }
 
 // ── UI Mockups ────────────────────────────────────────────────────────────────
@@ -452,7 +462,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
 
   const plan = PLANS[planId]
   const details = PLAN_DETAILS[planId]
-  const stats = STAT_LABELS[planId]
+  const stats = getStatLabels(planId)
 
   const isEnterprise = planId === 'enterprise'
   const isComingSoon = planId === 'institution' || planId === 'enterprise'

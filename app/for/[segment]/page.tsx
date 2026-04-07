@@ -222,7 +222,7 @@ export default async function SegmentPage({
           </h2>
           <div className="space-y-3 mb-6 text-stone-400">
             <p><span className="text-white font-medium">Community</span> — Free. Up to 100 items, public collection page, core cataloguing.</p>
-            <p><span className="text-white font-medium">Hobbyist</span> — £5/month. Up to 500 items, public collection page, core cataloguing tools.</p>
+            <p><span className="text-white font-medium">Hobbyist</span> — £5/month. Up to 1,000 items, public collection page, core cataloguing tools.</p>
             <p><span className="text-white font-medium">Professional</span> — £79/month. Up to 5,000 items, full dashboard, CSV import, analytics, event ticketing, compliance tools, and staff accounts.</p>
           </div>
           <Link

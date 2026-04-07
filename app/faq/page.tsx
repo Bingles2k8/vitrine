@@ -46,7 +46,7 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   {
     question: 'How much does Vitrine cost?',
     answer:
-      'Vitrine offers four plans. Community is free for up to 100 items. Hobbyist costs £5/month and includes up to 500 items, a public website, and full cataloguing tools. Professional costs £79/month and adds analytics, event ticketing, compliance tools, and staff roles. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
+      'Vitrine offers four plans. Community is free for up to 100 items. Hobbyist costs £5/month and includes up to 1,000 items, a public website, and full cataloguing tools. Professional costs £79/month and adds analytics, event ticketing, compliance tools, and staff roles. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
   },
   {
     question: 'Is there a free plan?',

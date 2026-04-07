@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
@@ -8,6 +9,8 @@ import ImageUpload from '@/components/ImageUpload'
 import ImageGallery from '@/components/ImageGallery'
 import ObjectComponents from '@/components/ObjectComponents'
 import { getPlan } from '@/lib/plans'
+import { createClient } from '@/lib/supabase'
+import { formatSize } from '@/lib/formatSize'
 
 interface OverviewTabProps {
   form: Record<string, any>
@@ -38,6 +41,177 @@ function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }
 }
 
 const textareaCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+
+const HOBBYIST_DOC_TYPES = [
+  'Receipt / Invoice', 'Certificate of Authenticity', 'Insurance Valuation',
+  'Provenance Document', 'Photograph', 'Correspondence', 'Other',
+]
+const DOC_ACCEPTED = '.pdf,.doc,.docx,.png,.jpg,.jpeg'
+const DOC_MAX_BYTES = 20 * 1024 * 1024
+
+function fileIcon(mime: string | null) {
+  if (!mime) return '📄'
+  if (mime.startsWith('image/')) return '🖼'
+  if (mime === 'application/pdf') return '📋'
+  return '📄'
+}
+
+function SupportingDocuments({ objectId, museumId, canEdit }: { objectId: string; museumId: string; canEdit: boolean }) {
+  const [docs, setDocs] = useState<any[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [label, setLabel] = useState('')
+  const [docType, setDocType] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetch(`/api/objects/${objectId}/documents?type=general`)
+      .then(r => r.json())
+      .then(data => { setDocs(Array.isArray(data) ? data : []); setLoaded(true) })
+      .catch(() => setLoaded(true))
+  }, [objectId])
+
+  async function upload() {
+    if (!file) return
+    if (file.size > DOC_MAX_BYTES) { setError('File exceeds 20 MB limit'); return }
+    setUploading(true)
+    setError(null)
+
+    const ext = file.name.split('.').pop()
+    const path = `${museumId}/${objectId}/documents/${Date.now()}.${ext}`
+    const { error: storageError } = await supabase.storage.from('object-documents').upload(path, file)
+    if (storageError) { setError(storageError.message); setUploading(false); return }
+
+    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+
+    const res = await fetch(`/api/objects/${objectId}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        related_to_type: 'general',
+        related_to_id: null,
+        label: label || file.name,
+        document_type: docType || 'Other',
+        file_url: publicUrl,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+      }),
+    })
+
+    if (!res.ok) {
+      await supabase.storage.from('object-documents').remove([path])
+      const body = await res.json().catch(() => ({}))
+      setError(body.error || 'Upload failed')
+      setUploading(false)
+      return
+    }
+
+    const doc = await res.json()
+    setDocs(prev => [doc, ...prev])
+    setLabel('')
+    setDocType('')
+    setFile(null)
+    setShowForm(false)
+    setUploading(false)
+  }
+
+  async function deleteDoc(doc: any) {
+    if (!confirm(`Remove "${doc.label || doc.file_name}"?`)) return
+    const path = doc.file_url.split('/object-documents/')[1]
+    if (path) await supabase.storage.from('object-documents').remove([path])
+    await supabase.from('object_documents').delete().eq('id', doc.id)
+    setDocs(prev => prev.filter(d => d.id !== doc.id))
+  }
+
+  const fieldCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
+  const fieldLabel = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
+
+  return (
+    <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 font-medium">Supporting Documents</h3>
+        {canEdit && !showForm && (
+          <button type="button" onClick={() => setShowForm(true)}
+            className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">
+            + Add document
+          </button>
+        )}
+      </div>
+
+      {!loaded && <p className="text-xs text-stone-400 dark:text-stone-500">Loading…</p>}
+
+      {loaded && docs.length === 0 && !showForm && (
+        <p className="text-xs text-stone-400 dark:text-stone-500">No documents attached yet. Upload receipts, certificates, or provenance documents.</p>
+      )}
+
+      {docs.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {docs.map(doc => (
+            <div key={doc.id} className="flex items-start gap-3 p-3 border border-stone-100 dark:border-stone-800 rounded-lg">
+              <span className="text-lg mt-0.5 shrink-0">{fileIcon(doc.mime_type)}</span>
+              <div className="flex-1 min-w-0">
+                <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                  className="text-sm font-medium text-stone-900 dark:text-stone-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate block">
+                  {doc.label || doc.file_name}
+                </a>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {doc.document_type && <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{doc.document_type}</span>}
+                  {doc.file_size && <span className="text-xs text-stone-400 dark:text-stone-500">{formatSize(doc.file_size)}</span>}
+                </div>
+              </div>
+              {canEdit && (
+                <button type="button" onClick={() => deleteDoc(doc)}
+                  className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors shrink-0">
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showForm && (
+        <div className="border border-stone-100 dark:border-stone-800 rounded-lg p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={fieldLabel}>Label</label>
+              <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Purchase receipt"
+                className={fieldCls} />
+            </div>
+            <div>
+              <label className={fieldLabel}>Document Type</label>
+              <select value={docType} onChange={e => setDocType(e.target.value)} className={fieldCls}>
+                <option value="">— Select type —</option>
+                {HOBBYIST_DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={fieldLabel}>File</label>
+            <input type="file" accept={DOC_ACCEPTED} onChange={e => setFile(e.target.files?.[0] ?? null)}
+              className="text-xs text-stone-600 dark:text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-stone-200 dark:file:border-stone-700 file:text-xs file:font-mono file:bg-white dark:file:bg-stone-900 file:text-stone-700 dark:file:text-stone-300 hover:file:bg-stone-50 dark:hover:file:bg-stone-800 file:transition-colors" />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">PDF, Word, or images. Max 20 MB.</p>
+          </div>
+          {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
+          <div className="flex gap-2">
+            <button type="button" onClick={upload} disabled={!file || uploading}
+              className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded px-4 py-1.5 disabled:opacity-50 transition-colors">
+              {uploading ? 'Uploading…' : 'Upload'}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setLabel(''); setDocType(''); setFile(null); setError(null) }}
+              className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function OverviewTab({ form, set, canEdit, saving, object, museum, latestValuation, setActiveTab }: OverviewTabProps) {
   const router = useRouter()
@@ -506,6 +680,29 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Overrides your collection's primary category in the Vitrine discovery directory.</p>
         </div>
       </div>
+
+      {/* Supporting Documents — Hobbyist+ only, shown in simple mode */}
+      {!fullMode && (
+        getPlan(museum.plan).documentStorageMb > 0 ? (
+          <SupportingDocuments objectId={object.id} museumId={museum.id} canEdit={canEdit} />
+        ) : (
+          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+            <div className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 font-medium mb-3">Supporting Documents</div>
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">🔒</span>
+              <div className="text-sm text-stone-400 dark:text-stone-500">
+                <p>Attach receipts, certificates of authenticity, insurance valuations, and provenance documents to each item.</p>
+                <p className="mt-1.5">
+                  Available from the{' '}
+                  <a href="/dashboard/plan" className="text-stone-900 dark:text-stone-100 underline underline-offset-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                    Hobbyist plan
+                  </a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+      )}
 
       {canEdit && <SaveBar saving={saving} onCancel={() => router.push('/dashboard')} />}
     </>

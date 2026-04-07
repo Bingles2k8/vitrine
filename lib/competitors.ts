@@ -102,7 +102,7 @@ export const competitors: Competitor[] = [
       },
       {
         question: 'Is there a free plan?',
-        answer: 'Yes. The Community plan is free and supports up to 100 items. The Hobbyist plan at £5/month supports up to 500 items.',
+        answer: 'Yes. The Community plan is free and supports up to 100 items. The Hobbyist plan at £5/month supports up to 1,000 items.',
       },
     ],
   },
@@ -355,7 +355,7 @@ export const competitors: Competitor[] = [
       },
       {
         question: 'How does Vitrine\'s pricing compare to CLZ?',
-        answer: 'Vitrine is free for up to 100 items, then £5/month for up to 500 items. CLZ charges $20–30/year per app — so a collector using three CLZ apps pays $60–90/year versus Vitrine\'s £60/year for everything.',
+        answer: 'Vitrine is free for up to 100 items, then £5/month for up to 1,000 items. CLZ charges $20–30/year per app — so a collector using three CLZ apps pays $60–90/year versus Vitrine\'s £60/year for everything.',
       },
     ],
   },

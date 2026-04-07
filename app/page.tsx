@@ -3,6 +3,7 @@ import PublicFooter from '@/components/PublicFooter'
 import PublicNav from '@/components/PublicNav'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
+import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
 
 export const metadata = buildPageMetadata({
   title: 'Vitrine – Collection Management App for Museums & Collectors',
@@ -48,6 +49,15 @@ const organizationSchema = {
       },
     },
   ],
+}
+
+// Presentation-layer copy that lives outside lib/plans.ts (taglines, CTAs, learn-more links)
+const PAGE_EXTRAS: Record<PlanId, { desc: string; cta: string; ctaHref: string | null; learnMoreHref: string; muted: boolean }> = {
+  community:    { desc: 'Perfect for small local museums and heritage societies.',      cta: 'Start free →',    ctaHref: '/signup',  learnMoreHref: '/plans/community',    muted: true  },
+  hobbyist:     { desc: 'For hobbyist collectors who want to showcase more.',           cta: 'Get started →',   ctaHref: '/signup',  learnMoreHref: '/plans/hobbyist',     muted: false },
+  professional: { desc: 'For regional museums ready to go further online.',             cta: 'Get started →',   ctaHref: '/signup',  learnMoreHref: '/plans/professional',  muted: false },
+  institution:  { desc: 'For regional and national collections.',                       cta: 'Coming soon',     ctaHref: null,       learnMoreHref: '/plans/institution',   muted: false },
+  enterprise:   { desc: 'For national institutions and large-scale collections.',       cta: 'Coming soon',     ctaHref: null,       learnMoreHref: '/plans/enterprise',    muted: true  },
 }
 
 export default function Home() {
@@ -257,95 +267,29 @@ export default function Home() {
           <p className="text-stone-400 font-light text-lg max-w-xl mb-16">From village heritage centres to national institutions.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
-            {[
-              {
-                tier: 'Community',
-                price: 'Free',
-                priceNote: null,
-                desc: 'Perfect for small local museums and heritage societies.',
-                features: ['Up to 100 collection items', 'Public collection website', 'Basic site customisation', 'Purchase price & value tracking'],
-                missing: ['Collections compliance tools', 'Analytics', 'Staff management'],
-                cta: 'Start free →',
-                ctaHref: '/signup',
-                learnMoreHref: '/plans/community',
-                featured: false,
-                muted: true,
-              },
-              {
-                tier: 'Hobbyist',
-                price: '£5',
-                priceNote: '/ month',
-                desc: 'For hobbyist collectors who want to showcase more.',
-                features: ['Up to 500 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list'],
-                missing: ['Visit & About pages', 'Collections compliance tools', 'Analytics', 'Staff management'],
-                cta: 'Get started →',
-                ctaHref: '/signup',
-                learnMoreHref: '/plans/hobbyist',
-                featured: false,
-                muted: false,
-              },
-              {
-                tier: 'Professional',
-                price: '£79',
-                priceNote: '/ month',
-                desc: 'For regional museums ready to go further online.',
-                features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', '1 GB document storage'],
-                missing: [],
-                cta: 'Get started →',
-                ctaHref: '/signup',
-                learnMoreHref: '/plans/professional',
-                featured: true,
-                muted: false,
-              },
-              {
-                tier: 'Institution',
-                price: '£349',
-                priceNote: '/ month',
-                desc: 'For regional and national collections.',
-                features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
-                missing: [],
-                cta: 'Coming soon',
-                ctaHref: null,
-                learnMoreHref: '/plans/institution',
-                featured: false,
-                muted: false,
-                comingSoon: true,
-              },
-              {
-                tier: 'Enterprise',
-                price: 'Custom',
-                priceNote: null,
-                desc: 'For national institutions and large-scale collections.',
-                features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
-                missing: [],
-                cta: 'Coming soon',
-                ctaHref: null,
-                learnMoreHref: '/plans/enterprise',
-                featured: false,
-                muted: true,
-                comingSoon: true,
-              },
-            ].map(p => (
-              <div key={p.tier} className={`rounded-xl border relative flex flex-col ${p.muted ? 'p-6 scale-[0.97] origin-top' : 'p-8'} ${p.featured ? 'bg-stone-900 border-amber-500/30' : p.muted ? 'bg-stone-900/30 border-white/5' : 'bg-stone-900/50 border-white/8'}`}>
-                {p.featured && (
+            {PLAN_ORDER.map(id => {
+              const plan = PLANS[id]
+              const extras = PAGE_EXTRAS[id]
+              return (
+              <div key={id} className={`rounded-xl border relative flex flex-col ${extras.muted ? 'p-6 scale-[0.97] origin-top' : 'p-8'} ${plan.featured ? 'bg-stone-900 border-amber-500/30' : extras.muted ? 'bg-stone-900/30 border-white/5' : 'bg-stone-900/50 border-white/8'}`}>
+                {plan.featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
                     Most popular
                   </div>
                 )}
-                <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{p.tier}</div>
+                <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="font-serif text-4xl text-white">{p.price}</span>
-                  {p.priceNote && <span className="text-stone-500 text-sm">{p.priceNote}</span>}
+                  <span className="font-serif text-4xl text-white">{plan.price}</span>
                 </div>
-                <p className="text-sm text-stone-500 font-light mb-6">{p.desc}</p>
-                <hr className={`mb-6 ${p.muted ? 'border-white/5' : 'border-white/8'}`} />
+                <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
+                <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
                 <ul className="space-y-2.5 mb-8">
-                  {p.features.map(f => (
+                  {plan.features.map(f => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
                       <span className="text-amber-500 text-xs">✓</span> {f}
                     </li>
                   ))}
-                  {p.missing.map(f => (
+                  {plan.missingFeatures.map(f => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
                       <span className="text-xs">–</span> {f}
                     </li>
@@ -353,26 +297,27 @@ export default function Home() {
                 </ul>
                 <div className="mt-auto flex flex-col gap-2">
                   <Link
-                    href={p.learnMoreHref}
+                    href={extras.learnMoreHref}
                     className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors"
                   >
                     Learn more
                   </Link>
-                  {p.comingSoon ? (
+                  {plan.comingSoon ? (
                     <span className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 text-stone-600 cursor-default">
                       Coming soon
                     </span>
                   ) : (
                     <Link
-                      href={p.ctaHref!}
-                      className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${p.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
+                      href={extras.ctaHref!}
+                      className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
                     >
-                      {p.cta}
+                      {extras.cta}
                     </Link>
                   )}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
