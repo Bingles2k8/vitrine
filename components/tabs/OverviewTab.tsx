@@ -683,7 +683,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
       {/* Supporting Documents — Hobbyist+ only, shown in simple mode */}
       {!fullMode && (
-        getPlan(museum.plan).documentStorageMb > 0 ? (
+        (getPlan(museum.plan).documentStorageMb ?? 0) > 0 ? (
           <SupportingDocuments objectId={object.id} museumId={museum.id} canEdit={canEdit} />
         ) : (
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
