@@ -13,6 +13,11 @@ export const PAGE_BG: Record<string, string> = {
   cover: '#0d0b08', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9',
 }
 
+const PAGE_BG_DARK: Record<string, string> = {
+  minimal: '#111110', editorial: '#0a0a0a', archival: '#1a1610',
+  curator: '#111110', magazine: '#0a0a0a', salon: '#111110',
+}
+
 // Per-template content colours for sub-pages
 export const CONTENT_COLORS: Record<string, {
   heading: string
@@ -33,6 +38,15 @@ export const CONTENT_COLORS: Record<string, {
   salon:     { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff' },
 }
 
+const CONTENT_COLORS_DARK: Record<string, typeof CONTENT_COLORS[string]> = {
+  minimal:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
+  editorial: { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#3a3a3a', cardBg: '#141414', inputBg: '#141414' },
+  archival:  { heading: '#ede8dc', body: '#a09070', muted: '#6b5e47', border: '#3d3020', cardBg: 'rgba(255,255,255,0.05)', inputBg: '#231c0f' },
+  curator:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
+  magazine:  { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#141414', inputBg: '#1a1a1a' },
+  salon:     { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
+}
+
 export const NAV_STYLES: Record<string, { nav: string; text: string; link: string }> = {
   minimal:   { nav: 'bg-white border-b border-stone-100',      text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
   dramatic:  { nav: 'bg-stone-950 border-b border-white/5',    text: 'text-white',      link: 'text-white/50 hover:text-white' },
@@ -44,6 +58,17 @@ export const NAV_STYLES: Record<string, { nav: string; text: string; link: strin
   magazine:  { nav: 'bg-white border-b-2 border-black',        text: 'text-black font-bold', link: 'text-stone-400 hover:text-black' },
   salon:     { nav: 'bg-white border-b border-stone-100',      text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
 }
+
+const NAV_STYLES_DARK: Record<string, typeof NAV_STYLES[string]> = {
+  minimal:   { nav: 'bg-stone-950 border-b border-stone-800',   text: 'text-stone-100',       link: 'text-stone-500 hover:text-stone-100' },
+  editorial: { nav: 'bg-stone-950 border-b-4 border-white',     text: 'text-white font-bold', link: 'text-stone-500 hover:text-white' },
+  archival:  { nav: 'bg-stone-900 border-b border-stone-700',   text: 'text-stone-200',       link: 'text-stone-500 hover:text-stone-200' },
+  curator:   { nav: 'bg-stone-950 border-b border-stone-800',   text: 'text-stone-100',       link: 'text-stone-500 hover:text-stone-100' },
+  magazine:  { nav: 'bg-stone-950 border-b-2 border-white',     text: 'text-white font-bold', link: 'text-stone-500 hover:text-white' },
+  salon:     { nav: 'bg-stone-950 border-b border-stone-800',   text: 'text-stone-100',       link: 'text-stone-500 hover:text-stone-100' },
+}
+
+const DARK_TEMPLATES = new Set(['dramatic', 'classic', 'cover'])
 
 export function getLayoutVariant(museum: any): string {
   const tmpl = getTemplate(museum.template || 'minimal')
@@ -59,14 +84,16 @@ export function getMuseumStyles(museum: any) {
     ? { fontFamily: font.css, fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em' }
     : { fontFamily: font.css, fontStyle: 'italic' }
 
+  const useDark = museum.dark_mode === true && !DARK_TEMPLATES.has(tmpl.id)
+
   return {
     tmpl,
     accent,
     primary,
     font,
     headingStyle,
-    pageBg: PAGE_BG[tmpl.id] || '#fafaf9',
-    content: CONTENT_COLORS[tmpl.id] || CONTENT_COLORS.minimal,
-    navStyle: NAV_STYLES[tmpl.id] || NAV_STYLES.minimal,
+    pageBg:   (useDark ? PAGE_BG_DARK[tmpl.id] : null) ?? PAGE_BG[tmpl.id] ?? '#fafaf9',
+    content:  (useDark ? CONTENT_COLORS_DARK[tmpl.id] : null) ?? CONTENT_COLORS[tmpl.id] ?? CONTENT_COLORS.minimal,
+    navStyle: (useDark ? NAV_STYLES_DARK[tmpl.id] : null) ?? NAV_STYLES[tmpl.id] ?? NAV_STYLES.minimal,
   }
 }

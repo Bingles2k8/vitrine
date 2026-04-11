@@ -63,6 +63,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     image_ratio: museum.image_ratio || tmpl.image_ratio,
     card_padding: museum.card_padding || tmpl.card_padding,
     card_metadata: museum.card_metadata || tmpl.card_metadata,
+    darkMode: museum.dark_mode === true,
   }
 
   const formattedValue = showValueBadge
@@ -97,6 +98,289 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const collectionGrid = allObjects.length === 0
     ? emptyState
     : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} />
+
+  // ─── MINIMAL layout ─────────────────────────────────────────────────────────
+  // White-cube gallery: no hero box. Giant floating italic title on white, thin
+  // rule, quiet stats, then the grid.
+  if (layoutVariant === 'minimal') {
+    return (
+      <>
+        <PageViewTracker museumId={museum.id} pageType="home" />
+
+        <div className="max-w-6xl mx-auto px-6 pt-20 pb-10">
+          {/* Eyebrow */}
+          <div className="text-xs font-mono uppercase tracking-[0.2em] mb-6" style={{ color: content.muted }}>
+            {museum.name}
+          </div>
+
+          {/* Giant title */}
+          <h1
+            className="font-normal leading-none mb-8"
+            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(3.5rem, 8vw, 7rem)' }}
+          >
+            {museum.tagline || 'The Collection'}
+          </h1>
+
+          {/* Rule + count */}
+          <div className="flex items-center gap-6 mb-6">
+            <div className="h-px flex-1" style={{ background: content.border }} />
+            <span className="text-xs font-mono shrink-0" style={{ color: content.muted }}>
+              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} works`}
+              {distinctCategories > 1 ? ` · ${distinctCategories} categories` : ''}
+              {museum.collecting_since ? ` · Since ${museum.collecting_since}` : ''}
+            </span>
+          </div>
+
+          {showValueBadge && (
+            <div className="mb-6">
+              <span className="text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+                Collection value: approx. {formattedValue}
+              </span>
+            </div>
+          )}
+
+          {museum.collector_bio && (
+            <p className="text-sm leading-relaxed max-w-xl font-light mb-8" style={{ color: content.body }}>
+              {museum.collector_bio}
+            </p>
+          )}
+        </div>
+
+        {featuredObjects && featuredObjects.length > 0 && (
+          <div className="max-w-6xl mx-auto px-6 pb-4">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="text-xs uppercase tracking-widest font-mono" style={{ color: content.muted }}>Featured</div>
+              <div className="h-px flex-1" style={{ background: content.border }} />
+            </div>
+            <div className={`grid gap-4 ${featuredObjects.length === 1 ? 'grid-cols-1 max-w-sm' : featuredObjects.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+              {featuredObjects.map(obj => (
+                <Link key={obj.id} href={`/museum/${slug}/object/${obj.id}`}
+                  className="group block overflow-hidden border transition-shadow hover:shadow-md"
+                  style={{ borderColor: content.border, borderRadius: `${museum.card_radius ?? 8}px` }}>
+                  <div className="relative w-full pb-[56%]" style={{ background: content.cardBg }}>
+                    {obj.image_url
+                      ? <img src={obj.image_url} alt={obj.title || ''} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                      : <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>}
+                  </div>
+                  <div className="p-3" style={{ background: content.cardBg }}>
+                    <div className="text-sm font-medium truncate" style={{ ...headingStyle, color: content.heading }}>{obj.title || 'Untitled'}</div>
+                    {obj.artist && <div className="text-xs truncate mt-0.5" style={{ color: content.muted }}>{obj.artist}</div>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {collectionGrid}
+      </>
+    )
+  }
+
+  // ─── DRAMATIC layout ─────────────────────────────────────────────────────────
+  // Midnight cinema: the dark page IS the hero. Title slams left in giant white
+  // type. A full-width gold rule separates identity from collection.
+  if (layoutVariant === 'dramatic') {
+    const hasHeroImg = !!museum.hero_image_url
+    return (
+      <>
+        <PageViewTracker museumId={museum.id} pageType="home" />
+
+        {/* Identity block — no bounding box, floats on the dark page */}
+        <div className="max-w-6xl mx-auto px-6 pt-16 pb-12">
+          <div className="text-xs font-mono uppercase tracking-[0.25em] mb-8" style={{ color: accent }}>
+            {museum.name} &nbsp;/&nbsp; {collectionLabel}
+          </div>
+
+          {hasHeroImg ? (
+            /* If they uploaded a hero image, show it full-width cinematic */
+            <div
+              className="relative w-full mb-10 overflow-hidden"
+              style={{ height: 'clamp(280px, 45vw, 520px)', borderRadius: '2px' }}
+            >
+              <img
+                src={museum.hero_image_url!}
+                alt={museum.name}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: museum.hero_image_position || '50% 50%' }}
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(12,10,9,0.85) 100%)' }} />
+              <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
+                <h1
+                  className="font-normal leading-none"
+                  style={{ ...headingStyle, color: '#ffffff', fontSize: 'clamp(2.5rem, 6vw, 5.5rem)' }}
+                >
+                  {museum.tagline || 'The Collection'}
+                </h1>
+              </div>
+            </div>
+          ) : (
+            <h1
+              className="font-normal leading-none mb-10"
+              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(3rem, 8vw, 7.5rem)' }}
+            >
+              {museum.tagline || 'The Collection'}
+            </h1>
+          )}
+
+          {/* Full-width accent rule */}
+          <div className="h-px w-full mb-6" style={{ background: accent }} />
+
+          {/* Stats row */}
+          <div className="flex flex-wrap items-center gap-6">
+            <span className="text-xs font-mono" style={{ color: content.muted }}>
+              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} works`}
+            </span>
+            {distinctCategories > 1 && (
+              <span className="text-xs font-mono" style={{ color: content.muted }}>{distinctCategories} categories</span>
+            )}
+            {museum.collecting_since && (
+              <span className="text-xs font-mono" style={{ color: content.muted }}>Since {museum.collecting_since}</span>
+            )}
+            {showValueBadge && (
+              <span className="text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+                {formattedValue}
+              </span>
+            )}
+          </div>
+
+          {museum.collector_bio && (
+            <p className="text-sm leading-relaxed max-w-2xl mt-8 font-light" style={{ color: content.body }}>
+              {museum.collector_bio}
+            </p>
+          )}
+        </div>
+
+        {featuredObjects && featuredObjects.length > 0 && (
+          <div className="max-w-6xl mx-auto px-6 pb-4">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>Featured Works</div>
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+            <div className={`grid gap-3 ${featuredObjects.length === 1 ? 'grid-cols-1 max-w-sm' : featuredObjects.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+              {featuredObjects.map(obj => (
+                <Link key={obj.id} href={`/museum/${slug}/object/${obj.id}`}
+                  className="group block overflow-hidden transition-all"
+                  style={{ borderRadius: `${museum.card_radius ?? 4}px`, background: content.cardBg }}>
+                  <div className="relative w-full pb-[56%]" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    {obj.image_url
+                      ? <img src={obj.image_url} alt={obj.title || ''} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                      : <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>}
+                  </div>
+                  <div className="p-3">
+                    <div className="text-sm font-medium truncate" style={{ ...headingStyle, color: content.heading }}>{obj.title || 'Untitled'}</div>
+                    {obj.artist && <div className="text-xs truncate mt-0.5" style={{ color: content.muted }}>{obj.artist}</div>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {collectionGrid}
+      </>
+    )
+  }
+
+  // ─── ARCHIVAL layout ─────────────────────────────────────────────────────────
+  // Museum catalog: formal double-border centred masthead, ornamental separator,
+  // optional two-column bio/info block, then the grid.
+  if (layoutVariant === 'archival') {
+    return (
+      <>
+        <PageViewTracker museumId={museum.id} pageType="home" />
+
+        {/* Centred masthead */}
+        <div className="max-w-6xl mx-auto px-6 pt-12 pb-0">
+          <div
+            className="text-center py-10 px-8"
+            style={{ border: `1px solid ${content.border}`, outline: `4px solid ${content.border}`, outlineOffset: '-8px' }}
+          >
+            <div className="text-xs font-mono uppercase tracking-[0.3em] mb-4" style={{ color: content.muted }}>
+              {museum.name}
+            </div>
+            <h1
+              className="font-normal leading-tight mb-4"
+              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
+            >
+              {museum.tagline || collectionLabel}
+            </h1>
+            {/* Ornamental rule */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="h-px w-12" style={{ background: accent }} />
+              <div className="w-1.5 h-1.5 rotate-45" style={{ background: accent }} />
+              <div className="h-px w-12" style={{ background: accent }} />
+            </div>
+            <div className="text-xs font-mono" style={{ color: content.muted }}>
+              {[
+                isFullMode ? `${onDisplay} works on display` : `${allObjects.length} works`,
+                distinctCategories > 1 ? `${distinctCategories} media` : null,
+                distinctOrigins > 1 ? `${distinctOrigins} origins` : null,
+                museum.collecting_since ? `Est. ${museum.collecting_since}` : null,
+              ].filter(Boolean).join('  ·  ')}
+            </div>
+            {showValueBadge && (
+              <div className="mt-3">
+                <span className="text-xs font-mono px-2.5 py-1 rounded-full" style={{ background: accent + '18', color: accent }}>
+                  Collection value: approx. {formattedValue}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Optional bio / featured two-col block */}
+        {(museum.collector_bio || (featuredObjects && featuredObjects.length > 0)) && (
+          <div className="max-w-6xl mx-auto px-6 mt-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {museum.collector_bio && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest font-mono mb-4" style={{ color: accent }}>Collector's Note</div>
+                  <p className="text-sm leading-relaxed font-light" style={{ color: content.body }}>{museum.collector_bio}</p>
+                </div>
+              )}
+              {featuredObjects && featuredObjects.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest font-mono mb-4" style={{ color: accent }}>Featured Works</div>
+                  <div className="flex flex-col gap-3">
+                    {featuredObjects.slice(0, 3).map(obj => (
+                      <Link key={obj.id} href={`/museum/${slug}/object/${obj.id}`}
+                        className="group flex items-center gap-3 transition-opacity hover:opacity-75"
+                      >
+                        <div
+                          className="w-14 h-14 flex-shrink-0 overflow-hidden"
+                          style={{ background: content.cardBg, border: `1px solid ${content.border}`, borderRadius: `${museum.card_radius ?? 4}px` }}
+                        >
+                          {obj.image_url
+                            ? <img src={obj.image_url} alt={obj.title || ''} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center text-xl">{obj.emoji || '🖼️'}</div>}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-light truncate" style={{ ...headingStyle, color: content.heading }}>{obj.title || 'Untitled'}</div>
+                          {obj.artist && <div className="text-xs truncate" style={{ color: content.muted }}>{obj.artist}</div>}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Section rule before grid */}
+        <div className="max-w-6xl mx-auto px-6 mt-10 mb-0">
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1" style={{ background: content.border }} />
+            <span className="text-xs font-mono uppercase tracking-widest" style={{ color: content.muted }}>{collectionLabel}</span>
+            <div className="h-px flex-1" style={{ background: content.border }} />
+          </div>
+        </div>
+
+        {collectionGrid}
+      </>
+    )
+  }
 
   // ─── COVER layout ───────────────────────────────────────────────────────────
   if (layoutVariant === 'cover') {

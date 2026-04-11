@@ -17,6 +17,7 @@ export const PLANS: Record<PlanId, {
   depositorTracking: boolean  // Donor info, Entry By, GDPR, receipt & terms in entry records
   wishlist: boolean  // Wanted/wishlist feature — Community & Hobbyist only
   changeSlug: boolean  // Allow changing the public URL slug after initial setup
+  hideVitrineBranding: boolean  // Option to remove "Powered by Vitrine" from public site footer
   features: string[]
   missingFeatures: string[]  // Shown on homepage pricing cards as "not included"
   featured: boolean          // Highlighted "most popular" card on homepage
@@ -39,6 +40,7 @@ export const PLANS: Record<PlanId, {
     depositorTracking: false,
     wishlist: true,
     changeSlug: false,
+    hideVitrineBranding: false,
     features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking'],
     missingFeatures: ['Document storage', 'Wanted list', 'Premium templates', 'Visitor analytics'],
     featured: false,
@@ -61,6 +63,7 @@ export const PLANS: Record<PlanId, {
     depositorTracking: false,
     wishlist: true,
     changeSlug: true,
+    hideVitrineBranding: false,
     features: ['Up to 1,000 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list', '100 MB document storage'],
     missingFeatures: ['Visit & About pages', 'Collections compliance tools', 'Visitor analytics', 'Staff management'],
     featured: false,
@@ -83,6 +86,7 @@ export const PLANS: Record<PlanId, {
     depositorTracking: true,
     wishlist: false,
     changeSlug: true,
+    hideVitrineBranding: true,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '1 GB document storage'],
     missingFeatures: ['Unlimited objects', 'Unlimited staff', 'Unlimited storage'],
     featured: true,
@@ -105,6 +109,7 @@ export const PLANS: Record<PlanId, {
     depositorTracking: true,
     wishlist: false,
     changeSlug: true,
+    hideVitrineBranding: true,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', '10 GB document storage'],
     missingFeatures: [],
     featured: false,
@@ -127,6 +132,7 @@ export const PLANS: Record<PlanId, {
     depositorTracking: true,
     wishlist: false,
     changeSlug: true,
+    hideVitrineBranding: true,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Collections compliance tools', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
     missingFeatures: [],
     featured: false,

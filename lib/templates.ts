@@ -15,7 +15,7 @@ export interface Template {
   image_ratio: string
   card_padding: string
   card_metadata: string
-  layout_variant: 'standard' | 'cover' | 'text-forward' | 'magazine' | 'sidebar'
+  layout_variant: 'standard' | 'cover' | 'text-forward' | 'magazine' | 'sidebar' | 'minimal' | 'dramatic' | 'archival'
 }
 
 export const TEMPLATES: Template[] = [
@@ -36,7 +36,7 @@ export const TEMPLATES: Template[] = [
     image_ratio: 'square',
     card_padding: 'normal',
     card_metadata: 'title+artist',
-    layout_variant: 'standard',
+    layout_variant: 'minimal',
   },
   {
     id: 'dramatic',
@@ -55,7 +55,7 @@ export const TEMPLATES: Template[] = [
     image_ratio: 'portrait',
     card_padding: 'normal',
     card_metadata: 'full',
-    layout_variant: 'standard',
+    layout_variant: 'dramatic',
   },
   {
     id: 'archival',
@@ -74,7 +74,7 @@ export const TEMPLATES: Template[] = [
     image_ratio: 'square',
     card_padding: 'generous',
     card_metadata: 'full',
-    layout_variant: 'standard',
+    layout_variant: 'archival',
   },
   {
     id: 'editorial',

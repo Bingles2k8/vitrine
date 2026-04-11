@@ -25,6 +25,7 @@ interface StyleSettings {
   image_ratio: string
   card_padding: string
   card_metadata: string
+  darkMode?: boolean
 }
 
 interface Props {
@@ -38,7 +39,9 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
   const [activeMedium, setActiveMedium] = useState('All')
   const [activeStatus, setActiveStatus] = useState('All')
 
-  const { template, accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata } = settings
+  const { template, accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata, darkMode } = settings
+  const DARK_TEMPLATES = new Set(['dramatic', 'classic', 'cover'])
+  const useDark = darkMode === true && !DARK_TEMPLATES.has(template)
 
   const mediums = useMemo(() => {
     const all = objects.map(a => a.medium).filter(Boolean)
@@ -64,53 +67,125 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
     setActiveStatus('All')
   }
 
-  const titleClass = {
+  const titleClassLight: Record<string, string> = {
     minimal: 'font-serif text-stone-900',
     dramatic: 'font-serif italic text-white',
     archival: 'font-serif italic text-stone-800',
     editorial: 'font-sans font-bold text-black uppercase tracking-tight text-sm',
     classic: 'font-serif italic text-amber-100',
-  }[template] || 'font-serif text-stone-900'
+    curator: 'font-serif text-stone-900',
+    magazine: 'font-sans font-bold text-black uppercase tracking-tight text-sm',
+    salon: 'font-serif text-stone-900',
+  }
+  const titleClassDark: Record<string, string> = {
+    minimal: 'font-serif text-stone-100',
+    editorial: 'font-sans font-bold text-white uppercase tracking-tight text-sm',
+    archival: 'font-serif italic text-stone-200',
+    curator: 'font-serif text-stone-100',
+    magazine: 'font-sans font-bold text-white uppercase tracking-tight text-sm',
+    salon: 'font-serif text-stone-100',
+  }
+  const titleClass = (useDark ? titleClassDark[template] : titleClassLight[template]) ?? titleClassLight.minimal
 
-  const artistClass = {
+  const artistClassLight: Record<string, string> = {
     minimal: 'text-stone-400 italic',
     dramatic: 'text-white/40 italic',
     archival: 'text-stone-500 italic',
     editorial: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
     classic: 'text-amber-300/60 italic',
-  }[template] || 'text-stone-400 italic'
+    curator: 'text-stone-400 italic',
+    magazine: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
+    salon: 'text-stone-400 italic',
+  }
+  const artistClassDark: Record<string, string> = {
+    minimal: 'text-stone-500 italic',
+    editorial: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
+    archival: 'text-stone-500 italic',
+    curator: 'text-stone-500 italic',
+    magazine: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
+    salon: 'text-stone-500 italic',
+  }
+  const artistClass = (useDark ? artistClassDark[template] : artistClassLight[template]) ?? artistClassLight.minimal
 
-  const metaClass = {
+  const metaClassLight: Record<string, string> = {
     minimal: 'font-mono text-stone-400',
     dramatic: 'font-mono text-white/30',
     archival: 'font-mono text-stone-400',
     editorial: 'font-mono text-stone-500',
     classic: 'font-mono text-amber-300/40',
-  }[template] || 'font-mono text-stone-400'
+    curator: 'font-mono text-stone-400',
+    magazine: 'font-mono text-stone-500',
+    salon: 'font-mono text-stone-400',
+  }
+  const metaClassDark: Record<string, string> = {
+    minimal: 'font-mono text-stone-600',
+    editorial: 'font-mono text-stone-600',
+    archival: 'font-mono text-stone-600',
+    curator: 'font-mono text-stone-600',
+    magazine: 'font-mono text-stone-600',
+    salon: 'font-mono text-stone-600',
+  }
+  const metaClass = (useDark ? metaClassDark[template] : metaClassLight[template]) ?? metaClassLight.minimal
 
-  const cardBg = {
+  const cardBgLight: Record<string, string> = {
     minimal: 'bg-white border border-stone-200 hover:shadow-md',
     dramatic: 'bg-stone-900 border border-white/8 hover:bg-stone-800',
     archival: 'bg-amber-50/50 border border-amber-200/50 hover:bg-amber-50',
     editorial: 'bg-white border-2 border-black hover:bg-stone-50',
     classic: 'bg-stone-800 border border-white/10 hover:bg-stone-700',
-  }[template] || 'bg-white border border-stone-200'
+    curator: 'bg-white border border-stone-200 hover:shadow-md',
+    magazine: 'bg-white border-2 border-black hover:bg-stone-50',
+    salon: 'bg-white border border-stone-200 hover:shadow-md',
+  }
+  const cardBgDark: Record<string, string> = {
+    minimal: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
+    editorial: 'bg-neutral-950 border-2 border-neutral-800 hover:bg-neutral-900',
+    archival: 'bg-stone-900 border border-stone-700/40 hover:bg-stone-800',
+    curator: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
+    magazine: 'bg-neutral-950 border-2 border-neutral-800 hover:bg-neutral-900',
+    salon: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
+  }
+  const cardBg = (useDark ? cardBgDark[template] : cardBgLight[template]) ?? cardBgLight.minimal
 
-  const imageBg = {
+  const imageBgLight: Record<string, string> = {
     minimal: 'bg-stone-50',
     dramatic: 'bg-stone-800',
     archival: 'bg-amber-100/50',
     editorial: 'bg-stone-100',
     classic: 'bg-stone-700',
-  }[template] || 'bg-stone-50'
+    curator: 'bg-stone-50',
+    magazine: 'bg-stone-100',
+    salon: 'bg-stone-50',
+  }
+  const imageBgDark: Record<string, string> = {
+    minimal: 'bg-stone-800',
+    editorial: 'bg-neutral-900',
+    archival: 'bg-stone-800',
+    curator: 'bg-stone-800',
+    magazine: 'bg-neutral-900',
+    salon: 'bg-stone-800',
+  }
+  const imageBg = (useDark ? imageBgDark[template] : imageBgLight[template]) ?? imageBgLight.minimal
 
-  const searchInputClass = {
+  const searchInputClassLight: Record<string, string> = {
     minimal: 'bg-white border-stone-200 text-stone-900',
     dramatic: 'bg-stone-900 border-white/10 text-white placeholder:text-white/30',
     archival: 'bg-amber-50 border-amber-200 text-stone-800',
     editorial: 'bg-white border-2 border-black text-black rounded-none',
     classic: 'bg-stone-800 border-white/10 text-amber-100 placeholder:text-amber-100/30',
-  }[template] || 'bg-white border-stone-200 text-stone-900'
+    curator: 'bg-white border-stone-200 text-stone-900',
+    magazine: 'bg-white border-2 border-black text-black rounded-none',
+    salon: 'bg-white border-stone-200 text-stone-900',
+  }
+  const searchInputClassDark: Record<string, string> = {
+    minimal: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
+    editorial: 'bg-neutral-950 border-2 border-neutral-700 text-white rounded-none placeholder:text-neutral-600',
+    archival: 'bg-stone-900 border-stone-700 text-stone-200 placeholder:text-stone-600',
+    curator: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
+    magazine: 'bg-neutral-950 border-2 border-neutral-700 text-white rounded-none placeholder:text-neutral-600',
+    salon: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
+  }
+  const searchInputClass = (useDark ? searchInputClassDark[template] : searchInputClassLight[template]) ?? searchInputClassLight.minimal
 
   const padMap: Record<string, string> = { tight: 'p-2', normal: 'p-4', generous: 'p-6' }
   const ratioClass: Record<string, string> = { square: 'aspect-square', portrait: 'aspect-[3/4]', landscape: 'aspect-[16/9]' }
@@ -148,10 +223,14 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-8">
-        <div className="flex items-center gap-1.5 bg-white border border-stone-200 rounded-lg p-1">
+        <div className={`flex items-center gap-1.5 rounded-lg p-1 border ${useDark ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-200'}`}>
           {['All', 'On Display', 'On Loan'].map(s => (
             <button key={s} onClick={() => setActiveStatus(s)}
-              className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${activeStatus === s ? 'bg-stone-900 text-white' : 'text-stone-500 hover:text-stone-900'}`}>
+              className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
+                activeStatus === s
+                  ? useDark ? 'bg-stone-100 text-stone-900' : 'bg-stone-900 text-white'
+                  : useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-500 hover:text-stone-900'
+              }`}>
               {s}
             </button>
           ))}
@@ -159,19 +238,23 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
         <div className="flex items-center gap-1.5 flex-wrap">
           {mediums.map(m => (
             <button key={m} onClick={() => setActiveMedium(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${activeMedium === m ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-500 hover:bg-stone-50'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+                activeMedium === m
+                  ? useDark ? 'bg-stone-100 text-stone-900 border-stone-100' : 'bg-stone-900 text-white border-stone-900'
+                  : useDark ? 'border-stone-700 text-stone-500 hover:bg-stone-800' : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+              }`}>
               {m}
             </button>
           ))}
         </div>
         <div className="ml-auto flex items-center gap-4">
           {hasActiveFilters && (
-            <button onClick={clearAll} className="text-xs font-mono text-stone-400 hover:text-stone-900 transition-colors underline underline-offset-2">
+            <button onClick={clearAll} className={`text-xs font-mono transition-colors underline underline-offset-2 ${useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-400 hover:text-stone-900'}`}>
               Clear filters
             </button>
           )}
-          <span className="text-xs font-mono text-stone-400">
-            <span className="text-stone-900 font-medium">{filtered.length}</span> of {objects.length} works
+          <span className={`text-xs font-mono ${useDark ? 'text-stone-500' : 'text-stone-400'}`}>
+            <span className={`font-medium ${useDark ? 'text-stone-200' : 'text-stone-900'}`}>{filtered.length}</span> of {objects.length} works
           </span>
         </div>
       </div>
@@ -179,10 +262,10 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
       {filtered.length === 0 ? (
         <div className="text-center py-32">
           <div className="text-5xl mb-4">🔍</div>
-          <div className="font-serif text-2xl italic text-stone-400 mb-2">No works found</div>
-          <p className="text-sm text-stone-400 mb-5">
+          <div className={`font-serif text-2xl italic mb-2 ${useDark ? 'text-stone-600' : 'text-stone-400'}`}>No works found</div>
+          <p className={`text-sm mb-5 ${useDark ? 'text-stone-600' : 'text-stone-400'}`}>
             Try a different search term or{' '}
-            <button onClick={clearAll} className="underline underline-offset-2 hover:text-stone-900 transition-colors">clear all filters</button>
+            <button onClick={clearAll} className={`underline underline-offset-2 transition-colors ${useDark ? 'hover:text-stone-200' : 'hover:text-stone-900'}`}>clear all filters</button>
           </p>
         </div>
       ) : (

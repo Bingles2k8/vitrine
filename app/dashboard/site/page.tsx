@@ -136,6 +136,8 @@ export default function SiteBuilder() {
     collector_bio: '',
     show_wanted: false,
     show_collection_value: false,
+    dark_mode: false,
+    hide_vitrine_branding: false,
   })
 
   useEffect(() => {
@@ -184,6 +186,8 @@ export default function SiteBuilder() {
         collector_bio: museum.collector_bio || '',
         show_wanted: museum.show_wanted ?? false,
         show_collection_value: museum.show_collection_value ?? false,
+        dark_mode: museum.dark_mode ?? false,
+        hide_vitrine_branding: museum.hide_vitrine_branding ?? false,
       })
       setLoading(false)
     }
@@ -312,6 +316,16 @@ export default function SiteBuilder() {
 
   const navBg = previewNavBg[form.template] || '#ffffff'
   const navText = previewNavText[form.template] || '#111111'
+
+  const pvDark = form.dark_mode === true && !['dramatic', 'classic', 'cover'].includes(form.template)
+  const pvPageBg = pvDark ? ({ minimal: '#111110', editorial: '#0a0a0a', archival: '#1a1610', curator: '#111110', magazine: '#0a0a0a', salon: '#111110' } as Record<string,string>)[form.template] ?? '#111110' : (({ minimal: '#fafaf9', editorial: '#ffffff', archival: '#f5f0e8', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9' } as Record<string,string>)[form.template] ?? '#ffffff')
+  const pvNavBg   = pvDark ? ({ minimal: '#111110', editorial: '#0a0a0a', archival: '#1c1814', curator: '#111110', magazine: '#0a0a0a', salon: '#111110' } as Record<string,string>)[form.template] ?? '#111110' : navBg
+  const pvNavText = pvDark ? ({ minimal: '#f5f4f3', editorial: '#ffffff',  archival: '#ede8dc', curator: '#f5f4f3', magazine: '#ffffff',  salon: '#f5f4f3' } as Record<string,string>)[form.template] ?? '#f5f4f3' : navText
+  const pvCardBg  = pvDark ? ({ minimal: '#1c1917', editorial: '#141414',  archival: 'rgba(255,255,255,0.05)', curator: '#1c1917', magazine: '#141414', salon: '#1c1917' } as Record<string,string>)[form.template] ?? '#1c1917' : '#ffffff'
+  const pvBorder  = pvDark ? ({ minimal: '#292524', editorial: '#3a3a3a',  archival: '#3d3020', curator: '#292524', magazine: '#292524', salon: '#292524' } as Record<string,string>)[form.template] ?? '#292524' : '#e7e5e4'
+  const pvHeading = pvDark ? ({ minimal: '#f5f4f3', editorial: '#ffffff',  archival: '#ede8dc', curator: '#f5f4f3', magazine: '#ffffff',  salon: '#f5f4f3' } as Record<string,string>)[form.template] ?? '#f5f4f3' : '#1c1917'
+  const pvMuted   = pvDark ? ({ minimal: '#57534e', editorial: '#57534e',  archival: '#6b5e47', curator: '#57534e', magazine: '#57534e',  salon: '#57534e' } as Record<string,string>)[form.template] ?? '#57534e' : '#a8a29e'
+  const pvImgBg   = pvDark ? ({ minimal: '#292524', editorial: '#1a1a1a',  archival: '#2a2018', curator: '#292524', magazine: '#1a1a1a',  salon: '#292524' } as Record<string,string>)[form.template] ?? '#292524' : '#f5f5f4'
 
   const selectedFont = FONTS.find(f => f.id === form.heading_font) || FONTS[0]
   const previewHeadingStyle = form.template === 'editorial'
@@ -452,6 +466,52 @@ export default function SiteBuilder() {
                                 {[0,1,2,3].map(i => (
                                   <div key={i} className="rounded-sm aspect-square" style={{ background: t.previewText + '18' }} />
                                 ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'minimal' && (
+                          <>
+                            <div className="px-2 py-1 border-b flex items-center" style={{ borderColor: t.previewText + '15' }}>
+                              <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
+                            </div>
+                            <div className="px-2 pt-3">
+                              <div className="w-6 h-0.5 rounded mb-2" style={{ background: t.previewText + '30' }} />
+                              <div className="w-14 h-3 rounded mb-2" style={{ background: t.previewText + 'dd' }} />
+                              <div className="flex items-center gap-1">
+                                <div className="h-px flex-1" style={{ background: t.previewText + '20' }} />
+                                <div className="w-6 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'dramatic' && (
+                          <>
+                            <div className="px-2 py-1 border-b flex items-center" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+                              <div className="w-10 h-1 rounded" style={{ background: 'rgba(255,255,255,0.5)' }} />
+                            </div>
+                            <div className="px-2 pt-3">
+                              <div className="w-8 h-0.5 rounded mb-2" style={{ background: t.previewAccent + 'cc' }} />
+                              <div className="w-14 h-3 rounded mb-2" style={{ background: t.previewText + 'dd' }} />
+                              <div className="h-px w-full mb-2" style={{ background: t.previewAccent }} />
+                              <div className="w-8 h-0.5 rounded" style={{ background: t.previewText + '30' }} />
+                            </div>
+                          </>
+                        )}
+                        {t.layout_variant === 'archival' && (
+                          <>
+                            <div className="px-2 py-1 border-b flex items-center" style={{ borderColor: t.previewText + '15' }}>
+                              <div className="w-10 h-1 rounded" style={{ background: t.previewText + '60' }} />
+                            </div>
+                            <div className="px-2 pt-2">
+                              <div className="text-center py-2 px-1" style={{ border: `1px solid ${t.previewText}25`, outline: `2px solid ${t.previewText}20`, outlineOffset: '-4px' }}>
+                                <div className="w-8 h-0.5 rounded mx-auto mb-1.5" style={{ background: t.previewText + '40' }} />
+                                <div className="w-10 h-1.5 rounded mx-auto mb-1.5" style={{ background: t.previewText + 'cc' }} />
+                                <div className="flex items-center justify-center gap-1">
+                                  <div className="h-px w-4" style={{ background: t.previewAccent }} />
+                                  <div className="w-0.5 h-0.5 rotate-45" style={{ background: t.previewAccent }} />
+                                  <div className="h-px w-4" style={{ background: t.previewAccent }} />
+                                </div>
                               </div>
                             </div>
                           </>
@@ -743,6 +803,38 @@ export default function SiteBuilder() {
                   { value: 'full', label: 'Full' },
                 ]}
               />
+
+              <div>
+                <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Colour Scheme</div>
+                {['dramatic', 'classic', 'cover'].includes(form.template) ? (
+                  <div className="flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono opacity-40 cursor-not-allowed bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500">
+                    <span className="relative w-8 h-4 rounded-full bg-stone-900 dark:bg-stone-100 flex-shrink-0">
+                      <span className="absolute top-0.5 left-4 w-3 h-3 rounded-full bg-white dark:bg-stone-900" />
+                    </span>
+                    Always dark
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => set('dark_mode', !form.dark_mode)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                      form.dark_mode
+                        ? 'bg-stone-900 border-stone-700 text-stone-100 dark:bg-stone-800 dark:border-stone-600'
+                        : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                    }`}
+                  >
+                    <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.dark_mode ? 'bg-stone-600' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.dark_mode ? 'left-4' : 'left-0.5'}`} />
+                    </span>
+                    {form.dark_mode ? 'Dark mode on' : 'Dark mode off'}
+                  </button>
+                )}
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">
+                  {['dramatic', 'classic', 'cover'].includes(form.template)
+                    ? 'This template is always dark — switch to a light template to enable dark mode toggle.'
+                    : form.dark_mode ? 'Your site displays in dark tones for all visitors.' : 'Enable to display your site in dark tones for all visitors.'}
+                </p>
+              </div>
             </CollapsibleSection>
 
             {/* Visit Information — Professional+ */}
@@ -998,6 +1090,31 @@ export default function SiteBuilder() {
               </div>
             </CollapsibleSection>
 
+            {/* Vitrine Branding — Professional+ */}
+            {getPlan(museum?.plan).hideVitrineBranding && (
+              <CollapsibleSection title="Vitrine Branding">
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">
+                    The &ldquo;Powered by Vitrine&rdquo; link appears in your site footer by default. You can remove it on Professional and above.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => set('hide_vitrine_branding', !form.hide_vitrine_branding)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                      form.hide_vitrine_branding
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                        : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                    }`}
+                  >
+                    <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.hide_vitrine_branding ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.hide_vitrine_branding ? 'left-4' : 'left-0.5'}`} />
+                    </span>
+                    {form.hide_vitrine_branding ? '"Powered by Vitrine" hidden' : 'Show "Powered by Vitrine"'}
+                  </button>
+                </div>
+              </CollapsibleSection>
+            )}
+
             {/* Embed on Website — Professional+ */}
             <CollapsibleSection title="Embed on Website">
               {getPlan(museum?.plan).fullMode ? (
@@ -1112,36 +1229,36 @@ export default function SiteBuilder() {
               {layoutVariant === 'text-forward' && (
                 <>
                   {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: '#faf8f5', borderColor: '#e7e5e4' }}>
-                    <div className="text-xs flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: '#1c1917' }}>
+                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
+                    <div className="text-xs flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
                       {form.logo_emoji} {form.name || 'Your Museum'}
                     </div>
-                    <span className="text-xs border-b" style={{ color: '#1c1917', borderColor: form.accent_color }}>Collection</span>
+                    <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
                   </div>
                   {/* Large centred text intro */}
-                  <div className="flex flex-col items-center justify-center text-center px-6 py-8" style={{ background: '#faf8f5' }}>
+                  <div className="flex flex-col items-center justify-center text-center px-6 py-8" style={{ background: pvPageBg }}>
                     <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: form.accent_color }}>{form.name || 'Your Museum'}</div>
-                    <div className="mb-3" style={{ ...previewHeadingStyle, color: '#1c1917', fontSize: '28px' }}>
+                    <div className="mb-3" style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '28px' }}>
                       {form.tagline || 'Explore the collection'}
                     </div>
-                    <div className="w-10 h-px mb-3" style={{ background: '#e7e5e4' }} />
-                    <div className="text-xs leading-relaxed max-w-xs" style={{ color: '#78716c' }}>
+                    <div className="w-10 h-px mb-3" style={{ background: pvBorder }} />
+                    <div className="text-xs leading-relaxed max-w-xs" style={{ color: pvMuted }}>
                       A carefully curated collection…
                     </div>
                   </div>
                   {/* Thin rule */}
-                  <div className="mx-4 mb-3 h-px" style={{ background: '#e7e5e4' }} />
+                  <div className="mx-4 mb-3 h-px" style={{ background: pvBorder }} />
                   {/* Cards */}
-                  <div className="px-3 pb-3" style={{ background: '#faf8f5' }}>
+                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
                     <div className={`grid ${previewColClass} gap-2`}>
                       {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden bg-white border border-stone-100" style={{ borderRadius: `${form.card_radius}px` }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
                             <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
                           </div>
                           {form.card_metadata !== 'none' && (
                             <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-1.5 bg-stone-200 rounded w-3/4 mb-1" />
+                              <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: pvMuted + '50' }} />
                             </div>
                           )}
                         </div>
@@ -1155,15 +1272,15 @@ export default function SiteBuilder() {
               {layoutVariant === 'magazine' && (
                 <>
                   {/* Nav — bold border */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b-2 border-black bg-white">
-                    <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: '#000' }}>
+                  <div className="px-4 h-10 flex items-center justify-between border-b-2" style={{ background: pvNavBg, borderColor: pvNavText }}>
+                    <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: pvNavText }}>
                       {form.logo_emoji} {form.name || 'Your Museum'}
                     </div>
-                    <span className="text-xs border-b font-bold" style={{ color: '#000', borderColor: form.accent_color }}>Collection</span>
+                    <span className="text-xs border-b font-bold" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
                   </div>
                   {/* Masthead bar */}
-                  <div className="px-3 py-2 flex items-end justify-between border-b-2 border-black bg-white">
-                    <div style={{ ...previewHeadingStyle, color: '#000', fontSize: '26px', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}>
+                  <div className="px-3 py-2 flex items-end justify-between border-b-2" style={{ background: pvPageBg, borderColor: pvNavText }}>
+                    <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '26px', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}>
                       {form.tagline || form.name || 'The Collection'}
                     </div>
                     <div className="text-right">
@@ -1171,9 +1288,9 @@ export default function SiteBuilder() {
                     </div>
                   </div>
                   {/* Asymmetric hero grid */}
-                  <div className="p-2 bg-white">
+                  <div className="p-2" style={{ background: pvPageBg }}>
                     <div className="grid grid-cols-3 gap-1" style={{ height: '110px' }}>
-                      <div className="col-span-2 bg-stone-100 flex items-center justify-center text-2xl rounded-sm overflow-hidden relative">
+                      <div className="col-span-2 flex items-center justify-center text-2xl rounded-sm overflow-hidden relative" style={{ background: pvImgBg }}>
                         {sampleEmojis[0]}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-1">
                           <div className="h-1.5 bg-white/60 rounded w-3/4" />
@@ -1181,7 +1298,7 @@ export default function SiteBuilder() {
                       </div>
                       <div className="col-span-1 flex flex-col gap-1">
                         {[1, 2].map(i => (
-                          <div key={i} className="flex-1 bg-stone-100 flex items-center justify-center text-lg rounded-sm overflow-hidden relative">
+                          <div key={i} className="flex-1 flex items-center justify-center text-lg rounded-sm overflow-hidden relative" style={{ background: pvImgBg }}>
                             {sampleEmojis[i]}
                             <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
                               <div className="h-1 bg-white/60 rounded w-3/4" />
@@ -1192,12 +1309,12 @@ export default function SiteBuilder() {
                     </div>
                   </div>
                   {/* Rule + small grid */}
-                  <div className="px-3 pb-3 bg-white">
-                    <div className="h-px mb-2" style={{ background: '#e7e5e4' }} />
+                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
+                    <div className="h-px mb-2" style={{ background: pvBorder }} />
                     <div className={`grid ${previewColClass} gap-2`}>
                       {sampleEmojis.slice(3, 3 + previewGridCols).map((e, i) => (
-                        <div key={i} className="overflow-hidden border border-stone-100" style={{ borderRadius: `${form.card_radius}px` }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
                             <div className="absolute inset-0 flex items-center justify-center">{e}</div>
                           </div>
                         </div>
@@ -1209,34 +1326,34 @@ export default function SiteBuilder() {
 
               {/* ── SALON (sidebar) preview ────────────────────────────── */}
               {layoutVariant === 'sidebar' && (
-                <div className="flex" style={{ background: '#fafaf9', minHeight: '280px' }}>
+                <div className="flex" style={{ background: pvPageBg, minHeight: '280px' }}>
                   {/* Sidebar */}
-                  <div className="flex flex-col pt-4 px-3 gap-3 border-r" style={{ width: '72px', borderColor: '#e7e5e4' }}>
+                  <div className="flex flex-col pt-4 px-3 gap-3 border-r" style={{ width: '72px', borderColor: pvBorder }}>
                     <div className="flex flex-col items-start gap-1">
                       <div className="text-lg">{form.logo_emoji}</div>
-                      <div className="text-xs leading-tight" style={{ ...previewHeadingStyle, color: '#1c1917', fontSize: '9px', maxWidth: '56px' }}>
+                      <div className="text-xs leading-tight" style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '9px', maxWidth: '56px' }}>
                         {form.name || 'Your Museum'}
                       </div>
                     </div>
-                    <div className="w-8 h-px" style={{ background: '#e7e5e4' }} />
+                    <div className="w-8 h-px" style={{ background: pvBorder }} />
                     <div className="flex flex-col gap-2">
                       <div className="text-xs font-mono" style={{ color: form.accent_color, fontSize: '8px', borderLeft: `2px solid ${form.accent_color}`, paddingLeft: '4px' }}>Collection</div>
-                      <div className="text-xs font-mono" style={{ color: '#a8a29e', fontSize: '8px', paddingLeft: '6px' }}>Events</div>
-                      <div className="text-xs font-mono" style={{ color: '#a8a29e', fontSize: '8px', paddingLeft: '6px' }}>Visit</div>
+                      <div className="text-xs font-mono" style={{ color: pvMuted, fontSize: '8px', paddingLeft: '6px' }}>Events</div>
+                      <div className="text-xs font-mono" style={{ color: pvMuted, fontSize: '8px', paddingLeft: '6px' }}>Visit</div>
                     </div>
                   </div>
                   {/* Main content */}
                   <div className="flex-1 p-3">
-                    <div className="text-xs font-mono mb-2" style={{ color: '#a8a29e', fontSize: '9px' }}>Collection · 42 pieces</div>
+                    <div className="text-xs font-mono mb-2" style={{ color: pvMuted, fontSize: '9px' }}>Collection · 42 pieces</div>
                     <div className={`grid ${previewColClass} gap-2`}>
                       {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border border-stone-100 bg-white" style={{ borderRadius: `${form.card_radius}px` }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
                             <div className="absolute inset-0 flex items-center justify-center text-lg">{e}</div>
                           </div>
                           {form.card_metadata !== 'none' && (
                             <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-1.5 bg-stone-200 rounded w-3/4" />
+                              <div className="h-1.5 rounded w-3/4" style={{ background: pvMuted + '50' }} />
                             </div>
                           )}
                         </div>
@@ -1246,13 +1363,159 @@ export default function SiteBuilder() {
                 </div>
               )}
 
+              {/* ── MINIMAL preview ────────────────────────────────────── */}
+              {layoutVariant === 'minimal' && (
+                <>
+                  {/* Nav */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
+                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
+                      {form.logo_emoji} {form.name || 'Your Museum'}
+                    </div>
+                    <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
+                  </div>
+                  {/* Giant title block */}
+                  <div className="px-5 pt-7 pb-4" style={{ background: pvPageBg }}>
+                    <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: pvMuted }}>
+                      {form.name || 'Your Museum'}
+                    </div>
+                    <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '30px', lineHeight: 1 }}>
+                      {form.tagline || 'The Collection'}
+                    </div>
+                    <div className="flex items-center gap-3 mt-4">
+                      <div className="h-px flex-1" style={{ background: pvBorder }} />
+                      <div className="text-xs font-mono" style={{ color: pvMuted }}>42 works</div>
+                    </div>
+                  </div>
+                  {/* Cards */}
+                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
+                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
+                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
+                                <div className="h-1.5 rounded w-1/2" style={{ background: pvMuted + '50' }} />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── DRAMATIC preview ───────────────────────────────────── */}
+              {layoutVariant === 'dramatic' && (
+                <>
+                  {/* Nav */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: '#0c0a09', borderColor: 'rgba(255,255,255,0.07)' }}>
+                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: '#ffffff' }}>
+                      {form.logo_emoji} {form.name || 'Your Museum'}
+                    </div>
+                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Collection</span>
+                  </div>
+                  {/* Title slammed left on dark page */}
+                  <div className="px-5 pt-7 pb-4" style={{ background: '#0c0a09' }}>
+                    <div className="text-xs font-mono uppercase tracking-widest mb-5" style={{ color: form.accent_color }}>
+                      {form.name || 'Your Museum'} &nbsp;/&nbsp; Collection
+                    </div>
+                    <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '30px', lineHeight: 1 }}>
+                      {form.tagline || 'The Collection'}
+                    </div>
+                    <div className="h-px w-full my-4" style={{ background: form.accent_color }} />
+                    <div className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.35)' }}>42 works &nbsp;·&nbsp; 3 categories</div>
+                  </div>
+                  {/* Cards */}
+                  <div className="px-3 pb-3" style={{ background: '#0c0a09' }}>
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden" style={{ borderRadius: `${form.card_radius}px`, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: 'rgba(255,255,255,0.08)' }}>
+                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: 'rgba(255,255,255,0.3)' }} />
+                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
+                                <div className="h-1 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── ARCHIVAL preview ───────────────────────────────────── */}
+              {layoutVariant === 'archival' && (
+                <>
+                  {/* Nav */}
+                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
+                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
+                      {form.logo_emoji} {form.name || 'Your Museum'}
+                    </div>
+                    <span className="text-xs" style={{ color: pvMuted }}>Collection</span>
+                  </div>
+                  {/* Double-border centred masthead */}
+                  <div className="px-4 pt-5 pb-3" style={{ background: pvPageBg }}>
+                    <div className="text-center py-5 px-4" style={{ border: `1px solid ${pvBorder}`, outline: `3px solid ${pvBorder}`, outlineOffset: '-6px' }}>
+                      <div className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: pvMuted }}>
+                        {form.name || 'Your Museum'}
+                      </div>
+                      <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '20px' }}>
+                        {form.tagline || 'The Collection'}
+                      </div>
+                      {/* Ornamental rule */}
+                      <div className="flex items-center justify-center gap-2 my-2">
+                        <div className="h-px w-8" style={{ background: form.accent_color }} />
+                        <div className="w-1 h-1 rotate-45" style={{ background: form.accent_color }} />
+                        <div className="h-px w-8" style={{ background: form.accent_color }} />
+                      </div>
+                      <div className="text-xs font-mono" style={{ color: pvMuted }}>42 works · 3 media</div>
+                    </div>
+                  </div>
+                  {/* Rule + cards */}
+                  <div className="px-4 pb-3" style={{ background: pvPageBg }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-px flex-1" style={{ background: pvBorder }} />
+                      <div className="text-xs font-mono uppercase tracking-widest" style={{ color: pvMuted }}>Collection</div>
+                      <div className="h-px flex-1" style={{ background: pvBorder }} />
+                    </div>
+                    <div className={`grid ${previewColClass} gap-2`}>
+                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
+                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
+                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
+                          </div>
+                          {form.card_metadata !== 'none' && (
+                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
+                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
+                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
+                                <div className="h-1.5 rounded w-1/2" style={{ background: pvMuted + '50' }} />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* ── STANDARD preview (all original templates) ──────────── */}
               {layoutVariant === 'standard' && (
                 <>
                   {/* Nav */}
                   <div className="px-4 h-10 flex items-center justify-between border-b"
-                    style={{ background: navBg, borderColor: navText + '15' }}>
-                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: navText }}>
+                    style={{ background: pvNavBg, borderColor: pvNavText + '15' }}>
+                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
                       {form.logo_image_url
                         ? <img src={form.logo_image_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
                         : form.logo_emoji
@@ -1260,15 +1523,15 @@ export default function SiteBuilder() {
                       {form.name || 'Your Museum'}
                     </div>
                     <div className="flex gap-4">
-                      <span className="text-xs border-b" style={{ color: navText, borderColor: form.accent_color }}>Collection</span>
-                      <span className="text-xs opacity-40" style={{ color: navText }}>Visit</span>
+                      <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
+                      <span className="text-xs opacity-40" style={{ color: pvNavText }}>Visit</span>
                     </div>
                   </div>
 
                   {/* Hero */}
                   {form.hero_height !== 'none' && (
                     <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
-                      backgroundColor: previewHeroBg,
+                      backgroundColor: form.hero_image_url ? undefined : (pvDark ? pvPageBg : previewHeroBg),
                       backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
                       backgroundSize: 'cover',
                       backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
@@ -1280,7 +1543,7 @@ export default function SiteBuilder() {
                         </div>
                         <div style={{
                           ...previewHeadingStyle,
-                          color: form.hero_image_url ? '#fff' : previewHeroText,
+                          color: form.hero_image_url ? '#fff' : pvHeading,
                           fontSize: form.hero_height === 'fullscreen' ? '32px' : form.hero_height === 'tall' ? '26px' : '22px'
                         }}>
                           {form.tagline || 'Explore the collection'}
@@ -1290,25 +1553,25 @@ export default function SiteBuilder() {
                   )}
 
                   {/* Cards */}
-                  <div className="bg-white p-3">
+                  <div className="p-3" style={{ background: pvPageBg }}>
                     {form.card_metadata !== 'none' && (
-                      <div className="text-xs text-stone-400 font-mono mb-2">On Display</div>
+                      <div className="text-xs font-mono mb-2" style={{ color: pvMuted }}>On Display</div>
                     )}
                     <div className={`grid ${previewColClass} gap-2`}>
                       {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border border-stone-100"
-                          style={{ borderRadius: `${form.card_radius}px` }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'} bg-stone-50`}>
+                        <div key={i} className="overflow-hidden border"
+                          style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
+                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
                             <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
                           </div>
                           {form.card_metadata !== 'none' && (
                             <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-2 bg-stone-200 rounded w-3/4 mb-1" />
+                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
                               {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                                <div className="h-1.5 bg-stone-100 rounded w-1/2 mb-1" />
+                                <div className="h-1.5 rounded w-1/2 mb-1" style={{ background: pvMuted + '50' }} />
                               )}
                               {form.card_metadata === 'full' && (
-                                <div className="h-1.5 bg-stone-100 rounded w-1/3" />
+                                <div className="h-1.5 rounded w-1/3" style={{ background: pvMuted + '50' }} />
                               )}
                             </div>
                           )}

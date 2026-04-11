@@ -66,6 +66,8 @@ export default async function MuseumLayout({
   const hasVisitInfo = getPlan(museum.plan).visitInfo
   const hasWanted = museum.show_wanted === true
   const isPaid = getPlan(museum.plan).advancedCustomisation
+  const canHideBranding = getPlan(museum.plan).hideVitrineBranding
+  const showBranding = !(canHideBranding && museum.hide_vitrine_branding === true)
 
   const { pageBg, font, navStyle, accent, headingStyle, content } = getMuseumStyles(museum)
   const layoutVariant = getLayoutVariant(museum)
@@ -121,9 +123,11 @@ export default async function MuseumLayout({
             ))}
           </div>
         )}
-        <div className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.35)' }}>
-          Powered by Vitrine
-        </div>
+        {showBranding && (
+          <div className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.35)' }}>
+            <a href="https://vitrinecms.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">Powered by Vitrine</a>
+          </div>
+        )}
       </div>
     </footer>
   )
@@ -156,9 +160,11 @@ export default async function MuseumLayout({
               <div className="text-xs font-mono" style={{ color: content.muted }}>
                 {isPaid && museum.footer_text ? museum.footer_text : museum.name}
               </div>
-              <div className="text-xs font-mono" style={{ color: content.muted, opacity: 0.5 }}>
-                Powered by Vitrine
-              </div>
+              {showBranding && (
+                <div className="text-xs font-mono" style={{ color: content.muted, opacity: 0.5 }}>
+                  <a href="https://vitrinecms.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">Powered by Vitrine</a>
+                </div>
+              )}
             </div>
           </footer>
         </main>
