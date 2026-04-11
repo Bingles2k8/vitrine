@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
-import { uploadToR2 } from '@/lib/r2-upload'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
@@ -118,6 +118,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
   }
 
   async function deleteImage(image: any) {
+    await deleteFromR2('object-images', image.url)
     const { error } = await supabase.from('object_images').delete().eq('id', image.id)
     if (error) return
     const remaining = images.filter(i => i.id !== image.id)
