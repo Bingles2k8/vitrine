@@ -3,10 +3,10 @@ import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Comma
 export const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
+  credentials: async () => ({
     accessKeyId: process.env.R2_ACCESS_KEY_ID!,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
+  }),
 })
 
 const PUBLIC_URLS: Record<string, string> = {
