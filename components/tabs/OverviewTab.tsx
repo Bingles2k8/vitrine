@@ -675,7 +675,11 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Overrides your collection's primary category in the Vitrine discovery directory.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">
+            {museum.discoverable
+              ? <>Overrides your collection's category for this object in the <a href="/discover" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a>.</>
+              : <>Your museum isn't listed in the <a href="/discover" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a> yet, but you can set a category now for when you opt in.</>}
+          </p>
         </div>
       </div>
 

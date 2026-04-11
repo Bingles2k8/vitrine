@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useState, useEffect, useRef } from 'react'
 import { getPlan } from '@/lib/plans'
 import { useLearnMode } from '@/components/LearnModeProvider'
+import { COLLECTION_CATEGORIES } from '@/lib/categories'
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -57,13 +58,15 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [theme, setTheme] = useState<Theme>('system')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [discoverable, setDiscoverable] = useState(false)
+  const [collectionCategory, setCollectionCategory] = useState<string>('')
   const settingsRef = useRef<HTMLDivElement>(null)
   const { learnMode, setLearnMode } = useLearnMode()
 
   // Sync discoverable from museum prop (museum may be null on first render)
   useEffect(() => {
     setDiscoverable(museum?.discoverable ?? false)
-  }, [museum?.discoverable])
+    setCollectionCategory(museum?.collection_category ?? '')
+  }, [museum?.discoverable, museum?.collection_category])
 
   // Fetch user email
   useEffect(() => {
@@ -120,6 +123,12 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     const next = !discoverable
     setDiscoverable(next)
     await supabase.from('museums').update({ discoverable: next }).eq('id', museum.id)
+  }
+
+  async function updateCollectionCategory(value: string) {
+    if (!museum) return
+    setCollectionCategory(value)
+    await supabase.from('museums').update({ collection_category: value || null }).eq('id', museum.id)
   }
 
   function navItem(path: string, icon: string, label: string, learnKey?: string) {
@@ -366,10 +375,11 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </button>
               </div>
 
-              {/* Directory (Professional+ owners and admins) */}
+              {/* Discover (Professional+ owners and admins) */}
               {museum && (isOwner || staffAccess === 'Admin') && planInfo?.fullMode && (
                 <div>
-                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Directory</div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">Discover</div>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Public directory of Vitrine museums.</p>
                   <button
                     onClick={toggleDiscoverable}
                     className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
@@ -382,8 +392,20 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                     <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${discoverable ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
                       <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${discoverable ? 'left-3.5' : 'left-0.5'}`} />
                     </span>
-                    {discoverable ? 'Listed in directory' : 'Not listed'}
+                    {discoverable ? 'Listed in Discover' : 'Not listed'}
                   </button>
+                  {discoverable && (
+                    <select
+                      value={collectionCategory}
+                      onChange={e => updateCollectionCategory(e.target.value)}
+                      className="mt-2 w-full text-xs font-mono bg-transparent border border-stone-200 dark:border-stone-700 rounded px-2 py-1 text-stone-600 dark:text-stone-400"
+                    >
+                      <option value="">— No default category —</option>
+                      {COLLECTION_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
 
