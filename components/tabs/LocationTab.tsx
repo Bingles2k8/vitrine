@@ -5,6 +5,7 @@ import { inputCls, labelCls, sectionTitle, INVENTORY_OUTCOMES } from '@/componen
 import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 interface LocationTabProps {
   form: Record<string, any>
@@ -329,9 +330,8 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       for (const doc of stagedDocs) {
         const ext = doc.file.name.split('.').pop()
         const path = `${museum.id}/audits/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
-        if (stErr) continue
-        const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+        let publicUrl: string
+        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
         await supabase.from('object_documents').insert({
           object_id: object.id, museum_id: museum.id,
           related_to_type: 'audit_record', related_to_id: auditRecord.id,

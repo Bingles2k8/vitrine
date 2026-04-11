@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { r2, r2PathFromUrl, DeleteObjectCommand } from '@/lib/r2'
 
 export async function DELETE(
   _request: Request,
@@ -43,17 +44,12 @@ export async function DELETE(
 
   if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Delete from Supabase Storage
-  const marker = '/object-documents/'
-  const markerIdx = doc.file_url.indexOf(marker)
-  if (markerIdx === -1) {
-    return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 })
-  }
-  const storagePath = doc.file_url.slice(markerIdx + marker.length)
+  // Delete from R2
+  const storagePath = r2PathFromUrl('object-documents', doc.file_url)
   if (!storagePath) {
     return NextResponse.json({ error: 'Invalid storage path' }, { status: 400 })
   }
-  await supabase.storage.from('object-documents').remove([storagePath])
+  await r2.send(new DeleteObjectCommand({ Bucket: 'object-documents', Key: storagePath }))
 
   // Hard-delete the row
   const { error } = await supabase

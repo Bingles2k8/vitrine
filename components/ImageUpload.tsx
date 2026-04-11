@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 interface Props {
   currentUrl?: string
@@ -13,7 +13,6 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(currentUrl || '')
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const supabase = createClient()
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -31,24 +30,17 @@ export default function ImageUpload({ currentUrl, onUpload }: Props) {
     // Compress before upload
     const compressed = await compressImage(file)
 
-    // Upload to Supabase Storage
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-    const { data, error } = await supabase.storage
-      .from('object-images')
-      .upload(filename, compressed, { upsert: true, contentType: compressed.type })
-
-    if (error) {
+    let publicUrl: string
+    try {
+      publicUrl = await uploadToR2('object-images', filename, compressed)
+    } catch {
       setUploadError('Upload failed — please try again')
       setUploading(false)
       return
     }
-
-    // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('object-images')
-      .getPublicUrl(data.path)
 
     onUpload(publicUrl)
     setPreview(publicUrl)

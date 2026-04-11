@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
@@ -41,9 +42,10 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('object-images').upload(filename, compressed, { upsert: true, contentType: compressed.type })
-    if (error) { setUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('object-images').getPublicUrl(data.path)
+    let publicUrl: string
+    try {
+      publicUrl = await uploadToR2('object-images', filename, compressed)
+    } catch { setUploading(false); return }
     // Only set as primary if there are no gallery images AND no existing primary on the object
     const isPrimary = images.length === 0 && !currentPrimaryUrl
     const res = await fetch(`/api/objects/${objectId}/images`, {

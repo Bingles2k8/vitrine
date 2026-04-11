@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { checkStorageQuota } from '@/lib/storageUsage'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -84,9 +85,8 @@ export default function DisposalPage() {
     if (!withinQuota) { setError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/disposal/documents/${Date.now()}.${ext}`
-    const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
-    if (stErr) { setDocUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    let publicUrl: string
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setDocUploading(false); return }
     const { data: doc } = await supabase.from('disposal_record_documents').insert({
       disposal_id: disposalId, museum_id: museum.id,
       label: docLabel || docFile.name, document_type: docType || 'Other',
@@ -100,8 +100,7 @@ export default function DisposalPage() {
   }
 
   async function deleteDisposalDoc(doc: any) {
-    const path = doc.file_url.split('/object-documents/')[1]
-    if (path) await supabase.storage.from('object-documents').remove([path])
+    await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('disposal_record_documents').delete().eq('id', doc.id)
     setRecordDocs(m => ({ ...m, [doc.disposal_id]: (m[doc.disposal_id] || []).filter((d: any) => d.id !== doc.id) }))
   }

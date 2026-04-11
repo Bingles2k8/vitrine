@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { checkStorageQuota } from '@/lib/storageUsage'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import { TableSkeleton } from '@/components/Skeleton'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 
@@ -504,9 +505,8 @@ export default function DocumentationPlanPage() {
           for (const doc of stagedDocs) {
             const ext = doc.file.name.split('.').pop()
             const path = `${museum.id}/doc-plans/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-            const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
-            if (stErr) continue
-            const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+            let publicUrl: string
+            try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
             const { data: docRecord } = await supabase.from('documentation_plan_documents').insert({
               plan_id: data.id, museum_id: museum.id,
               section: null,
@@ -557,9 +557,8 @@ export default function DocumentationPlanPage() {
     if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/doc-plans/documents/${Date.now()}.${ext}`
-    const { error: storageError } = await supabase.storage.from('object-documents').upload(path, docFile)
-    if (storageError) { setDocError(storageError.message); setDocUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    let publicUrl: string
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch (err: any) { setDocError(err.message || 'Upload failed'); setDocUploading(false); return }
     const { data: doc, error: dbError } = await supabase.from('documentation_plan_documents').insert({
       plan_id: plan.id, museum_id: museum.id,
       section: docSection || null,
@@ -575,8 +574,7 @@ export default function DocumentationPlanPage() {
   }
 
   async function deletePlanDoc(doc: any) {
-    const path = doc.file_url.split('/object-documents/')[1]
-    if (path) await supabase.storage.from('object-documents').remove([path])
+    await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('documentation_plan_documents').delete().eq('id', doc.id)
     setPlanDocs(prev => prev.filter(d => d.id !== doc.id))
   }

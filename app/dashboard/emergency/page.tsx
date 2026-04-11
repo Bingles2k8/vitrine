@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { checkStorageQuota } from '@/lib/storageUsage'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import { TableSkeleton } from '@/components/Skeleton'
 
 const PLAN_TYPES = ['General', 'Fire', 'Flood', 'Theft', 'Pest', 'Environmental', 'Structural']
@@ -115,9 +116,8 @@ export default function EmergencyPage() {
     if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/emergency/documents/${Date.now()}.${ext}`
-    const { error: stErr } = await supabase.storage.from('object-documents').upload(path, docFile)
-    if (stErr) { setDocUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    let publicUrl: string
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setDocUploading(false); return }
     const { data: doc } = await supabase.from('emergency_plan_documents').insert({
       plan_id: planId, museum_id: museum.id,
       label: docLabel || docFile.name, document_type: docType || 'Other',
@@ -131,8 +131,7 @@ export default function EmergencyPage() {
   }
 
   async function deleteEmergencyDoc(doc: any) {
-    const path = doc.file_url.split('/object-documents/')[1]
-    if (path) await supabase.storage.from('object-documents').remove([path])
+    await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('emergency_plan_documents').delete().eq('id', doc.id)
     setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter((d: any) => d.id !== doc.id) }))
   }

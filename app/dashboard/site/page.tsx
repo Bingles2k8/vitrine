@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan, FREE_TIER_TEMPLATES } from '@/lib/plans'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -219,11 +220,10 @@ export default function SiteBuilder() {
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabase.storage.from('museum-assets').upload(filename, compressed, { upsert: true })
-    if (!error && data) {
-      const { data: { publicUrl } } = supabase.storage.from('museum-assets').getPublicUrl(data.path)
+    try {
+      const publicUrl = await uploadToR2('museum-assets', filename, compressed)
       set(field, publicUrl)
-    }
+    } catch { /* ignore upload errors */ }
     setUploadingField(null)
   }
 

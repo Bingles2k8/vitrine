@@ -11,6 +11,7 @@ import AutocompleteInput from '@/components/AutocompleteInput'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { checkStorageQuota } from '@/lib/storageUsage'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 interface ConservationTabProps {
   form: Record<string, any>
@@ -88,10 +89,13 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     }
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { data, error } = await supabaseClient.storage.from('object-images').upload(filename, compressed, { upsert: true, contentType: compressed.type })
-    if (error) { toast('Upload failed — please try again', 'error'); return null }
-    const { data: { publicUrl } } = supabaseClient.storage.from('object-images').getPublicUrl(data.path)
-    return { url: publicUrl, size: compressed.size }
+    try {
+      const publicUrl = await uploadToR2('object-images', filename, compressed)
+      return { url: publicUrl, size: compressed.size }
+    } catch {
+      toast('Upload failed — please try again', 'error')
+      return null
+    }
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {

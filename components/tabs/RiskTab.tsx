@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { inputCls, labelCls, sectionTitle, RISK_TYPES, RISK_SEVERITIES, RISK_LIKELIHOODS, RISK_SEVERITY_STYLES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadToR2 } from '@/lib/r2-upload'
 
 interface RiskTabProps {
   canEdit: boolean
@@ -52,9 +53,8 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
       for (const doc of stagedDocs) {
         const ext = doc.file.name.split('.').pop()
         const path = `${museum.id}/risks/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { error: stErr } = await supabase.storage.from('object-documents').upload(path, doc.file)
-        if (stErr) continue
-        const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+        let publicUrl: string
+        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
         await supabase.from('object_documents').insert({
           object_id: object.id, museum_id: museum.id,
           related_to_type: 'risk', related_to_id: riskRecord.id,

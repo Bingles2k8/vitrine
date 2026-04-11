@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatSize } from '@/lib/formatSize'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 const DOC_TYPES: Record<string, string[]> = {
   acquisition:            ['Deed of Gift', 'Bill of Sale', 'Export Licence', 'Ethics Approval', 'Accession Form', 'Other'],
@@ -88,13 +89,14 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
     const ext = file.name.split('.').pop()
     const path = `${museumId}/${objectId}/${relatedToType}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-    const { data: storageData, error: storageErr } = await supabase.storage
-      .from('object-documents')
-      .upload(path, file, { upsert: false })
-
-    if (storageErr) { setError(storageErr.message); setUploading(false); return }
-
-    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(storageData.path)
+    let publicUrl: string
+    try {
+      publicUrl = await uploadToR2('object-documents', path, file)
+    } catch (err: any) {
+      setError(err.message || 'Upload failed')
+      setUploading(false)
+      return
+    }
 
     const res = await fetch(`/api/objects/${objectId}/documents`, {
       method: 'POST',
@@ -114,7 +116,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
       setError(body.error || 'Upload failed')
-      await supabase.storage.from('object-documents').remove([storageData.path])
+      await deleteFromR2('object-documents', publicUrl)
       setUploading(false)
       return
     }

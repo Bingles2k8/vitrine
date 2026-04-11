@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe } from '@/lib/stripe'
+import { r2, r2PathFromUrl, DeleteObjectsCommand, ListObjectsV2Command } from '@/lib/r2'
 
 function adminClient() {
   return createClient(
@@ -131,15 +132,18 @@ function extractStoragePath(url: string, bucketName: string): string | null {
 }
 
 async function deleteStorageFiles(
-  admin: ReturnType<typeof adminClient>,
+  _admin: ReturnType<typeof adminClient>,
   bucket: string,
   paths: (string | null | undefined)[],
 ) {
   const valid = paths.filter((p): p is string => !!p)
   if (valid.length === 0) return
-  // Supabase storage remove accepts up to 1000 paths at once
+  // R2 DeleteObjects accepts up to 1000 keys at once
   for (let i = 0; i < valid.length; i += 1000) {
-    await admin.storage.from(bucket).remove(valid.slice(i, i + 1000))
+    await r2.send(new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: { Objects: valid.slice(i, i + 1000).map(Key => ({ Key })) },
+    }))
   }
 }
 
@@ -168,30 +172,26 @@ export async function deleteUser(museumId: string) {
   }
 
   // 3. Collect storage paths to delete
-  // object-documents: all files are under {museum_id}/
-  const { data: docFiles } = await admin.storage
-    .from('object-documents')
-    .list(museum.id, { limit: 10000 })
-
-  // List recursively through subfolders
+  // object-documents: list all files under {museum_id}/ using R2
   async function listAllDocPaths(prefix: string): Promise<string[]> {
-    const { data: items } = await admin.storage.from('object-documents').list(prefix, { limit: 10000 })
-    if (!items) return []
     const paths: string[] = []
-    for (const item of items) {
-      const fullPath = `${prefix}/${item.name}`
-      if (item.metadata) {
-        // it's a file
-        paths.push(fullPath)
-      } else {
-        // it's a folder — recurse
-        paths.push(...(await listAllDocPaths(fullPath)))
+    let continuationToken: string | undefined
+    do {
+      const res = await r2.send(new ListObjectsV2Command({
+        Bucket: 'object-documents',
+        Prefix: `${prefix}/`,
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000,
+      }))
+      for (const obj of res.Contents ?? []) {
+        if (obj.Key) paths.push(obj.Key)
       }
-    }
+      continuationToken = res.NextContinuationToken
+    } while (continuationToken)
     return paths
   }
 
-  const docPaths = docFiles ? await listAllDocPaths(museum.id) : []
+  const docPaths = await listAllDocPaths(museum.id)
 
   // object-images: get URLs from DB
   const { data: objectImages } = await admin
@@ -199,12 +199,12 @@ export async function deleteUser(museumId: string) {
     .select('url')
     .eq('museum_id', museumId)
 
-  const imagePaths = (objectImages ?? []).map(r => extractStoragePath(r.url, 'object-images'))
+  const imagePaths = (objectImages ?? []).map(r => r2PathFromUrl('object-images', r.url))
 
   // museum-assets: hero + logo stored at top level of bucket
   const museumAssetPaths = [
-    museum.hero_image_url ? extractStoragePath(museum.hero_image_url, 'museum-assets') : null,
-    museum.logo_image_url ? extractStoragePath(museum.logo_image_url, 'museum-assets') : null,
+    museum.hero_image_url ? r2PathFromUrl('museum-assets', museum.hero_image_url) : null,
+    museum.logo_image_url ? r2PathFromUrl('museum-assets', museum.logo_image_url) : null,
   ]
 
   // 4. Delete storage files

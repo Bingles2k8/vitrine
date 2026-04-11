@@ -1,7 +1,8 @@
 import type { StagedDoc } from '@/components/StagedDocumentPicker'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 export async function uploadStagedDocs(
-  supabase: any,
+  _supabase: any,
   staged: StagedDoc[],
   objectId: string,
   museumId: string,
@@ -16,19 +17,14 @@ export async function uploadStagedDocs(
     const ext = doc.file.name.split('.').pop()
     const path = `${museumId}/${objectId}/${relatedToType}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-    const { data: storageData, error: storageErr } = await supabase.storage
-      .from('object-documents')
-      .upload(path, doc.file, { upsert: false })
-
-    if (storageErr) {
-      console.error('[uploadStagedDocs]', doc.file.name, storageErr.message)
+    let publicUrl: string
+    try {
+      publicUrl = await uploadToR2('object-documents', path, doc.file)
+    } catch (err) {
+      console.error('[uploadStagedDocs]', doc.file.name, err)
       failed.push(doc.file.name)
       continue
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('object-documents')
-      .getPublicUrl(storageData.path)
 
     const res = await fetch(`/api/objects/${objectId}/documents`, {
       method: 'POST',
@@ -47,7 +43,7 @@ export async function uploadStagedDocs(
 
     if (!res.ok) {
       console.error('[uploadStagedDocs] API error for', doc.file.name)
-      await supabase.storage.from('object-documents').remove([storageData.path])
+      await deleteFromR2('object-documents', publicUrl)
       failed.push(doc.file.name)
     }
   }

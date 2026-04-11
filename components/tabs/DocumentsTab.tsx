@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { formatSize } from '@/lib/formatSize'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 const DOC_TYPES = [
   'Deed of Gift', 'Bill of Sale', 'Export Licence', 'Ethics Approval', 'Accession Form',
@@ -61,10 +62,14 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
 
     const ext = file.name.split('.').pop()
     const path = `${museum.id}/${object.id}/documents/${Date.now()}.${ext}`
-    const { error: storageError } = await supabase.storage.from('object-documents').upload(path, file)
-    if (storageError) { setError(storageError.message); setUploading(false); return }
-
-    const { data: { publicUrl } } = supabase.storage.from('object-documents').getPublicUrl(path)
+    let publicUrl: string
+    try {
+      publicUrl = await uploadToR2('object-documents', path, file)
+    } catch (err: any) {
+      setError(err.message || 'Upload failed')
+      setUploading(false)
+      return
+    }
     const { data: doc, error: dbError } = await supabase.from('object_documents').insert({
       object_id: object.id,
       museum_id: museum.id,
@@ -91,8 +96,7 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
 
   async function deleteDoc(doc: any) {
     if (!confirm(`Remove "${doc.label || doc.file_name}"?`)) return
-    const path = doc.file_url.split('/object-documents/')[1]
-    if (path) await supabase.storage.from('object-documents').remove([path])
+    await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('object_documents').delete().eq('id', doc.id)
     setDocs(prev => prev.filter(d => d.id !== doc.id))
   }
