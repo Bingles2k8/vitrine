@@ -29,42 +29,47 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
   }, [objectId])
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setUploadError('Please upload a JPG, PNG, WEBP, GIF, or AVIF file.')
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+
+    const invalid = files.find(f => !ALLOWED_IMAGE_TYPES.includes(f.type))
+    if (invalid) {
+      setUploadError('Please upload JPG, PNG, WEBP, GIF, or AVIF files only.')
       e.target.value = ''
       return
     }
 
     setUploading(true)
     setUploadError(null)
-    const compressed = await compressImage(file)
-    const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    let publicUrl: string
-    try {
-      publicUrl = await uploadToR2('object-images', filename, compressed)
-    } catch { setUploading(false); return }
-    // Only set as primary if there are no gallery images AND no existing primary on the object
-    const isPrimary = images.length === 0 && !currentPrimaryUrl
-    const res = await fetch(`/api/objects/${objectId}/images`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: images.length }),
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setUploadError(body.error === PLAN_LIMIT_ERROR ? PLAN_LIMIT_ERROR : 'Upload failed')
-      setUploading(false)
-      e.target.value = ''
-      return
+
+    let currentImages = images
+    for (const file of files) {
+      if (currentImages.length >= imageLimit) break
+      const compressed = await compressImage(file)
+      const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      let publicUrl: string
+      try {
+        publicUrl = await uploadToR2('object-images', filename, compressed)
+      } catch { continue }
+      const isPrimary = currentImages.length === 0 && !currentPrimaryUrl
+      const res = await fetch(`/api/objects/${objectId}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setUploadError(body.error === PLAN_LIMIT_ERROR ? PLAN_LIMIT_ERROR : 'Upload failed')
+        break
+      }
+      const newImage = await res.json()
+      if (isPrimary) onPrimaryChange(publicUrl)
+      currentImages = [...currentImages, newImage]
+      setImages(currentImages)
     }
-    const newImage = await res.json()
-    if (isPrimary) onPrimaryChange(publicUrl)
-    setImages(imgs => [...imgs, newImage])
+
     setUploading(false)
-    // Reset input
     e.target.value = ''
   }
 
@@ -137,7 +142,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
             {uploadError && (
               <div className="text-xs text-red-500 mt-1 text-center px-1">{uploadError}</div>
             )}
-            <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleFile} disabled={uploading} className="hidden" />
+            <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleFile} disabled={uploading} multiple className="hidden" />
           </label>
         )}
         {canEdit && images.length >= imageLimit && (
