@@ -7,6 +7,11 @@ import { uploadToR2 } from '@/lib/r2-upload'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
+type PendingImage = {
+  id: string
+  localUrl: string
+}
+
 interface Props {
   objectId: string
   museumId: string
@@ -19,7 +24,8 @@ interface Props {
 
 export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit, currentPrimaryUrl, hidePrimary }: Props) {
   const [images, setImages] = useState<any[]>([])
-  const [uploading, setUploading] = useState(false)
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -39,37 +45,65 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       return
     }
 
-    setUploading(true)
     setUploadError(null)
 
+    // Create blob previews immediately for all files (up to remaining slots)
+    const slots = imageLimit - images.length
+    const filesToUpload = files.slice(0, slots)
+    const newPending: PendingImage[] = filesToUpload.map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      localUrl: URL.createObjectURL(file),
+    }))
+    setPendingImages(prev => [...prev, ...newPending])
+    setUploadProgress({ done: 0, total: filesToUpload.length })
+
     let currentImages = images
-    for (const file of files) {
-      if (currentImages.length >= imageLimit) break
+    let done = 0
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i]
+      const pending = newPending[i]
+
       const compressed = await compressImage(file)
       const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
       let publicUrl: string
       try {
         publicUrl = await uploadToR2('object-images', filename, compressed)
-      } catch { continue }
+      } catch {
+        URL.revokeObjectURL(pending.localUrl)
+        setPendingImages(prev => prev.filter(p => p.id !== pending.id))
+        done++
+        setUploadProgress({ done, total: filesToUpload.length })
+        continue
+      }
+
       const isPrimary = currentImages.length === 0 && !currentPrimaryUrl
       const res = await fetch(`/api/objects/${objectId}/images`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length }),
       })
+
+      URL.revokeObjectURL(pending.localUrl)
+      setPendingImages(prev => prev.filter(p => p.id !== pending.id))
+      done++
+      setUploadProgress({ done, total: filesToUpload.length })
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setUploadError(body.error === PLAN_LIMIT_ERROR ? PLAN_LIMIT_ERROR : 'Upload failed')
         break
       }
+
       const newImage = await res.json()
       if (isPrimary) onPrimaryChange(publicUrl)
       currentImages = [...currentImages, newImage]
       setImages(currentImages)
     }
 
-    setUploading(false)
+    setUploadProgress(null)
     e.target.value = ''
   }
 
@@ -88,7 +122,6 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     if (error) return
     const remaining = images.filter(i => i.id !== image.id)
     setImages(remaining)
-    // If we deleted the primary, promote the first remaining image
     if (image.is_primary && remaining.length > 0) {
       await setPrimary(remaining[0])
     } else if (image.is_primary && remaining.length === 0) {
@@ -97,9 +130,10 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     }
   }
 
-  if (images.length === 0 && !canEdit) return null
+  if (images.length === 0 && pendingImages.length === 0 && !canEdit) return null
 
   const displayedImages = hidePrimary ? images.filter(i => i.url !== currentPrimaryUrl) : images
+  const uploading = pendingImages.length > 0
 
   return (
     <div>
@@ -107,6 +141,21 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
         <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
           Image Gallery
         </label>
+      )}
+
+      {uploadProgress && (
+        <div className="mb-3">
+          <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+            <span>Uploading images…</span>
+            <span>{uploadProgress.done} / {uploadProgress.total}</span>
+          </div>
+          <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+              style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
       )}
 
       <div className="flex flex-row gap-2 overflow-x-auto">
@@ -135,7 +184,16 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
           </div>
         ))}
 
-        {canEdit && images.length < imageLimit && (
+        {pendingImages.map(p => (
+          <div key={p.id} className="relative rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 shrink-0 w-40 h-40">
+            <img src={p.localUrl} alt="" className="w-full h-full object-contain opacity-50" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+              <span className="text-white text-xs font-mono bg-black/40 px-2 py-1 rounded">Uploading…</span>
+            </div>
+          </div>
+        ))}
+
+        {canEdit && (images.length + pendingImages.length) < imageLimit && (
           <label className="flex flex-col items-center justify-center w-40 h-40 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg cursor-pointer hover:border-stone-400 dark:hover:border-stone-500 transition-colors bg-stone-50 dark:bg-stone-900">
             <div className="text-lg mb-1">📷</div>
             <div className="text-xs text-stone-400 dark:text-stone-500">{uploading ? 'Uploading…' : '+ Add image'}</div>
@@ -145,7 +203,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
             <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleFile} disabled={uploading} multiple className="hidden" />
           </label>
         )}
-        {canEdit && images.length >= imageLimit && (
+        {canEdit && (images.length + pendingImages.length) >= imageLimit && (
           <div className="flex flex-col items-center justify-center w-40 h-40 shrink-0 border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-900 text-center p-2 gap-1">
             <div className="text-xs text-stone-400 dark:text-stone-500">
               {imageLimit === 1 ? 'Image limit reached' : `${imageLimit} image limit reached`}
