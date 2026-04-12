@@ -8,6 +8,7 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { checkStorageQuota } from '@/lib/storageUsage'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
+import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -25,7 +26,8 @@ export default function DisposalPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [specificSearch, setSpecificSearch] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState<SortBy>('')
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null)
   const [recordDocs, setRecordDocs] = useState<Record<string, any[]>>({})
   const [showDocForm, setShowDocForm] = useState<string | null>(null)
@@ -34,6 +36,7 @@ export default function DisposalPage() {
   const [docNotes, setDocNotes] = useState('')
   const [docFile, setDocFile] = useState<File | null>(null)
   const [docUploading, setDocUploading] = useState(false)
+  const [pendingDocInfo, setPendingDocInfo] = useState<{ recordId: string; label: string; fileName: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -53,7 +56,7 @@ export default function DisposalPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const [{ data: recs }, { data: arts }, { data: dDocs }] = await Promise.all([
-        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('disposal_record_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
@@ -81,12 +84,13 @@ export default function DisposalPage() {
     if (!docFile) return
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
+    setPendingDocInfo({ recordId: disposalId, label: docLabel || docFile.name, fileName: docFile.name })
     const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
-    if (!withinQuota) { setError('Storage limit reached for your plan'); setDocUploading(false); return }
+    if (!withinQuota) { setError('Storage limit reached for your plan'); setPendingDocInfo(null); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/disposal/documents/${Date.now()}.${ext}`
     let publicUrl: string
-    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setDocUploading(false); return }
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setPendingDocInfo(null); setDocUploading(false); return }
     const { data: doc } = await supabase.from('disposal_record_documents').insert({
       disposal_id: disposalId, museum_id: museum.id,
       label: docLabel || docFile.name, document_type: docType || 'Other',
@@ -95,6 +99,7 @@ export default function DisposalPage() {
       uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
     }).select().single()
     if (doc) setRecordDocs(m => ({ ...m, [disposalId]: [doc, ...(m[disposalId] || [])] }))
+    setPendingDocInfo(null)
     setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null)
     setShowDocForm(null); setDocUploading(false)
   }
@@ -167,26 +172,38 @@ export default function DisposalPage() {
   const approved = records.filter(r => r.status === 'Approved')
   const completed = records.filter(r => r.status === 'Completed')
 
-  const rawQ = searchQuery.trim()
-  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
-  const isSpecific = specificSearch || isQuoted
-  const dq = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
-  const filteredRecords = records.filter(r => {
-    if (!dq) return true
-    if (isSpecific) return (
-      r.objects?.title?.toLowerCase().includes(dq) ||
-      r.objects?.accession_no?.toLowerCase().includes(dq)
-    )
-    return (
-      r.objects?.title?.toLowerCase().includes(dq) ||
-      r.objects?.accession_no?.toLowerCase().includes(dq) ||
-      r.objects?.description?.toLowerCase().includes(dq) ||
-      r.objects?.medium?.toLowerCase().includes(dq) ||
-      r.objects?.physical_materials?.toLowerCase().includes(dq) ||
-      r.objects?.artist?.toLowerCase().includes(dq) ||
-      r.objects?.maker_name?.toLowerCase().includes(dq)
-    )
-  })
+  const mediumOptions = Array.from(new Set(records.map(r => r.objects?.medium).filter(Boolean))).sort() as string[]
+  const objectTypeOptions = Array.from(new Set(records.map(r => r.objects?.object_type).filter(Boolean))).sort() as string[]
+  const artistOptions = [] as string[]
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredRecords = records
+    .filter(r => {
+      if (filters.dateFrom && (r.deaccession_date || '') < filters.dateFrom) return false
+      if (filters.dateTo && (r.deaccession_date || '') > filters.dateTo) return false
+      if (filters.medium && r.objects?.medium !== filters.medium) return false
+      if (filters.objectType && r.objects?.object_type !== filters.objectType) return false
+      if (filters.status && r.objects?.status !== filters.status) return false
+      if (filters.accessionStatus === 'confirmed' && !r.objects?.accession_register_confirmed) return false
+      if (filters.accessionStatus === 'unconfirmed' && r.objects?.accession_register_confirmed) return false
+      if (filters.acquisitionMethod && r.objects?.acquisition_method !== filters.acquisitionMethod) return false
+      if (!q) return true
+      return (
+        r.objects?.title?.toLowerCase().includes(q) ||
+        r.objects?.accession_no?.toLowerCase().includes(q) ||
+        r.objects?.description?.toLowerCase().includes(q) ||
+        r.objects?.medium?.toLowerCase().includes(q) ||
+        r.objects?.physical_materials?.toLowerCase().includes(q) ||
+        r.objects?.artist?.toLowerCase().includes(q) ||
+        r.objects?.maker_name?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.objects?.title || '').localeCompare(b.objects?.title || '')
+      if (sortBy === 'date_added') return (b.objects?.created_at || '').localeCompare(a.objects?.created_at || '')
+      if (sortBy === 'date_made') return (b.objects?.production_date || '').localeCompare(a.objects?.production_date || '')
+      return 0
+    })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/disposal" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -311,23 +328,14 @@ export default function DisposalPage() {
           )}
 
           {/* Search */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder='Search objects… or use "quotes" for specific search'
-                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
-              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
-              Specific search
-            </label>
-          </div>
+          <SearchFilterBar
+            searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            filters={filters} onFiltersChange={setFilters}
+            sortBy={sortBy} onSortChange={setSortBy}
+            isFullMode={true}
+            mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
+            placeholder="Search objects…"
+          />
 
           {records.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
@@ -389,8 +397,17 @@ export default function DisposalPage() {
                       <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                         <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 space-y-3">
                           <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
-                          {(recordDocs[r.id] || []).length > 0 && (
+                          {((recordDocs[r.id] || []).length > 0 || (pendingDocInfo && pendingDocInfo.recordId === r.id)) && (
                             <div className="space-y-1.5 mb-3">
+                              {pendingDocInfo && pendingDocInfo.recordId === r.id && (
+                                <div className="flex items-center gap-2 opacity-50">
+                                  <div className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 bg-white dark:bg-stone-900">
+                                    <span className="text-stone-400">📎</span>
+                                    <span className="truncate">{pendingDocInfo.label}</span>
+                                    <span className="text-stone-400 dark:text-stone-500 ml-auto shrink-0">Uploading…</span>
+                                  </div>
+                                </div>
+                              )}
                               {(recordDocs[r.id] || []).map((doc: any) => (
                                 <div key={doc.id} className="flex items-center gap-2">
                                   <a href={doc.file_url} target="_blank" rel="noopener noreferrer"

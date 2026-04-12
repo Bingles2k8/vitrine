@@ -20,6 +20,7 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
   const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
   const { toast } = useToast()
@@ -50,11 +51,13 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
 
     if (stagedDocs.length > 0 && riskRecord) {
       const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+      setStagedUploadProgress({ done: 0, total: stagedDocs.length })
+      let done = 0
       for (const doc of stagedDocs) {
         const ext = doc.file.name.split('.').pop()
         const path = `${museum.id}/risks/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         let publicUrl: string
-        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
+        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { done++; setStagedUploadProgress({ done, total: stagedDocs.length }); continue }
         await supabase.from('object_documents').insert({
           object_id: object.id, museum_id: museum.id,
           related_to_type: 'risk', related_to_id: riskRecord.id,
@@ -63,7 +66,10 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
           file_size: doc.file.size, mime_type: doc.file.type,
           uploaded_by: userId,
         })
+        done++
+        setStagedUploadProgress({ done, total: stagedDocs.length })
       }
+      setStagedUploadProgress(null)
     }
 
     setRiskForm({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
@@ -133,6 +139,18 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
             <label className={labelCls}>Supporting Documents</label>
             <StagedDocumentPicker relatedToType="risk" value={stagedDocs} onChange={setStagedDocs} />
           </div>
+          {stagedUploadProgress && (
+            <div>
+              <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+                <span>Uploading documents…</span>
+                <span>{stagedUploadProgress.done} / {stagedUploadProgress.total}</span>
+              </div>
+              <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+                  style={{ width: `${(stagedUploadProgress.done / stagedUploadProgress.total) * 100}%` }} />
+              </div>
+            </div>
+          )}
           <button type="button" onClick={addRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
             className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {submitting ? 'Saving\u2026' : 'Add risk \u2192'}

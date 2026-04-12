@@ -11,7 +11,7 @@ import AutocompleteInput from '@/components/AutocompleteInput'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { checkStorageQuota } from '@/lib/storageUsage'
-import { uploadToR2 } from '@/lib/r2-upload'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 interface ConservationTabProps {
   form: Record<string, any>
@@ -61,8 +61,10 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   const [editForm, setEditForm] = useState<any>(null)
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
-  const [imageUploading, setImageUploading] = useState(false)
-  const [editImageUploading, setEditImageUploading] = useState(false)
+  const [pendingImages, setPendingImages] = useState<{ id: string; localUrl: string; name: string }[]>([])
+  const [imageUploadProgress, setImageUploadProgress] = useState<{ done: number; total: number } | null>(null)
+  const [editPendingImages, setEditPendingImages] = useState<{ id: string; localUrl: string; name: string }[]>([])
+  const [editImageUploadProgress, setEditImageUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const canAttach = canEdit && getPlan(museum.plan).compliance
   const { toast } = useToast()
@@ -99,29 +101,55 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImageUploading(true)
-    const result = await uploadImage(file)
-    if (result) {
-      const newImg: TreatmentImage = { url: result.url, name: file.name.replace(/\.[^.]+$/, ''), date: today, file_size: result.size }
-      setConservationForm(f => ({ ...f, images: [...f.images, newImg] }))
-    }
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const newPending = files.map(f => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      localUrl: URL.createObjectURL(f),
+      name: f.name.replace(/\.[^.]+$/, ''),
+    }))
+    setPendingImages(prev => [...prev, ...newPending])
+    setImageUploadProgress({ done: 0, total: files.length })
     e.target.value = ''
-    setImageUploading(false)
+    let done = 0
+    for (let i = 0; i < files.length; i++) {
+      const result = await uploadImage(files[i])
+      done++
+      setImageUploadProgress({ done, total: files.length })
+      URL.revokeObjectURL(newPending[i].localUrl)
+      setPendingImages(prev => prev.filter(p => p.id !== newPending[i].id))
+      if (result) {
+        const newImg: TreatmentImage = { url: result.url, name: newPending[i].name, date: today, file_size: result.size }
+        setConservationForm(f => ({ ...f, images: [...f.images, newImg] }))
+      }
+    }
+    setImageUploadProgress(null)
   }
 
   async function handleEditImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setEditImageUploading(true)
-    const result = await uploadImage(file)
-    if (result) {
-      const newImg: TreatmentImage = { url: result.url, name: file.name.replace(/\.[^.]+$/, ''), date: today, file_size: result.size }
-      setEditForm((f: any) => ({ ...f, images: [...(f.images ?? []), newImg] }))
-    }
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const newPending = files.map(f => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      localUrl: URL.createObjectURL(f),
+      name: f.name.replace(/\.[^.]+$/, ''),
+    }))
+    setEditPendingImages(prev => [...prev, ...newPending])
+    setEditImageUploadProgress({ done: 0, total: files.length })
     e.target.value = ''
-    setEditImageUploading(false)
+    let done = 0
+    for (let i = 0; i < files.length; i++) {
+      const result = await uploadImage(files[i])
+      done++
+      setEditImageUploadProgress({ done, total: files.length })
+      URL.revokeObjectURL(newPending[i].localUrl)
+      setEditPendingImages(prev => prev.filter(p => p.id !== newPending[i].id))
+      if (result) {
+        const newImg: TreatmentImage = { url: result.url, name: newPending[i].name, date: today, file_size: result.size }
+        setEditForm((f: any) => ({ ...f, images: [...(f.images ?? []), newImg] }))
+      }
+    }
+    setEditImageUploadProgress(null)
   }
 
   async function addConservation() {
@@ -300,11 +328,24 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
         <div>
           <label className={labelCls}>Images</label>
           <label className="inline-flex items-center gap-2 px-3 py-1.5 border border-dashed border-stone-300 dark:border-stone-600 rounded cursor-pointer hover:border-stone-500 transition-colors text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/50">
-            <span>{imageUploading ? 'Uploading…' : '+ Upload image'}</span>
-            <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleImageUpload} disabled={imageUploading} className="hidden" />
+            <span>{imageUploadProgress ? 'Uploading…' : '+ Upload image'}</span>
+            <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleImageUpload} disabled={!!imageUploadProgress} multiple className="hidden" />
           </label>
 
-          {conservationForm.images.length > 0 && (
+          {imageUploadProgress && (
+            <div className="mt-2">
+              <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+                <span>Uploading…</span>
+                <span>{imageUploadProgress.done} / {imageUploadProgress.total}</span>
+              </div>
+              <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+                  style={{ width: `${(imageUploadProgress.done / imageUploadProgress.total) * 100}%` }} />
+              </div>
+            </div>
+          )}
+
+          {(conservationForm.images.length > 0 || pendingImages.length > 0) && (
             <table className="w-full mt-3 text-xs border border-stone-100 dark:border-stone-800 rounded overflow-hidden">
               <thead>
                 <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800">
@@ -338,8 +379,20 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                       />
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <button type="button" onClick={() => setConservationForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i) }))} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
+                      <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setConservationForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i) })) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                     </td>
+                  </tr>
+                ))}
+                {pendingImages.map(p => (
+                  <tr key={p.id} className="border-b border-stone-50 dark:border-stone-800/50 last:border-0 opacity-50">
+                    <td className="px-3 py-2">
+                      <div className="w-12 h-12 rounded overflow-hidden border border-stone-200 dark:border-stone-700">
+                        <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-stone-400 dark:text-stone-500">{p.name}</td>
+                    <td className="px-3 py-2 text-stone-400 dark:text-stone-500 font-mono">Uploading…</td>
+                    <td />
                   </tr>
                 ))}
               </tbody>
@@ -539,10 +592,22 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                 <div>
                   <label className={labelCls}>Images</label>
                   <label className="inline-flex items-center gap-2 px-3 py-1.5 border border-dashed border-stone-300 dark:border-stone-600 rounded cursor-pointer hover:border-stone-500 transition-colors text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/50">
-                    <span>{editImageUploading ? 'Uploading…' : '+ Upload image'}</span>
-                    <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleEditImageUpload} disabled={editImageUploading} className="hidden" />
+                    <span>{editImageUploadProgress ? 'Uploading…' : '+ Upload image'}</span>
+                    <input type="file" accept={ALLOWED_IMAGE_ACCEPT} onChange={handleEditImageUpload} disabled={!!editImageUploadProgress} multiple className="hidden" />
                   </label>
-                  {(editForm.images ?? []).length > 0 && (
+                  {editImageUploadProgress && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+                        <span>Uploading…</span>
+                        <span>{editImageUploadProgress.done} / {editImageUploadProgress.total}</span>
+                      </div>
+                      <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+                          style={{ width: `${(editImageUploadProgress.done / editImageUploadProgress.total) * 100}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {((editForm.images ?? []).length > 0 || editPendingImages.length > 0) && (
                     <table className="w-full mt-3 text-xs border border-stone-100 dark:border-stone-800 rounded overflow-hidden">
                       <thead>
                         <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-100 dark:border-stone-800">
@@ -567,8 +632,20 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                               <input type="date" value={img.date} onChange={e => setEditForm((f: any) => ({ ...f, images: f.images.map((im: TreatmentImage, j: number) => j === i ? { ...im, date: e.target.value } : im) }))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono" />
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <button type="button" onClick={() => setEditForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) }))} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
+                              <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setEditForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) })) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                             </td>
+                          </tr>
+                        ))}
+                        {editPendingImages.map(p => (
+                          <tr key={p.id} className="border-b border-stone-50 dark:border-stone-800/50 last:border-0 opacity-50">
+                            <td className="px-3 py-2">
+                              <div className="w-12 h-12 rounded overflow-hidden border border-stone-200 dark:border-stone-700">
+                                <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-stone-400 dark:text-stone-500">{p.name}</td>
+                            <td className="px-3 py-2 text-stone-400 dark:text-stone-500 font-mono">Uploading…</td>
+                            <td />
                           </tr>
                         ))}
                       </tbody>

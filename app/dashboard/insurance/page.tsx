@@ -54,6 +54,7 @@ export default function InsurancePage() {
   const [docFile, setDocFile] = useState<File | null>(null)
   const [docUploading, setDocUploading] = useState(false)
   const [docError, setDocError] = useState<string | null>(null)
+  const [pendingDocInfo, setPendingDocInfo] = useState<{ policyId: string; label: string; fileName: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -102,12 +103,13 @@ export default function InsurancePage() {
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
     setDocError(null)
+    setPendingDocInfo({ policyId, label: docLabel || docFile.name, fileName: docFile.name })
     const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
-    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
+    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setPendingDocInfo(null); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/insurance/documents/${Date.now()}.${ext}`
     let publicUrl: string
-    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setDocUploading(false); return }
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setPendingDocInfo(null); setDocUploading(false); return }
     const { data: doc } = await supabase.from('insurance_policy_documents').insert({
       policy_id: policyId, museum_id: museum.id,
       label: docLabel || docFile.name, document_type: docType || 'Other',
@@ -116,6 +118,7 @@ export default function InsurancePage() {
       uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
     }).select().single()
     if (doc) setPolicyDocs(m => ({ ...m, [policyId]: [doc, ...(m[policyId] || [])] }))
+    setPendingDocInfo(null)
     setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null)
     setShowDocForm(null); setDocUploading(false)
   }
@@ -512,8 +515,17 @@ export default function InsurancePage() {
                             )}
                             <div className="pt-3 border-t border-stone-200 dark:border-stone-700">
                               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
-                              {(policyDocs[p.id] || []).length > 0 && (
+                              {((policyDocs[p.id] || []).length > 0 || (pendingDocInfo && pendingDocInfo.policyId === p.id)) && (
                                 <div className="space-y-1.5 mb-3">
+                                  {pendingDocInfo && pendingDocInfo.policyId === p.id && (
+                                    <div className="flex items-center gap-2 opacity-50">
+                                      <div className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 bg-white dark:bg-stone-900">
+                                        <span className="text-stone-400">📎</span>
+                                        <span className="truncate">{pendingDocInfo.label}</span>
+                                        <span className="text-stone-400 dark:text-stone-500 ml-auto shrink-0">Uploading…</span>
+                                      </div>
+                                    </div>
+                                  )}
                                   {(policyDocs[p.id] || []).map((doc: any) => (
                                     <div key={doc.id} className="flex items-center gap-2">
                                       <a href={doc.file_url} target="_blank" rel="noopener noreferrer"

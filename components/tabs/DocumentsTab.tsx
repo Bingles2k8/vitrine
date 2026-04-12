@@ -39,6 +39,7 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
   const [notes, setNotes] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [pendingDoc, setPendingDoc] = useState<{ label: string; fileName: string; mimeType: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const canAttach = canEdit && museum?.plan && true // compliance docs enabled
 
@@ -59,6 +60,7 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
     if (file.size > MAX_BYTES) { setError('File exceeds 20 MB limit'); return }
     setUploading(true)
     setError(null)
+    setPendingDoc({ label: label || file.name, fileName: file.name, mimeType: file.type || null })
 
     const ext = file.name.split('.').pop()
     const path = `${museum.id}/${object.id}/documents/${Date.now()}.${ext}`
@@ -67,6 +69,7 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
       publicUrl = await uploadToR2('object-documents', path, file)
     } catch (err: any) {
       setError(err.message || 'Upload failed')
+      setPendingDoc(null)
       setUploading(false)
       return
     }
@@ -84,8 +87,9 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
       mime_type: file.type,
     }).select().single()
 
-    if (dbError) { setError(dbError.message); setUploading(false); return }
+    if (dbError) { setError(dbError.message); setPendingDoc(null); setUploading(false); return }
     setDocs(prev => [doc, ...prev])
+    setPendingDoc(null)
     setLabel('')
     setDocType('')
     setNotes('')
@@ -124,8 +128,23 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
           <p className="text-xs text-stone-400 dark:text-stone-500">No documents attached yet.</p>
         )}
 
-        {docs.length > 0 && (
+        {(docs.length > 0 || pendingDoc) && (
           <div className="space-y-2 mb-4">
+            {pendingDoc && (
+              <div className="flex items-start gap-3 p-3 border border-stone-100 dark:border-stone-800 rounded-lg opacity-50">
+                <span className="text-lg mt-0.5 shrink-0">{fileIcon(pendingDoc.mimeType)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{pendingDoc.label}</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-mono text-stone-400 dark:text-stone-500 truncate">{pendingDoc.fileName}</span>
+                    <span className="text-xs font-mono text-stone-400 dark:text-stone-500">Uploading…</span>
+                  </div>
+                  <div className="mt-1.5 h-0.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-stone-400 dark:bg-stone-500 rounded-full animate-pulse w-full" />
+                  </div>
+                </div>
+              </div>
+            )}
             {docs.map(doc => (
               <div key={doc.id} className="flex items-start gap-3 p-3 border border-stone-100 dark:border-stone-800 rounded-lg">
                 <span className="text-lg mt-0.5 shrink-0">{fileIcon(doc.mime_type)}</span>

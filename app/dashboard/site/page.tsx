@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan, FREE_TIER_TEMPLATES } from '@/lib/plans'
-import { uploadToR2 } from '@/lib/r2-upload'
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -217,13 +217,19 @@ export default function SiteBuilder() {
 
   async function uploadImage(file: File, field: 'hero_image_url' | 'logo_image_url') {
     setUploadingField(field)
+    const blobUrl = URL.createObjectURL(file)
+    const previousUrl = form[field] as string
+    set(field, blobUrl)
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     try {
       const publicUrl = await uploadToR2('museum-assets', filename, compressed)
       set(field, publicUrl)
-    } catch { /* ignore upload errors */ }
+    } catch {
+      set(field, previousUrl)
+    }
+    URL.revokeObjectURL(blobUrl)
     setUploadingField(null)
   }
 
@@ -638,7 +644,7 @@ export default function SiteBuilder() {
                         {uploadingField === 'logo_image_url' ? 'Uploading…' : 'Change'}
                         <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo_image_url')} />
                       </label>
-                      <button type="button" onClick={() => set('logo_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
+                      <button type="button" onClick={() => { deleteFromR2('museum-assets', form.logo_image_url); set('logo_image_url', '') }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
                   </div>
                 ) : (
@@ -689,7 +695,7 @@ export default function SiteBuilder() {
                         {uploadingField === 'hero_image_url' ? 'Uploading…' : 'Change image'}
                         <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                       </label>
-                      <button type="button" onClick={() => set('hero_image_url', '')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
+                      <button type="button" onClick={() => { deleteFromR2('museum-assets', form.hero_image_url); set('hero_image_url', '') }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors px-2">Remove</button>
                     </div>
                   </div>
                 ) : (

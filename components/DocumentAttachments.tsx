@@ -49,6 +49,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
   const [docType, setDocType] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [pendingDoc, setPendingDoc] = useState<{ label: string; fileName: string; mimeType: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -85,6 +86,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
     if (file.size > MAX_BYTES) { setError('File too large (max 20 MB)'); return }
     setUploading(true)
     setError(null)
+    setPendingDoc({ label: label.trim(), fileName: file.name, mimeType: file.type || null })
 
     const ext = file.name.split('.').pop()
     const path = `${museumId}/${objectId}/${relatedToType}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -94,6 +96,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
       publicUrl = await uploadToR2('object-documents', path, file)
     } catch (err: any) {
       setError(err.message || 'Upload failed')
+      setPendingDoc(null)
       setUploading(false)
       return
     }
@@ -117,12 +120,14 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
       const body = await res.json().catch(() => ({}))
       setError(body.error || 'Upload failed')
       await deleteFromR2('object-documents', publicUrl)
+      setPendingDoc(null)
       setUploading(false)
       return
     }
 
     const newDoc = await res.json()
     setDocs(d => [newDoc, ...d])
+    setPendingDoc(null)
     resetForm()
     setUploading(false)
   }
@@ -152,8 +157,23 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
         )}
       </div>
 
-      {docs.length > 0 && (
+      {(docs.length > 0 || pendingDoc) && (
         <div className="space-y-1 mb-3">
+          {pendingDoc && (
+            <div className="flex items-center gap-2 py-1.5 px-3 bg-stone-50 dark:bg-stone-800 rounded border border-stone-200 dark:border-stone-700 opacity-50">
+              <span className="text-sm shrink-0">{fileIcon(pendingDoc.mimeType)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-stone-900 dark:text-stone-100 truncate">{pendingDoc.label}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500 truncate">{pendingDoc.fileName}</span>
+                  <span className="text-xs font-mono text-stone-400 dark:text-stone-500">Uploading…</span>
+                </div>
+                <div className="mt-1 h-0.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-stone-400 dark:bg-stone-500 rounded-full animate-pulse w-full" />
+                </div>
+              </div>
+            </div>
+          )}
           {docs.map(doc => (
             <div key={doc.id} className="flex items-center gap-2 py-1.5 px-3 bg-stone-50 dark:bg-stone-800 rounded border border-stone-200 dark:border-stone-700 group">
               <span className="text-sm shrink-0">{fileIcon(doc.mime_type)}</span>

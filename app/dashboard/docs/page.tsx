@@ -104,6 +104,7 @@ export default function DocumentationPlanPage() {
   const [planDocs, setPlanDocs] = useState<any[]>([])
   const [planDocsLoaded, setPlanDocsLoaded] = useState(false)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [showDocForm, setShowDocForm] = useState(false)
   const [docLabel, setDocLabel] = useState('')
   const [docType, setDocType] = useState('')
@@ -112,6 +113,7 @@ export default function DocumentationPlanPage() {
   const [docFile, setDocFile] = useState<File | null>(null)
   const [docUploading, setDocUploading] = useState(false)
   const [docError, setDocError] = useState<string | null>(null)
+  const [pendingDoc, setPendingDoc] = useState<{ label: string; fileName: string; mimeType: string | null } | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -502,11 +504,13 @@ export default function DocumentationPlanPage() {
         if (stagedDocs.length > 0) {
           const userId = (await supabase.auth.getUser()).data.user?.id ?? null
           const uploaded: any[] = []
+          setStagedUploadProgress({ done: 0, total: stagedDocs.length })
+          let done = 0
           for (const doc of stagedDocs) {
             const ext = doc.file.name.split('.').pop()
             const path = `${museum.id}/doc-plans/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
             let publicUrl: string
-            try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
+            try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { done++; setStagedUploadProgress({ done, total: stagedDocs.length }); continue }
             const { data: docRecord } = await supabase.from('documentation_plan_documents').insert({
               plan_id: data.id, museum_id: museum.id,
               section: null,
@@ -516,7 +520,10 @@ export default function DocumentationPlanPage() {
               uploaded_by: userId,
             }).select().single()
             if (docRecord) uploaded.push(docRecord)
+            done++
+            setStagedUploadProgress({ done, total: stagedDocs.length })
           }
+          setStagedUploadProgress(null)
           setPlanDocs(uploaded)
           setStagedDocs([])
         }
@@ -553,12 +560,13 @@ export default function DocumentationPlanPage() {
     if (!docFile || !plan) return
     if (docFile.size > 20 * 1024 * 1024) { setDocError('File exceeds 20 MB limit'); return }
     setDocUploading(true); setDocError(null)
+    setPendingDoc({ label: docLabel || docFile.name, fileName: docFile.name, mimeType: docFile.type || null })
     const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
-    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setDocUploading(false); return }
+    if (!withinQuota) { setDocError('Storage limit reached for your plan'); setPendingDoc(null); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
     const path = `${museum.id}/doc-plans/documents/${Date.now()}.${ext}`
     let publicUrl: string
-    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch (err: any) { setDocError(err.message || 'Upload failed'); setDocUploading(false); return }
+    try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch (err: any) { setDocError(err.message || 'Upload failed'); setPendingDoc(null); setDocUploading(false); return }
     const { data: doc, error: dbError } = await supabase.from('documentation_plan_documents').insert({
       plan_id: plan.id, museum_id: museum.id,
       section: docSection || null,
@@ -567,8 +575,9 @@ export default function DocumentationPlanPage() {
       file_size: docFile.size, mime_type: docFile.type,
       uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
     }).select().single()
-    if (dbError) { setDocError(dbError.message); setDocUploading(false); return }
+    if (dbError) { setDocError(dbError.message); setPendingDoc(null); setDocUploading(false); return }
     setPlanDocs(prev => [doc, ...prev])
+    setPendingDoc(null)
     setDocLabel(''); setDocType(''); setDocSection(''); setDocNotes(''); setDocFile(null)
     setShowDocForm(false); setDocUploading(false)
   }
@@ -980,11 +989,24 @@ export default function DocumentationPlanPage() {
                     </button>
                   </div>
                 )}
-                {plan && planDocs.length === 0 && !showDocForm && (
+                {plan && planDocs.length === 0 && !showDocForm && !pendingDoc && (
                   <div className="px-6 pb-6 text-xs text-stone-400 dark:text-stone-500">No documents attached yet.</div>
                 )}
-                {plan && planDocs.length > 0 && (
+                {plan && (planDocs.length > 0 || pendingDoc) && (
                   <div className="px-6 pb-4 space-y-2">
+                    {pendingDoc && (
+                      <div className="flex items-center justify-between py-2 border-t border-stone-100 dark:border-stone-800 first:border-t-0 opacity-50">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-stone-900 dark:text-stone-100 truncate">{pendingDoc.label}</span>
+                          </div>
+                          <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5 truncate">{pendingDoc.fileName} · Uploading…</div>
+                          <div className="mt-1 h-0.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-stone-400 dark:bg-stone-500 rounded-full animate-pulse w-full" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {planDocs.map(d => (
                       <div key={d.id} className="flex items-center justify-between py-2 border-t border-stone-100 dark:border-stone-800 first:border-t-0">
                         <div className="min-w-0 flex-1">
@@ -1006,7 +1028,21 @@ export default function DocumentationPlanPage() {
               </div>
 
               {/* Save footer */}
-              <div className="flex items-center gap-4 px-6 py-4 bg-stone-50 dark:bg-stone-800/50">
+              <div className="px-6 pt-4 pb-2 bg-stone-50 dark:bg-stone-800/50">
+                {stagedUploadProgress && (
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+                      <span>Uploading documents…</span>
+                      <span>{stagedUploadProgress.done} / {stagedUploadProgress.total}</span>
+                    </div>
+                    <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+                        style={{ width: `${(stagedUploadProgress.done / stagedUploadProgress.total) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-4 px-6 pb-4 bg-stone-50 dark:bg-stone-800/50">
                 <button onClick={savePlan} disabled={saving} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-40">
                   {saving ? 'Saving…' : plan ? 'Save changes' : 'Create Documentation Plan'}
                 </button>

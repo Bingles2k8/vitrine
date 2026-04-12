@@ -24,6 +24,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
   const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
   const { toast } = useToast()
@@ -61,11 +62,13 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
 
     if (stagedDocs.length > 0 && auditRecord) {
       const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+      setStagedUploadProgress({ done: 0, total: stagedDocs.length })
+      let done = 0
       for (const doc of stagedDocs) {
         const ext = doc.file.name.split('.').pop()
         const path = `${museum.id}/audits/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         let publicUrl: string
-        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { continue }
+        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { done++; setStagedUploadProgress({ done, total: stagedDocs.length }); continue }
         await supabase.from('object_documents').insert({
           object_id: object.id, museum_id: museum.id,
           related_to_type: 'audit_record', related_to_id: auditRecord.id,
@@ -74,7 +77,10 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           file_size: doc.file.size, mime_type: doc.file.type,
           uploaded_by: userId,
         })
+        done++
+        setStagedUploadProgress({ done, total: stagedDocs.length })
       }
+      setStagedUploadProgress(null)
     }
 
     setAuditForm({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
@@ -163,6 +169,18 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           <label className={labelCls}>Supporting Documents</label>
           <StagedDocumentPicker relatedToType="audit_record" value={stagedDocs} onChange={setStagedDocs} />
         </div>
+        {stagedUploadProgress && (
+          <div>
+            <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
+              <span>Uploading documents…</span>
+              <span>{stagedUploadProgress.done} / {stagedUploadProgress.total}</span>
+            </div>
+            <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+              <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
+                style={{ width: `${(stagedUploadProgress.done / stagedUploadProgress.total) * 100}%` }} />
+            </div>
+          </div>
+        )}
         <button type="button" onClick={addAudit} disabled={submitting}
           className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
           {submitting ? 'Saving…' : 'Save audit record →'}
