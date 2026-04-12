@@ -2,6 +2,11 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import CollectionSearch from '@/components/CollectionSearch'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function EmbedCollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params

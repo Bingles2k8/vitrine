@@ -1,6 +1,20 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import { buildPageMetadata } from '@/lib/seo'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createServerSideClient()
+  const { data: museum } = await supabase.from('museums').select('name').eq('slug', slug).single()
+  if (!museum) return {}
+  return buildPageMetadata({
+    title: `Acquisition Wishlist — ${museum.name}`,
+    description: `Objects and artefacts that ${museum.name} is actively seeking to acquire for its collection.`,
+    path: `/museum/${slug}/wanted`,
+  })
+}
 
 const PRIORITY_LABELS: Record<string, string> = {
   high: 'High priority',

@@ -2,6 +2,20 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
+import { buildPageMetadata } from '@/lib/seo'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createServerSideClient()
+  const { data: museum } = await supabase.from('museums').select('name').eq('slug', slug).single()
+  if (!museum) return {}
+  return buildPageMetadata({
+    title: `Visit — ${museum.name}`,
+    description: `Plan your visit to ${museum.name}. Opening hours, location, and upcoming events.`,
+    path: `/museum/${slug}/visit`,
+  })
+}
 
 function formatDateRange(start: string, end: string) {
   const s = new Date(start)
