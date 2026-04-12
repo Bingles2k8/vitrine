@@ -5,6 +5,8 @@ import CollectionSearch from '@/components/CollectionSearch'
 import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
+import { JsonLd } from '@/components/JsonLd'
+import { SITE_URL } from '@/lib/seo'
 
 export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -675,8 +677,32 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const heroSubText = hasHeroImage ? 'rgba(255,255,255,0.7)' : (isLightHero ? '#888888' : 'rgba(255,255,255,0.5)')
   const heroAccent = hasHeroImage ? 'rgba(255,255,255,0.8)' : accent
 
+  const museumUrl = `${SITE_URL}/museum/${slug}`
+  const description = museum.seo_description || museum.tagline || museum.name
+
+  const collectionPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: museum.name,
+    description,
+    url: museumUrl,
+    ...(museum.hero_image_url && { image: museum.hero_image_url }),
+    ...(allObjects.length > 0 && { numberOfItems: allObjects.length }),
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: museum.name, item: museumUrl },
+    ],
+  }
+
   return (
     <>
+      <JsonLd data={collectionPageSchema} />
+      <JsonLd data={breadcrumbSchema} />
       <PageViewTracker museumId={museum.id} pageType="home" />
       {showHero && (
         <div className={`px-6 ${heroPad} relative`} style={{

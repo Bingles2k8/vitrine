@@ -2,11 +2,51 @@ import type { MetadataRoute } from "next";
 import { segments } from "@/lib/segments";
 import { competitors } from "@/lib/competitors";
 import { getAllPosts } from "@/lib/blog";
+import { createServerSideClient } from "@/lib/supabase-server";
 
 const BASE = "https://vitrinecms.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await getAllPosts();
+
+  let museumEntries: MetadataRoute.Sitemap = []
+  let objectEntries: MetadataRoute.Sitemap = []
+  try {
+    const supabase = await createServerSideClient()
+    const { data: museums } = await supabase
+      .from('museums')
+      .select('id, slug, updated_at')
+      .eq('discoverable', true)
+
+    if (museums) {
+      museumEntries = museums.map((m) => ({
+        url: `${BASE}/museum/${m.slug}`,
+        lastModified: new Date(m.updated_at),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
+
+      const museumIds = museums.map((m) => m.id)
+      const { data: objects } = await supabase
+        .from('objects')
+        .select('id, museum_id, updated_at')
+        .in('museum_id', museumIds)
+        .eq('show_on_site', true)
+        .is('deleted_at', null)
+
+      if (objects) {
+        const slugById = Object.fromEntries(museums.map((m) => [m.id, m.slug]))
+        objectEntries = objects.map((o) => ({
+          url: `${BASE}/museum/${slugById[o.museum_id]}/object/${o.id}`,
+          lastModified: new Date(o.updated_at),
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+        }))
+      }
+    }
+  } catch {
+    // Sitemap generation should never fail; museum/object entries are best-effort
+  }
   return [
     {
       url: BASE,
@@ -80,5 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
+    ...museumEntries,
+    ...objectEntries,
   ];
 }

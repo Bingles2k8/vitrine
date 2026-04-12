@@ -29,12 +29,13 @@ export async function generateMetadata({
   return {
     title: museum.name,
     description,
-    openGraph: isPaid ? {
+    alternates: { canonical: `/museum/${slug}` },
+    openGraph: {
       title: museum.name,
       description: description ?? '',
       images: museum.hero_image_url ? [museum.hero_image_url] : [],
       type: 'website',
-    } : undefined,
+    },
   }
 }
 

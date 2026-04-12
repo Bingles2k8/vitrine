@@ -5,6 +5,67 @@ import { getMuseumStyles } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 import PublicImageGallery from '@/components/PublicImageGallery'
+import { buildPageMetadata, SITE_URL } from '@/lib/seo'
+import { JsonLd } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; id: string }>
+}): Promise<Metadata> {
+  const { slug, id } = await params
+  const supabase = await createServerSideClient()
+
+  const { data: museum } = await supabase
+    .from('museums')
+    .select('name')
+    .eq('slug', slug)
+    .single()
+
+  if (!museum) return {}
+
+  const { data: object } = await supabase
+    .from('objects')
+    .select('title, artist, description, medium, production_date, year, image_url')
+    .eq('id', id)
+    .eq('show_on_site', true)
+    .is('deleted_at', null)
+    .single()
+
+  if (!object) return {}
+
+  const { data: primaryImageRow } = await supabase
+    .from('object_images')
+    .select('url')
+    .eq('object_id', id)
+    .eq('is_primary', true)
+    .maybeSingle()
+
+  const imageUrl = primaryImageRow?.url ?? object.image_url ?? null
+
+  // Build description from available fields
+  const parts: string[] = []
+  if (object.artist) parts.push(object.artist)
+  const date = object.production_date || object.year
+  if (date) parts.push(String(date))
+  if (object.medium) parts.push(object.medium)
+  const prefix = parts.length > 0 ? parts.join(', ') + '. ' : ''
+  const body = object.description
+    ? (prefix + object.description).slice(0, 155)
+    : prefix
+      ? prefix.slice(0, 155)
+      : `${object.title} from ${museum.name}'s collection.`
+
+  const title = `${object.title} — ${museum.name}`
+
+  return buildPageMetadata({
+    title,
+    description: body,
+    path: `/museum/${slug}/object/${id}`,
+    image: imageUrl ? { url: imageUrl, width: 1200, height: 630, alt: object.title } : undefined,
+  })
+}
 
 function formatDate(object: any): string | null {
   const date = object.production_date || object.year
@@ -99,8 +160,35 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     { label: 'Associated Place', value: object.associated_place },
   ].filter(a => !!a.value)
 
+  const objectUrl = `${SITE_URL}/museum/${slug}/object/${id}`
+  const museumUrl = `${SITE_URL}/museum/${slug}`
+
+  const visualArtworkSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'VisualArtwork',
+    name: object.title,
+    ...(object.artist && { creator: { '@type': 'Person', name: object.artist } }),
+    ...(object.production_date || object.year ? { dateCreated: String(object.production_date || object.year) } : {}),
+    ...(object.description && { description: object.description }),
+    ...(primaryImage?.url && { image: primaryImage.url }),
+    url: objectUrl,
+    isPartOf: { '@type': 'CollectionPage', name: museum.name, url: museumUrl },
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: museum.name, item: museumUrl },
+      { '@type': 'ListItem', position: 3, name: object.title, item: objectUrl },
+    ],
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-6 pt-6 pb-16 md:py-16">
+      <JsonLd data={visualArtworkSchema} />
+      <JsonLd data={breadcrumbSchema} />
       <PageViewTracker museumId={museum.id} pageType="object" objectId={object.id} />
       <Link
         href={`/museum/${slug}`}
