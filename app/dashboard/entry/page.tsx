@@ -8,6 +8,7 @@ import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { useToast } from '@/components/Toast'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
+import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES } from '@/components/tabs/shared'
 import CSVImportModal from '@/components/CSVImportModal'
 
@@ -28,7 +29,8 @@ export default function EntryRegisterPage() {
   const [objects, setObjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [specificSearch, setSpecificSearch] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState<SortBy>('')
   const [showForm, setShowForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -69,7 +71,7 @@ export default function EntryRegisterPage() {
       const { museum, isOwner, staffAccess } = result
       try {
         const [{ data: entries }, { data: objects }] = await Promise.all([
-          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at, description, medium, physical_materials, artist, maker_name)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
+          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
           supabase.from('objects').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
@@ -204,29 +206,47 @@ export default function EntryRegisterPage() {
   const trackDepositor = getPlan(museum?.plan).depositorTracking
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
-  const rawQ = searchQuery.trim()
-  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
-  const isSpecific = specificSearch || isQuoted
-  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
-  const filteredEntries = entries.filter(e => {
-    if (!q) return true
-    if (isSpecific) return (
-      e.objects?.title?.toLowerCase().includes(q) ||
-      e.objects?.accession_no?.toLowerCase().includes(q) ||
-      e.entry_number?.toLowerCase().includes(q)
-    )
-    return (
-      e.objects?.title?.toLowerCase().includes(q) ||
-      e.objects?.accession_no?.toLowerCase().includes(q) ||
-      e.object_description?.toLowerCase().includes(q) ||
-      e.entry_number?.toLowerCase().includes(q) ||
-      e.objects?.description?.toLowerCase().includes(q) ||
-      e.objects?.medium?.toLowerCase().includes(q) ||
-      e.objects?.physical_materials?.toLowerCase().includes(q) ||
-      e.objects?.artist?.toLowerCase().includes(q) ||
-      e.objects?.maker_name?.toLowerCase().includes(q)
-    )
-  })
+  const mediumOptions = Array.from(new Set(entries.map(e => e.objects?.medium).filter(Boolean))).sort() as string[]
+  const objectTypeOptions = Array.from(new Set(entries.map(e => e.objects?.object_type).filter(Boolean))).sort() as string[]
+  const artistOptions = Array.from(new Set(
+    entries.flatMap(e => [e.objects?.artist, e.objects?.maker_name]).filter(Boolean)
+  )).sort() as string[]
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredEntries = entries
+    .filter(e => {
+      if (filters.dateFrom && (e.entry_date || '') < filters.dateFrom) return false
+      if (filters.dateTo && (e.entry_date || '') > filters.dateTo) return false
+      if (filters.medium && e.objects?.medium !== filters.medium) return false
+      if (filters.objectType && e.objects?.object_type !== filters.objectType) return false
+      if (fullMode) {
+        if (filters.status && e.objects?.status !== filters.status) return false
+        if (filters.accessionStatus === 'confirmed' && !e.objects?.accession_register_confirmed) return false
+        if (filters.accessionStatus === 'unconfirmed' && e.objects?.accession_register_confirmed) return false
+        if (filters.acquisitionMethod && e.objects?.acquisition_method !== filters.acquisitionMethod) return false
+      } else {
+        if (filters.artist && e.objects?.artist !== filters.artist && e.objects?.maker_name !== filters.artist) return false
+      }
+      if (!q) return true
+      return (
+        e.objects?.title?.toLowerCase().includes(q) ||
+        e.objects?.accession_no?.toLowerCase().includes(q) ||
+        e.object_description?.toLowerCase().includes(q) ||
+        e.entry_number?.toLowerCase().includes(q) ||
+        e.objects?.description?.toLowerCase().includes(q) ||
+        e.objects?.medium?.toLowerCase().includes(q) ||
+        e.objects?.physical_materials?.toLowerCase().includes(q) ||
+        e.objects?.artist?.toLowerCase().includes(q) ||
+        e.objects?.maker_name?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.objects?.title || a.object_description || '').localeCompare(b.objects?.title || b.object_description || '')
+      if (sortBy === 'date_added') return (b.objects?.created_at || '').localeCompare(a.objects?.created_at || '')
+      if (sortBy === 'date_made') return (b.objects?.production_date || '').localeCompare(a.objects?.production_date || '')
+      if (sortBy === 'insured_value') return (b.objects?.insured_value ?? 0) - (a.objects?.insured_value ?? 0)
+      return 0
+    })
   const acquired = entries.filter(e => e.outcome === 'Acquired').length
   const returned = entries.filter(e => e.outcome === 'Returned to depositor').length
 
@@ -313,23 +333,14 @@ export default function EntryRegisterPage() {
           </div>
 
           {/* Search */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder='Search objects… or use "quotes" for specific search'
-                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
-              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
-              Specific search
-            </label>
-          </div>
+          <SearchFilterBar
+            searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            filters={filters} onFiltersChange={setFilters}
+            sortBy={sortBy} onSortChange={setSortBy}
+            isFullMode={fullMode}
+            mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
+            placeholder="Search entries…"
+          />
 
           {/* New Entry Form */}
           {showForm && (

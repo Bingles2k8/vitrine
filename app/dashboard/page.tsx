@@ -9,6 +9,7 @@ import { getPlan } from '@/lib/plans'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import CSVImportModal from '@/components/CSVImportModal'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
+import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -41,7 +42,8 @@ export default function Dashboard() {
   const [duplicateObjectIds, setDuplicateObjectIds] = useState<Set<string>>(new Set())
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showFilterPanel, setShowFilterPanel] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState<SortBy>('')
   const [conditionDueIds, setConditionDueIds] = useState<Set<string>>(new Set())
   const [showConditionDue, setShowConditionDue] = useState(false)
   const router = useRouter()
@@ -208,16 +210,47 @@ export default function Dashboard() {
     { label: 'Deaccessioned', filterKey: 'Deaccessioned',value: statusCount('Deaccessioned'), sub: '—', learnKey: 'dashboard.deaccessioned' },
   ]
 
+  const mediumOptions = Array.from(new Set(objects.map(a => a.medium).filter(Boolean))).sort() as string[]
+  const objectTypeOptions = Array.from(new Set(objects.map(a => a.object_type).filter(Boolean))).sort() as string[]
+  const artistOptions = Array.from(new Set(
+    objects.flatMap(a => [a.artist, a.maker_name]).filter(Boolean)
+  )).sort() as string[]
+
+  const q = searchQuery.trim().toLowerCase()
   const visibleObjects = objects
     .filter(a => filter ? a.status === filter : true)
     .filter(a => showDuplicatesOnly ? duplicateObjectIds.has(a.id) : true)
     .filter(a => showConditionDue ? conditionDueIds.has(a.id) : true)
-    .filter(a => searchQuery.trim() ? (
-      a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.accession_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.artist?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.medium?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) : true)
+    .filter(a => {
+      if (filters.dateFrom && (a.created_at || '') < filters.dateFrom) return false
+      if (filters.dateTo && (a.created_at || '') > filters.dateTo + 'T23:59:59') return false
+      if (filters.medium && a.medium !== filters.medium) return false
+      if (filters.objectType && a.object_type !== filters.objectType) return false
+      if (fullMode) {
+        if (filters.status && a.status !== filters.status) return false
+        if (filters.accessionStatus === 'confirmed' && !a.accession_register_confirmed) return false
+        if (filters.accessionStatus === 'unconfirmed' && a.accession_register_confirmed) return false
+        if (filters.acquisitionMethod && a.acquisition_method !== filters.acquisitionMethod) return false
+      } else {
+        if (filters.artist && a.artist !== filters.artist && a.maker_name !== filters.artist) return false
+      }
+      if (!q) return true
+      return (
+        a.title?.toLowerCase().includes(q) ||
+        a.accession_no?.toLowerCase().includes(q) ||
+        a.artist?.toLowerCase().includes(q) ||
+        a.maker_name?.toLowerCase().includes(q) ||
+        a.medium?.toLowerCase().includes(q) ||
+        a.object_type?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.title || '').localeCompare(b.title || '')
+      if (sortBy === 'date_added') return (b.created_at || '').localeCompare(a.created_at || '')
+      if (sortBy === 'date_made') return (b.production_date || b.year || '').localeCompare(a.production_date || a.year || '')
+      if (sortBy === 'insured_value') return (b.insured_value ?? 0) - (a.insured_value ?? 0)
+      return 0
+    })
   const fullMode = getPlan(museum?.plan).fullMode
 
   const totalPaid = objects.reduce((sum, o) => sum + (o.acquisition_value ? parseFloat(o.acquisition_value) : 0), 0)
@@ -392,60 +425,36 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Search and filter bar */}
-              <div className="flex items-center gap-2 mb-3">
-                {/* Filter button */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowFilterPanel(v => !v)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded border text-xs font-mono transition-colors flex-shrink-0 ${
-                      showConditionDue
-                        ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400'
-                        : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500'
-                    }`}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-                    </svg>
-                    Filter
-                    {showConditionDue && <span className="bg-amber-500 text-stone-950 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">1</span>}
-                  </button>
-                  {showFilterPanel && (
-                    <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg p-3 w-56">
-                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Filters</div>
-                      <label className="flex items-center gap-2 cursor-pointer py-1.5">
-                        <input
-                          type="checkbox"
-                          checked={showConditionDue}
-                          onChange={e => setShowConditionDue(e.target.checked)}
-                          className="rounded border-stone-300 dark:border-stone-600"
-                        />
-                        <span className="text-xs font-mono text-stone-700 dark:text-stone-300">Condition Check Due</span>
-                        {conditionDueIds.size > 0 && <span className="ml-auto text-xs font-mono text-stone-400 dark:text-stone-500">{conditionDueIds.size}</span>}
-                      </label>
-                      {showConditionDue && (
-                        <button
-                          onClick={() => { setShowConditionDue(false); setShowFilterPanel(false) }}
-                          className="mt-2 text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
-                        >
-                          Clear filters ×
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {/* Search bar */}
-                <div className="relative flex-1 max-w-xs">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search objects…"
-                    className="w-full pl-8 pr-3 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
-                  />
-                </div>
+              <div className="mb-3">
+                <SearchFilterBar
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  isFullMode={fullMode}
+                  mediumOptions={mediumOptions}
+                  objectTypeOptions={objectTypeOptions}
+                  artistOptions={artistOptions}
+                  additionalFilters={
+                    conditionDueIds.size > 0 ? (
+                      <div className="col-span-2 md:col-span-1">
+                        <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Condition</label>
+                        <label className="flex items-center gap-2 cursor-pointer py-1">
+                          <input
+                            type="checkbox"
+                            checked={showConditionDue}
+                            onChange={e => setShowConditionDue(e.target.checked)}
+                            className="rounded border-stone-300 dark:border-stone-600 accent-stone-900"
+                          />
+                          <span className="text-xs font-mono text-stone-700 dark:text-stone-300">Check Due</span>
+                          <span className="text-xs font-mono text-stone-400 dark:text-stone-500">({conditionDueIds.size})</span>
+                        </label>
+                      </div>
+                    ) : undefined
+                  }
+                />
               </div>
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {/* Filter bar */}

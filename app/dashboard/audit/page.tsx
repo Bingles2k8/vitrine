@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
+import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
@@ -21,7 +22,8 @@ export default function AuditPage() {
   const [exercises, setExercises] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [specificSearch, setSpecificSearch] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState<SortBy>('')
   const [showExerciseForm, setShowExerciseForm] = useState(false)
   const [savingExercise, setSavingExercise] = useState(false)
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function AuditPage() {
       const { museum, isOwner, staffAccess } = result
       const [{ data: objects }, { data: exercises }, { data: auditCounts }] = await Promise.all([
         supabase.from('objects')
-          .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by, description, medium, physical_materials, artist, maker_name')
+          .select('id, title, accession_no, emoji, status, current_location, last_inventoried, inventoried_by, description, medium, physical_materials, artist, maker_name, object_type, created_at, production_date, acquisition_method, accession_register_confirmed')
           .eq('museum_id', museum.id).is('deleted_at', null).neq('status', 'Deaccessioned')
           .order('last_inventoried', { ascending: true, nullsFirst: true }),
         supabase.from('audit_exercises')
@@ -187,26 +189,38 @@ export default function AuditPage() {
   const inventoriedThisYear = objects.filter(a => a.last_inventoried?.startsWith(thisYearStr))
   const overdue = objects.filter(a => a.last_inventoried && a.last_inventoried < oneYearAgoStr)
 
-  const rawQ = searchQuery.trim()
-  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
-  const isSpecific = specificSearch || isQuoted
-  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
-  const filteredObjects = objects.filter(a => {
-    if (!q) return true
-    if (isSpecific) return (
-      a.title?.toLowerCase().includes(q) ||
-      a.accession_no?.toLowerCase().includes(q)
-    )
-    return (
-      a.title?.toLowerCase().includes(q) ||
-      a.accession_no?.toLowerCase().includes(q) ||
-      a.description?.toLowerCase().includes(q) ||
-      a.medium?.toLowerCase().includes(q) ||
-      a.physical_materials?.toLowerCase().includes(q) ||
-      a.artist?.toLowerCase().includes(q) ||
-      a.maker_name?.toLowerCase().includes(q)
-    )
-  })
+  const mediumOptions = Array.from(new Set(objects.map(a => a.medium).filter(Boolean))).sort() as string[]
+  const objectTypeOptions = Array.from(new Set(objects.map(a => a.object_type).filter(Boolean))).sort() as string[]
+  const artistOptions = [] as string[] // pro-only page, artist filter not shown
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredObjects = objects
+    .filter(a => {
+      if (filters.dateFrom && (a.last_inventoried || '') < filters.dateFrom) return false
+      if (filters.dateTo && (a.last_inventoried || '') > filters.dateTo) return false
+      if (filters.medium && a.medium !== filters.medium) return false
+      if (filters.objectType && a.object_type !== filters.objectType) return false
+      if (filters.status && a.status !== filters.status) return false
+      if (filters.accessionStatus === 'confirmed' && !a.accession_register_confirmed) return false
+      if (filters.accessionStatus === 'unconfirmed' && a.accession_register_confirmed) return false
+      if (filters.acquisitionMethod && a.acquisition_method !== filters.acquisitionMethod) return false
+      if (!q) return true
+      return (
+        a.title?.toLowerCase().includes(q) ||
+        a.accession_no?.toLowerCase().includes(q) ||
+        a.description?.toLowerCase().includes(q) ||
+        a.medium?.toLowerCase().includes(q) ||
+        a.physical_materials?.toLowerCase().includes(q) ||
+        a.artist?.toLowerCase().includes(q) ||
+        a.maker_name?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.title || '').localeCompare(b.title || '')
+      if (sortBy === 'date_added') return (b.created_at || '').localeCompare(a.created_at || '')
+      if (sortBy === 'date_made') return (b.production_date || '').localeCompare(a.production_date || '')
+      return 0
+    })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -345,23 +359,14 @@ export default function AuditPage() {
           <p className="text-xs text-stone-400 dark:text-stone-500">Objects sorted by last inventoried date — never-inventoried items appear first. Best practice recommends annual inventory checks. Click any row to record an audit.</p>
 
           {/* Search */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder='Search objects… or use "quotes" for specific search'
-                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
-              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
-              Specific search
-            </label>
-          </div>
+          <SearchFilterBar
+            searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            filters={filters} onFiltersChange={setFilters}
+            sortBy={sortBy} onSortChange={setSortBy}
+            isFullMode={true}
+            mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
+            placeholder="Search objects…"
+          />
 
           {/* Table */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">

@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
+import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 
 const SEVERITY_STYLES: Record<string, string> = {
   Critical: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',
@@ -29,7 +30,8 @@ export default function RiskPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Open' | 'Mitigated' | 'Closed'>('All')
   const [searchQuery, setSearchQuery] = useState('')
-  const [specificSearch, setSpecificSearch] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState<SortBy>('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -42,7 +44,7 @@ export default function RiskPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: risks } = await supabase
         .from('risk_register')
-        .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name)')
+        .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)')
         .eq('museum_id', museum.id)
         .order('created_at', { ascending: false })
       setMuseum(museum)
@@ -97,27 +99,39 @@ export default function RiskPage() {
   const criticalOpen = risks.filter(r => r.severity === 'Critical' && r.status === 'Open')
   const dueForReview = risks.filter(r => r.status === 'Open' && r.review_date && r.review_date <= today)
 
-  const rawQ = searchQuery.trim()
-  const isQuoted = rawQ.startsWith('"') && rawQ.endsWith('"') && rawQ.length > 2
-  const isSpecific = specificSearch || isQuoted
-  const q = isQuoted ? rawQ.slice(1, -1).toLowerCase() : rawQ.toLowerCase()
-  const filtered = risks.filter(r => {
-    if (filter !== 'All' && r.status !== filter) return false
-    if (!q) return true
-    if (isSpecific) return (
-      r.objects?.title?.toLowerCase().includes(q) ||
-      r.objects?.accession_no?.toLowerCase().includes(q)
-    )
-    return (
-      r.objects?.title?.toLowerCase().includes(q) ||
-      r.objects?.accession_no?.toLowerCase().includes(q) ||
-      r.objects?.description?.toLowerCase().includes(q) ||
-      r.objects?.medium?.toLowerCase().includes(q) ||
-      r.objects?.physical_materials?.toLowerCase().includes(q) ||
-      r.objects?.artist?.toLowerCase().includes(q) ||
-      r.objects?.maker_name?.toLowerCase().includes(q)
-    )
-  })
+  const mediumOptions = Array.from(new Set(risks.map(r => r.objects?.medium).filter(Boolean))).sort() as string[]
+  const objectTypeOptions = Array.from(new Set(risks.map(r => r.objects?.object_type).filter(Boolean))).sort() as string[]
+  const artistOptions = [] as string[]
+
+  const q = searchQuery.trim().toLowerCase()
+  const filtered = risks
+    .filter(r => {
+      if (filter !== 'All' && r.status !== filter) return false
+      if (filters.dateFrom && (r.created_at || '') < filters.dateFrom) return false
+      if (filters.dateTo && (r.created_at || '') > filters.dateTo + 'T23:59:59') return false
+      if (filters.medium && r.objects?.medium !== filters.medium) return false
+      if (filters.objectType && r.objects?.object_type !== filters.objectType) return false
+      if (filters.status && r.objects?.status !== filters.status) return false
+      if (filters.accessionStatus === 'confirmed' && !r.objects?.accession_register_confirmed) return false
+      if (filters.accessionStatus === 'unconfirmed' && r.objects?.accession_register_confirmed) return false
+      if (filters.acquisitionMethod && r.objects?.acquisition_method !== filters.acquisitionMethod) return false
+      if (!q) return true
+      return (
+        r.objects?.title?.toLowerCase().includes(q) ||
+        r.objects?.accession_no?.toLowerCase().includes(q) ||
+        r.objects?.description?.toLowerCase().includes(q) ||
+        r.objects?.medium?.toLowerCase().includes(q) ||
+        r.objects?.physical_materials?.toLowerCase().includes(q) ||
+        r.objects?.artist?.toLowerCase().includes(q) ||
+        r.objects?.maker_name?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.objects?.title || '').localeCompare(b.objects?.title || '')
+      if (sortBy === 'date_added') return (b.objects?.created_at || '').localeCompare(a.objects?.created_at || '')
+      if (sortBy === 'date_made') return (b.objects?.production_date || '').localeCompare(a.objects?.production_date || '')
+      return 0
+    })
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/risk" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -156,23 +170,14 @@ export default function RiskPage() {
           </div>
 
           {/* Search */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder='Search objects… or use "quotes" for specific search'
-                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-400"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs font-mono text-stone-500 dark:text-stone-400 cursor-pointer whitespace-nowrap select-none">
-              <input type="checkbox" checked={specificSearch} onChange={e => setSpecificSearch(e.target.checked)} className="rounded border-stone-300 dark:border-stone-600 accent-stone-900" />
-              Specific search
-            </label>
-          </div>
+          <SearchFilterBar
+            searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            filters={filters} onFiltersChange={setFilters}
+            sortBy={sortBy} onSortChange={setSortBy}
+            isFullMode={true}
+            mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
+            placeholder="Search objects…"
+          />
 
           {/* Table */}
           {filtered.length === 0 ? (
