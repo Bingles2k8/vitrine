@@ -266,58 +266,112 @@ export default function Home() {
           <h2 className="font-serif text-5xl italic font-normal mb-4">Right-sized for<br />every museum.</h2>
           <p className="text-stone-400 font-light text-lg max-w-xl mb-16">From village heritage centres to national institutions.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
-            {PLAN_ORDER.map(id => {
-              const plan = PLANS[id]
-              const extras = PAGE_EXTRAS[id]
-              return (
-              <div key={id} className={`rounded-xl border relative flex flex-col ${extras.muted ? 'p-6 scale-[0.97] origin-top' : 'p-8'} ${plan.featured ? 'bg-stone-900 border-amber-500/30' : extras.muted ? 'bg-stone-900/30 border-white/5' : 'bg-stone-900/50 border-white/8'}`}>
-                {plan.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
-                    Most popular
+          <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
+
+            {/* Collectors group */}
+            <div className="w-full xl:w-[38%] flex flex-col gap-5">
+              <p className="text-xs font-mono text-stone-600 uppercase tracking-widest">For collectors</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 flex-1 xl:grid-rows-1">
+                {(['community', 'hobbyist'] as PlanId[]).map(id => {
+                  const plan = PLANS[id]
+                  const extras = PAGE_EXTRAS[id]
+                  return (
+                  <div key={id} className={`rounded-xl border relative flex flex-col h-full p-8 transition-transform ${extras.muted ? 'scale-[0.95] origin-top bg-stone-900/30 border-white/5' : plan.featured ? 'bg-stone-900 border-amber-500/30' : 'bg-stone-900/50 border-white/8'}`}>
+                    {plan.featured && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
+                        Most popular
+                      </div>
+                    )}
+                    <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-serif text-4xl text-white">{plan.price}</span>
+                    </div>
+                    <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
+                    <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
+                    <ul className="space-y-2.5 mb-8">
+                      {plan.features.map(f => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
+                          <span className="text-amber-500 text-xs">✓</span> {f}
+                        </li>
+                      ))}
+                      {plan.missingFeatures.map(f => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
+                          <span className="text-xs">–</span> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex flex-col gap-2">
+                      <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
+                        Learn more
+                      </Link>
+                      <Link href={extras.ctaHref!} className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}>
+                        {extras.cta}
+                      </Link>
+                    </div>
                   </div>
-                )}
-                <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="font-serif text-4xl text-white">{plan.price}</span>
-                </div>
-                <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
-                <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                <ul className="space-y-2.5 mb-8">
-                  {plan.features.map(f => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
-                      <span className="text-amber-500 text-xs">✓</span> {f}
-                    </li>
-                  ))}
-                  {plan.missingFeatures.map(f => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
-                      <span className="text-xs">–</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto flex flex-col gap-2">
-                  <Link
-                    href={extras.learnMoreHref}
-                    className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors"
-                  >
-                    Learn more
-                  </Link>
-                  {plan.comingSoon ? (
-                    <span className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 text-stone-600 cursor-default">
-                      Coming soon
-                    </span>
-                  ) : (
-                    <Link
-                      href={extras.ctaHref!}
-                      className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
-                    >
-                      {extras.cta}
-                    </Link>
-                  )}
-                </div>
+                  )
+                })}
               </div>
-              )
-            })}
+            </div>
+
+            {/* Divider */}
+            <div className="hidden xl:block self-stretch w-px bg-white/8 mt-7" />
+
+            {/* Museums group */}
+            <div className="w-full xl:flex-1 flex flex-col gap-5">
+              <p className="text-xs font-mono text-stone-600 uppercase tracking-widest">For museums & institutions</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 flex-1 xl:grid-rows-1">
+                {(['professional', 'institution', 'enterprise'] as PlanId[]).map(id => {
+                  const plan = PLANS[id]
+                  const extras = PAGE_EXTRAS[id]
+                  return (
+                  <div key={id} className={`rounded-xl border relative flex flex-col h-full p-8 transition-transform ${extras.muted ? 'scale-[0.95] origin-top bg-stone-900/30 border-white/5' : plan.featured ? 'bg-stone-900 border-amber-500/30' : 'bg-stone-900/50 border-white/8'}`}>
+                    {plan.featured && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
+                        Most popular
+                      </div>
+                    )}
+                    <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-serif text-4xl text-white">{plan.price}</span>
+                    </div>
+                    <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
+                    <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
+                    <ul className="space-y-2.5 mb-8">
+                      {plan.features.map(f => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
+                          <span className="text-amber-500 text-xs">✓</span> {f}
+                        </li>
+                      ))}
+                      {plan.missingFeatures.map(f => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
+                          <span className="text-xs">–</span> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex flex-col gap-2">
+                      <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
+                        Learn more
+                      </Link>
+                      {plan.comingSoon ? (
+                        <span className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 text-stone-600 cursor-default">
+                          Coming soon
+                        </span>
+                      ) : (
+                        <Link
+                          href={extras.ctaHref!}
+                          className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
+                        >
+                          {extras.cta}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                  )
+                })}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
