@@ -308,7 +308,7 @@ export default function EntryRegisterPage() {
             })()}
             {canEdit && (
               <div className="flex gap-2 shrink-0">
-                {getPlan(museum?.plan).fullMode && (
+                {getPlan(museum?.plan).analytics && (
                   <button
                     onClick={() => setShowImport(true)}
                     className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
@@ -573,6 +573,7 @@ export default function EntryRegisterPage() {
         <CSVImportModal
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); window.location.reload() }}
+          titleOnly={!getPlan(museum?.plan).fullMode}
         />
       )}
     </DashboardShell>

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 
 const EXPECTED_COLS = ['title', 'artist', 'year', 'medium', 'dimensions', 'description', 'accession_no', 'acquisition_method', 'acquisition_date', 'acquisition_source', 'status']
 
-function parseCSV(text: string): Record<string, string>[] {
+function parseCSV(text: string, titleOnly: boolean): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter(l => l.trim())
   if (lines.length < 2) return []
   const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase().replace(/\s+/g, '_'))
@@ -22,15 +22,16 @@ function parseCSV(text: string): Record<string, string>[] {
     const row: Record<string, string> = {}
     headers.forEach((h, i) => { row[h] = (values[i] || '').trim() })
     return row
-  }).filter(r => r.title || r.accession_no)
+  }).filter(r => titleOnly ? r.title : (r.title || r.accession_no))
 }
 
 interface CSVImportModalProps {
   onClose: () => void
   onSuccess: (count: number) => void
+  titleOnly?: boolean  // Hobbyist: title is the only required field, accession_no is auto-generated
 }
 
-export default function CSVImportModal({ onClose, onSuccess }: CSVImportModalProps) {
+export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }: CSVImportModalProps) {
   const [step, setStep] = useState<'upload' | 'preview' | 'done'>('upload')
   const [rows, setRows] = useState<Record<string, string>[]>([])
   const [importing, setImporting] = useState(false)
@@ -43,8 +44,8 @@ export default function CSVImportModal({ onClose, onSuccess }: CSVImportModalPro
     const reader = new FileReader()
     reader.onload = ev => {
       const text = ev.target?.result as string
-      const parsed = parseCSV(text)
-      if (parsed.length === 0) { setError('No valid rows found. Make sure the CSV has a header row and a "title" or "accession_no" column.'); return }
+      const parsed = parseCSV(text, titleOnly)
+      if (parsed.length === 0) { setError(`No valid rows found. Make sure the CSV has a header row and a "title"${titleOnly ? '' : ' or "accession_no"'} column.`); return }
       setError('')
       setRows(parsed)
       setStep('preview')
@@ -102,7 +103,7 @@ export default function CSVImportModal({ onClose, onSuccess }: CSVImportModalPro
                 <div className="grid grid-cols-3 gap-1">
                   {EXPECTED_COLS.map(c => <div key={c}>{c}</div>)}
                 </div>
-                <div className="mt-2 text-stone-400 dark:text-stone-500">All columns optional except title or accession_no. Status values: Entry, On Display, Storage, On Loan, Restoration.</div>
+                <div className="mt-2 text-stone-400 dark:text-stone-500">{titleOnly ? 'Only title is required. Object numbers are auto-generated if not provided.' : 'All columns optional except title or accession_no.'} Status values: Entry, On Display, Storage, On Loan, Restoration.</div>
               </div>
               {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
             </div>

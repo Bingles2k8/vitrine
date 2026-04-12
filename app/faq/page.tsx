@@ -46,7 +46,7 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   {
     question: 'How much does Vitrine cost?',
     answer:
-      'Vitrine offers four plans. Community is free for up to 100 items. Hobbyist costs £5/month and includes up to 1,000 items, a public website, and full cataloguing tools. Professional costs £79/month and adds analytics, event ticketing, compliance tools, and staff roles. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
+      'Vitrine offers four plans. Community is free for up to 100 items. Hobbyist costs £5/month and includes up to 1,000 items, collection analytics, CSV import, and 100 MB document storage. Professional costs £79/month and adds visitor analytics, event ticketing, compliance tools, staff management, and 1 GB document storage. Institution costs £349/month for full museum-grade features. Enterprise pricing is available for large organisations.',
   },
   {
     question: 'Is there a free plan?',
@@ -56,12 +56,12 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   {
     question: 'How do I start cataloguing my collection?',
     answer:
-      'Sign up for a free account at vitrinecms.com, create your first collection, and begin adding items. Each item can include a title, description, images, condition notes, acquisition date, value estimate, and custom fields. You can add items one by one, or bulk-import via CSV on Professional and above.',
+      'Sign up for a free account at vitrinecms.com, create your first collection, and begin adding items. Each item can include a title, description, images, condition notes, acquisition date, value estimate, and custom fields. You can add items one by one, or bulk-import via CSV on Hobbyist and above.',
   },
   {
     question: 'Can I import my existing collection data?',
     answer:
-      'Yes, on Professional plans and above. Vitrine supports bulk import via CSV, making it straightforward to migrate from a spreadsheet or another collection management tool. The import tool maps your columns to Vitrine fields and flags any rows that need review before committing. Community and Hobbyist users can add items individually.',
+      'Yes, on Hobbyist plans and above. Vitrine supports bulk import via CSV, making it straightforward to migrate from a spreadsheet or another collection management tool. The import tool maps your columns to Vitrine fields and flags any rows that need review before committing. Community users can add items individually.',
   },
   {
     question: 'Can I export my collection data?',

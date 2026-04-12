@@ -62,10 +62,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Maximum 500 rows per import' }, { status: 400 })
   }
 
-  // Check plan gating — CSV import is Professional+
+  // Check plan gating — CSV import is Hobbyist+
   const planInfo = getPlan(plan)
-  if (!planInfo.fullMode) {
-    return NextResponse.json({ error: 'Bulk CSV import requires a Professional plan or above. Upgrade to use this feature.' }, { status: 403 })
+  if (!planInfo.analytics) {
+    return NextResponse.json({ error: 'Bulk CSV import requires a Hobbyist plan or above. Upgrade to use this feature.' }, { status: 403 })
   }
 
   // Check plan object limit
@@ -101,8 +101,9 @@ export async function POST(request: Request) {
     )
   }
 
-  // Build insert records
-  const insertRows = rows.map((row: any) => ({
+  // Build insert records — auto-generate accession_no for any row that doesn't have one
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const insertRows = rows.map((row: any, i: number) => ({
     museum_id: museumId,
     owner_id: ownerId,
     created_by: user.id,
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
     medium: String(row.medium || '').trim() || null,
     dimensions: String(row.dimensions || '').trim() || null,
     description: String(row.description || '').trim() || null,
-    accession_no: String(row.accession_no || '').trim() || null,
+    accession_no: String(row.accession_no || '').trim() || `IMP-${dateStr}-${String(i + 1).padStart(3, '0')}`,
     acquisition_method: String(row.acquisition_method || '').trim() || null,
     acquisition_date: String(row.acquisition_date || '').trim() || null,
     acquisition_source: String(row.acquisition_source || '').trim() || null,

@@ -468,6 +468,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const isComingSoon = planId === 'institution' || planId === 'enterprise'
   const hasFull = plan.fullMode
   const hasAnalytics = plan.analytics
+  const hasVisitorAnalytics = plan.visitorAnalytics
   const hasCompliance = plan.compliance
   const hasTicketing = plan.ticketing
   const hasVisitInfo = plan.visitInfo
@@ -584,7 +585,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
               `${plan.imagesPerObject} ${plan.imagesPerObject === 1 ? 'image' : 'images'} per object`,
               'Full text search and filtering',
               'Custom fields and categories',
-              'Bulk import via CSV',
+              ...(plan.analytics ? ['Bulk import via CSV'] : []),
             ]}
             mockup={<CollectionMockup />}
             flip={false}
@@ -655,18 +656,30 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
             />
           )}
 
-          {/* Analytics — Professional+ */}
+          {/* Analytics — Hobbyist+ (collection analytics) / Professional+ (visitor analytics) */}
           {hasAnalytics && (
             <FeatureSection
               label="Analytics"
-              title="Understand who visits your site."
-              desc="See how many people are visiting your collection site, which objects are most popular, and how your audience is growing week on week."
-              bullets={[
-                'Page views and visitor counts',
-                'Most-viewed objects',
-                'Weekly trend charts',
-              ]}
-              mockup={<AnalyticsMockup advanced={false} />}
+              title={hasVisitorAnalytics ? 'Understand who visits your site.' : 'Understand your collection at a glance.'}
+              desc={
+                hasVisitorAnalytics
+                  ? 'See how many people are visiting your collection site, which objects are most popular, and how your audience is growing week on week.'
+                  : 'Track your collection\'s total value, monitor status across your catalogue, and watch your acquisition trend over time.'
+              }
+              bullets={
+                hasVisitorAnalytics
+                  ? [
+                      'Page views and visitor counts',
+                      'Most-viewed objects',
+                      'Weekly trend charts',
+                    ]
+                  : [
+                      'Collection value and acquisition cost',
+                      'Status and medium breakdowns',
+                      'Acquisition trend by month',
+                    ]
+              }
+              mockup={<AnalyticsMockup advanced={hasVisitorAnalytics} />}
               flip={hasCompliance}
             />
           )}

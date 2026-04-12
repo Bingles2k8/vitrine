@@ -427,7 +427,7 @@ export default function ObjectDetail() {
                 Print record
               </button>
             )}
-            {canEdit && fullMode && (
+            {canEdit && (
               <button onClick={handleDuplicate} disabled={duplicating}
                 className="hidden sm:inline text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors disabled:opacity-50">
                 {duplicating ? 'Duplicating…' : 'Duplicate'}

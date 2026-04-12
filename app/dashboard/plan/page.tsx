@@ -411,7 +411,7 @@ export default function PlanPage() {
                     values: PLAN_ORDER.map(id => PLANS[id].fullMode ? 'Full' : 'Basic'),
                   },
                   { label: 'Collections compliance tools', values: PLAN_ORDER.map(id => PLANS[id].compliance) },
-                  { label: 'Analytics', values: PLAN_ORDER.map(id => PLANS[id].visitorAnalytics) },
+                  { label: 'Visitor analytics', values: PLAN_ORDER.map(id => PLANS[id].visitorAnalytics) },
                   { label: 'Staff management', values: PLAN_ORDER.map(id => PLANS[id].fullMode) },
                   { label: 'Event ticketing', values: PLAN_ORDER.map(id => PLANS[id].ticketing) },
                   {

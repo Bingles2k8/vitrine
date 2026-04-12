@@ -300,7 +300,7 @@ export default function AnalyticsPage() {
   const maxMonth = Math.max(...byMonth.map(([, v]) => v), 1)
   const plan = getPlan(museum?.plan)
   const hasVisitorAnalytics = plan.visitorAnalytics  // Professional+
-  const hasExport = plan.visitorAnalytics            // Professional+
+  const hasExport = plan.analytics                   // Hobbyist+
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>

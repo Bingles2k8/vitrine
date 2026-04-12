@@ -216,6 +216,9 @@ export default function Dashboard() {
     objects.flatMap(a => [a.artist, a.maker_name]).filter(Boolean)
   )).sort() as string[]
 
+  const fullMode = getPlan(museum?.plan).fullMode
+  const canImport = getPlan(museum?.plan).analytics
+
   const q = searchQuery.trim().toLowerCase()
   const visibleObjects = objects
     .filter(a => filter ? a.status === filter : true)
@@ -251,7 +254,6 @@ export default function Dashboard() {
       if (sortBy === 'insured_value') return (b.insured_value ?? 0) - (a.insured_value ?? 0)
       return 0
     })
-  const fullMode = getPlan(museum?.plan).fullMode
 
   const totalPaid = objects.reduce((sum, o) => sum + (o.acquisition_value ? parseFloat(o.acquisition_value) : 0), 0)
   const totalEstimated = objects.reduce((sum, o) => sum + (o.estimated_value ? parseFloat(o.estimated_value) : 0), 0)
@@ -274,11 +276,12 @@ export default function Dashboard() {
               // Reload objects after import
               window.location.reload()
             }}
+            titleOnly={!fullMode}
           />
         )}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
-          {canEdit && fullMode && (
+          {canEdit && canImport && (
             <button onClick={() => setShowImport(true)} className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors" data-learn="action.import_csv">
               Import CSV
             </button>

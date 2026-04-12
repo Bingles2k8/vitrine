@@ -1101,7 +1101,7 @@ export default function SiteBuilder() {
               <CollapsibleSection title="Vitrine Branding">
                 <div className="space-y-3">
                   <p className="text-xs text-stone-400 dark:text-stone-500">
-                    The &ldquo;Powered by Vitrine&rdquo; link appears in your site footer by default. You can remove it on Professional and above.
+                    The &ldquo;Powered by Vitrine&rdquo; link appears in your site footer by default. You can remove it here.
                   </p>
                   <button
                     type="button"
