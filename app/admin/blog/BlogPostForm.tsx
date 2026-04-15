@@ -1,3 +1,8 @@
+'use client'
+
+import { useActionState } from 'react'
+import type { PostActionState } from '../actions'
+
 type DefaultValues = {
   slug?: string
   title?: string
@@ -11,15 +16,22 @@ export function BlogPostForm({
   action,
   defaultValues = {},
 }: {
-  action: (formData: FormData) => Promise<void>
+  action: (prev: PostActionState, formData: FormData) => Promise<PostActionState>
   defaultValues?: DefaultValues
 }) {
+  const [state, formAction, pending] = useActionState(action, null)
+
   const publishedDefault = defaultValues.published_at
     ? new Date(defaultValues.published_at).toISOString().split('T')[0]
     : new Date().toISOString().split('T')[0]
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={formAction} className="space-y-6">
+      {state?.error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-4 py-3">
+          {state.error}
+        </div>
+      )}
       <Field label="Title" name="title" defaultValue={defaultValues.title} required />
       <Field
         label="Slug"
@@ -73,9 +85,10 @@ export function BlogPostForm({
       <div className="pt-2">
         <button
           type="submit"
-          className="bg-gray-900 text-white text-sm px-6 py-2 rounded hover:bg-gray-700 transition-colors"
+          disabled={pending}
+          className="bg-gray-900 text-white text-sm px-6 py-2 rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
         >
-          Save post
+          {pending ? 'Saving…' : 'Save post'}
         </button>
       </div>
     </form>

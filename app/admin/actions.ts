@@ -30,7 +30,9 @@ function parseKeywords(raw: string): string[] {
     .filter(Boolean)
 }
 
-export async function createPost(formData: FormData) {
+export type PostActionState = { error: string } | null
+
+export async function createPost(_prev: PostActionState, formData: FormData): Promise<PostActionState> {
   await assertAdmin()
   const admin = adminClient()
 
@@ -51,7 +53,10 @@ export async function createPost(formData: FormData) {
     updated_at: new Date().toISOString(),
   })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (error.code === '23505') return { error: `Slug "${slug}" is already in use by another post.` }
+    throw new Error(error.message)
+  }
 
   revalidatePath('/blog')
   revalidatePath(`/blog/${slug}`)
@@ -59,7 +64,7 @@ export async function createPost(formData: FormData) {
   redirect('/admin/blog')
 }
 
-export async function updatePost(id: string, formData: FormData) {
+export async function updatePost(id: string, _prev: PostActionState, formData: FormData): Promise<PostActionState> {
   await assertAdmin()
   const admin = adminClient()
 
@@ -90,7 +95,10 @@ export async function updatePost(id: string, formData: FormData) {
     })
     .eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (error.code === '23505') return { error: `Slug "${slug}" is already in use by another post.` }
+    throw new Error(error.message)
+  }
 
   revalidatePath('/blog')
   revalidatePath(`/blog/${slug}`)
