@@ -44,6 +44,43 @@ const VALID_DOC_RELATED_TYPES = [
   'damage', 'emergency', 'reproduction', 'rights', 'general', 'provenance',
 ] as const
 
+export const trackViewSchema = z.object({
+  museum_id: z.string().uuid(),
+  object_id: z.string().uuid().nullable().optional(),
+  page_type: z.enum(['home', 'object', 'events', 'visit', 'embed']),
+})
+
+export const STORAGE_BUCKETS = ['object-documents', 'object-images', 'museum-assets'] as const
+
+export const presignSchema = z.object({
+  bucket: z.enum(STORAGE_BUCKETS),
+  path: z.string()
+    .min(1)
+    .max(500)
+    .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\//, 'Path must start with museum UUID prefix')
+    .refine(p => !p.includes('..') && !p.startsWith('/') && !p.includes('\0'), 'Invalid path characters'),
+  contentType: z.string().min(1).max(200).regex(/^[\w.+-]+\/[\w.+-]+$/, 'Invalid content type'),
+})
+
+export const storageDeleteSchema = z.object({
+  bucket: z.enum(STORAGE_BUCKETS),
+  url: z.string().url().max(2000),
+})
+
+export const wantedItemSchema = z.object({
+  title: z.string().min(1).max(500),
+  year: z.string().max(50).nullable().optional(),
+  medium: z.string().max(500).nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+})
+
+export const objectComponentSchema = z.object({
+  title: z.string().min(1).max(500),
+  notes: z.string().max(5000).nullable().optional(),
+  part_number_label: z.string().max(100).nullable().optional(),
+})
+
 export const documentUploadSchema = z.object({
   related_to_type: z.string().min(1).max(100).refine(
     v => VALID_DOC_RELATED_TYPES.includes(v as any) || /^[a-z_]+$/.test(v),

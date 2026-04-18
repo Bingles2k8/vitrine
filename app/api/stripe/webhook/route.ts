@@ -105,8 +105,8 @@ export async function POST(request: Request) {
               .eq('id', museumId)
           }
         }
-      } catch {
-        console.error('Failed to retrieve subscription schedule')
+      } catch (err) {
+        console.error('[webhook] subscription schedule fetch failed:', err instanceof Error ? err.message : 'unknown')
       }
     }
   }
@@ -115,16 +115,24 @@ export async function POST(request: Request) {
     const subscription = event.data.object as Stripe.Subscription
     const museumId = subscription.metadata.museum_id
     const deletedCustomerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
+    let museumRow: { name: string | null; owner_id: string | null } | null = null
     if (museumId && deletedCustomerId) {
       const { data: verifiedDeletedMuseum } = await supabase
         .from('museums')
-        .select('id')
+        .select('id, name, owner_id')
         .eq('id', museumId)
         .eq('stripe_customer_id', deletedCustomerId)
         .maybeSingle()
       if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
+      museumRow = { name: verifiedDeletedMuseum.name ?? null, owner_id: verifiedDeletedMuseum.owner_id ?? null }
     }
     if (museumId) {
+      // Fetch staff before delete so we can audit and notify them
+      const { data: staffToRemove } = await supabase
+        .from('staff_members')
+        .select('email, name')
+        .eq('museum_id', museumId)
+
       await supabase
         .from('museums')
         .update({
@@ -136,6 +144,67 @@ export async function POST(request: Request) {
           payment_past_due: false,
         })
         .eq('id', museumId)
+
+      // Community plan allows 1 staff member (the owner). Remove all staff_members
+      // records — the owner authenticates directly, staff records are for additional users only.
+      await supabase
+        .from('staff_members')
+        .delete()
+        .eq('museum_id', museumId)
+
+      const removedCount = staffToRemove?.length ?? 0
+      if (removedCount > 0) {
+        await supabase.from('activity_log').insert({
+          museum_id: museumId,
+          action_type: 'staff_removed_on_downgrade',
+          description: `${removedCount} staff member(s) removed after downgrade to Community plan`,
+        })
+
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
+        const museumName = museumRow?.name ?? 'Your museum'
+
+        // Notify owner
+        let ownerEmail: string | null = null
+        if (museumRow?.owner_id) {
+          const { data: ownerUser } = await supabase.auth.admin.getUserById(museumRow.owner_id)
+          ownerEmail = ownerUser?.user?.email ?? null
+        }
+        if (ownerEmail) {
+          const listHtml = staffToRemove!
+            .map(s => `<li>${esc(s.name ?? '')} &lt;${esc(s.email)}&gt;</li>`).join('')
+          await resend.emails.send({
+            from: 'Vitrine <noreply@contact.vitrinecms.com>',
+            to: ownerEmail,
+            subject: `${museumName}: staff access removed after plan downgrade`,
+            html: `
+              <p>Hi,</p>
+              <p>Your Vitrine plan has been downgraded to Community, which only supports a single owner account.</p>
+              <p>The following staff members have been removed from <strong>${esc(museumName)}</strong>:</p>
+              <ul>${listHtml}</ul>
+              <p>They will no longer be able to access your dashboard. Upgrade again at any time to restore staff access:</p>
+              <p><a href="${siteUrl}/dashboard/plan">Manage your plan →</a></p>
+              <p>— The Vitrine team</p>
+            `,
+          }).catch(err => console.error('[webhook] owner downgrade email failed:', err instanceof Error ? err.message : err))
+        }
+
+        // Notify each removed staff member
+        for (const s of staffToRemove!) {
+          if (!s.email) continue
+          await resend.emails.send({
+            from: 'Vitrine <noreply@contact.vitrinecms.com>',
+            to: s.email,
+            subject: `Access removed from ${museumName}`,
+            html: `
+              <p>Hi ${esc(s.name ?? '')},</p>
+              <p>Your access to the <strong>${esc(museumName)}</strong> Vitrine workspace has been removed because the museum's plan was downgraded to Community, which does not support additional staff accounts.</p>
+              <p>If you believe this was a mistake, please contact the museum owner.</p>
+              <p>— The Vitrine team</p>
+            `,
+          }).catch(err => console.error('[webhook] staff downgrade email failed:', err instanceof Error ? err.message : err))
+        }
+      }
     }
   }
 
@@ -259,7 +328,7 @@ export async function POST(request: Request) {
           qty: order.quantity,
         })
 
-        if (rpcError) console.error('[webhook] RPC error on increment_slot_bookings:', rpcError)
+        if (rpcError) console.error('[webhook] increment_slot_bookings failed:', rpcError.message)
         if (!slotSuccess) {
           await supabase
             .from('ticket_orders')
@@ -279,7 +348,7 @@ export async function POST(request: Request) {
         if (ticketError) {
           // Release the capacity we just incremented before returning 500 for Stripe to retry
           await supabase.rpc('decrement_slot_bookings', { slot_uuid: order.slot_id, qty: order.quantity })
-          console.error('[webhook] Failed to insert tickets for order', order.id, ticketError)
+          console.error('[webhook] ticket insert failed for order', order.id, ticketError.message)
           return NextResponse.json({ error: 'Ticket generation failed' }, { status: 500 })
         }
 
@@ -328,7 +397,7 @@ export async function POST(request: Request) {
               ${sessionLine}
               <p style="margin-top:24px">See you there!<br>— ${esc(emailMuseum?.name ?? 'The Vitrine team')}</p>
             `,
-          }).catch(err => console.error('[webhook] Failed to send ticket confirmation email:', err))
+          }).catch(err => console.error('[webhook] ticket confirmation email failed:', err instanceof Error ? err.message : 'unknown'))
         }
       }
     }
@@ -356,15 +425,34 @@ export async function POST(request: Request) {
     const paymentIntentId = typeof charge.payment_intent === 'string'
       ? charge.payment_intent
       : charge.payment_intent?.id
+    const connectAccountId = typeof charge.on_behalf_of === 'string'
+      ? charge.on_behalf_of
+      : charge.on_behalf_of?.id ?? null
 
     if (paymentIntentId) {
       const { data: order } = await supabase
         .from('ticket_orders')
-        .select('id, slot_id, quantity')
+        .select('id, slot_id, quantity, museum_id')
         .eq('stripe_payment_intent_id', paymentIntentId)
         .maybeSingle()
 
       if (order) {
+        // Cross-check: the order's museum must own the Stripe Connect account the charge was
+        // made on behalf of. Prevents a spoofed refund event from cancelling a foreign
+        // museum's order (tickets use destination charges via on_behalf_of).
+        if (connectAccountId) {
+          const { data: museumForCharge } = await supabase
+            .from('museums')
+            .select('id')
+            .eq('id', order.museum_id)
+            .eq('stripe_connect_id', connectAccountId)
+            .maybeSingle()
+          if (!museumForCharge) {
+            console.error('[webhook] charge.refunded museum/connect-account mismatch', { orderId: order.id })
+            return NextResponse.json({ received: true })
+          }
+        }
+
         await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
         await supabase.from('tickets').update({ status: 'refunded' }).eq('order_id', order.id)
         // Release the capacity — decrement booked_count, clamped to 0

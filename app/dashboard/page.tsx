@@ -336,12 +336,16 @@ export default function Dashboard() {
           )}
 
           {/* Near object limit warning */}
-          {nearLimit && trashedCount > 0 && (
+          {nearLimit && (
             <div className="mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-6 py-4">
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 You're using {objects.length} of {objectLimit} objects on your plan.{' '}
-                You have {trashedCount} item{trashedCount !== 1 ? 's' : ''} in the bin — permanently deleting them will free up space.{' '}
-                <a href="/dashboard/trash" className="underline hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Go to bin →</a>
+                {trashedCount > 0 ? (
+                  <>You have {trashedCount} item{trashedCount !== 1 ? 's' : ''} in the bin — permanently deleting them will free up space.{' '}
+                  <a href="/dashboard/trash" className="underline hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Go to bin →</a></>
+                ) : (
+                  <><a href="/dashboard/plan" className="underline hover:text-amber-900 dark:hover:text-amber-200 transition-colors">Upgrade your plan</a> to add more.</>
+                )}
               </p>
             </div>
           )}

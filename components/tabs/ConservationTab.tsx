@@ -183,7 +183,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
 
     if (stagedDocs.length > 0) {
-      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }

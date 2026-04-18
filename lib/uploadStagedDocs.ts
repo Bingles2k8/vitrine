@@ -2,7 +2,6 @@ import type { StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 
 export async function uploadStagedDocs(
-  _supabase: any,
   staged: StagedDoc[],
   objectId: string,
   museumId: string,

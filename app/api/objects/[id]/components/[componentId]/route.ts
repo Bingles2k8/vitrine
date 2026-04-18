@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { parseBody, objectComponentSchema } from '@/lib/validations'
 
 async function resolveMuseum(supabase: any, userId: string) {
   const { data: owned } = await supabase
@@ -37,8 +38,10 @@ export async function PUT(
   const museum = await resolveMuseum(supabase, user.id)
   if (!museum) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await request.json()
-  const { title, notes, part_number_label } = body
+  const raw = await request.json().catch(() => null)
+  const parsed = parseBody(objectComponentSchema, raw)
+  if (!parsed.success) return parsed.response
+  const { title, notes, part_number_label } = parsed.data
 
   const { data, error } = await supabase
     .from('object_components')

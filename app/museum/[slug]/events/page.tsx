@@ -1,13 +1,17 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createPublicClient } from '@/lib/supabase-server'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import { buildPageMetadata } from '@/lib/seo'
+import { getPlan } from '@/lib/plans'
 import type { Metadata } from 'next'
+
+export const revalidate = 3600
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
   const { data: museum } = await supabase.from('museums').select('name').eq('slug', slug).single()
   if (!museum) return {}
   return buildPageMetadata({
@@ -36,7 +40,7 @@ function formatPrice(cents: number, currency: string) {
 
 export default async function PublicEventsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
 
   const { data: museum } = await supabase
     .from('museums')
@@ -45,6 +49,7 @@ export default async function PublicEventsPage({ params }: { params: Promise<{ s
     .single()
 
   if (!museum) notFound()
+  if (!getPlan(museum.plan).ticketing) notFound()
 
   const { data: events } = await supabase
     .from('events')
@@ -78,8 +83,8 @@ export default async function PublicEventsPage({ params }: { params: Promise<{ s
                 style={{ borderColor: content.border, background: content.cardBg }}
               >
                 {event.image_url && (
-                  <div className="aspect-[16/9] overflow-hidden">
-                    <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="relative aspect-[16/9] overflow-hidden">
+                    <Image src={event.image_url} alt={event.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
                 )}
                 <div className="p-6">

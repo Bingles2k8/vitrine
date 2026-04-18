@@ -329,6 +329,20 @@ export default function ObjectDetail() {
   async function handleDuplicate() {
     if (!canEdit || !object) return
     setDuplicating(true)
+    const planInfo = getPlan(museum?.plan)
+    const limit = planInfo.objects
+    if (limit !== null) {
+      const { count } = await supabase
+        .from('objects')
+        .select('*', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+        .is('deleted_at', null)
+      if (count !== null && count >= limit) {
+        toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
+        setDuplicating(false)
+        return
+      }
+    }
     const { condition_grade, condition_date, condition_assessor, hazard_note: _hz, ...formToSave } = form
     const { data: newObject, error } = await supabase.from('objects').insert({
       ...formToSave,

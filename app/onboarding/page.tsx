@@ -106,19 +106,24 @@ export default function Onboarding() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); router.push('/login'); return }
 
-    const selectedTemplate = TEMPLATES.find(t => t.id === template)!
     const isPaidPlan = plan !== 'community' && plan !== 'enterprise'
 
     // Create museum on community first if a paid plan is selected
     // Stripe webhook will upgrade after successful checkout
     const insertPlan = isPaidPlan ? 'community' : plan
 
+    // If landing on Community, ensure template is a free-tier one
+    const safeTemplate = insertPlan === 'community' && !FREE_TIER_TEMPLATES.includes(template)
+      ? 'minimal'
+      : template
+    const selectedTemplate = TEMPLATES.find(t => t.id === safeTemplate)!
+
     const { error } = await supabase.from('museums').insert({
       name: name.trim(),
       slug,
       owner_id: user.id,
       logo_emoji: emoji,
-      template,
+      template: safeTemplate,
       primary_color: selectedTemplate.primary_color,
       accent_color: selectedTemplate.accent_color,
       plan: insertPlan,

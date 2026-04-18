@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
+import { getPlan } from '@/lib/plans'
 
 export async function GET(request: Request) {
   const supabase = await createServerSideClient()
@@ -32,6 +33,12 @@ export async function GET(request: Request) {
   }
 
   if (!museumId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Check plan — CSV export is Hobbyist+ (analytics flag)
+  const { data: museum } = await supabase.from('museums').select('plan').eq('id', museumId).maybeSingle()
+  if (!museum || !getPlan(museum.plan).analytics) {
+    return NextResponse.json({ error: 'CSV export requires a Hobbyist plan or above.' }, { status: 403 })
+  }
 
   // Parse optional filter params
   const { searchParams } = new URL(request.url)

@@ -53,11 +53,11 @@ const organizationSchema = {
 
 // Presentation-layer copy that lives outside lib/plans.ts (taglines, CTAs, learn-more links)
 const PAGE_EXTRAS: Record<PlanId, { desc: string; cta: string; ctaHref: string | null; learnMoreHref: string; muted: boolean }> = {
-  community:    { desc: 'Perfect for small local museums and heritage societies.',      cta: 'Start free →',    ctaHref: '/signup',  learnMoreHref: '/plans/community',    muted: true  },
-  hobbyist:     { desc: 'For hobbyist collectors who want to showcase more.',           cta: 'Get started →',   ctaHref: '/signup',  learnMoreHref: '/plans/hobbyist',     muted: false },
-  professional: { desc: 'For regional museums ready to go further online.',             cta: 'Get started →',   ctaHref: '/signup',  learnMoreHref: '/plans/professional',  muted: false },
-  institution:  { desc: 'For regional and national collections.',                       cta: 'Coming soon',     ctaHref: null,       learnMoreHref: '/plans/institution',   muted: false },
-  enterprise:   { desc: 'For national institutions and large-scale collections.',       cta: 'Coming soon',     ctaHref: null,       learnMoreHref: '/plans/enterprise',    muted: true  },
+  community:    { desc: 'A complete home for a small collection — forever.',                                          cta: 'Start free →',       ctaHref: '/signup',                learnMoreHref: '/plans/community',    muted: true  },
+  hobbyist:     { desc: 'For collectors who are serious about their collection.',                                      cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/hobbyist',     muted: false },
+  professional: { desc: 'For museums ready to run their public presence from one place.',                              cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/professional',  muted: false },
+  institution:  { desc: 'For regional and national collections that need room to grow.',                               cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/institution',   muted: false },
+  enterprise:   { desc: 'For national institutions with complex needs and teams to match.',                            cta: 'Get in touch →',     ctaHref: '/contact/enterprise',    learnMoreHref: '/plans/enterprise',    muted: true  },
 }
 
 export default function Home() {
@@ -261,7 +261,7 @@ export default function Home() {
 
       {/* Pricing */}
       <section id="pricing" className="py-28 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Simple pricing</p>
           <h2 className="font-serif text-5xl italic font-normal mb-4">Right-sized for<br />every museum.</h2>
           <p className="text-stone-400 font-light text-lg max-w-xl mb-16">From village heritage centres to national institutions.</p>
@@ -288,18 +288,26 @@ export default function Home() {
                     </div>
                     <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
                     <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                    <ul className="space-y-2.5 mb-8">
-                      {plan.features.map(f => (
-                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
-                          <span className="text-amber-500 text-xs">✓</span> {f}
-                        </li>
+                    <div className="space-y-5 mb-8">
+                      {plan.featureGroups.map((group, gi) => (
+                        <div key={gi}>
+                          {group.title && (
+                            <p className={`text-xs font-mono uppercase tracking-widest mb-2 ${group.muted ? 'text-stone-700' : 'text-stone-600'}`}>{group.title}</p>
+                          )}
+                          <ul className="space-y-2">
+                            {group.items.map(f => (
+                              <li key={f} className={`flex items-start gap-2.5 text-sm ${group.muted ? 'text-stone-600' : 'text-stone-300'}`}>
+                                <span className={`mt-0.5 text-xs shrink-0 ${group.muted ? 'text-stone-700' : 'text-amber-500'}`}>{group.muted ? '–' : '✓'}</span>
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                          {group.note && (
+                            <p className="mt-2 text-xs text-stone-600 italic">{group.note}</p>
+                          )}
+                        </div>
                       ))}
-                      {plan.missingFeatures.map(f => (
-                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
-                          <span className="text-xs">–</span> {f}
-                        </li>
-                      ))}
-                    </ul>
+                    </div>
                     <div className="mt-auto flex flex-col gap-2">
                       <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
                         Learn more
@@ -337,18 +345,26 @@ export default function Home() {
                     </div>
                     <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
                     <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                    <ul className="space-y-2.5 mb-8">
-                      {plan.features.map(f => (
-                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-300">
-                          <span className="text-amber-500 text-xs">✓</span> {f}
-                        </li>
+                    <div className="space-y-5 mb-8">
+                      {plan.featureGroups.map((group, gi) => (
+                        <div key={gi}>
+                          {group.title && (
+                            <p className={`text-xs font-mono uppercase tracking-widest mb-2 ${group.muted ? 'text-stone-700' : 'text-stone-600'}`}>{group.title}</p>
+                          )}
+                          <ul className="space-y-2">
+                            {group.items.map(f => (
+                              <li key={f} className={`flex items-start gap-2.5 text-sm ${group.muted ? 'text-stone-600' : 'text-stone-300'}`}>
+                                <span className={`mt-0.5 text-xs shrink-0 ${group.muted ? 'text-stone-700' : 'text-amber-500'}`}>{group.muted ? '–' : '✓'}</span>
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                          {group.note && (
+                            <p className="mt-2 text-xs text-stone-600 italic">{group.note}</p>
+                          )}
+                        </div>
                       ))}
-                      {plan.missingFeatures.map(f => (
-                        <li key={f} className="flex items-center gap-2.5 text-sm text-stone-600">
-                          <span className="text-xs">–</span> {f}
-                        </li>
-                      ))}
-                    </ul>
+                    </div>
                     <div className="mt-auto flex flex-col gap-2">
                       <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
                         Learn more

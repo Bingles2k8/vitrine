@@ -1,9 +1,13 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createPublicClient } from '@/lib/supabase-server'
+import Image from 'next/image'
+
+export const revalidate = 3600
 import { notFound } from 'next/navigation'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import EventBookingClient from './EventBookingClient'
+import { getPlan } from '@/lib/plans'
 import type { Metadata } from 'next'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -29,7 +33,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string; id: string }>
 }): Promise<Metadata> {
   const { slug, id } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
 
   const { data: museum } = await supabase.from('museums').select('name').eq('slug', slug).single()
   if (!museum) return {}
@@ -60,7 +64,7 @@ export default async function PublicEventDetailPage({
   params: Promise<{ slug: string; id: string }>
 }) {
   const { slug, id } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
 
   const { data: museum } = await supabase
     .from('museums')
@@ -69,6 +73,7 @@ export default async function PublicEventDetailPage({
     .single()
 
   if (!museum) notFound()
+  if (!getPlan(museum.plan).ticketing) notFound()
 
   const { data: event } = await supabase
     .from('events')
@@ -110,8 +115,8 @@ export default async function PublicEventDetailPage({
       <JsonLd data={jsonLd} />
 
       {event.image_url && (
-        <div className="aspect-[4/3] md:aspect-[21/9] rounded-lg overflow-hidden mb-8">
-          <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
+        <div className="relative aspect-[4/3] md:aspect-[21/9] rounded-lg overflow-hidden mb-8">
+          <Image src={event.image_url} alt={event.title} fill priority sizes="(max-width: 768px) 100vw, 1024px" className="object-cover" />
         </div>
       )}
 

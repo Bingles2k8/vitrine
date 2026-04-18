@@ -79,6 +79,7 @@ function makeMockClient(
       inserts.push({ table, data })
       return chain
     })
+    chain.delete = vi.fn(() => chain)
     chain.eq = vi.fn(() => chain)
     chain.neq = vi.fn(() => chain)
     chain.is = vi.fn(() => chain)
@@ -443,6 +444,66 @@ describe('POST /api/stripe/webhook', () => {
           amount: 2000,
           amount_refunded: 2000,
           payment_intent: 'pi_test',
+        },
+      },
+    } as any)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    expect(
+      mockSupabaseClient.getUpdatesFor('ticket_orders').some(u => u.status === 'cancelled')
+    ).toBe(true)
+    expect(
+      mockSupabaseClient.getUpdatesFor('tickets').some(u => u.status === 'refunded')
+    ).toBe(true)
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+      'decrement_slot_bookings',
+      { slot_uuid: 'slot-uuid', qty: 2 }
+    )
+  })
+
+  it('rejects refund when charge.on_behalf_of does not match the order museum', async () => {
+    mockSupabaseClient = makeMockClient([
+      // first maybeSingle: ticket_orders lookup → order found
+      { data: { id: 'order-uuid', slot_id: 'slot-uuid', quantity: 2, museum_id: 'museum-uuid' }, error: null },
+      // second maybeSingle: museums cross-check → null (mismatch)
+      { data: null, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: {
+        object: {
+          amount: 2000,
+          amount_refunded: 2000,
+          payment_intent: 'pi_test',
+          on_behalf_of: 'acct_foreign',
+        },
+      },
+    } as any)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    // No state changes should have occurred
+    expect(mockSupabaseClient.getUpdatesFor('ticket_orders')).toHaveLength(0)
+    expect(mockSupabaseClient.getUpdatesFor('tickets')).toHaveLength(0)
+    expect(mockSupabaseClient.rpc).not.toHaveBeenCalled()
+  })
+
+  it('proceeds with refund when charge.on_behalf_of matches the order museum', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'order-uuid', slot_id: 'slot-uuid', quantity: 2, museum_id: 'museum-uuid' }, error: null },
+      { data: { id: 'museum-uuid' }, error: null }, // cross-check passes
+    ])
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: {
+        object: {
+          amount: 2000,
+          amount_refunded: 2000,
+          payment_intent: 'pi_test',
+          on_behalf_of: 'acct_ours',
         },
       },
     } as any)

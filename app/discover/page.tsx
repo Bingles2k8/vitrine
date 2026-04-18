@@ -8,7 +8,7 @@ import DiscoverCategoryScroll from './DiscoverCategoryScroll'
 import DiscoverMobileFilters from './DiscoverMobileFilters'
 import { buildPageMetadata } from '@/lib/seo'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export const metadata = buildPageMetadata({
   title: 'Discover Public Collections',
@@ -39,6 +39,7 @@ export default async function DiscoverPage({
     .from('museums')
     .select('id, name, slug, collection_category')
     .eq('discoverable', true)
+    .limit(200)
 
   const filteredMuseums = museumQuery
     ? (museums || []).filter(m => m.name.toLowerCase().includes(museumQuery.toLowerCase()))
@@ -52,6 +53,7 @@ export default async function DiscoverPage({
     .eq('show_on_site', true)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .limit(500)
 
   if (museumIds.length > 0) {
     objectsQuery = objectsQuery.in('museum_id', museumIds)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { parseBody, objectComponentSchema } from '@/lib/validations'
 
 async function resolveMuseum(supabase: any, userId: string) {
   const { data: owned } = await supabase
@@ -69,8 +70,10 @@ export async function POST(
     .maybeSingle()
   if (!object) return NextResponse.json({ error: 'Object not found' }, { status: 404 })
 
-  const body = await request.json()
-  const { title, notes, part_number_label } = body
+  const raw = await request.json().catch(() => null)
+  const parsed = parseBody(objectComponentSchema, raw)
+  if (!parsed.success) return parsed.response
+  const { title, notes, part_number_label } = parsed.data
 
   // Get next component number
   const { data: existing } = await supabase

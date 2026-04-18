@@ -50,7 +50,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     const newRecord = await supabase.from('damage_reports').select('id').eq('report_number', reportNumber).single()
     if (stagedDocs.length > 0 && newRecord.data) {
-      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'damage', newRecord.data.id)
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'damage', newRecord.data.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }

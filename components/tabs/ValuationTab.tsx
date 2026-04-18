@@ -56,7 +56,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
     const newValuation = await supabase.from('valuations').select('id').eq('valuation_reference', valRef).single()
     if (stagedDocs.length > 0 && newValuation.data) {
-      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'valuation', newValuation.data.id)
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'valuation', newValuation.data.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }

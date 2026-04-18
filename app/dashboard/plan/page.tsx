@@ -101,6 +101,8 @@ export default function PlanPage() {
 
       // If returning from a successful checkout but the webhook hasn't fired yet,
       // poll until the plan updates in the database (race condition with Stripe webhooks).
+      // Note: if webhook already fired before page loaded, museum.plan will already be updated
+      // and we skip polling — show "Subscription activated!" immediately.
       if (checkoutParam === 'success' && museum.plan === 'community') {
         setPollingForPlan(true)
         pollAttemptsRef.current = 0
@@ -193,13 +195,18 @@ export default function PlanPage() {
         <div className="p-4 md:p-8 max-w-5xl">
           {checkoutResult === 'success' && (
             <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
-              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">
-                {pollingForPlan
-                  ? 'Activating your plan…'
-                  : pollingTimedOut
-                    ? 'Your plan is activating — this can take a moment. Refresh the page if it does not update shortly.'
-                    : 'Subscription activated!'}
-              </p>
+              {pollingForPlan ? (
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">Activating your plan…</p>
+              ) : pollingTimedOut ? (
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">
+                  Your plan is activating — this can take a moment.{' '}
+                  <button onClick={() => window.location.reload()} className="underline hover:no-underline">
+                    Refresh the page
+                  </button>{' '}if it does not update shortly.
+                </p>
+              ) : (
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">Subscription activated!</p>
+              )}
             </div>
           )}
           {checkoutResult === 'cancelled' && (

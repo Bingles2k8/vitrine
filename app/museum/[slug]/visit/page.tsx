@@ -1,13 +1,16 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createPublicClient } from '@/lib/supabase-server'
+
+export const revalidate = 3600
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getMuseumStyles } from '@/lib/museum-styles'
 import { buildPageMetadata } from '@/lib/seo'
+import { getPlan } from '@/lib/plans'
 import type { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
   const { data: museum } = await supabase.from('museums').select('name').eq('slug', slug).single()
   if (!museum) return {}
   return buildPageMetadata({
@@ -35,7 +38,7 @@ const typeLabels: Record<string, string> = {
 
 export default async function VisitPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
 
   const { data: museum } = await supabase
     .from('museums')
@@ -44,6 +47,7 @@ export default async function VisitPage({ params }: { params: Promise<{ slug: st
     .single()
 
   if (!museum) notFound()
+  if (!getPlan(museum.plan).visitInfo) notFound()
 
   const today = new Date().toISOString().split('T')[0]
   const { data: upcomingEvents } = await supabase

@@ -84,7 +84,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       set('hazard_note', conditionForm.hazard_note || '')
 
       if (stagedDocs.length > 0) {
-        const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
+        const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
         if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])
       }

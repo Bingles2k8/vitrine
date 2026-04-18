@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import { TableSkeleton } from '@/components/Skeleton'
 
@@ -58,6 +59,19 @@ export default function TrashPage() {
   }
 
   async function handleRestore(id: string) {
+    const planInfo = getPlan(museum?.plan)
+    if (planInfo.objects !== null) {
+      const { count } = await supabase
+        .from('objects')
+        .select('*', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+        .is('deleted_at', null)
+      if ((count ?? 0) >= planInfo.objects) {
+        toast(`Your ${planInfo.label} plan allows up to ${planInfo.objects.toLocaleString()} objects. Delete items permanently to free up space.`, 'error')
+        return
+      }
+    }
+
     const { error } = await supabase
       .from('objects')
       .update({ deleted_at: null })

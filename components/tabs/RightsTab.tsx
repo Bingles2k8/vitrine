@@ -90,7 +90,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     if (stagedRightsDocs.length > 0 && newRecord) {
-      const failed = await uploadStagedDocs(supabase, stagedRightsDocs, object.id, museum.id, 'rights', newRecord.id)
+      const failed = await uploadStagedDocs(stagedRightsDocs, object.id, museum.id, 'rights', newRecord.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedRightsDocs([])
     }
@@ -123,7 +123,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     }).select('id').single()
     if (repErr) { toast(repErr.message, 'error'); setSubmitting(false); return }
     if (stagedReproDocs.length > 0 && newRepro) {
-      const failed = await uploadStagedDocs(supabase, stagedReproDocs, object.id, museum.id, 'reproduction', newRepro.id)
+      const failed = await uploadStagedDocs(stagedReproDocs, object.id, museum.id, 'reproduction', newRepro.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedReproDocs([])
     }

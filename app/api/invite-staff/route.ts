@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { inviteStaffSchema, parseBody } from '@/lib/validations'
-import { apiLimiter, rateLimit } from '@/lib/rate-limit'
+import { authLimiter, rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   const parsed = parseBody(inviteStaffSchema, await request.json())
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const limited = await rateLimit(apiLimiter, user.id)
+  const limited = await rateLimit(authLimiter, `invite:${user.id}`)
   if (limited) return limited
 
   // Determine which museum the caller manages (as owner or Admin staff)

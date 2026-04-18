@@ -36,6 +36,22 @@ export async function POST(
   if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 })
   if (item.acquired_at) return NextResponse.json({ error: 'Already acquired' }, { status: 409 })
 
+  // Check plan object limit before creating
+  const planInfo = getPlan(museum.plan)
+  if (planInfo.objects !== null) {
+    const { count } = await supabase
+      .from('objects')
+      .select('*', { count: 'exact', head: true })
+      .eq('museum_id', museum.id)
+      .is('deleted_at', null)
+    if ((count ?? 0) >= planInfo.objects) {
+      return NextResponse.json(
+        { error: `Your ${planInfo.label} plan allows up to ${planInfo.objects.toLocaleString()} objects. Upgrade your plan or delete existing objects to acquire this item.` },
+        { status: 403 }
+      )
+    }
+  }
+
   // Create a new object pre-populated from the wanted item
   const { data: newObject, error: objError } = await supabase
     .from('objects')

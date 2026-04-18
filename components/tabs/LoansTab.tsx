@@ -55,7 +55,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
       set('status', 'On Loan')
     }
     if (stagedDocs.length > 0) {
-      const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'loan', newLoan.id)
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'loan', newLoan.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }

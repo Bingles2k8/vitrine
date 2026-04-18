@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       qty: quantity,
     })
 
-    if (rpcError) console.error('[ticket-checkout] RPC error:', rpcError)
+    if (rpcError) console.error('[ticket-checkout] increment_slot_bookings failed:', rpcError.message)
     if (!success) {
       await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
       return NextResponse.json({ error: 'Slot is now full' }, { status: 409 })
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
       // Rollback: release the slot and cancel the order
       await supabase.rpc('decrement_slot_bookings', { slot_uuid: slotId, qty: quantity })
       await supabase.from('ticket_orders').update({ status: 'cancelled' }).eq('id', order.id)
-      console.error('[ticket-checkout] Failed to insert tickets:', ticketError)
+      console.error('[ticket-checkout] ticket insert failed:', ticketError.message)
       return NextResponse.json({ error: 'Failed to generate tickets' }, { status: 500 })
     }
 
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
         <p style="color:#666;font-size:13px">Scan these codes at the door. Each link shows the full ticket details.</p>
         <p style="margin-top:24px">See you there!<br>— ${esc(museum.name ?? 'The Vitrine team')}</p>
       `,
-    }).catch(err => console.error('[ticket-checkout] Failed to send confirmation email:', err))
+    }).catch(err => console.error('[ticket-checkout] confirmation email failed:', err instanceof Error ? err.message : 'unknown'))
 
     return NextResponse.json({
       success: true,

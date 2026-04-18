@@ -1,4 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
+import type { Database } from '@/lib/database.types'
 
 /**
  * Returns true if the museum has room for `additionalBytes` more storage.
@@ -9,7 +11,7 @@ import { getPlan } from '@/lib/plans'
  * governed by the per-object imagesPerObject count limit instead.
  */
 export async function checkStorageQuota(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   museumId: string,
   planId: string,
   additionalBytes: number,

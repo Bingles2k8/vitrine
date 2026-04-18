@@ -73,7 +73,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     if (stagedDocs.length > 0) {
       const newRecord = await supabase.from('object_exits').select('id').eq('exit_number', exitNumber).single()
       if (newRecord.data) {
-        const failed = await uploadStagedDocs(supabase, stagedDocs, object.id, museum.id, 'exit_record', newRecord.data.id)
+        const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'exit_record', newRecord.data.id)
         if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])
       }

@@ -70,12 +70,20 @@ const NAV_STYLES_DARK: Record<string, typeof NAV_STYLES[string]> = {
 
 const DARK_TEMPLATES = new Set(['dramatic', 'classic', 'cover'])
 
-export function getLayoutVariant(museum: any): string {
+export type MuseumStyleInput = {
+  template?: string | null
+  accent_color?: string | null
+  primary_color?: string | null
+  heading_font?: string | null
+  dark_mode?: boolean | null
+}
+
+export function getLayoutVariant(museum: MuseumStyleInput): string {
   const tmpl = getTemplate(museum.template || 'minimal')
   return tmpl.layout_variant
 }
 
-export function getMuseumStyles(museum: any) {
+export function getMuseumStyles(museum: MuseumStyleInput) {
   const tmpl = getTemplate(museum.template || 'minimal')
   const accent = museum.accent_color || tmpl.accent_color
   const primary = museum.primary_color || tmpl.primary_color

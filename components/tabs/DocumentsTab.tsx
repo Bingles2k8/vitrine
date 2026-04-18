@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { formatSize } from '@/lib/formatSize'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
+import { getPlan } from '@/lib/plans'
 
 const DOC_TYPES = [
   'Deed of Gift', 'Bill of Sale', 'Export Licence', 'Ethics Approval', 'Accession Form',
@@ -41,7 +42,9 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
   const [uploading, setUploading] = useState(false)
   const [pendingDoc, setPendingDoc] = useState<{ label: string; fileName: string; mimeType: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const canAttach = canEdit && museum?.plan && true // compliance docs enabled
+  const planInfo = getPlan(museum?.plan)
+  const storageLimitMb = planInfo.documentStorageMb
+  const canAttach = canEdit && storageLimitMb !== 0
 
   useEffect(() => {
     supabase
@@ -109,7 +112,14 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
     <div className="space-y-4">
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 font-medium">Supporting Documents</h3>
+          <div>
+            <h3 className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 font-medium">Supporting Documents</h3>
+            {storageLimitMb !== null && storageLimitMb > 0 && (
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5 font-mono">
+                {formatSize(museum?.storage_used_bytes ?? 0)} of {storageLimitMb >= 1024 ? `${storageLimitMb / 1024} GB` : `${storageLimitMb} MB`} used
+              </p>
+            )}
+          </div>
           {canAttach && !showForm && (
             <button
               onClick={() => setShowForm(true)}
@@ -119,6 +129,12 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
             </button>
           )}
         </div>
+
+        {!canAttach && loaded && docs.length > 0 && (
+          <p className="text-xs text-stone-400 dark:text-stone-500 mb-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded">
+            Document uploads are not available on the Community plan. Your existing documents are preserved and can still be viewed and downloaded. <a href="/dashboard/plan" className="underline hover:no-underline">Upgrade to Hobbyist</a> to add more.
+          </p>
+        )}
 
         {!loaded && (
           <p className="text-xs text-stone-400 dark:text-stone-500">Loading…</p>

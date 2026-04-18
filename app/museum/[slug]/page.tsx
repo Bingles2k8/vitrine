@@ -1,6 +1,7 @@
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createPublicClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import CollectionSearch from '@/components/CollectionSearch'
 import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
@@ -8,9 +9,11 @@ import PageViewTracker from '@/components/PageViewTracker'
 import { JsonLd } from '@/components/JsonLd'
 import { SITE_URL } from '@/lib/seo'
 
+export const revalidate = 3600
+
 export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createServerSideClient()
+  const supabase = createPublicClient()
 
   const { data: museum } = await supabase
     .from('museums')
@@ -161,7 +164,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                   style={{ borderColor: content.border, borderRadius: `${museum.card_radius ?? 8}px` }}>
                   <div className="relative w-full pb-[56%]" style={{ background: content.cardBg }}>
                     {obj.image_url
-                      ? <img src={obj.image_url} alt={obj.title || ''} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                      ? <Image src={obj.image_url} alt={obj.title || ''} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
                       : <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>}
                   </div>
                   <div className="p-3" style={{ background: content.cardBg }}>
@@ -200,10 +203,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               className="relative w-full mb-10 overflow-hidden"
               style={{ height: 'clamp(280px, 45vw, 520px)', borderRadius: '2px' }}
             >
-              <img
+              <Image
                 src={museum.hero_image_url!}
                 alt={museum.name}
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
                 style={{ objectPosition: museum.hero_image_position || '50% 50%' }}
               />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(12,10,9,0.85) 100%)' }} />
@@ -266,7 +272,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                   style={{ borderRadius: `${museum.card_radius ?? 4}px`, background: content.cardBg }}>
                   <div className="relative w-full pb-[56%]" style={{ background: 'rgba(255,255,255,0.06)' }}>
                     {obj.image_url
-                      ? <img src={obj.image_url} alt={obj.title || ''} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                      ? <Image src={obj.image_url} alt={obj.title || ''} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
                       : <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>}
                   </div>
                   <div className="p-3">
@@ -461,8 +467,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                   style={{ borderColor: 'rgba(128,128,128,0.12)', borderRadius: `${museum.card_radius ?? 6}px` }}>
                   <div className="relative w-full pb-[56%] bg-stone-100">
                     {obj.image_url ? (
-                      <img src={obj.image_url} alt={obj.title || ''}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                      <Image src={obj.image_url} alt={obj.title || ''}
+                        fill sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>
                     )}
@@ -564,8 +571,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 style={{ borderRadius: 0 }}
               >
                 {featuredObjects![0].image_url ? (
-                  <img src={featuredObjects![0].image_url} alt={featuredObjects![0].title || ''}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                  <Image src={featuredObjects![0].image_url} alt={featuredObjects![0].title || ''}
+                    fill priority sizes="(max-width: 768px) 100vw, 66vw"
+                    className="object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                 ) : (
                   <div className="absolute inset-0 w-full h-full bg-stone-100 flex items-center justify-center text-6xl">
                     {featuredObjects![0].emoji || '🖼️'}
@@ -591,8 +599,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                     className="relative overflow-hidden block aspect-[4/3] md:aspect-auto md:flex-1"
                   >
                     {obj.image_url ? (
-                      <img src={obj.image_url} alt={obj.title || ''}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                      <Image src={obj.image_url} alt={obj.title || ''}
+                        fill sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                     ) : (
                       <div className="absolute inset-0 w-full h-full bg-stone-200 flex items-center justify-center text-4xl">
                         {obj.emoji || '🖼️'}
@@ -772,8 +781,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 style={{ borderColor: 'rgba(128,128,128,0.12)', borderRadius: `${museum.card_radius ?? 8}px` }}>
                 <div className="relative w-full pb-[56%] bg-stone-100 dark:bg-stone-800">
                   {obj.image_url ? (
-                    <img src={obj.image_url} alt={obj.title || ''}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                    <Image src={obj.image_url} alt={obj.title || ''}
+                      fill sizes="(max-width: 768px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-4xl">{obj.emoji || '🖼️'}</div>
                   )}

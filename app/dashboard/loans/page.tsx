@@ -112,7 +112,7 @@ export default function LoansPage() {
     if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     if (stagedDocs.length > 0) {
-      const failed = await uploadStagedDocs(supabase, stagedDocs, newObject.id, museum.id, 'entry_record', created.id)
+      const failed = await uploadStagedDocs(stagedDocs, newObject.id, museum.id, 'entry_record', created.id)
       if (failed.length > 0) {
         toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       }
