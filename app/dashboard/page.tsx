@@ -10,6 +10,7 @@ import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import CSVImportModal from '@/components/CSVImportModal'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
+import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState<SortBy>('')
   const [conditionDueIds, setConditionDueIds] = useState<Set<string>>(new Set())
   const [showConditionDue, setShowConditionDue] = useState(false)
+  const [valuations, setValuations] = useState<any[]>([])
   const router = useRouter()
   const supabase = createClient()
 
@@ -87,6 +89,17 @@ export default function Dashboard() {
     setBulking(false)
   }
 
+  async function toggleShowOnSite(id: string, current: boolean, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!canEdit) return
+    const next = !current
+    setObjects(prev => prev.map(o => o.id === id ? { ...o, show_on_site: next } : o))
+    const { error } = await supabase.from('objects').update({ show_on_site: next }).eq('id', id)
+    if (error) {
+      setObjects(prev => prev.map(o => o.id === id ? { ...o, show_on_site: current } : o))
+    }
+  }
+
   async function handleDeleteObject(id: string, title: string, e: React.MouseEvent) {
     e.stopPropagation()
     if (!confirm(`Move "${title}" to bin?\n\nItems in the bin are permanently deleted after 90 days.`)) return
@@ -119,13 +132,14 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(200),
           supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
           supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
           supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
+          supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
         ])
 
         setMuseum(museum)
@@ -139,6 +153,7 @@ export default function Dashboard() {
         setObjects(objects || [])
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
+        setValuations(valuationRows || [])
       } catch {
         setLoadError(true)
       }
@@ -155,10 +170,16 @@ export default function Dashboard() {
   async function saveDiscoverability(newDiscoverable: boolean, newCategory: string) {
     if (!museum) return
     setSavingDiscovery(true)
-    await supabase.from('museums').update({
+    setDiscoverable(newDiscoverable)
+    const { error } = await supabase.from('museums').update({
       discoverable: newDiscoverable,
       collection_category: newCategory || null,
     }).eq('id', museum.id)
+    if (error) {
+      setDiscoverable(!newDiscoverable)
+    } else {
+      setMuseum((m: any) => m ? { ...m, discoverable: newDiscoverable } : m)
+    }
     setSavingDiscovery(false)
   }
 
@@ -201,8 +222,13 @@ export default function Dashboard() {
     ? Math.floor((new Date(today).getTime() - new Date(loan.loan_end_date).getTime()) / 86400000)
     : 0
 
-  // null = show all; a status string = show only that status
-  const CARDS = [
+  const fullMode = getPlan(museum?.plan).fullMode
+  const canImport = getPlan(museum?.plan).analytics
+  const hideMoneyValues = !!museum?.hide_money_values
+  const onPublicSiteCount = objects.filter(a => a.show_on_site).length
+
+  // null = show all; a status string = show only that status; '__on_public_site__' = show_on_site=true
+  const FULL_CARDS = [
     { label: 'Total Objects', filterKey: null,           value: objects.length + trashedCount, sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection`, learnKey: 'dashboard.total_objects' },
     { label: 'On Display',    filterKey: 'On Display',   value: statusCount('On Display'),    sub: objects.length ? `${Math.round(statusCount('On Display')/objects.length*100)}% of collection` : '—', learnKey: 'dashboard.on_display' },
     { label: 'On Loan',       filterKey: 'On Loan',      value: statusCount('On Loan'),       sub: '—', learnKey: 'dashboard.on_loan' },
@@ -216,12 +242,13 @@ export default function Dashboard() {
     objects.flatMap(a => [a.artist, a.maker_name]).filter(Boolean)
   )).sort() as string[]
 
-  const fullMode = getPlan(museum?.plan).fullMode
-  const canImport = getPlan(museum?.plan).analytics
-
   const q = searchQuery.trim().toLowerCase()
   const visibleObjects = objects
-    .filter(a => filter ? a.status === filter : true)
+    .filter(a => {
+      if (!filter) return true
+      if (filter === '__on_public_site__') return !!a.show_on_site
+      return a.status === filter
+    })
     .filter(a => showDuplicatesOnly ? duplicateObjectIds.has(a.id) : true)
     .filter(a => showConditionDue ? conditionDueIds.has(a.id) : true)
     .filter(a => {
@@ -257,12 +284,20 @@ export default function Dashboard() {
 
   const totalPaid = objects.reduce((sum, o) => sum + (o.acquisition_value ? parseFloat(o.acquisition_value) : 0), 0)
   const totalEstimated = objects.reduce((sum, o) => sum + (o.estimated_value ? parseFloat(o.estimated_value) : 0), 0)
-  const showValueTiles = totalPaid > 0 || totalEstimated > 0
+  const showValueTiles = (totalPaid > 0 || totalEstimated > 0) && !hideMoneyValues
   const valueDiff = totalEstimated - totalPaid
   const defaultCurrency = objects.find(o => o.acquisition_currency || o.estimated_value_currency)?.acquisition_currency || objects.find(o => o.estimated_value_currency)?.estimated_value_currency || 'GBP'
   function fmtCurrency(amount: number, currency: string) {
     return new Intl.NumberFormat('en-GB', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
   }
+  const { total: collectionValue, currency: collectionValueCurrency } = getCollectionValue(objects, valuations)
+  const SIMPLE_CARDS = [
+    { label: 'Total Objects',  filterKey: null,                   value: String(objects.length + trashedCount),       sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection`, learnKey: 'dashboard.total_objects', isValue: false },
+    { label: 'On Public Site', filterKey: '__on_public_site__',   value: String(onPublicSiteCount),                    sub: objects.length ? `${Math.round(onPublicSiteCount/objects.length*100)}% of collection` : '—', learnKey: 'dashboard.on_public_site', isValue: false },
+    { label: 'On Loan',        filterKey: 'On Loan',              value: String(statusCount('On Loan')),               sub: '—', learnKey: 'dashboard.on_loan', isValue: false },
+    { label: 'Collection Value', filterKey: null,                 value: hideMoneyValues ? '—' : (collectionValue > 0 ? formatCollectionValue(collectionValue, collectionValueCurrency) : '—'), sub: hideMoneyValues ? 'Hidden' : (collectionValue > 0 ? 'Latest valuation, estimate, or purchase' : '—'), learnKey: 'dashboard.collection_value', isValue: true },
+  ]
+  const CARDS = fullMode ? FULL_CARDS.map(c => ({ ...c, value: String(c.value), isValue: false })) : SIMPLE_CARDS
   const objectLimit = getPlan(museum?.plan).objects
   const nearLimit = objectLimit !== null && objects.length >= objectLimit * 0.8
 
@@ -289,34 +324,36 @@ export default function Dashboard() {
         </div>
 
         <div className="p-4 md:p-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className={`grid grid-cols-2 ${fullMode ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 mb-8`}>
             {CARDS.map(card => {
-              const active = filter === card.filterKey
+              const active = !card.isValue && filter === card.filterKey
+              const Element: any = card.isValue ? 'div' : 'button'
               return (
-                <button
+                <Element
                   key={card.label}
-                  type="button"
-                  onClick={() => setFilter(card.filterKey)}
+                  {...(card.isValue ? {} : { type: 'button', onClick: () => setFilter(card.filterKey) })}
                   data-learn={card.learnKey}
                   className={`text-left rounded-lg p-5 border transition-all ${
                     active
                       ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white'
-                      : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 hover:shadow-sm'
+                      : card.isValue
+                        ? 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700'
+                        : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 hover:shadow-sm'
                   }`}
                 >
                   <div className={`text-xs uppercase tracking-widest mb-2 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.label}</div>
-                  <div className={`font-serif text-4xl ${active ? 'text-white dark:text-stone-900' : 'text-stone-900 dark:text-stone-100'}`}>{card.value}</div>
+                  <div className={`font-serif ${card.isValue ? 'text-3xl' : 'text-4xl'} ${active ? 'text-white dark:text-stone-900' : 'text-stone-900 dark:text-stone-100'}`}>{card.value}</div>
                   <div className={`text-xs mt-1 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.sub}</div>
-                </button>
+                </Element>
               )
             })}
           </div>
 
-          {/* Collection value tiles */}
-          {showValueTiles && (
+          {/* Collection value tiles (full mode only) */}
+          {fullMode && showValueTiles && (
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5" data-learn="dashboard.total_paid">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Paid</div>
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Purchase Price</div>
                 <div className="font-serif text-3xl text-stone-900 dark:text-stone-100">{totalPaid > 0 ? fmtCurrency(totalPaid, defaultCurrency) : '—'}</div>
                 <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Purchase prices recorded</div>
               </div>
@@ -420,13 +457,13 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">🏛️</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">Your collection is empty</div>
-              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Log an object in the Entry Register to begin.</p>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">{fullMode ? 'Log an object in the Entry Register to begin.' : 'Add your first object to begin.'}</p>
               <button
                 onClick={() => router.push('/dashboard/entry')}
                 className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
                 data-learn="action.new_entry"
               >
-                + New Entry Record
+                {fullMode ? '+ New Entry Record' : '+ Add an object'}
               </button>
             </div>
           ) : (
@@ -444,6 +481,29 @@ export default function Dashboard() {
                   mediumOptions={mediumOptions}
                   objectTypeOptions={objectTypeOptions}
                   artistOptions={artistOptions}
+                  sortBeforeSearch={!fullMode}
+                  trailingSlot={!fullMode && (isOwner || staffAccess === 'Admin') ? (
+                    <div className="relative group/discover flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => saveDiscoverability(!discoverable, collectionCategory)}
+                        disabled={savingDiscovery}
+                        className="flex items-center gap-2 px-3 py-2 rounded border text-xs font-mono transition-colors disabled:opacity-50 bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500"
+                      >
+                        <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${discoverable ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                          <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${discoverable ? 'left-4' : 'left-0.5'}`} />
+                        </span>
+                        <span className={discoverable ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-stone-400'}>
+                          Discover
+                        </span>
+                      </button>
+                      <div className="absolute right-0 top-full mt-1.5 w-56 p-2.5 bg-stone-900 text-white text-[11px] rounded shadow-xl opacity-0 invisible group-hover/discover:opacity-100 group-hover/discover:visible transition-all z-50 pointer-events-none leading-relaxed">
+                        {discoverable
+                          ? 'Your collection is listed in Vitrine Discover. Click to remove it.'
+                          : 'List your collection in Vitrine Discover so others can find it.'}
+                      </div>
+                    </div>
+                  ) : undefined}
                   additionalFilters={
                     conditionDueIds.size > 0 ? (
                       <div className="col-span-2 md:col-span-1">
@@ -469,7 +529,7 @@ export default function Dashboard() {
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
                     Showing {visibleObjects.length} {visibleObjects.length === 1 ? 'object' : 'objects'}
-                    {filter ? ` — ${filter}` : ''}
+                    {filter ? ` — ${filter === '__on_public_site__' ? 'On public site' : filter}` : ''}
                     {showDuplicatesOnly ? ' — Duplicates only' : ''}
                   </span>
                   <button onClick={() => { setFilter(null); setShowDuplicatesOnly(false) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
@@ -525,6 +585,7 @@ export default function Dashboard() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.year">Year</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.medium">Medium</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.status">Status</th>
+                    {!fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.public">Public</th>}
                     {canEdit && <th className="w-10 px-2 py-3" />}
                   </tr>
                 </thead>
@@ -602,6 +663,19 @@ export default function Dashboard() {
                           )
                         })()}
                       </td>
+                      {!fullMode && (
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                          <label className={`inline-flex items-center gap-2 ${canEdit ? 'cursor-pointer' : 'cursor-default opacity-60'}`} title={a.show_on_site ? 'Visible on your public site' : 'Hidden from your public site'}>
+                            <input
+                              type="checkbox"
+                              checked={!!a.show_on_site}
+                              onChange={e => toggleShowOnSite(a.id, !!a.show_on_site, e as any)}
+                              disabled={!canEdit}
+                              className="rounded border-stone-300 dark:border-stone-600 accent-amber-600"
+                            />
+                          </label>
+                        </td>
+                      )}
                       {canEdit && (
                         <td className="px-2 py-3 w-10" onClick={e => e.stopPropagation()}>
                           <button
@@ -619,8 +693,8 @@ export default function Dashboard() {
                   ))}
                   {visibleObjects.length === 0 && (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 4} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
-                        {searchQuery || showConditionDue ? 'No objects match your filters.' : `No objects with status "${filter}"`}
+                      <td colSpan={4 + (fullMode && canEdit ? 1 : 0) + (!fullMode ? 1 : 0) + (canEdit ? 1 : 0)} className="px-6 py-12 text-center text-sm text-stone-400 dark:text-stone-500">
+                        {searchQuery || showConditionDue ? 'No objects match your filters.' : filter === '__on_public_site__' ? 'No objects are currently visible on your public site.' : `No objects with status "${filter}"`}
                       </td>
                     </tr>
                   )}

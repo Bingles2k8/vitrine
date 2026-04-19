@@ -16,6 +16,7 @@ export interface Template {
   card_padding: string
   card_metadata: string
   layout_variant: 'standard' | 'cover' | 'text-forward' | 'magazine' | 'sidebar' | 'minimal' | 'dramatic' | 'archival'
+  supports_header_image: boolean
 }
 
 export const TEMPLATES: Template[] = [
@@ -37,6 +38,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'normal',
     card_metadata: 'title+artist',
     layout_variant: 'minimal',
+    supports_header_image: false,
   },
   {
     id: 'dramatic',
@@ -56,6 +58,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'normal',
     card_metadata: 'full',
     layout_variant: 'dramatic',
+    supports_header_image: true,
   },
   {
     id: 'archival',
@@ -75,6 +78,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'generous',
     card_metadata: 'full',
     layout_variant: 'archival',
+    supports_header_image: false,
   },
   {
     id: 'editorial',
@@ -94,6 +98,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'tight',
     card_metadata: 'title+artist',
     layout_variant: 'standard',
+    supports_header_image: true,
   },
   {
     id: 'classic',
@@ -113,6 +118,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'normal',
     card_metadata: 'full',
     layout_variant: 'standard',
+    supports_header_image: true,
   },
   {
     id: 'cover',
@@ -132,6 +138,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'normal',
     card_metadata: 'title+artist',
     layout_variant: 'cover',
+    supports_header_image: true,
   },
   {
     id: 'curator',
@@ -151,6 +158,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'tight',
     card_metadata: 'title+artist',
     layout_variant: 'text-forward',
+    supports_header_image: false,
   },
   {
     id: 'magazine',
@@ -170,6 +178,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'tight',
     card_metadata: 'title+artist',
     layout_variant: 'magazine',
+    supports_header_image: false,
   },
   {
     id: 'salon',
@@ -189,6 +198,7 @@ export const TEMPLATES: Template[] = [
     card_padding: 'normal',
     card_metadata: 'title+artist',
     layout_variant: 'sidebar',
+    supports_header_image: false,
   },
 ]
 

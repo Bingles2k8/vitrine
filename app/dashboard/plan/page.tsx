@@ -10,7 +10,7 @@ import { CardGridSkeleton } from '@/components/Skeleton'
 import { formatSize } from '@/lib/formatSize'
 
 const CHECK = '✓'
-const CROSS = '✕'
+const CROSS = '—'
 
 function UsageRow({ label, used, limit, format, note }: {
   label: string
@@ -394,61 +394,84 @@ export default function PlanPage() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <th className="text-left font-normal text-stone-400 dark:text-stone-500 px-6 py-3 uppercase tracking-widest w-1/3"></th>
+                  <th colSpan={2} className="text-center font-normal text-stone-400 dark:text-stone-500 px-4 py-2 uppercase tracking-widest border-l border-stone-200 dark:border-stone-700">For collectors</th>
+                  <th colSpan={3} className="text-center font-normal text-stone-400 dark:text-stone-500 px-4 py-2 uppercase tracking-widest border-l border-stone-200 dark:border-stone-700">For institutions</th>
+                </tr>
+                <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                   <th className="text-left font-normal text-stone-400 dark:text-stone-500 px-6 py-3 uppercase tracking-widest">Feature</th>
-                  {PLAN_ORDER.map(id => (
-                    <th key={id} className={`text-center font-normal px-4 py-3 uppercase tracking-widest ${currentPlan === id ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'}`}>
+                  {PLAN_ORDER.map((id, i) => (
+                    <th key={id} className={`text-center font-normal px-4 py-3 uppercase tracking-widest ${currentPlan === id ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'} ${i === 0 || i === 2 ? 'border-l border-stone-200 dark:border-stone-700' : ''}`}>
                       {PLANS[id].label}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {[
-                  {
-                    label: 'Collection items',
-                    values: PLAN_ORDER.map(id => PLANS[id].objects === null ? 'Unlimited' : PLANS[id].objects!.toLocaleString()),
-                  },
-                  {
-                    label: 'Staff accounts',
-                    values: PLAN_ORDER.map(id => PLANS[id].staff === null ? 'Unlimited' : PLANS[id].staff === 1 ? '1 (owner)' : `Up to ${PLANS[id].staff}`),
-                  },
-                  { label: 'Public website', values: PLAN_ORDER.map(() => true) },
-                  {
-                    label: 'Site customisation',
-                    values: PLAN_ORDER.map(id => PLANS[id].fullMode ? 'Full' : 'Basic'),
-                  },
-                  { label: 'Collections compliance tools', values: PLAN_ORDER.map(id => PLANS[id].compliance) },
-                  { label: 'Visitor analytics', values: PLAN_ORDER.map(id => PLANS[id].visitorAnalytics) },
-                  { label: 'Staff management', values: PLAN_ORDER.map(id => PLANS[id].fullMode) },
-                  { label: 'Event ticketing', values: PLAN_ORDER.map(id => PLANS[id].ticketing) },
-                  {
-                    label: 'Storage',
-                    values: PLAN_ORDER.map(id => {
+                {(() => {
+                  type Row = { label: string; values: (string | boolean)[] }
+                  type Group = { group: string } | Row
+                  const rows: Group[] = [
+                    { group: 'Collection' },
+                    { label: 'Collection items', values: PLAN_ORDER.map(id => PLANS[id].objects === null ? 'Unlimited' : PLANS[id].objects!.toLocaleString()) },
+                    { label: 'Photos per object', values: PLAN_ORDER.map(id => PLANS[id].imagesPerObject === null ? 'Unlimited' : String(PLANS[id].imagesPerObject)) },
+                    { label: 'Wishlist', values: PLAN_ORDER.map(id => PLANS[id].wishlist) },
+                    { label: 'Collections compliance tools', values: PLAN_ORDER.map(id => PLANS[id].compliance) },
+                    { label: 'Document storage', values: PLAN_ORDER.map(id => {
                       const mb = PLANS[id].documentStorageMb
                       if (mb === null) return 'Unlimited'
-                      if (mb === 0) return '—'
+                      if (mb === 0) return false
                       if (mb >= 1024) return `${mb / 1024} GB`
                       return `${mb} MB`
-                    }),
-                  },
-                ].map(row => (
-                  <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
-                    <td className="px-6 py-3 text-stone-600 dark:text-stone-400">{row.label}</td>
-                    {row.values.map((val, i) => (
-                      <td key={i} className="px-4 py-3 text-center">
-                        {typeof val === 'boolean' ? (
-                          <span className={val ? 'text-emerald-500' : 'text-stone-300 dark:text-stone-600'}>
-                            {val ? CHECK : CROSS}
-                          </span>
-                        ) : (
-                          <span className={`font-mono ${currentPlan === PLAN_ORDER[i] ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}>
-                            {val}
-                          </span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                    }) },
+
+                    { group: 'Public site' },
+                    { label: 'Public website', values: PLAN_ORDER.map(() => true) },
+                    { label: 'Site customisation', values: PLAN_ORDER.map(id => PLANS[id].fullMode ? 'Full' : 'Basic') },
+                    { label: 'Custom slug', values: PLAN_ORDER.map(id => PLANS[id].changeSlug) },
+                    { label: 'Hide Vitrine branding', values: PLAN_ORDER.map(id => PLANS[id].hideVitrineBranding) },
+                    { label: 'Visit & event pages', values: PLAN_ORDER.map(id => PLANS[id].visitInfo) },
+                    { label: 'Event ticketing', values: PLAN_ORDER.map(id => PLANS[id].ticketing) },
+
+                    { group: 'Insights & team' },
+                    { label: 'Analytics', values: PLAN_ORDER.map(id => PLANS[id].analytics) },
+                    { label: 'Visitor analytics', values: PLAN_ORDER.map(id => PLANS[id].visitorAnalytics) },
+                    { label: 'Staff accounts', values: PLAN_ORDER.map(id => PLANS[id].staff === null ? 'Unlimited' : PLANS[id].staff === 1 ? '1 (owner)' : `Up to ${PLANS[id].staff}`) },
+                    { label: 'Staff management', values: PLAN_ORDER.map(id => PLANS[id].fullMode) },
+                  ]
+                  let dataRowIdx = 0
+                  return rows.map((r, rowIdx) => {
+                    if ('group' in r) {
+                      return (
+                        <tr key={`g-${rowIdx}`} className="bg-stone-50/50 dark:bg-stone-800/30">
+                          <td colSpan={PLAN_ORDER.length + 1} className="px-6 py-2 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-mono">
+                            {r.group}
+                          </td>
+                        </tr>
+                      )
+                    }
+                    const zebra = dataRowIdx % 2 === 1
+                    dataRowIdx += 1
+                    return (
+                      <tr key={r.label} className={`border-b border-stone-100 dark:border-stone-800 last:border-0 ${zebra ? 'bg-stone-50/40 dark:bg-stone-800/20' : ''}`}>
+                        <td className="px-6 py-3 text-left text-stone-600 dark:text-stone-400">{r.label}</td>
+                        {r.values.map((val, i) => (
+                          <td key={i} className={`px-4 py-3 text-center ${i === 0 || i === 2 ? 'border-l border-stone-100 dark:border-stone-800' : ''}`}>
+                            {typeof val === 'boolean' ? (
+                              <span className={val ? 'text-emerald-500' : 'text-stone-300 dark:text-stone-600'}>
+                                {val ? CHECK : CROSS}
+                              </span>
+                            ) : (
+                              <span className={`font-mono ${currentPlan === PLAN_ORDER[i] ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'}`}>
+                                {val}
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    )
+                  })
+                })()}
               </tbody>
             </table>
           </div>

@@ -30,7 +30,7 @@ export const MEDIUMS = [
   'Textiles','Embroidery','Tapestry','Leather','Metalwork','Wood','Paper','Ivory','Bone','Other',
 ]
 export const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Conservation','Deaccessioned']
-export const EMOJIS = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨']
+export const EMOJIS = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨','⌚','🪙','💍','📖','🏆','🎸','🧸','🎮','🎟️','🚗','📺','💿','🎺','🎻','🔭','⚽','🎣','🪖','🪔','🪆','🧿']
 export const OBJECT_TYPES = ['Painting','Drawing','Print','Photograph','Sculpture','Ceramic','Textile','Furniture','Metalwork','Glass','Archaeological','Natural History','Document / Archive','Other']
 export const ACQ_METHODS = ['Purchase','Gift','Bequest','Transfer','Found','Fieldwork','Exchange','Unknown']
 export const CONDITION_GRADES = ['Excellent','Good','Fair','Poor','Critical']
@@ -70,14 +70,17 @@ export const RISK_SEVERITY_STYLES: Record<string, string> = {
 }
 
 export const CULTURES = [
-  'British', 'English', 'Scottish', 'Welsh', 'Irish',
-  'French', 'German', 'Italian', 'Spanish', 'Portuguese', 'Dutch', 'Flemish',
-  'Netherlandish', 'Belgian', 'Swiss', 'Austrian', 'Scandinavian', 'Norwegian',
-  'Swedish', 'Danish', 'Russian', 'Greek', 'Roman', 'Byzantine',
-  'Ottoman', 'Persian', 'Islamic', 'Egyptian', 'African',
-  'American', 'Canadian', 'Australian', 'Japanese', 'Chinese', 'Korean',
-  'Indian', 'Mughal', 'Aztec', 'Mayan', 'Pre-Columbian', 'Viking',
-  'Medieval European', 'Renaissance', 'Baroque', 'Rococo',
+  'Britain', 'England', 'Scotland', 'Wales', 'Ireland',
+  'France', 'Germany', 'Italy', 'Spain', 'Portugal', 'Netherlands', 'Belgium',
+  'Switzerland', 'Austria', 'Norway', 'Sweden', 'Denmark', 'Finland', 'Iceland',
+  'Poland', 'Czech Republic', 'Hungary', 'Russia', 'Ukraine',
+  'Greece', 'Turkey', 'Cyprus', 'Malta',
+  'Egypt', 'Morocco', 'Tunisia', 'Algeria', 'South Africa', 'Ethiopia', 'Nigeria', 'Ghana', 'Kenya',
+  'Iran', 'Iraq', 'Syria', 'Lebanon', 'Israel', 'Saudi Arabia',
+  'United States', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'Peru', 'Chile', 'Colombia',
+  'Australia', 'New Zealand',
+  'Japan', 'China', 'Korea', 'Taiwan', 'Vietnam', 'Thailand', 'Indonesia', 'Philippines',
+  'India', 'Pakistan', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Afghanistan',
 ]
 
 export const PRODUCTION_PLACES = [

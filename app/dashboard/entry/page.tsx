@@ -92,6 +92,21 @@ export default function EntryRegisterPage() {
     router.push('/login')
   }
 
+  async function generateAccessionNo(): Promise<string> {
+    const today = new Date()
+    const yy = String(today.getFullYear()).slice(-2)
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const prefix = `${yy}${mm}${dd}`
+    const { data: sameDay } = await supabase
+      .from('objects')
+      .select('accession_no')
+      .eq('museum_id', museum.id)
+      .like('accession_no', `${prefix}-%`)
+    const next = (sameDay?.length ?? 0) + 1
+    return `${prefix}-${String(next).padStart(3, '0')}`
+  }
+
   async function handlePromote(entry: any) {
         const planInfo = getPlan(museum?.plan)
     const limit = planInfo.objects
@@ -108,6 +123,7 @@ export default function EntryRegisterPage() {
     const { data: newObject, error: createError } = await supabase.from('objects').insert({
       museum_id: museum.id,
       title: entry.objects?.title || entry.object_description || 'Untitled',
+      description: entry.object_description || null,
       acquisition_source: entry.depositor_name,
       acquisition_source_contact: entry.depositor_contact,
       acquisition_object_count: entry.object_count,
@@ -128,7 +144,7 @@ export default function EntryRegisterPage() {
   async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
     const trackDepositor = getPlan(museum?.plan).depositorTracking
-    const requiredMissing = !entry_date || !object_title || (fullMode && !entry_reason) || !object_description || !accession_no ||
+    const requiredMissing = !entry_date || !object_title || (fullMode && !entry_reason) || !object_description || (fullMode && !accession_no) ||
       (trackDepositor && (!depositor_name || !received_by))
     if (requiredMissing) {
       toast('Please fill in all required fields.', 'error')
@@ -164,15 +180,17 @@ export default function EntryRegisterPage() {
       outcome: 'Pending',
     }).select('*').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
-    // Create the object
+    // Create the object — auto-generate accession_no for simple mode if blank
+    const finalAccessionNo = newEntry.accession_no.trim() || (!fullMode ? await generateAccessionNo() : null)
     const { data: newObject, error: objectError } = await supabase.from('objects').insert({
       museum_id: museum.id,
       title: newEntry.object_title,
+      description: newEntry.object_description || null,
       acquisition_source: newEntry.depositor_name,
       acquisition_source_contact: newEntry.depositor_contact || null,
       acquisition_object_count: newEntry.object_count,
       number_of_parts: newEntry.object_count,
-      accession_no: newEntry.accession_no || null,
+      accession_no: finalAccessionNo,
       status: 'Entry',
       emoji: '🖼️',
       condition_grade: newEntry.condition_grade || null,
@@ -180,7 +198,7 @@ export default function EntryRegisterPage() {
     if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     if (mode === 'continue') {
-      router.push(`/dashboard`)
+      router.push(`/dashboard/objects/${newObject.id}`)
     } else {
       setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_title, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
       setNewEntry(defaultEntry())
@@ -406,13 +424,15 @@ export default function EntryRegisterPage() {
                     </select>
                   </div>
                 )}
-                <div>
-                  <label className={labelCls}>Entry Method</label>
-                  <select className={inputCls} value={newEntry.entry_method} onChange={e => setNewEntry(v => ({ ...v, entry_method: e.target.value }))}>
-                    <option value="">Select method…</option>
-                    {['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer'].map(m => <option key={m}>{m}</option>)}
-                  </select>
-                </div>
+                {fullMode && (
+                  <div>
+                    <label className={labelCls}>Entry Method</label>
+                    <select className={inputCls} value={newEntry.entry_method} onChange={e => setNewEntry(v => ({ ...v, entry_method: e.target.value }))}>
+                      <option value="">Select method…</option>
+                      {['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer'].map(m => <option key={m}>{m}</option>)}
+                    </select>
+                  </div>
+                )}
                 {trackDepositor && (
                   <div>
                     <label className={labelCls}>Entry By <span className="text-red-400">*</span></label>
@@ -429,8 +449,18 @@ export default function EntryRegisterPage() {
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
                   </div>
                   <div>
-                    <label className={labelCls}>Object Number <span className="text-red-400">*</span></label>
-                    <input type="text" className={inputCls} placeholder="e.g. 2026.001" value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
+                    <label className={labelCls + ' flex items-center gap-1.5'}>
+                      Object Number {fullMode && <span className="text-red-400">*</span>}
+                      {!fullMode && (
+                        <span className="relative group/tip inline-flex items-center">
+                          <span className="cursor-help text-stone-400 dark:text-stone-500 text-[10px] border border-stone-300 dark:border-stone-600 rounded-full w-3.5 h-3.5 flex items-center justify-center">?</span>
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-60 max-w-[calc(100vw-2rem)] p-2.5 bg-stone-900 text-white text-[11px] normal-case tracking-normal rounded shadow-xl opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 pointer-events-none leading-relaxed">
+                            Optional — we'll generate one automatically (YYMMDD-001). Set your own if you want to distinguish multiple objects with the same name.
+                          </span>
+                        </span>
+                      )}
+                    </label>
+                    <input type="text" className={inputCls} placeholder={fullMode ? 'e.g. 2026.001' : 'Auto — leave blank to generate'} value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
                   </div>
                   <div>
                     <label className={labelCls}>Condition Grade</label>

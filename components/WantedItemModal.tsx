@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useToast } from '@/components/Toast'
-import { inputCls, labelCls, MEDIUMS } from '@/components/tabs/shared'
+import { inputCls, labelCls } from '@/components/tabs/shared'
 
 interface WantedItemModalProps {
   museumId: string
@@ -78,7 +78,7 @@ export default function WantedItemModal({ museumId, item, onClose, onSaved }: Wa
       <div className="relative bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-700 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800">
           <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
-            {item ? 'Edit wanted item' : 'Add to wanted list'}
+            {item ? 'Edit wishlist item' : 'Add to wishlist'}
           </h2>
           <button
             onClick={onClose}
@@ -102,31 +102,15 @@ export default function WantedItemModal({ museumId, item, onClose, onSaved }: Wa
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Year / date</label>
-              <input
-                type="text"
-                value={form.year}
-                onChange={e => set('year', e.target.value)}
-                placeholder="e.g. 1920s, c.1850"
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Medium / type</label>
-              <input
-                type="text"
-                value={form.medium}
-                onChange={e => set('medium', e.target.value)}
-                placeholder="e.g. Oil on canvas"
-                list="wanted-mediums"
-                className={inputCls}
-              />
-              <datalist id="wanted-mediums">
-                {MEDIUMS.map(m => <option key={m} value={m} />)}
-              </datalist>
-            </div>
+          <div>
+            <label className={labelCls}>Year / date</label>
+            <input
+              type="text"
+              value={form.year}
+              onChange={e => set('year', e.target.value)}
+              placeholder="e.g. 1920s, c.1850"
+              className={inputCls}
+            />
           </div>
 
           <div>

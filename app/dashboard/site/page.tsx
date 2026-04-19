@@ -109,6 +109,7 @@ export default function SiteBuilder() {
     logo_image_url: '',
     hero_image_url: '',
     hero_image_position: '50% 50%',
+    header_image_zoom: 1,
     heading_font: 'playfair',
     primary_color: '#0f0e0c',
     accent_color: '#c8961e',
@@ -159,6 +160,7 @@ export default function SiteBuilder() {
         logo_image_url: museum.logo_image_url || '',
         hero_image_url: museum.hero_image_url || '',
         hero_image_position: museum.hero_image_position || '50% 50%',
+        header_image_zoom: museum.header_image_zoom ?? 1,
         heading_font: museum.heading_font || 'playfair',
         primary_color: museum.primary_color || '#0f0e0c',
         accent_color: museum.accent_color || '#c8961e',
@@ -216,13 +218,14 @@ export default function SiteBuilder() {
   }
 
   async function uploadImage(file: File, field: 'hero_image_url' | 'logo_image_url') {
+    if (!museum) return
     setUploadingField(field)
     const blobUrl = URL.createObjectURL(file)
     const previousUrl = form[field] as string
     set(field, blobUrl)
     const compressed = await compressImage(file)
     const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const filename = `${museum.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     try {
       const publicUrl = await uploadToR2('museum-assets', filename, compressed)
       set(field, publicUrl)
@@ -383,13 +386,13 @@ export default function SiteBuilder() {
           <div className="flex items-center gap-3">
             {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
             {error && <span className="text-xs font-mono text-red-500">{error}</span>}
-            <button onClick={() => window.open('/museum/' + museum.slug, '_blank')}
-              className="hidden sm:block border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
-              View public site
-            </button>
             <button onClick={handleSave} disabled={saving}
               className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
               {saving ? 'Saving...' : 'Save changes'}
+            </button>
+            <button onClick={() => window.open('/museum/' + museum.slug, '_blank')}
+              className="hidden sm:block border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
+              View public site
             </button>
           </div>
         </div>
@@ -625,6 +628,13 @@ export default function SiteBuilder() {
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 mb-2">Logo Emoji</label>
                 <div className="flex gap-2 flex-wrap">
+                  <button
+                    key="none"
+                    type="button"
+                    onClick={() => set('logo_emoji', '')}
+                    className={'w-9 h-9 rounded-lg border text-xs font-mono transition-all ' + (!form.logo_emoji ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700 text-stone-900 dark:text-white' : 'border-stone-200 dark:border-stone-700 text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800')}>
+                    None
+                  </button>
                   {emojis.map(e => (
                     <button key={e} type="button" onClick={() => set('logo_emoji', e)}
                       className={'w-9 h-9 rounded-lg border text-lg transition-all ' + (form.logo_emoji === e ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700' : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800')}>
@@ -657,7 +667,15 @@ export default function SiteBuilder() {
                   </label>
                 )}
               </div>
-              <div>
+              <div className="relative">
+                {!selectedTemplate.supports_header_image && (
+                  <div className="absolute inset-0 bg-white/70 dark:bg-stone-900/80 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-lg">
+                    <p className="text-xs font-mono text-stone-600 dark:text-stone-300 text-center px-4">
+                      The {selectedTemplate.name} template doesn't use a header image.
+                    </p>
+                  </div>
+                )}
+                <div className={selectedTemplate.supports_header_image ? '' : 'opacity-50 pointer-events-none'}>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Header Image</label>
                 <p className="text-xs text-stone-400 dark:text-stone-500 mb-3">Background image for the hero section. Wide landscape images work best.</p>
                 {form.hero_image_url ? (
@@ -670,10 +688,13 @@ export default function SiteBuilder() {
                       onMouseUp={() => setIsDragging(false)}
                       onMouseLeave={() => setIsDragging(false)}
                     >
-                      <img
-                        src={form.hero_image_url} alt="Header" draggable={false}
-                        className="w-full h-full object-cover pointer-events-none"
-                        style={{ objectPosition: form.hero_image_position }}
+                      <div
+                        className="w-full h-full pointer-events-none"
+                        style={{
+                          backgroundImage: `url(${form.hero_image_url})`,
+                          backgroundSize: (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
+                          backgroundPosition: form.hero_image_position || '50% 50%',
+                        }}
                       />
                       {(() => {
                         const parts = (form.hero_image_position || '50% 50%').split(' ')
@@ -711,6 +732,24 @@ export default function SiteBuilder() {
                     <input type="file" accept={ALLOWED_IMAGE_ACCEPT} className="hidden" onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'hero_image_url')} />
                   </label>
                 )}
+                {form.hero_image_url && (
+                  <div className="mt-3">
+                    <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5">Header Zoom</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="1"
+                        max="2.5"
+                        step="0.05"
+                        value={form.header_image_zoom ?? 1}
+                        onChange={e => set('header_image_zoom', parseFloat(e.target.value))}
+                        className="flex-1"
+                      />
+                      <span className="text-xs font-mono text-stone-500 dark:text-stone-400 w-10 text-right">{Number(form.header_image_zoom ?? 1).toFixed(2)}x</span>
+                    </div>
+                  </div>
+                )}
+                </div>
               </div>
               {getPlan(museum?.plan).advancedCustomisation ? (
                 <div>
@@ -1040,9 +1079,9 @@ export default function SiteBuilder() {
               )}
             </CollapsibleSection>
 
-            {/* Wanted List — Community & Hobbyist only */}
+            {/* Wishlist — Community & Hobbyist only */}
             {getPlan(museum?.plan).wishlist && (
-              <CollapsibleSection title="Wanted List">
+              <CollapsibleSection title="Wishlist">
                 <div className="space-y-3">
                   <p className="text-xs text-stone-400 dark:text-stone-500">
                     Show what you&apos;re actively looking for on your public collection site. Visitors who own items on your list can reach out directly.
@@ -1059,7 +1098,7 @@ export default function SiteBuilder() {
                     <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_wanted ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
                       <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_wanted ? 'left-4' : 'left-0.5'}`} />
                     </span>
-                    {form.show_wanted ? 'Wanted list visible on public site' : 'Show wanted list on public site'}
+                    {form.show_wanted ? 'Wishlist visible on public site' : 'Show wishlist on public site'}
                   </button>
                   {form.show_wanted && museum?.slug && (
                     <p className="text-xs text-stone-400 dark:text-stone-500">
@@ -1189,7 +1228,7 @@ export default function SiteBuilder() {
                       height: '160px',
                       backgroundColor: heroBg || '#1a1a1a',
                       backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
-                      backgroundSize: 'cover',
+                      backgroundSize: form.hero_image_url && (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
                       backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
                     }}>
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)' }} />
@@ -1425,7 +1464,22 @@ export default function SiteBuilder() {
                     </div>
                     <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Collection</span>
                   </div>
-                  {/* Title slammed left on dark page */}
+                  {/* Hero image (if set) or title block */}
+                  {form.hero_image_url ? (
+                    <div className="relative overflow-hidden" style={{
+                      height: '100px',
+                      backgroundImage: `url(${form.hero_image_url})`,
+                      backgroundSize: (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
+                      backgroundPosition: form.hero_image_position || '50% 50%',
+                    }}>
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(12,10,9,0.9) 100%)' }} />
+                      <div className="absolute bottom-0 left-0 right-0 px-4 pb-2">
+                        <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '22px', lineHeight: 1 }}>
+                          {form.tagline || 'The Collection'}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="px-5 pt-7 pb-4" style={{ background: '#0c0a09' }}>
                     <div className="text-xs font-mono uppercase tracking-widest mb-5" style={{ color: form.accent_color }}>
                       {form.name || 'Your Museum'} &nbsp;/&nbsp; Collection
@@ -1436,6 +1490,7 @@ export default function SiteBuilder() {
                     <div className="h-px w-full my-4" style={{ background: form.accent_color }} />
                     <div className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.35)' }}>42 works &nbsp;·&nbsp; 3 categories</div>
                   </div>
+                  )}
                   {/* Cards */}
                   <div className="px-3 pb-3" style={{ background: '#0c0a09' }}>
                     <div className={`grid ${previewColClass} gap-2`}>
@@ -1539,7 +1594,7 @@ export default function SiteBuilder() {
                     <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
                       backgroundColor: form.hero_image_url ? undefined : (pvDark ? pvPageBg : previewHeroBg),
                       backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
-                      backgroundSize: 'cover',
+                      backgroundSize: form.hero_image_url && (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
                       backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
                     }}>
                       {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}

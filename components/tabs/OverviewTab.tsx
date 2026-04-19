@@ -312,16 +312,25 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         {/* Medium + Object Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls} data-learn="objects.medium">Medium {publicLabel}</label>
-            <AutocompleteInput
-              value={form.medium}
-              onChange={v => set('medium', v)}
-              museumId={museum.id}
-              field="medium"
-              staticList={MEDIUMS}
-              placeholder="Search or type a medium…"
-              className={inputCls}
-            />
+            <label className={labelCls} data-learn="objects.medium">{fullMode ? 'Medium' : 'Medium / Material'} {publicLabel}</label>
+            {fullMode ? (
+              <AutocompleteInput
+                value={form.medium}
+                onChange={v => set('medium', v)}
+                museumId={museum.id}
+                field="medium"
+                staticList={MEDIUMS}
+                placeholder="Search or type a medium…"
+                className={inputCls}
+              />
+            ) : (
+              <input
+                value={form.medium || ''}
+                onChange={e => set('medium', e.target.value)}
+                placeholder="e.g. oak, silver, oil on canvas…"
+                className={inputCls}
+              />
+            )}
           </div>
           <div>
             <label className={labelCls} data-learn="objects.object_type">Object Type {publicLabel}</label>
@@ -339,7 +348,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Culture/Origin */}
         <div>
-          <label className={labelCls} data-learn="objects.culture">Culture / Origin {publicLabel}</label>
+          <label className={labelCls} data-learn="objects.culture">{fullMode ? 'Culture / Origin' : 'Origin'} {publicLabel}</label>
           <AutocompleteInput
             value={form.culture}
             onChange={v => set('culture', v)}
@@ -412,7 +421,10 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         <div>
           <label className={labelCls} data-learn="objects.status">Status</label>
           <div className="flex gap-2 flex-wrap">
-            {STATUSES.filter(s => fullMode || s !== 'Deaccessioned').map(s => (
+            {(fullMode
+              ? STATUSES
+              : ['Storage', 'On Loan', 'On Display', 'Restoration', 'Conservation']
+            ).map(s => (
               <button key={s} type="button" onClick={() => set('status', s)}
                 className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                 {s}
@@ -449,7 +461,7 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         <div>
           <label className={labelCls} data-learn="objects.inscription">Marks and Inscriptions {publicLabel}</label>
           <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={3}
-            placeholder="Inscriptions, hallmarks, maker's marks, stamps, signatures…"
+            placeholder="Inscriptions, hallmarks, maker's marks, stamps, signatures, labels…"
             className={textareaCls} />
         </div>
 
@@ -592,12 +604,16 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         )}
 
         {/* Associations */}
-        <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Associations</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div><label className={labelCls}>Associated Person</label><input value={form.associated_person} onChange={e => set('associated_person', e.target.value)} placeholder="e.g. previous owner, subject" className={inputCls} /></div>
-          <div><label className={labelCls}>Associated Organisation</label><input value={form.associated_organisation} onChange={e => set('associated_organisation', e.target.value)} placeholder="e.g. commission, guild" className={inputCls} /></div>
-          <div><label className={labelCls}>Associated Place</label><input value={form.associated_place} onChange={e => set('associated_place', e.target.value)} placeholder="e.g. depicted location" className={inputCls} /></div>
-        </div>
+        {fullMode && (
+          <>
+            <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Associations</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div><label className={labelCls}>Associated Person</label><input value={form.associated_person} onChange={e => set('associated_person', e.target.value)} placeholder="e.g. previous owner, subject" className={inputCls} /></div>
+              <div><label className={labelCls}>Associated Organisation</label><input value={form.associated_organisation} onChange={e => set('associated_organisation', e.target.value)} placeholder="e.g. commission, guild" className={inputCls} /></div>
+              <div><label className={labelCls}>Associated Place</label><input value={form.associated_place} onChange={e => set('associated_place', e.target.value)} placeholder="e.g. depicted location" className={inputCls} /></div>
+            </div>
+          </>
+        )}
 
         {/* Record Attribution (incl. donor/GDPR info from former Entry tab) */}
         {fullMode && (
@@ -641,27 +657,25 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
 
         {/* Public Site Visibility — moved to bottom */}
         <div className={sectionTitle} style={{marginTop: '1.5rem'}}>Visibility</div>
-        <div>
-          <label className={labelCls} data-learn="objects.show_on_site">Public Site Visibility</label>
+        <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => set('show_on_site', !form.show_on_site)}
             className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
               form.show_on_site
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400'
                 : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
             }`}
           >
-            <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_on_site ? 'bg-emerald-500 dark:bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+            <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.show_on_site ? 'bg-amber-400 dark:bg-amber-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
               <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_on_site ? 'left-4' : 'left-0.5'}`} />
             </span>
-            {form.show_on_site ? 'Visible on public site' : 'Hidden from public site'}
+            {fullMode
+              ? (form.show_on_site ? 'Visible on public site' : 'Hidden from public site')
+              : (form.show_on_site ? 'Visible on your public page' : 'Hidden from your public page')}
           </button>
-        </div>
 
-        {/* Feature on homepage toggle */}
-        {form.show_on_site && getPlan(museum.plan).advancedCustomisation && (
-          <div>
+          {form.show_on_site && getPlan(museum.plan).advancedCustomisation && (
             <button
               type="button"
               onClick={() => set('is_featured', !form.is_featured)}
@@ -674,13 +688,12 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
               <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${form.is_featured ? 'bg-amber-400 dark:bg-amber-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
                 <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.is_featured ? 'left-4' : 'left-0.5'}`} />
               </span>
-              {form.is_featured ? 'Featured on homepage' : 'Feature on homepage'}
+              {fullMode
+                ? (form.is_featured ? 'Featured on homepage' : 'Feature on homepage')
+                : (form.is_featured ? 'Featured on your public page' : 'Feature on your public page')}
             </button>
-            {!form.is_featured && (
-              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Show this work in a highlighted section above the collection grid.</p>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Discovery Category — moved to bottom */}
         <div>
@@ -697,8 +710,8 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </select>
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">
             {museum.discoverable
-              ? <>Overrides your collection's category for this object in the <a href="/discover" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a>.</>
-              : <>Your museum isn't listed in the <a href="/discover" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a> yet, but you can set a category now for when you opt in.</>}
+              ? <>Overrides your collection's category for this object in the <a href="/discover" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a>.</>
+              : <>Your museum isn't listed in the <a href="/discover" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-600 dark:hover:text-stone-300 transition-colors">Vitrine Discover directory</a> yet, but you can set a category now for when you opt in.</>}
           </p>
         </div>
       </div>

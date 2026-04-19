@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
+import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 
 interface ObjectItem {
   id: string
@@ -18,6 +19,9 @@ interface ObjectItem {
   created_at: string
   acquisition_value: number | null
   insured_value: number | null
+  estimated_value: number | null
+  estimated_value_currency: string | null
+  acquisition_currency: string | null
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -162,6 +166,7 @@ export default function AnalyticsPage() {
   const [objects, setObjects] = useState<ObjectItem[]>([])
   const [trashedCount, setTrashedCount] = useState(0)
   const [pageViews, setPageViews] = useState<any[]>([])
+  const [valuations, setValuations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showExport, setShowExport] = useState(false)
   const router = useRouter()
@@ -175,10 +180,11 @@ export default function AnalyticsPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const [{ data: objects }, { data: views }, { count: trashed }] = await Promise.all([
-        supabase.from('objects').select('id, title, artist, medium, status, emoji, created_at, acquisition_value, insured_value').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+      const [{ data: objects }, { data: views }, { count: trashed }, { data: valuationRows }] = await Promise.all([
+        supabase.from('objects').select('id, title, artist, medium, status, emoji, created_at, acquisition_value, acquisition_currency, insured_value, estimated_value, estimated_value_currency').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
         supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
+        supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
@@ -186,6 +192,7 @@ export default function AnalyticsPage() {
       setObjects(objects || [])
       setTrashedCount(trashed ?? 0)
       setPageViews(views || [])
+      setValuations(valuationRows || [])
       setLoading(false)
     }
     load()
@@ -213,7 +220,9 @@ export default function AnalyticsPage() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
   }, [objects])
 
-  const totalValue = useMemo(() => objects.reduce((sum, a) => sum + (a.insured_value ?? 0), 0), [objects])
+  const collectionValue = useMemo(() => getCollectionValue(objects as any, valuations), [objects, valuations])
+  const totalValue = collectionValue.total
+  const valueCurrency = collectionValue.currency
   const totalCost = useMemo(() => objects.reduce((sum, a) => sum + (a.acquisition_value ?? 0), 0), [objects])
 
   const topByValue = useMemo(() => {
@@ -332,7 +341,7 @@ export default function AnalyticsPage() {
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Collection Value</div>
                 <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">
-                  {totalValue > 0 ? `£${totalValue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—'}
+                  {totalValue > 0 ? formatCollectionValue(totalValue, valueCurrency) : '—'}
                 </div>
               </div>
             </div>
@@ -347,7 +356,7 @@ export default function AnalyticsPage() {
                   <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                     <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
                     <div className={`font-serif text-4xl ${s.gain === false ? 'text-red-500 dark:text-red-400' : s.gain === true ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-900 dark:text-stone-100'}`}>
-                      £{s.value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {formatCollectionValue(s.value, valueCurrency)}
                     </div>
                   </div>
                 ))}

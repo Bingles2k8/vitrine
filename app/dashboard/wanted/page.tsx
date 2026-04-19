@@ -103,7 +103,7 @@ export default function WantedPage() {
     setSavingToggle(true)
     const next = !showWanted
     const { error } = await supabase.from('museums').update({ show_wanted: next }).eq('id', museum.id)
-    if (error) { toast('Failed to save', 'error') } else { setShowWanted(next); toast(next ? 'Wanted list is now public' : 'Wanted list hidden from public site') }
+    if (error) { toast('Failed to save', 'error') } else { setShowWanted(next); toast(next ? 'Wishlist is now public' : 'Wishlist hidden from public site') }
     setSavingToggle(false)
   }
 
@@ -136,7 +136,7 @@ export default function WantedPage() {
       staffAccess={staffAccess}
     >
       <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-        <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Wanted</span>
+        <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Wishlist</span>
         {canEdit && (
           <button
             onClick={openAdd}
@@ -153,7 +153,7 @@ export default function WantedPage() {
           <div className="flex items-center justify-between bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-4">
             <div>
               <div className="text-sm font-medium text-stone-900 dark:text-stone-100">Show on public site</div>
-              <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Displays your active wanted list as a tab on your collection page</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Displays your active wishlist as a tab on your collection page</div>
             </div>
             <button
               type="button"
@@ -206,7 +206,7 @@ export default function WantedPage() {
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-12 text-center">
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">
               {items.length === 0
-                ? 'Your wanted list is empty. Add items you\'re actively hunting for.'
+                ? 'Your wishlist is empty. Add items you\'re actively hunting for.'
                 : 'No items match your filters.'}
             </p>
             {items.length === 0 && canEdit && (
@@ -214,7 +214,7 @@ export default function WantedPage() {
                 onClick={openAdd}
                 className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-4 py-2 rounded"
               >
-                Add your first wanted item →
+                Add your first wishlist item →
               </button>
             )}
           </div>

@@ -26,10 +26,12 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   const [valuations, setValuations] = useState<any[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const today = new Date().toISOString().split('T')[0]
-  const [valuationForm, setValuationForm] = useState({ value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' })
+  const emptyForm = { value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' }
+  const [valuationForm, setValuationForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
+  const [showRecordModal, setShowRecordModal] = useState(false)
   const { toast } = useToast()
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
@@ -62,11 +64,12 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     }
     const lv = { value: valuationForm.value, currency: valuationForm.currency, valuation_date: valuationForm.valuation_date }
     setLatestValuation(lv)
-    setValuationForm({ value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' })
+    setValuationForm(emptyForm)
     const { data } = await supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
     setValuations(data || [])
     logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${object.title}"`)
     setSubmitting(false)
+    setShowRecordModal(false)
   }
 
   const fmtCurrency = (value: any, currency: string) =>
@@ -129,46 +132,78 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       )}
 
       {canEdit && (
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Official Recorded Valuation</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <label className={labelCls} data-learn="valuation.value">Value <span className="text-red-400">*</span></label>
-              <input type="number" step="0.01" min="0" value={valuationForm.value} onChange={e => setValuationForm(f => ({ ...f, value: e.target.value }))}
-                placeholder="0.00" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} data-learn="valuation.currency">Currency</label>
-              <select value={valuationForm.currency} onChange={e => setValuationForm(f => ({ ...f, currency: e.target.value }))} className={inputCls}>
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
-              <input value={valuationForm.valuer} onChange={e => setValuationForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} data-learn="valuation.validity_date">Validity Date</label>
-              <input type="date" value={valuationForm.validity_date} onChange={e => setValuationForm(f => ({ ...f, validity_date: e.target.value }))} className={inputCls} />
-              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date until which this valuation is valid</p>
-            </div>
-          </div>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-center justify-between gap-4">
           <div>
-            <label className={labelCls}>Notes</label>
-            <textarea value={valuationForm.notes} onChange={e => setValuationForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+            <div className={sectionTitle} style={{ marginBottom: 2 }}>Official Recorded Valuation</div>
+            <p className="text-xs text-stone-400 dark:text-stone-500">Record a formal valuation with valuer, validity date and supporting documents. Appended to the history below.</p>
           </div>
-          {canAttach && (
-            <div>
-              <label className={labelCls}>Supporting Documents</label>
-              <StagedDocumentPicker relatedToType="valuation" value={stagedDocs} onChange={setStagedDocs} />
-            </div>
-          )}
-          <button type="button" onClick={addValuation} disabled={!valuationForm.value || submitting}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {submitting ? 'Saving\u2026' : 'Save valuation \u2192'}
+          <button
+            type="button"
+            onClick={() => { setValuationForm(emptyForm); setStagedDocs([]); setShowRecordModal(true) }}
+            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors flex-shrink-0"
+          >
+            Record Official Valuation
           </button>
+        </div>
+      )}
+
+      {showRecordModal && canEdit && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submitting) setShowRecordModal(false) }}>
+          <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
+              <div className={sectionTitle} style={{ marginBottom: 0 }}>Record Official Valuation</div>
+              <button type="button" onClick={() => { if (!submitting) setShowRecordModal(false) }} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className={labelCls} data-learn="valuation.value">Value <span className="text-red-400">*</span></label>
+                  <input type="number" step="0.01" min="0" value={valuationForm.value} onChange={e => setValuationForm(f => ({ ...f, value: e.target.value }))} placeholder="0.00" className={inputCls} autoFocus />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.currency">Currency</label>
+                  <select value={valuationForm.currency} onChange={e => setValuationForm(f => ({ ...f, currency: e.target.value }))} className={inputCls}>
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls} data-learn="valuation.valuation_date">Valuation Date</label>
+                  <input type="date" value={valuationForm.valuation_date} onChange={e => setValuationForm(f => ({ ...f, valuation_date: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.validity_date">Validity Date</label>
+                  <input type="date" value={valuationForm.validity_date} onChange={e => setValuationForm(f => ({ ...f, validity_date: e.target.value }))} className={inputCls} />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date until valid</p>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
+                <input value={valuationForm.valuer} onChange={e => setValuationForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={valuationForm.notes} onChange={e => setValuationForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+              </div>
+              {canAttach && (
+                <div>
+                  <label className={labelCls}>Supporting Documents</label>
+                  <StagedDocumentPicker relatedToType="valuation" value={stagedDocs} onChange={setStagedDocs} />
+                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={addValuation} disabled={!valuationForm.value || submitting}
+                  className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono py-2.5 rounded disabled:opacity-50">
+                  {submitting ? 'Saving\u2026' : 'Save valuation \u2192'}
+                </button>
+                <button type="button" onClick={() => { if (!submitting) setShowRecordModal(false) }} disabled={submitting}
+                  className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

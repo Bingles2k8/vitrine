@@ -40,6 +40,8 @@ interface Props {
   artistOptions: string[]
   placeholder?: string
   additionalFilters?: React.ReactNode
+  trailingSlot?: React.ReactNode
+  sortBeforeSearch?: boolean
 }
 
 export default function SearchFilterBar({
@@ -50,6 +52,8 @@ export default function SearchFilterBar({
   mediumOptions, objectTypeOptions, artistOptions,
   placeholder = 'Search objects…',
   additionalFilters,
+  trailingSlot,
+  sortBeforeSearch = false,
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -104,8 +108,21 @@ export default function SearchFilterBar({
           )}
         </button>
 
+        {/* Sort — before search when sortBeforeSearch */}
+        {sortBeforeSearch && (
+          <select
+            value={sortBy}
+            onChange={e => onSortChange(e.target.value as SortBy)}
+            className="flex-shrink-0 border border-stone-200 dark:border-stone-700 rounded px-2 py-2 text-xs font-mono bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+          >
+            {sortOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        )}
+
         {/* Search input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
@@ -118,16 +135,21 @@ export default function SearchFilterBar({
           />
         </div>
 
-        {/* Sort */}
-        <select
-          value={sortBy}
-          onChange={e => onSortChange(e.target.value as SortBy)}
-          className="flex-shrink-0 border border-stone-200 dark:border-stone-700 rounded px-2 py-2 text-xs font-mono bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
-        >
-          {sortOptions.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        {/* Sort — after search (default) */}
+        {!sortBeforeSearch && (
+          <select
+            value={sortBy}
+            onChange={e => onSortChange(e.target.value as SortBy)}
+            className="flex-shrink-0 border border-stone-200 dark:border-stone-700 rounded px-2 py-2 text-xs font-mono bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+          >
+            {sortOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Trailing slot (e.g. Discover toggle) */}
+        {trailingSlot}
       </div>
 
       {/* Filter panel */}

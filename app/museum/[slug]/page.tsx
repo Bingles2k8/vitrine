@@ -8,6 +8,7 @@ import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 import { JsonLd } from '@/components/JsonLd'
 import { SITE_URL } from '@/lib/seo'
+import { getCollectionValue } from '@/lib/collectionValue'
 
 export const revalidate = 3600
 
@@ -37,11 +38,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   const distinctCategories = new Set(allObjects.map((o: any) => o.medium).filter(Boolean)).size
   const distinctOrigins = new Set(allObjects.map((o: any) => o.culture).filter(Boolean)).size
 
-  const totalEstimatedValue = allObjects.reduce((sum: number, o: any) => {
-    const val = o.estimated_value ?? o.insured_value
-    return sum + (val ? parseFloat(val) : 0)
-  }, 0)
-  const valueCurrency = allObjects.find((o: any) => o.estimated_value_currency)?.estimated_value_currency || 'GBP'
+  const { data: valuationRows } = await supabase
+    .from('valuations')
+    .select('object_id, value, currency, valuation_date')
+    .eq('museum_id', museum.id)
+  const { total: totalEstimatedValue, currency: valueCurrency } = getCollectionValue(allObjects, valuationRows || [])
   const showValueBadge = museum.show_collection_value && totalEstimatedValue > 0
 
   const isPaid = getPlan(museum.plan).advancedCustomisation
@@ -102,7 +103,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
 
   const collectionGrid = allObjects.length === 0
     ? emptyState
-    : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} />
+    : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />
 
   // ─── MINIMAL layout ─────────────────────────────────────────────────────────
   // White-cube gallery: no hero box. Giant floating italic title on white, thin
@@ -409,7 +410,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             minHeight: '360px',
             background: heroBg,
             backgroundImage: museum.hero_image_url ? `url(${museum.hero_image_url})` : undefined,
-            backgroundSize: 'cover',
+            backgroundSize: museum.hero_image_url && (museum.header_image_zoom ?? 1) > 1 ? `${(museum.header_image_zoom ?? 1) * 100}%` : 'cover',
             backgroundPosition: museum.hero_image_url ? (museum.hero_image_position || '50% 50%') : 'center',
             position: 'relative',
           }}
@@ -717,7 +718,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         <div className={`px-6 ${heroPad} relative`} style={{
           background: heroBg,
           backgroundImage: museum.hero_image_url ? `url(${museum.hero_image_url})` : undefined,
-          backgroundSize: 'cover',
+          backgroundSize: museum.hero_image_url && (museum.header_image_zoom ?? 1) > 1 ? `${(museum.header_image_zoom ?? 1) * 100}%` : 'cover',
           backgroundPosition: museum.hero_image_url ? (museum.hero_image_position || '50% 50%') : 'center',
         }}>
           {museum.hero_image_url && <div className="absolute inset-0 bg-black/40" />}

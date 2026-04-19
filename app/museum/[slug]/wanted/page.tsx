@@ -64,7 +64,7 @@ export default async function PublicWantedPage({ params }: { params: Promise<{ s
         <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: accent }}>
           {museum.name}
         </div>
-        <h1 className="text-5xl mb-3" style={{ ...headingStyle, color: content.heading }}>Wanted List</h1>
+        <h1 className="text-5xl mb-3" style={{ ...headingStyle, color: content.heading }}>Wishlist</h1>
         <p className="font-light text-lg leading-relaxed" style={{ color: content.muted }}>
           Items this collection is actively seeking. If you own something on this list, please get in touch.
         </p>
@@ -72,7 +72,7 @@ export default async function PublicWantedPage({ params }: { params: Promise<{ s
 
       {allItems.length === 0 ? (
         <div className="py-16 text-center" style={{ color: content.muted }}>
-          <p className="font-light">Nothing on the wanted list right now.</p>
+          <p className="font-light">Nothing on the wishlist right now.</p>
         </div>
       ) : (
         <div className="space-y-4">

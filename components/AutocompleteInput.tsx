@@ -60,6 +60,42 @@ export default function AutocompleteInput({
   const suppressRef = useRef(false)
   const [corrected, setCorrected] = useState(false)
   const [collectionValues, setCollectionValues] = useState<string[]>([])
+  const rejectedRef = useRef<Record<string, string[]>>({})
+  const lastCorrectionRef = useRef<{ input: string; suggestion: string } | null>(null)
+
+  const rejectStorageKey = museumId && field ? `vitrine:ac-reject:${museumId}:${field}` : null
+
+  useEffect(() => {
+    if (!rejectStorageKey) return
+    try {
+      const raw = localStorage.getItem(rejectStorageKey)
+      rejectedRef.current = raw ? JSON.parse(raw) : {}
+    } catch {
+      rejectedRef.current = {}
+    }
+  }, [rejectStorageKey])
+
+  function saveRejections() {
+    if (!rejectStorageKey) return
+    try {
+      localStorage.setItem(rejectStorageKey, JSON.stringify(rejectedRef.current))
+    } catch {}
+  }
+
+  function isRejected(input: string, suggestion: string) {
+    const key = input.toLowerCase().trim()
+    const list = rejectedRef.current[key]
+    return !!list && list.includes(suggestion)
+  }
+
+  function recordRejection(input: string, suggestion: string) {
+    const key = input.toLowerCase().trim()
+    const list = rejectedRef.current[key] || []
+    if (!list.includes(suggestion)) {
+      rejectedRef.current[key] = [...list, suggestion]
+      saveRejections()
+    }
+  }
 
   useEffect(() => {
     if (!museumId || !field) return
@@ -145,6 +181,12 @@ export default function AutocompleteInput({
     const typed = e.target.value
     typedRef.current = typed
 
+    // If the user is restoring the original typed value after a correction, treat it as a rejection
+    if (lastCorrectionRef.current && typed.toLowerCase().trim() === lastCorrectionRef.current.input.toLowerCase().trim()) {
+      recordRejection(lastCorrectionRef.current.input, lastCorrectionRef.current.suggestion)
+      lastCorrectionRef.current = null
+    }
+
     const match = allSuggestions.find(s =>
       s.toLowerCase().startsWith(typed.toLowerCase()) && s.toLowerCase() !== typed.toLowerCase()
     )
@@ -164,9 +206,10 @@ export default function AutocompleteInput({
   function handleBlur() {
     const current = typedRef.current || value
     const match = fuzzyMatch(current, allSuggestions)
-    if (match && match !== value) {
+    if (match && match !== value && !isRejected(current, match)) {
       onChange(match)
       typedRef.current = match
+      lastCorrectionRef.current = { input: current, suggestion: match }
       setCorrected(true)
       setTimeout(() => setCorrected(false), 1200)
     }

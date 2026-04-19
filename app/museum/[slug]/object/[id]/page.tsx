@@ -132,17 +132,18 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
 
   const { accent, content, headingStyle } = getMuseumStyles(museum)
 
+  const isFullMode = getPlan(museum.plan).fullMode
   const metaRows = [
     { label: 'Date', value: formatDate(object) },
     { label: 'Object Type', value: object.object_type },
-    { label: 'Medium', value: object.medium },
-    { label: 'Culture', value: object.culture },
+    { label: isFullMode ? 'Medium' : 'Medium / Material', value: object.medium },
+    { label: isFullMode ? 'Culture' : 'Origin', value: object.culture },
     { label: 'Production Place', value: object.production_place },
-    { label: 'Accession', value: object.accession_no },
+    isFullMode ? { label: 'Accession', value: object.accession_no } : null,
     { label: 'Dimensions', value: formatDimensions(object) },
     parseInt(object.number_of_parts) > 1 ? { label: 'No. of Parts', value: String(object.number_of_parts) } : null,
-    { label: 'Status', value: object.status },
-    { label: 'Location', value: getPlan(museum.plan).fullMode && object.status === 'Storage' ? 'In Storage' : object.current_location },
+    isFullMode ? { label: 'Status', value: object.status } : null,
+    isFullMode ? { label: 'Location', value: object.status === 'Storage' ? 'In Storage' : object.current_location } : null,
     object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
   ].filter((row): row is { label: string; value: string } => !!row && !!row.value)
 
@@ -246,7 +247,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
             </div>
           ))}
 
-          {associations.length > 0 && (
+          {isFullMode && associations.length > 0 && (
             <div className="mb-6">
               <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Associations</div>
               <div className="space-y-1">

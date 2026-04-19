@@ -59,6 +59,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [discoverable, setDiscoverable] = useState(false)
   const [collectionCategory, setCollectionCategory] = useState<string>('')
+  const [hideMoneyValues, setHideMoneyValues] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
   const { learnMode, setLearnMode } = useLearnMode()
 
@@ -66,7 +67,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   useEffect(() => {
     setDiscoverable(museum?.discoverable ?? false)
     setCollectionCategory(museum?.collection_category ?? '')
-  }, [museum?.discoverable, museum?.collection_category])
+    setHideMoneyValues(museum?.hide_money_values ?? false)
+  }, [museum?.discoverable, museum?.collection_category, museum?.hide_money_values])
 
   // Fetch user email
   useEffect(() => {
@@ -129,6 +131,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     if (!museum) return
     setCollectionCategory(value)
     await supabase.from('museums').update({ collection_category: value || null }).eq('id', museum.id)
+  }
+
+  async function toggleHideMoneyValues() {
+    if (!museum) return
+    const next = !hideMoneyValues
+    setHideMoneyValues(next)
+    await supabase.from('museums').update({ hide_money_values: next }).eq('id', museum.id)
   }
 
   function navItem(path: string, icon: string, label: string, learnKey?: string) {
@@ -239,7 +248,12 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
       {nav && (
-        <div className="p-4 border-b border-stone-200 dark:border-stone-800">
+        <div
+          onClick={() => { router.push('/dashboard'); onNavigate?.() }}
+          className="p-4 border-b border-stone-200 dark:border-stone-800 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors"
+          role="link"
+          aria-label="Go to collection overview"
+        >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-lg">
               {nav.logo_emoji}
@@ -255,7 +269,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         {nav && (<>
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
-        {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wanted', 'nav.wanted')}
+        {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
 
         {nav.simple ? (
           <>
@@ -338,21 +352,35 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
               </div>
 
               {/* Interface */}
-              {museum && (
+              {museum && !communityLocked && (
                 <div data-learn="settings.ui_mode">
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Interface</div>
-                  {communityLocked ? (
-                    <span className="text-xs font-mono text-stone-300 dark:text-stone-600">
-                      ◎ Simple mode (Community plan)
+                  <button
+                    onClick={toggleMode}
+                    className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                  >
+                    {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
+                  </button>
+                </div>
+              )}
+
+              {/* Financial values (Community + Hobbyist) */}
+              {museum && communityLocked && isOwner && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Display</div>
+                  <button
+                    onClick={toggleHideMoneyValues}
+                    className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
+                      hideMoneyValues
+                        ? 'text-stone-500 dark:text-stone-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}
+                  >
+                    <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${!hideMoneyValues ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${!hideMoneyValues ? 'left-3.5' : 'left-0.5'}`} />
                     </span>
-                  ) : (
-                    <button
-                      onClick={toggleMode}
-                      className="w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-                    >
-                      {simple ? '⊕ Switch to Full mode' : '◎ Switch to Simple mode'}
-                    </button>
-                  )}
+                    {hideMoneyValues ? 'Financial values hidden' : 'Show financial values'}
+                  </button>
                 </div>
               )}
 
@@ -375,11 +403,11 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </button>
               </div>
 
-              {/* Discover (Professional+ owners and admins) */}
-              {museum && (isOwner || staffAccess === 'Admin') && planInfo?.fullMode && (
+              {/* Discover (all tiers, owners and admins) */}
+              {museum && (isOwner || staffAccess === 'Admin') && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">Discover</div>
-                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Public directory of Vitrine museums.</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">List in Vitrine Discover directory.</p>
                   <button
                     onClick={toggleDiscoverable}
                     className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${

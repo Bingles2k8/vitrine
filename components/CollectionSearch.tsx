@@ -32,9 +32,10 @@ interface Props {
   objects: ObjectItem[]
   slug: string
   settings: StyleSettings
+  showStatusFilter?: boolean
 }
 
-export default function CollectionSearch({ objects, slug, settings }: Props) {
+export default function CollectionSearch({ objects, slug, settings, showStatusFilter = true }: Props) {
   const [query, setQuery] = useState('')
   const [activeMedium, setActiveMedium] = useState('All')
   const [activeStatus, setActiveStatus] = useState('All')
@@ -223,18 +224,20 @@ export default function CollectionSearch({ objects, slug, settings }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-8">
-        <div className={`flex items-center gap-1.5 rounded-lg p-1 border ${useDark ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-200'}`}>
-          {['All', 'On Display', 'On Loan'].map(s => (
-            <button key={s} onClick={() => setActiveStatus(s)}
-              className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
-                activeStatus === s
-                  ? useDark ? 'bg-stone-100 text-stone-900' : 'bg-stone-900 text-white'
-                  : useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-500 hover:text-stone-900'
-              }`}>
-              {s}
-            </button>
-          ))}
-        </div>
+        {showStatusFilter && (
+          <div className={`flex items-center gap-1.5 rounded-lg p-1 border ${useDark ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-200'}`}>
+            {['All', 'On Display', 'On Loan'].map(s => (
+              <button key={s} onClick={() => setActiveStatus(s)}
+                className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
+                  activeStatus === s
+                    ? useDark ? 'bg-stone-100 text-stone-900' : 'bg-stone-900 text-white'
+                    : useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-500 hover:text-stone-900'
+                }`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-1.5 flex-wrap">
           {mediums.map(m => (
             <button key={m} onClick={() => setActiveMedium(m)}

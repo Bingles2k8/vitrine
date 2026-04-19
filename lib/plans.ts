@@ -51,14 +51,14 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: false,
     hideVitrineBranding: false,
-    features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wanted list'],
+    features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wishlist'],
     missingFeatures: ['Document storage', 'Premium templates', 'Analytics'],
     featureGroups: [
       { items: [
         'Up to 100 objects',
         'Public collection website',
         'Per-object pages & QR codes',
-        'Wanted list',
+        'Wishlist',
         'Value & condition tracking',
         'Opt in to Vitrine Discover',
       ]},
@@ -88,7 +88,7 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: true,
     hideVitrineBranding: true,
-    features: ['Up to 1,000 collection items', 'Public collection website', 'Full site customisation', 'Purchase price & value tracking', 'Wanted list', '100 MB document storage'],
+    features: ['Up to 1,000 collection items', 'Public collection website', 'Full site customisation', 'Purchase price & value tracking', 'Wishlist', '100 MB document storage'],
     missingFeatures: ['Visit & About pages', '21 collection management procedures', 'Visitor analytics', 'Staff management'],
     featureGroups: [
       { items: [

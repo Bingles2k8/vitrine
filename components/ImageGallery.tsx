@@ -66,7 +66,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
 
       const compressed = await compressImage(file)
       const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const filename = `${museumId}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
       let publicUrl: string
       try {
