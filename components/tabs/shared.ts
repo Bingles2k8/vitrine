@@ -30,6 +30,18 @@ export const MEDIUMS = [
   'Textiles','Embroidery','Tapestry','Leather','Metalwork','Wood','Paper','Ivory','Bone','Other',
 ]
 export const STATUSES = ['Entry','On Display','Storage','On Loan','Restoration','Conservation','Deaccessioned']
+
+export const SIMPLE_MODE_STATUS_LABELS: Record<string, string> = {
+  'Entry':         'New Addition',
+  'On Display':    'On Display',
+  'Storage':       'In Storage',
+  'On Loan':       'Lent Out',
+  'Restoration':   'Being Repaired',
+  'Conservation':  'Conservation',
+  'Deaccessioned': 'Sold / Gifted',
+}
+
+export const SIMPLE_MODE_STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Conservation', 'Deaccessioned']
 export const EMOJIS = ['🖼️','🏺','🗿','💎','📜','👗','🏮','🗡️','🪞','🧣','⚗️','🌿','📷','🎨','⌚','🪙','💍','📖','🏆','🎸','🧸','🎮','🎟️','🚗','📺','💿','🎺','🎻','🔭','⚽','🎣','🪖','🪔','🪆','🧿']
 export const OBJECT_TYPES = ['Painting','Drawing','Print','Photograph','Sculpture','Ceramic','Textile','Furniture','Metalwork','Glass','Archaeological','Natural History','Document / Archive','Other']
 export const ACQ_METHODS = ['Purchase','Gift','Bequest','Transfer','Found','Fieldwork','Exchange','Unknown']

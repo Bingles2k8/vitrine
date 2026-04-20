@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, EMOJIS, OBJECT_TYPES, CULTURES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, SIMPLE_MODE_STATUSES, SIMPLE_MODE_STATUS_LABELS, EMOJIS, OBJECT_TYPES, CULTURES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageGallery from '@/components/ImageGallery'
@@ -421,13 +421,10 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         <div>
           <label className={labelCls} data-learn="objects.status">Status</label>
           <div className="flex gap-2 flex-wrap">
-            {(fullMode
-              ? STATUSES
-              : ['Storage', 'On Loan', 'On Display', 'Restoration', 'Conservation']
-            ).map(s => (
+            {(fullMode ? STATUSES : SIMPLE_MODE_STATUSES).map(s => (
               <button key={s} type="button" onClick={() => set('status', s)}
                 className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                {s}
+                {fullMode ? s : (SIMPLE_MODE_STATUS_LABELS[s] ?? s)}
               </button>
             ))}
           </div>

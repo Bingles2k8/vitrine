@@ -9,6 +9,7 @@ import { getPlan } from '@/lib/plans'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import CSVImportModal from '@/components/CSVImportModal'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
+import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 
@@ -627,7 +628,7 @@ export default function Dashboard() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-xs text-stone-400 dark:text-stone-500">{a.accession_no}</div>
+                            {fullMode && <div className="text-xs text-stone-400 dark:text-stone-500">{a.accession_no}</div>}
                           </div>
                         </div>
                       </td>
@@ -658,7 +659,7 @@ export default function Dashboard() {
                           }
                           return (
                             <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
-                              {a.status}
+                              {fullMode ? a.status : (SIMPLE_MODE_STATUS_LABELS[a.status] ?? a.status)}
                             </span>
                           )
                         })()}

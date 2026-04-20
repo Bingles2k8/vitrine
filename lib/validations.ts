@@ -36,6 +36,10 @@ export const csvImportRowSchema = z.object({
   acquisition_date: z.string().max(50).optional(),
   acquisition_source: z.string().max(500).optional(),
   status: z.string().max(50).optional(),
+  purchase_price: z.coerce.number().optional(),
+  acquired_from: z.string().max(500).optional(),
+  condition: z.string().max(100).optional(),
+  purchase_date: z.string().max(50).optional(),
 })
 
 const VALID_DOC_RELATED_TYPES = [

@@ -8,6 +8,7 @@ import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
+import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 
 interface ObjectItem {
   id: string
@@ -316,12 +317,20 @@ export default function AnalyticsPage() {
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
-          {hasExport && (
-            <button onClick={() => setShowExport(true)}
-              className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-              Export CSV ↓
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {hasExport && (
+              <a href="/print/insurance" target="_blank"
+                className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                Insurance Pack ↗
+              </a>
+            )}
+            {hasExport && (
+              <button onClick={() => setShowExport(true)}
+                className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                Export CSV ↓
+              </button>
+            )}
+          </div>
         </div>
 
         {objects.length === 0 ? (
@@ -369,7 +378,7 @@ export default function AnalyticsPage() {
                 {byStatus.map(([label, value]) => (
                   <div key={label} className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[label] || '#a8a29e' }} />
-                    <div className="flex-1 text-xs text-stone-500 dark:text-stone-400">{label}</div>
+                    <div className="flex-1 text-xs text-stone-500 dark:text-stone-400">{plan.fullMode ? label : (SIMPLE_MODE_STATUS_LABELS[label] ?? label)}</div>
                     <div className="flex-1 bg-stone-100 dark:bg-stone-800 rounded-full h-2 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((value / objects.length) * 100)}%`, background: STATUS_COLORS[label] || '#a8a29e' }} />
                     </div>

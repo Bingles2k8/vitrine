@@ -136,6 +136,7 @@ export default function TrashPage() {
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+  const fullMode = getPlan(museum?.plan).fullMode
 
   if (loading) {
     return (
@@ -198,7 +199,7 @@ export default function TrashPage() {
                     </th>
                   )}
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Accession No.</th>
+                  {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Accession No.</th>}
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Deleted</th>
                   {canEdit && <th className="text-right text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Actions</th>}
                 </tr>
@@ -222,7 +223,7 @@ export default function TrashPage() {
                         <span className="text-sm text-stone-700 dark:text-stone-300">{a.title}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.accession_no || '—'}</td>
+                    {fullMode && <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.accession_no || '—'}</td>}
                     <td className="px-4 py-3 text-xs font-mono text-stone-400">
                       {a.deleted_at ? new Date(a.deleted_at).toLocaleDateString('en-GB') : '—'}
                     </td>

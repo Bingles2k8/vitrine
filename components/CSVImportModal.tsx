@@ -2,7 +2,20 @@
 
 import { useState, useRef } from 'react'
 
-const EXPECTED_COLS = ['title', 'artist', 'year', 'medium', 'dimensions', 'description', 'accession_no', 'acquisition_method', 'acquisition_date', 'acquisition_source', 'status']
+const EXPECTED_COLS = ['title', 'artist', 'year', 'medium', 'dimensions', 'description', 'purchase_price', 'purchase_date', 'acquired_from', 'accession_no', 'acquisition_method', 'acquisition_date', 'acquisition_source', 'status']
+
+function downloadTemplate() {
+  const header = 'title,artist,year,type,medium,dimensions,condition,purchase_price,purchase_date,acquired_from,description,status'
+  const rows = [
+    '"Wedgwood blue jasperware vase","Wedgwood",1890,"Ceramics","Glazed stoneware","H: 22cm","Good",85.00,1992-06-01,"Antique market","Blue relief garlands and classical figures.","On Display"',
+    '"Victorian mahogany writing slope","Unknown",1870,"Furniture","Mahogany & brass","W: 45cm x D: 30cm","Fair",120.00,2010-03-15,"eBay","Original key present. Some scratches on lid.","Storage"',
+  ]
+  const csv = [header, ...rows].join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+  a.download = 'vitrine-import-template.csv'
+  a.click()
+}
 
 function parseCSV(text: string, titleOnly: boolean): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter(l => l.trim())
@@ -88,6 +101,11 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
         <div className="px-6 py-5">
           {step === 'upload' && (
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <button onClick={downloadTemplate} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors underline underline-offset-2">
+                  Download template ↓
+                </button>
+              </div>
               <div className="border-2 border-dashed border-stone-200 dark:border-stone-700 rounded-lg p-8 text-center">
                 <div className="text-4xl mb-3">📄</div>
                 <p className="text-sm text-stone-600 dark:text-stone-400 mb-3">
@@ -103,7 +121,7 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
                 <div className="grid grid-cols-3 gap-1">
                   {EXPECTED_COLS.map(c => <div key={c}>{c}</div>)}
                 </div>
-                <div className="mt-2 text-stone-400 dark:text-stone-500">{titleOnly ? 'Only title is required. Object numbers are auto-generated if not provided.' : 'All columns optional except title or accession_no.'} Status values: Entry, On Display, Storage, On Loan, Restoration.</div>
+                <div className="mt-2 text-stone-400 dark:text-stone-500">{titleOnly ? 'Only title is required. Object numbers are auto-generated if not provided.' : 'All columns optional except title or accession_no.'} Status values: Entry, On Display, Storage, On Loan, Restoration, Conservation, Deaccessioned. Date format: YYYY-MM-DD.</div>
               </div>
               {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
             </div>

@@ -120,17 +120,7 @@ export default function DashboardShell({
             )}
           </div>
         )}
-        {!isMobile && museum?.slug && (
-          <a
-            href={`/museum/${museum.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="fixed top-3 right-6 z-40 text-xs font-mono text-stone-600 dark:text-stone-300 bg-white/90 dark:bg-stone-950/90 backdrop-blur border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded shadow-sm hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-          >
-            View public site ↗
-          </a>
-        )}
-        {museum?.payment_past_due && (
+{museum?.payment_past_due && (
           <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <span>Your last payment failed. Please update your payment method to keep your plan active.</span>
             <a href="/dashboard/plan" className="underline font-medium whitespace-nowrap">Update billing →</a>

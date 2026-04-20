@@ -262,6 +262,18 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
               <div className="text-xs font-medium text-stone-900 dark:text-stone-100 truncate">{nav.name}</div>
               <div className="text-xs text-amber-600 tracking-wide uppercase">{nav.plan} plan</div>
             </div>
+            {museum?.slug && (
+              <a
+                href={`/museum/${museum.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex-shrink-0 text-stone-300 hover:text-stone-600 dark:text-stone-600 dark:hover:text-stone-300 transition-colors text-sm leading-none ml-1"
+                title="View public site"
+              >
+                ↗
+              </a>
+            )}
           </div>
         </div>
       )}
