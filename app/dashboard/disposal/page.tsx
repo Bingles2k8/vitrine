@@ -139,8 +139,23 @@ export default function DisposalPage() {
   }
 
   async function updateStatus(id: string, status: string) {
+    const record = records.find(r => r.id === id)
     const { error: err } = await supabase.from('disposal_records').update({ status }).eq('id', id)
     if (err) { setError(err.message); return }
+    // On completion, sync disposal outcome onto the object so the object page,
+    // RightsTab, and print record all reflect Spectrum Procedure 20.
+    if (status === 'Completed' && record?.object_id) {
+      const { error: objErr } = await supabase.from('objects').update({
+        status: 'Deaccessioned',
+        disposal_method: record.disposal_method,
+        disposal_date: record.deaccession_date,
+        disposal_authorization: record.authorised_by,
+        disposal_recipient: record.recipient_name,
+        disposal_note: record.disposal_reason,
+        deaccession_protected: true,
+      }).eq('id', record.object_id)
+      if (objErr) { setError(`Disposal marked complete, but object sync failed: ${objErr.message}`) }
+    }
     setRecords(r => r.map(rec => rec.id === id ? { ...rec, status } : rec))
   }
 

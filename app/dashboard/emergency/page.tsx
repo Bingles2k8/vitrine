@@ -75,7 +75,7 @@ export default function EmergencyPage() {
       const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }] = await Promise.all([
         supabase.from('emergency_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false }),
-        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
+        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('emergency_event_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
         supabase.from('emergency_plan_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])

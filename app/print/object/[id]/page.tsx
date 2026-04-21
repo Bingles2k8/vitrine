@@ -45,10 +45,10 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
     { data: conservation },
   ] = await Promise.all([
     serviceClient.from('valuations').select('*').eq('object_id', id).order('valuation_date', { ascending: false }),
-    serviceClient.from('condition_assessments').select('*').eq('object_id', id).order('assessment_date', { ascending: false }),
+    serviceClient.from('condition_assessments').select('*').eq('object_id', id).order('assessed_at', { ascending: false }),
     serviceClient.from('location_history').select('*').eq('object_id', id).order('moved_at', { ascending: false }),
-    serviceClient.from('loans').select('*').eq('object_id', id).order('loan_start', { ascending: false }),
-    serviceClient.from('conservation_treatments').select('*').eq('object_id', id).order('treatment_date', { ascending: false }),
+    serviceClient.from('loans').select('*').eq('object_id', id).order('loan_start_date', { ascending: false }),
+    serviceClient.from('conservation_treatments').select('*').eq('object_id', id).order('start_date', { ascending: false }),
   ])
 
   const fmt = (d: string | null | undefined) => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB') : '—'
@@ -121,7 +121,7 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
             <thead><tr><th>Date</th><th>Grade</th><th>Assessor</th><th>Notes</th></tr></thead>
             <tbody>
               {conditions.map((c: any) => (
-                <tr key={c.id}><td>{fmt(c.assessment_date)}</td><td>{val(c.grade)}</td><td>{val(c.assessor)}</td><td>{val(c.notes)}</td></tr>
+                <tr key={c.id}><td>{fmt(c.assessed_at)}</td><td>{val(c.grade)}</td><td>{val(c.assessor)}</td><td>{val(c.notes)}</td></tr>
               ))}
             </tbody>
           </table>
@@ -148,10 +148,10 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
         <>
           <div className="pr-h2">Loan History</div>
           <table className="pr-table">
-            <thead><tr><th>Type</th><th>Borrower / Lender</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+            <thead><tr><th>Direction</th><th>Institution</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
             <tbody>
               {loans.map((l: any) => (
-                <tr key={l.id}><td>{val(l.loan_type)}</td><td>{val(l.borrower_lender)}</td><td>{fmt(l.loan_start)}</td><td>{fmt(l.loan_end)}</td><td>{val(l.status)}</td></tr>
+                <tr key={l.id}><td>{val(l.direction)}</td><td>{val(l.borrowing_institution)}</td><td>{fmt(l.loan_start_date)}</td><td>{fmt(l.loan_end_date)}</td><td>{val(l.status)}</td></tr>
               ))}
             </tbody>
           </table>
@@ -166,7 +166,7 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
             <thead><tr><th>Date</th><th>Type</th><th>Conservator</th><th>Description</th></tr></thead>
             <tbody>
               {conservation.map((c: any) => (
-                <tr key={c.id}><td>{fmt(c.treatment_date)}</td><td>{val(c.treatment_type)}</td><td>{val(c.conservator)}</td><td>{val(c.description)}</td></tr>
+                <tr key={c.id}><td>{fmt(c.start_date)}</td><td>{val(c.treatment_type)}</td><td>{val(c.conservator)}</td><td>{val(c.description)}</td></tr>
               ))}
             </tbody>
           </table>
