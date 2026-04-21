@@ -43,6 +43,8 @@ export async function POST() {
     return NextResponse.json({ error: 'No Stripe account connected' }, { status: 400 })
   }
 
+  // Express accounts: clearing the DB link is sufficient. The Stripe account
+  // persists so the museum keeps its payout history if they reconnect later.
   await supabase
     .from('museums')
     .update({ stripe_connect_id: null, stripe_connect_onboarded: false })

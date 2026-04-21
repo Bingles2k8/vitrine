@@ -120,19 +120,23 @@ export default function EntryRegisterPage() {
         return
       }
     }
-    const { data: newObject, error: createError } = await supabase.from('objects').insert({
-      museum_id: museum.id,
-      title: entry.objects?.title || entry.object_description || 'Untitled',
-      description: entry.object_description || null,
-      acquisition_source: entry.depositor_name,
-      acquisition_source_contact: entry.depositor_contact,
-      acquisition_object_count: entry.object_count,
-      number_of_parts: entry.object_count,
-      status: 'Entry',
-      emoji: '🖼️',
-    }).select('id').single()
-
-    if (createError) { toast(createError.message, 'error'); return }
+    const res = await fetch('/api/objects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: entry.objects?.title || entry.object_description || 'Untitled',
+        description: entry.object_description || null,
+        acquisition_source: entry.depositor_name,
+        acquisition_source_contact: entry.depositor_contact,
+        acquisition_object_count: entry.object_count,
+        number_of_parts: entry.object_count,
+        status: 'Entry',
+        emoji: '🖼️',
+      }),
+    })
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok) { toast(payload.error || 'Failed to create object', 'error'); return }
+    const newObject = payload.object
 
     const { error: updateError } = await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', entry.id)
     if (updateError) { toast(updateError.message, 'error'); return }
@@ -182,20 +186,25 @@ export default function EntryRegisterPage() {
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     // Create the object — auto-generate accession_no for simple mode if blank
     const finalAccessionNo = newEntry.accession_no.trim() || (!fullMode ? await generateAccessionNo() : null)
-    const { data: newObject, error: objectError } = await supabase.from('objects').insert({
-      museum_id: museum.id,
-      title: newEntry.object_title,
-      description: newEntry.object_description || null,
-      acquisition_source: newEntry.depositor_name,
-      acquisition_source_contact: newEntry.depositor_contact || null,
-      acquisition_object_count: newEntry.object_count,
-      number_of_parts: newEntry.object_count,
-      accession_no: finalAccessionNo,
-      status: 'Entry',
-      emoji: '🖼️',
-      condition_grade: newEntry.condition_grade || null,
-    }).select('id').single()
-    if (objectError) { toast(objectError.message, 'error'); setSubmitting(false); return }
+    const res = await fetch('/api/objects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: newEntry.object_title,
+        description: newEntry.object_description || null,
+        acquisition_source: newEntry.depositor_name,
+        acquisition_source_contact: newEntry.depositor_contact || null,
+        acquisition_object_count: newEntry.object_count,
+        number_of_parts: newEntry.object_count,
+        accession_no: finalAccessionNo,
+        status: 'Entry',
+        emoji: '🖼️',
+        condition_grade: newEntry.condition_grade || null,
+      }),
+    })
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok) { toast(payload.error || 'Failed to create object', 'error'); setSubmitting(false); return }
+    const newObject = payload.object
     await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     if (mode === 'continue') {
       router.push(`/dashboard/objects/${newObject.id}`)

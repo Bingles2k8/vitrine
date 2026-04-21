@@ -12,6 +12,17 @@ export const inviteStaffSchema = z.object({
   email: z.string().email().max(320),
 })
 
+export const STAFF_ACCESS_LEVELS = ['Admin', 'Editor', 'Viewer'] as const
+export const STAFF_DEPARTMENTS = ['Curatorial', 'Conservation', 'Education', 'Operations', 'Finance', 'Marketing'] as const
+
+export const createStaffMemberSchema = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  role: z.string().min(1).max(200),
+  department: z.enum(STAFF_DEPARTMENTS),
+  access: z.enum(STAFF_ACCESS_LEVELS),
+})
+
 export const stripeCheckoutSchema = z.object({
   planId: z.enum(['hobbyist', 'professional', 'institution']),
 })
@@ -22,6 +33,32 @@ export const ticketCheckoutSchema = z.object({
   quantity: z.number().int().min(1).max(10),
   buyerName: z.string().min(1).max(200),
   buyerEmail: z.string().email().max(320),
+})
+
+export const OBJECT_STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned'] as const
+
+export const objectCreateSchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(10000).nullable().optional(),
+  artist: z.string().max(500).nullable().optional(),
+  maker_name: z.string().max(500).nullable().optional(),
+  year: z.string().max(50).nullable().optional(),
+  production_date: z.string().max(50).nullable().optional(),
+  medium: z.string().max(500).nullable().optional(),
+  physical_materials: z.string().max(500).nullable().optional(),
+  dimensions: z.string().max(200).nullable().optional(),
+  accession_no: z.string().max(100).nullable().optional(),
+  object_type: z.string().max(100).nullable().optional(),
+  condition_grade: z.string().max(100).nullable().optional(),
+  status: z.enum(OBJECT_STATUSES).optional(),
+  emoji: z.string().max(20).optional(),
+  acquisition_method: z.string().max(200).nullable().optional(),
+  acquisition_date: z.string().max(50).nullable().optional(),
+  acquisition_source: z.string().max(500).nullable().optional(),
+  acquisition_source_contact: z.string().max(500).nullable().optional(),
+  acquisition_object_count: z.number().int().min(1).max(100000).nullable().optional(),
+  acquisition_value: z.coerce.number().nullable().optional(),
+  number_of_parts: z.number().int().min(1).max(100000).nullable().optional(),
 })
 
 export const csvImportRowSchema = z.object({

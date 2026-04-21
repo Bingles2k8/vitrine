@@ -64,7 +64,7 @@ export default async function InsurancePackPage() {
   }
 
   const collectionValue = getCollectionValue(allObjects)
-  const formattedValue = formatCollectionValue(collectionValue)
+  const formattedValue = formatCollectionValue(collectionValue.total, collectionValue.currency)
 
   const fmt = (d: string | null | undefined) =>
     d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB') : '—'

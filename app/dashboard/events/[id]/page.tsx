@@ -539,7 +539,7 @@ export default function EventDetailPage() {
                                       <>
                                         <span className="text-xs text-stone-500 dark:text-stone-400 font-mono">
                                           {order.amount_cents > 0
-                                            ? `Refund ${formatPrice(order.amount_cents, order.currency)} to buyer? Booking fee is non-refundable.`
+                                            ? `Refund this order? The buyer receives the ticket price back — the 4% + 20p booking fee and Stripe's processing fee are non-refundable.`
                                             : 'Cancel this booking?'}
                                         </span>
                                         <button

@@ -127,10 +127,13 @@ export default function StaffPage() {
         .eq('id', editingId)
       if (error) { toast(error.message, 'error'); setSaving(false); return }
     } else {
-      const { error } = await supabase
-        .from('staff_members')
-        .insert({ ...form, museum_id: museum.id })
-      if (error) { toast(error.message, 'error'); setSaving(false); return }
+      const res = await fetch('/api/staff-members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) { toast(payload.error || 'Failed to add staff member', 'error'); setSaving(false); return }
     }
 
     setSaving(false)
@@ -220,7 +223,8 @@ export default function StaffPage() {
     )
   }
 
-  if (!getPlan(museum?.plan).compliance) {
+  const staffLimit = getPlan(museum?.plan).staff
+  if (staffLimit !== null && staffLimit <= 1) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/staff" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
