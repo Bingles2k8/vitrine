@@ -55,7 +55,7 @@ const organizationSchema = {
 const PAGE_EXTRAS: Record<PlanId, { desc: string; cta: string; ctaHref: string | null; learnMoreHref: string; muted: boolean }> = {
   community:    { desc: 'A complete home for a small collection — forever.',                                          cta: 'Start free →',       ctaHref: '/signup',                learnMoreHref: '/plans/community',    muted: true  },
   hobbyist:     { desc: 'For collectors who are serious about their collection.',                                      cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/hobbyist',     muted: false },
-  professional: { desc: 'For museums ready to run their public presence from one place.',                              cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/professional',  muted: false },
+  professional: { desc: 'For museums ready to run their public presence from one place.',                              cta: 'Start 30-day free trial →', ctaHref: '/signup',                learnMoreHref: '/plans/professional',  muted: false },
   institution:  { desc: 'For regional and national collections that need room to grow.',                               cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/institution',   muted: false },
   enterprise:   { desc: 'For national institutions with complex needs and teams to match.',                            cta: 'Get in touch →',     ctaHref: '/contact/enterprise',    learnMoreHref: '/plans/enterprise',    muted: true  },
 }
@@ -286,6 +286,9 @@ export default function Home() {
                     <div className="flex items-baseline gap-1 mb-2">
                       <span className="font-serif text-4xl text-white">{plan.price}</span>
                     </div>
+                    {id === 'professional' && (
+                      <p className="text-xs font-mono text-amber-500/80 mb-2">30 days free, then £79/mo</p>
+                    )}
                     <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
                     <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
                     <div className="space-y-5 mb-8">
@@ -343,6 +346,9 @@ export default function Home() {
                     <div className="flex items-baseline gap-1 mb-2">
                       <span className="font-serif text-4xl text-white">{plan.price}</span>
                     </div>
+                    {id === 'professional' && (
+                      <p className="text-xs font-mono text-amber-500/80 mb-2">30 days free, then £79/mo</p>
+                    )}
                     <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
                     <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
                     <div className="space-y-5 mb-8">

@@ -59,7 +59,7 @@ const PLAN_DETAILS: Record<PlanId, {
     tagline: 'Everything a working museum needs.',
     desc: 'A full-featured platform for regional museums: compliance tools, analytics, staff accounts, and an event-ticketing system — all under one roof.',
     ctaHref: '/signup',
-    cta: 'Get started →',
+    cta: 'Start 30-day free trial →',
     priceDisplay: '£79',
     priceNote: '/ month',
   },
@@ -538,6 +538,9 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
                 <span className="text-stone-500 text-2xl not-italic font-light ml-2">{details.priceNote}</span>
               )}
             </h1>
+            {planId === 'professional' && (
+              <p className="text-sm font-mono text-amber-500 mb-4">30 days free, then £79/mo · Cancel anytime</p>
+            )}
             <p className="text-xl font-light text-stone-300 mb-3">{details.tagline}</p>
             <p className="text-stone-400 font-light leading-relaxed mb-8">{details.desc}</p>
             {isComingSoon ? (
@@ -772,7 +775,11 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
                 {details.cta}
               </Link>
               {!isEnterprise && (
-                <p className="text-xs text-stone-600 mt-4 font-mono">No credit card required · Cancel any time</p>
+                <p className="text-xs text-stone-600 mt-4 font-mono">
+                  {planId === 'professional'
+                    ? 'Card required · Converts to £79/mo after 30 days · Cancel any time'
+                    : 'No credit card required · Cancel any time'}
+                </p>
               )}
             </>
           )}
