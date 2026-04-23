@@ -131,13 +131,13 @@ export default function PlanPage() {
     }
   }, [])
 
-  async function handleUpgrade(planId: PlanId) {
-    setActionLoading(planId)
+  async function handleUpgrade(planId: PlanId, trial = false) {
+    setActionLoading(trial ? `${planId}-trial` : planId)
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify(trial ? { planId, trial: true } : { planId }),
       })
       const data = await res.json()
       if (data.url) {
@@ -186,6 +186,13 @@ export default function PlanPage() {
   }
 
   const currentPlan = museum?.plan || 'community'
+  const trialEndDate = museum?.trial_used_at ? new Date(museum.trial_used_at) : null
+  const isTrialing = !!trialEndDate && trialEndDate.getTime() > Date.now()
+  const trialEligible = !!museum
+    && currentPlan !== 'professional'
+    && !museum.trial_used_at
+    && !museum.ever_paid
+    && !museum.stripe_subscription_id
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/plan" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
@@ -212,6 +219,20 @@ export default function PlanPage() {
             <div className="mb-6 px-4 py-3 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
               <p className="text-sm text-stone-500 dark:text-stone-400 font-mono">
                 Checkout cancelled. You can upgrade at any time.
+              </p>
+            </div>
+          )}
+          {isTrialing && trialEndDate && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
+              <p className="text-sm text-stone-600 dark:text-stone-300 font-mono">
+                You&apos;re on a free trial. Converts to £79/mo on{' '}
+                <span className="font-medium text-stone-900 dark:text-stone-100">
+                  {trialEndDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+                . Cancel anytime from{' '}
+                <button onClick={handleManageSubscription} className="underline hover:no-underline">
+                  your billing portal
+                </button>.
               </p>
             </div>
           )}
@@ -355,6 +376,26 @@ export default function PlanPage() {
                               Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
                             </p>
                           )}
+                        </>
+                      ) : id === 'professional' && trialEligible ? (
+                        <>
+                          <button
+                            onClick={() => handleUpgrade(id, true)}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === `${id}-trial` ? 'Redirecting…' : 'Start 30-day free trial'}
+                          </button>
+                          <button
+                            onClick={() => handleUpgrade(id)}
+                            disabled={actionLoading !== null}
+                            className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === id ? 'Redirecting…' : 'Subscribe now'}
+                          </button>
+                          <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
+                            Card required. Converts to £79/mo after 30 days. Cancel anytime.
+                          </p>
                         </>
                       ) : (
                         <>

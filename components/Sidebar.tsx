@@ -18,7 +18,7 @@ interface SidebarProps {
   onNavigate?: () => void
 }
 
-type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; name: string; logo_emoji: string; plan: string }
+type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; shareLinks: boolean; name: string; logo_emoji: string; plan: string }
 
 export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null, onNavigate }: SidebarProps) {
   const router = useRouter()
@@ -41,6 +41,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       wishlist: planInfo.wishlist ?? false,
       ticketing: planInfo.ticketing ?? false,
       fullMode: planInfo.fullMode ?? false,
+      shareLinks: (planInfo.shareLinks ?? 0) !== 0,
       name: museum.name,
       logo_emoji: museum.logo_emoji,
       plan: museum.plan,
@@ -51,7 +52,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
   // Resolved nav values: use live data once available, fall back to cache, else hide
   const nav = museum && planInfo
-    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan }
+    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan }
     : navCache
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -287,6 +288,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           <>
             <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Record</div>
             {navItem('/dashboard/entry', '🗂', 'Add Object', 'nav.entry')}
+            {navItem('/dashboard/on-loan', '📤', 'On Loan', 'nav.on-loan')}
           </>
         ) : (
           <>
@@ -314,6 +316,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder', 'nav.site')}
         {nav.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
+        {nav.shareLinks && navItem('/dashboard/share', '🔗', 'Private Shares', 'nav.share')}
 
         {!nav.simple && (isOwner || staffAccess === 'Admin') && (
           <>

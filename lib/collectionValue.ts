@@ -20,6 +20,24 @@ export interface CollectionValueResult {
   counted: number
 }
 
+export interface CollectionValueOpts {
+  rates?: Map<string, number>
+  targetCurrency?: string
+}
+
+function convertAmount(amount: number, from: string, to: string, rates?: Map<string, number>): number {
+  if (amount === 0) return 0
+  const f = (from || 'GBP').toUpperCase()
+  const t = (to || 'GBP').toUpperCase()
+  if (f === t) return amount
+  if (!rates || rates.size === 0) return amount
+  const direct = rates.get(`${f}:${t}`)
+  if (direct) return amount * direct
+  const inverse = rates.get(`${t}:${f}`)
+  if (inverse) return amount / inverse
+  return amount
+}
+
 function toNumber(v: unknown): number {
   if (v == null || v === '') return 0
   const n = typeof v === 'number' ? v : parseFloat(String(v))
@@ -32,7 +50,8 @@ function toNumber(v: unknown): number {
  */
 export function getCollectionValue(
   objects: CollectionValueObject[],
-  valuations: CollectionValueValuation[] = []
+  valuations: CollectionValueValuation[] = [],
+  opts: CollectionValueOpts = {}
 ): CollectionValueResult {
   const latestByObject = new Map<string, CollectionValueValuation>()
   for (const v of valuations) {
@@ -45,7 +64,7 @@ export function getCollectionValue(
   }
 
   const currencyTally = new Map<string, number>()
-  let total = 0
+  const rawByCurrency = new Map<string, number>()
   let counted = 0
 
   for (const o of objects) {
@@ -63,10 +82,10 @@ export function getCollectionValue(
       currency = o.acquisition_currency
     }
     if (amount > 0) {
-      total += amount
       counted += 1
       const c = (currency || 'GBP').toUpperCase()
       currencyTally.set(c, (currencyTally.get(c) || 0) + 1)
+      rawByCurrency.set(c, (rawByCurrency.get(c) || 0) + amount)
     }
   }
 
@@ -76,7 +95,13 @@ export function getCollectionValue(
     if (n > bestCount) { dominantCurrency = c; bestCount = n }
   }
 
-  return { total, currency: dominantCurrency, counted }
+  const targetCurrency = (opts.targetCurrency || dominantCurrency).toUpperCase()
+  let total = 0
+  for (const [c, amt] of rawByCurrency) {
+    total += convertAmount(amt, c, targetCurrency, opts.rates)
+  }
+
+  return { total, currency: targetCurrency, counted }
 }
 
 export function formatCollectionValue(amount: number, currency: string): string {

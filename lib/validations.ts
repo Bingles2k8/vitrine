@@ -25,6 +25,7 @@ export const createStaffMemberSchema = z.object({
 
 export const stripeCheckoutSchema = z.object({
   planId: z.enum(['hobbyist', 'professional', 'institution']),
+  trial: z.boolean().optional(),
 })
 
 export const ticketCheckoutSchema = z.object({
@@ -59,6 +60,11 @@ export const objectCreateSchema = z.object({
   acquisition_object_count: z.number().int().min(1).max(100000).nullable().optional(),
   acquisition_value: z.coerce.number().nullable().optional(),
   number_of_parts: z.number().int().min(1).max(100000).nullable().optional(),
+  barcode: z.string().max(64).nullable().optional(),
+  origin_country: z.string().max(4).nullable().optional(),
+  origin_place: z.string().max(200).nullable().optional(),
+  origin_lat: z.coerce.number().min(-90).max(90).nullable().optional(),
+  origin_lng: z.coerce.number().min(-180).max(180).nullable().optional(),
 })
 
 export const csvImportRowSchema = z.object({
@@ -120,6 +126,39 @@ export const objectComponentSchema = z.object({
   title: z.string().min(1).max(500),
   notes: z.string().max(5000).nullable().optional(),
   part_number_label: z.string().max(100).nullable().optional(),
+})
+
+export const personalLoanCreateSchema = z.object({
+  object_id: z.string().uuid(),
+  borrower_name: z.string().min(1).max(200),
+  borrower_contact: z.string().max(500).nullable().optional(),
+  lent_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  due_back: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  note: z.string().max(2000).nullable().optional(),
+})
+
+export const shareLinkCreateSchema = z.object({
+  label: z.string().max(120).optional(),
+  passcode: z.string().min(4).max(64),
+  expires_at: z.string().datetime().optional().nullable(),
+  max_views: z.number().int().positive().max(100000).optional().nullable(),
+  scope_filter: z.object({
+    ids: z.array(z.string().uuid()).max(500).optional(),
+    status: z.array(z.string().max(50)).max(10).optional(),
+  }).optional().default({}),
+})
+
+export const shareLinkUnlockSchema = z.object({
+  passcode: z.string().min(1).max(64),
+})
+
+export const personalLoanUpdateSchema = z.object({
+  borrower_name: z.string().min(1).max(200).optional(),
+  borrower_contact: z.string().max(500).nullable().optional(),
+  lent_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  due_back: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  returned_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  note: z.string().max(2000).nullable().optional(),
 })
 
 export const documentUploadSchema = z.object({

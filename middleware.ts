@@ -9,6 +9,14 @@ const CSRF_EXEMPT_PATHS = new Set([
   '/api/ticket-checkout',  // Public unauthenticated checkout
 ])
 
+// Dashboard paths accessible while a museum is locked-out (payment wall).
+// Everything else under /dashboard redirects to /dashboard/billing-required.
+function isLockoutAllowedPath(pathname: string): boolean {
+  if (pathname.startsWith('/dashboard/billing-required')) return true
+  if (pathname.startsWith('/dashboard/plan')) return true
+  return false
+}
+
 function isCsrfExempt(pathname: string): boolean {
   if (CSRF_EXEMPT_PATHS.has(pathname)) return true
   // Public ticket lookup/mark-used
@@ -106,6 +114,30 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Lockout gate for dashboard: if the user's museum is locked, redirect
+    // all dashboard paths except the payment-wall exceptions to /dashboard/billing-required.
+    if (pathname.startsWith('/dashboard') && !isLockoutAllowedPath(pathname)) {
+      // Check as owner first, then as staff member — cover both cases.
+      const [ownedRes, staffRes] = await Promise.all([
+        supabase.from('museums').select('locked_at').eq('owner_id', user.id).maybeSingle(),
+        supabase.from('staff_members').select('museum_id').eq('user_id', user.id).maybeSingle(),
+      ])
+
+      let lockedAt: string | null = ownedRes.data?.locked_at ?? null
+      if (!ownedRes.data && staffRes.data?.museum_id) {
+        const { data: staffMuseum } = await supabase
+          .from('museums')
+          .select('locked_at')
+          .eq('id', staffRes.data.museum_id)
+          .maybeSingle()
+        lockedAt = staffMuseum?.locked_at ?? null
+      }
+
+      if (lockedAt) {
+        return NextResponse.redirect(new URL('/dashboard/billing-required', request.url))
+      }
     }
 
     return supabaseResponse

@@ -54,16 +54,24 @@ export async function POST(request: Request) {
       const planId = PRICE_TO_PLAN[priceId] ?? subscription.metadata.plan_id
 
       if (planId && planId in PLANS) {
-        await supabase
-          .from('museums')
-          .update({
-            plan: planId,
-            ui_mode: PLANS[planId as keyof typeof PLANS].fullMode ? 'full' : 'simple',
-            stripe_subscription_id: subscription.id,
-            pending_downgrade_plan: null,
-            pending_downgrade_date: null,
-          })
-          .eq('id', museumId)
+        const update: Record<string, unknown> = {
+          plan: planId,
+          ui_mode: PLANS[planId as keyof typeof PLANS].fullMode ? 'full' : 'simple',
+          stripe_subscription_id: subscription.id,
+          pending_downgrade_plan: null,
+          pending_downgrade_date: null,
+          // Clear any lockout state — they've (re)subscribed
+          locked_at: null,
+          lock_reason: null,
+          scheduled_deletion_at: null,
+          deletion_warning_30d_sent_at: null,
+          deletion_warning_7d_sent_at: null,
+        }
+        // Record trial usage once, on the first trialing subscription.
+        if (subscription.status === 'trialing' && subscription.trial_end) {
+          update.trial_used_at = new Date(subscription.trial_end * 1000).toISOString()
+        }
+        await supabase.from('museums').update(update).eq('id', museumId)
       }
     }
 
@@ -115,96 +123,80 @@ export async function POST(request: Request) {
     const subscription = event.data.object as Stripe.Subscription
     const museumId = subscription.metadata.museum_id
     const deletedCustomerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
-    let museumRow: { name: string | null; owner_id: string | null } | null = null
-    if (museumId && deletedCustomerId) {
-      const { data: verifiedDeletedMuseum } = await supabase
-        .from('museums')
-        .select('id, name, owner_id')
-        .eq('id', museumId)
-        .eq('stripe_customer_id', deletedCustomerId)
-        .maybeSingle()
-      if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
-      museumRow = { name: verifiedDeletedMuseum.name ?? null, owner_id: verifiedDeletedMuseum.owner_id ?? null }
+    if (!museumId || !deletedCustomerId) return NextResponse.json({ received: true })
+
+    const { data: verifiedDeletedMuseum } = await supabase
+      .from('museums')
+      .select('id, name, slug, owner_id, ever_paid')
+      .eq('id', museumId)
+      .eq('stripe_customer_id', deletedCustomerId)
+      .maybeSingle()
+    if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
+
+    // Determine deletion window: ex-customers get 180 days; trial-only users
+    // who never converted get 30 days.
+    const everPaid = verifiedDeletedMuseum.ever_paid === true
+    const windowDays = everPaid ? 180 : 30
+    const lockReason: 'subscription_ended' | 'trial_expired' =
+      everPaid ? 'subscription_ended' : 'trial_expired'
+    const now = new Date()
+    const deleteAt = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000)
+
+    await supabase
+      .from('museums')
+      .update({
+        locked_at: now.toISOString(),
+        lock_reason: lockReason,
+        scheduled_deletion_at: deleteAt.toISOString(),
+        stripe_subscription_id: null,
+        pending_downgrade_plan: null,
+        pending_downgrade_date: null,
+        payment_past_due: false,
+        deletion_warning_30d_sent_at: null,
+        deletion_warning_7d_sent_at: null,
+      })
+      .eq('id', museumId)
+
+    await supabase.from('activity_log').insert({
+      museum_id: museumId,
+      action_type: 'account_locked',
+      description: `Account locked (${lockReason}). Scheduled for deletion on ${deleteAt.toISOString().slice(0, 10)}.`,
+    })
+
+    // Notify owner that they're in the lockout window
+    let ownerEmail: string | null = null
+    if (verifiedDeletedMuseum.owner_id) {
+      const { data: ownerUser } = await supabase.auth.admin.getUserById(verifiedDeletedMuseum.owner_id)
+      ownerEmail = ownerUser?.user?.email ?? null
     }
-    if (museumId) {
-      // Fetch staff before delete so we can audit and notify them
-      const { data: staffToRemove } = await supabase
-        .from('staff_members')
-        .select('email, name')
-        .eq('museum_id', museumId)
-
-      await supabase
-        .from('museums')
-        .update({
-          plan: 'community',
-          ui_mode: 'simple',
-          stripe_subscription_id: null,
-          pending_downgrade_plan: null,
-          pending_downgrade_date: null,
-          payment_past_due: false,
-        })
-        .eq('id', museumId)
-
-      // Community plan allows 1 staff member (the owner). Remove all staff_members
-      // records — the owner authenticates directly, staff records are for additional users only.
-      await supabase
-        .from('staff_members')
-        .delete()
-        .eq('museum_id', museumId)
-
-      const removedCount = staffToRemove?.length ?? 0
-      if (removedCount > 0) {
-        await supabase.from('activity_log').insert({
-          museum_id: museumId,
-          action_type: 'staff_removed_on_downgrade',
-          description: `${removedCount} staff member(s) removed after downgrade to Community plan`,
-        })
-
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
-        const museumName = museumRow?.name ?? 'Your museum'
-
-        // Notify owner
-        let ownerEmail: string | null = null
-        if (museumRow?.owner_id) {
-          const { data: ownerUser } = await supabase.auth.admin.getUserById(museumRow.owner_id)
-          ownerEmail = ownerUser?.user?.email ?? null
-        }
-        if (ownerEmail) {
-          const listHtml = staffToRemove!
-            .map(s => `<li>${esc(s.name ?? '')} &lt;${esc(s.email)}&gt;</li>`).join('')
-          await resend.emails.send({
-            from: 'Vitrine <noreply@contact.vitrinecms.com>',
-            to: ownerEmail,
-            subject: `${museumName}: staff access removed after plan downgrade`,
-            html: `
-              <p>Hi,</p>
-              <p>Your Vitrine plan has been downgraded to Community, which only supports a single owner account.</p>
-              <p>The following staff members have been removed from <strong>${esc(museumName)}</strong>:</p>
-              <ul>${listHtml}</ul>
-              <p>They will no longer be able to access your dashboard. Upgrade again at any time to restore staff access:</p>
-              <p><a href="${siteUrl}/dashboard/plan">Manage your plan →</a></p>
-              <p>— The Vitrine team</p>
-            `,
-          }).catch(err => console.error('[webhook] owner downgrade email failed:', err instanceof Error ? err.message : err))
-        }
-
-        // Notify each removed staff member
-        for (const s of staffToRemove!) {
-          if (!s.email) continue
-          await resend.emails.send({
-            from: 'Vitrine <noreply@contact.vitrinecms.com>',
-            to: s.email,
-            subject: `Access removed from ${museumName}`,
-            html: `
-              <p>Hi ${esc(s.name ?? '')},</p>
-              <p>Your access to the <strong>${esc(museumName)}</strong> Vitrine workspace has been removed because the museum's plan was downgraded to Community, which does not support additional staff accounts.</p>
-              <p>If you believe this was a mistake, please contact the museum owner.</p>
-              <p>— The Vitrine team</p>
-            `,
-          }).catch(err => console.error('[webhook] staff downgrade email failed:', err instanceof Error ? err.message : err))
-        }
-      }
+    if (ownerEmail && process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
+      const museumName = verifiedDeletedMuseum.name ?? 'Your museum'
+      const deleteAtFormatted = deleteAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      const headline = everPaid
+        ? `Your Vitrine subscription has ended`
+        : `Your Vitrine trial has ended`
+      const body = everPaid
+        ? `<p>Your subscription for <strong>${esc(museumName)}</strong> has been cancelled. Your public site is now offline and your dashboard is locked.</p>
+           <p>You have <strong>180 days</strong> to resubscribe before your collection is permanently deleted. If you don't resubscribe, all your data will be removed on <strong>${esc(deleteAtFormatted)}</strong>.</p>`
+        : `<p>Your trial for <strong>${esc(museumName)}</strong> has ended without a subscription. Your public site is now offline and your dashboard is locked.</p>
+           <p>You have <strong>30 days</strong> to subscribe before your collection is permanently deleted. If you don't, all your data will be removed on <strong>${esc(deleteAtFormatted)}</strong>.</p>`
+      await resend.emails.send({
+        from: 'Vitrine <noreply@contact.vitrinecms.com>',
+        to: ownerEmail,
+        subject: `${museumName}: account locked — ${everPaid ? 'resubscribe' : 'subscribe'} to restore access`,
+        html: `
+          <p>Hi,</p>
+          <h2 style="font-style:italic">${headline}</h2>
+          ${body}
+          <p style="margin-top:24px">
+            <a href="${siteUrl}/dashboard/plan" style="background:#000;color:#fff;padding:10px 18px;text-decoration:none;border-radius:4px">Resubscribe now →</a>
+          </p>
+          <p style="color:#666;font-size:13px;margin-top:16px">You can also <a href="${siteUrl}/dashboard/billing-required" style="color:#666">export your data</a> at any time before deletion.</p>
+          <p>— The Vitrine team</p>
+        `,
+      }).catch(err => console.error('[webhook] lockout email failed:', err instanceof Error ? err.message : err))
     }
   }
 
@@ -252,9 +244,15 @@ export async function POST(request: Request) {
     const invoice = event.data.object as Stripe.Invoice
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
     if (customerId) {
+      // Only flag ever_paid when money actually changed hands. Stripe fires
+      // invoice.payment_succeeded for £0 trial invoices too; those don't count.
+      const update: Record<string, unknown> = { payment_past_due: false }
+      if (invoice.amount_paid > 0) {
+        update.ever_paid = true
+      }
       await supabase
         .from('museums')
-        .update({ payment_past_due: false })
+        .update(update)
         .eq('stripe_customer_id', customerId)
     }
   }
@@ -285,6 +283,12 @@ export async function POST(request: Request) {
             stripe_subscription_id: subscriptionId,
             pending_downgrade_plan: null,
             pending_downgrade_date: null,
+            // Clear any lockout state — checkout completion unlocks
+            locked_at: null,
+            lock_reason: null,
+            scheduled_deletion_at: null,
+            deletion_warning_30d_sent_at: null,
+            deletion_warning_7d_sent_at: null,
           })
           .eq('id', museumId)
           .eq('stripe_customer_id', customerId)

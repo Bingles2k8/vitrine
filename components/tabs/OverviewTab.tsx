@@ -7,6 +7,7 @@ import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageGallery from '@/components/ImageGallery'
 import ObjectComponents from '@/components/ObjectComponents'
+import OriginLocationField from '@/components/OriginLocationField'
 import { getPlan } from '@/lib/plans'
 import { createClient } from '@/lib/supabase'
 import { formatSize } from '@/lib/formatSize'
@@ -359,6 +360,19 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             className={inputCls}
           />
         </div>
+
+        {/* Map location (pins this object on the collection map) */}
+        <OriginLocationField
+          originFallback={form.culture || ''}
+          placeValue={form.origin_place || ''}
+          countryValue={form.origin_country || ''}
+          lat={form.origin_lat ?? null}
+          lng={form.origin_lng ?? null}
+          mapPublic={form.origin_map_public ?? true}
+          onChange={patch => {
+            for (const [k, v] of Object.entries(patch)) set(k, v)
+          }}
+        />
 
         {/* Accession No. + Rarity + Number of Parts */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

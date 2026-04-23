@@ -221,9 +221,9 @@ describe('POST /api/stripe/webhook', () => {
 
   // ── subscription.deleted ─────────────────────────────────────────────────
 
-  it('downgrades museum to community when subscription is deleted', async () => {
+  it('locks museum with 180-day window when ex-paying customer cancels', async () => {
     mockSupabaseClient = makeMockClient([
-      { data: { id: 'museum-uuid' }, error: null },
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: null, ever_paid: true }, error: null },
     ])
     constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
@@ -235,10 +235,72 @@ describe('POST /api/stripe/webhook', () => {
     const updates = mockSupabaseClient.getUpdatesFor('museums')
     expect(updates).toHaveLength(1)
     expect(updates[0]).toMatchObject({
-      plan: 'community',
-      ui_mode: 'simple',
+      lock_reason: 'subscription_ended',
       stripe_subscription_id: null,
       payment_past_due: false,
+    })
+    expect(updates[0].locked_at).toBeTruthy()
+    // ~180 days in the future (allow a few seconds of test drift)
+    const deleteAt = new Date(updates[0].scheduled_deletion_at as string).getTime()
+    const expected = Date.now() + 180 * 24 * 60 * 60 * 1000
+    expect(Math.abs(deleteAt - expected)).toBeLessThan(60_000)
+  })
+
+  it('locks museum with 30-day window when trial-only user cancels without ever paying', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: null, ever_paid: false }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: { object: makeSub() },
+    } as any)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates[0]).toMatchObject({ lock_reason: 'trial_expired' })
+    const deleteAt = new Date(updates[0].scheduled_deletion_at as string).getTime()
+    const expected = Date.now() + 30 * 24 * 60 * 60 * 1000
+    expect(Math.abs(deleteAt - expected)).toBeLessThan(60_000)
+  })
+
+  // ── subscription.created (trial + unlock) ─────────────────────────────────
+
+  it('records trial_used_at when a trialing subscription is created', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid' }, error: null },
+    ])
+    const trialEnd = Math.floor(Date.now() / 1000) + 30 * 86400
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.created',
+      data: { object: makeSub({ status: 'trialing', trial_end: trialEnd }) },
+    } as any)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates[0]).toMatchObject({ plan: 'professional' })
+    expect(updates[0].trial_used_at).toBe(new Date(trialEnd * 1000).toISOString())
+  })
+
+  it('clears lockout state when a subscription reactivates', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid' }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: { object: makeSub() },
+    } as any)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates[0]).toMatchObject({
+      locked_at: null,
+      lock_reason: null,
+      scheduled_deletion_at: null,
+      deletion_warning_30d_sent_at: null,
+      deletion_warning_7d_sent_at: null,
     })
   })
 
@@ -294,7 +356,20 @@ describe('POST /api/stripe/webhook', () => {
   it('clears payment_past_due flag when payment succeeds', async () => {
     constructEvent.mockReturnValue({
       type: 'invoice.payment_succeeded',
-      data: { object: { customer: 'cus_test' } },
+      data: { object: { customer: 'cus_test', amount_paid: 7900 } },
+    } as any)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates).toHaveLength(1)
+    expect(updates[0]).toMatchObject({ payment_past_due: false, ever_paid: true })
+  })
+
+  it('does not set ever_paid on a £0 trial invoice', async () => {
+    constructEvent.mockReturnValue({
+      type: 'invoice.payment_succeeded',
+      data: { object: { customer: 'cus_test', amount_paid: 0 } },
     } as any)
 
     await POST(makeRequest({}))
@@ -302,6 +377,7 @@ describe('POST /api/stripe/webhook', () => {
     const updates = mockSupabaseClient.getUpdatesFor('museums')
     expect(updates).toHaveLength(1)
     expect(updates[0]).toMatchObject({ payment_past_due: false })
+    expect(updates[0]).not.toHaveProperty('ever_paid')
   })
 
   // ── checkout.session.completed — ticket orders ────────────────────────────

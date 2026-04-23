@@ -115,6 +115,9 @@ export default function ObjectDetail() {
     rarity: '',
     physical_description: '',
     acquisition_ethics_notes: '',
+    // Map pin (geocoded from Culture/Origin or the override field)
+    origin_place: '', origin_country: null, origin_lat: null, origin_lng: null,
+    origin_map_public: true,
   })
 
   useEffect(() => {
@@ -250,6 +253,11 @@ export default function ObjectDetail() {
         rarity: object.rarity || '',
         physical_description: object.physical_description || '',
         acquisition_ethics_notes: object.acquisition_ethics_notes || '',
+        origin_place: object.origin_place || '',
+        origin_country: object.origin_country || null,
+        origin_lat: object.origin_lat ?? null,
+        origin_lng: object.origin_lng ?? null,
+        origin_map_public: object.origin_map_public ?? true,
       })
       const [{ data: lv }, { data: locs }, { data: dupes }] = await Promise.all([
         supabase.from('valuations').select('value, currency, valuation_date')
@@ -301,6 +309,12 @@ export default function ObjectDetail() {
       insured_value: formToSave.insured_value ? parseFloat(formToSave.insured_value) : null,
       acquisition_value: formToSave.acquisition_value ? parseFloat(formToSave.acquisition_value) : null,
       estimated_value: formToSave.estimated_value ? parseFloat(formToSave.estimated_value) : null,
+      // Origin map pin — coerce numeric (Postgres numeric(9,6)) + trim text.
+      origin_place: formToSave.origin_place ? String(formToSave.origin_place).slice(0, 200) : null,
+      origin_country: formToSave.origin_country ? String(formToSave.origin_country).slice(0, 4) : null,
+      origin_lat: formToSave.origin_lat === null || formToSave.origin_lat === '' ? null : parseFloat(String(formToSave.origin_lat)),
+      origin_lng: formToSave.origin_lng === null || formToSave.origin_lng === '' ? null : parseFloat(String(formToSave.origin_lng)),
+      origin_map_public: formToSave.origin_map_public ?? true,
     }).eq('id', params.id)
 
     if (error) { toast(error.message, 'error') } else {

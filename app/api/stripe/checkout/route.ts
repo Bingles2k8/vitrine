@@ -14,13 +14,13 @@ export async function POST(request: Request) {
 
   const parsed = parseBody(stripeCheckoutSchema, await request.json())
   if (!parsed.success) return parsed.response
-  const { planId } = parsed.data
+  const { planId, trial } = parsed.data
   const priceId = STRIPE_PRICE_MAP[planId]
   if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
   const { data: museum } = await supabase
     .from('museums')
-    .select('id, stripe_customer_id, stripe_subscription_id, owner_id')
+    .select('id, stripe_customer_id, stripe_subscription_id, owner_id, trial_used_at, ever_paid')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -32,6 +32,18 @@ export async function POST(request: Request) {
       { error: 'You already have an active subscription. Use Manage Subscription to make changes.' },
       { status: 400 }
     )
+  }
+
+  // Trial eligibility: Professional only, one per museum forever, never for
+  // ex-customers who already had a paid subscription.
+  const wantsTrial = trial === true
+  if (wantsTrial) {
+    if (planId !== 'professional') {
+      return NextResponse.json({ error: 'Trial is only available on Professional' }, { status: 400 })
+    }
+    if (museum.trial_used_at || museum.ever_paid) {
+      return NextResponse.json({ error: 'Trial has already been used on this account' }, { status: 400 })
+    }
   }
 
   // Get or create Stripe customer
@@ -57,7 +69,10 @@ export async function POST(request: Request) {
     cancel_url: `${siteUrl}/dashboard/plan?checkout=cancelled`,
     subscription_data: {
       metadata: { museum_id: museum.id, plan_id: planId },
+      ...(wantsTrial ? { trial_period_days: 30 } : {}),
     },
+    // Stripe requires card on file by default; trials auto-convert to paid
+    // on day 31 unless cancelled. No payment_method_collection override.
   })
 
   return NextResponse.json({ url: session.url })

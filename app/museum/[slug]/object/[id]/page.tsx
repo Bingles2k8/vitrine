@@ -5,9 +5,19 @@ import { getMuseumStyles } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 import PublicImageGallery from '@/components/PublicImageGallery'
+import PublicObjectMap from '@/components/PublicObjectMap'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
+
+function toFiniteNumber(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = parseFloat(v)
+    if (Number.isFinite(n)) return n
+  }
+  return null
+}
 
 export async function generateMetadata({
   params,
@@ -246,6 +256,24 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
               <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{section.value}</p>
             </div>
           ))}
+
+          {(() => {
+            const mapLat = toFiniteNumber(object.origin_lat)
+            const mapLng = toFiniteNumber(object.origin_lng)
+            if (!object.origin_map_public || mapLat === null || mapLng === null) return null
+            return (
+              <div className="mb-6">
+                <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Location</div>
+                <PublicObjectMap
+                  lat={mapLat}
+                  lng={mapLng}
+                  label={object.origin_place || null}
+                  accent={accent}
+                  borderColor={content.border}
+                />
+              </div>
+            )
+          })()}
 
           {isFullMode && associations.length > 0 && (
             <div className="mb-6">

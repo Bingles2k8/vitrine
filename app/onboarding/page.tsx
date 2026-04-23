@@ -137,12 +137,15 @@ export default function Onboarding() {
     }
 
     if (isPaidPlan) {
-      // Redirect to Stripe Checkout — webhook will upgrade the plan on success
+      // Redirect to Stripe Checkout — webhook will upgrade the plan on success.
+      // Professional plans get a 30-day free trial automatically during onboarding
+      // since the museum is brand new and trial-eligible by definition.
+      const wantsTrial = plan === 'professional'
       try {
         const res = await fetch('/api/stripe/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId: plan }),
+          body: JSON.stringify(wantsTrial ? { planId: plan, trial: true } : { planId: plan }),
         })
         const data = await res.json()
         if (data.url) {

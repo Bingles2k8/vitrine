@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
-import Link from 'next/link'
 import PublicFooter from '@/components/PublicFooter'
 import PublicNav from '@/components/PublicNav'
 import { Suspense } from 'react'
 import DiscoverFilters from './DiscoverFilters'
 import DiscoverCategoryScroll from './DiscoverCategoryScroll'
 import DiscoverMobileFilters from './DiscoverMobileFilters'
+import DiscoverGrid, { type DiscoverItem } from './DiscoverGrid'
 import { buildPageMetadata } from '@/lib/seo'
 
 export const revalidate = 3600
@@ -34,11 +34,12 @@ export default async function DiscoverPage({
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Fetch discoverable museums
+  // Fetch discoverable museums (excluding locked)
   const { data: museums } = await supabase
     .from('museums')
     .select('id, name, slug, collection_category')
     .eq('discoverable', true)
+    .is('locked_at', null)
     .limit(200)
 
   const filteredMuseums = museumQuery
@@ -124,72 +125,26 @@ export default async function DiscoverPage({
               </Suspense>
             </div>
 
-            {/* Results count */}
-            <div className="text-xs font-mono text-stone-500 mb-6">
-              {allObjects.length === 0
-                ? 'No objects found'
-                : `${allObjects.length} object${allObjects.length === 1 ? '' : 's'}`}
-              {selectedCategories.length > 0 && ` in ${selectedCategories.join(', ')}`}
-              {query && ` matching "${query}"`}
-              {museumQuery && ` from museums matching "${museumQuery}"`}
-            </div>
-
-            {/* Grid */}
-            {allObjects.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {allObjects.map(obj => {
-                  const museum = museumMap[obj.museum_id]
-                  if (!museum) return null
-                  return (
-                    <Link
-                      key={obj.id}
-                      href={`/museum/${museum.slug}/object/${obj.id}`}
-                      className="group bg-white/3 border border-white/8 rounded-xl overflow-hidden hover:border-white/15 hover:bg-white/5 transition-all"
-                    >
-                      {/* Image */}
-                      <div className="relative pb-[100%] bg-stone-900 overflow-hidden">
-                        {obj.image_url ? (
-                          <img
-                            src={obj.image_url}
-                            alt={obj.title}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-4xl text-stone-700">
-                            {obj.emoji || '🏛️'}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-3">
-                        <div className="text-sm font-medium text-stone-100 leading-snug mb-1 line-clamp-2">
-                          {obj.title}
-                        </div>
-                        {obj.description && (
-                          <div className="text-xs text-stone-500 leading-relaxed line-clamp-2 mb-2">
-                            {obj.description}
-                          </div>
-                        )}
-                        <div className="text-xs font-mono text-stone-600 truncate">
-                          {museum.name}
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="text-4xl mb-4">🔍</div>
-                <div className="text-stone-400 text-sm font-mono mb-2">No objects found</div>
-                <div className="text-stone-600 text-xs max-w-xs">
-                  {query || selectedCategories.length > 0
-                    ? 'Try adjusting your search or removing some category filters.'
-                    : 'No public collections are available yet. Check back soon.'}
-                </div>
-              </div>
-            )}
+            <DiscoverGrid
+              items={allObjects.reduce<DiscoverItem[]>((acc, obj) => {
+                const museum = museumMap[obj.museum_id]
+                if (!museum) return acc
+                acc.push({
+                  id: obj.id,
+                  title: obj.title,
+                  description: obj.description,
+                  image_url: obj.image_url,
+                  emoji: obj.emoji,
+                  museum_slug: museum.slug,
+                  museum_name: museum.name,
+                  effective_category: obj.category || museum.collection_category,
+                })
+                return acc
+              }, [])}
+              query={query}
+              selectedCategories={selectedCategories}
+              museumQuery={museumQuery}
+            />
           </div>
         </div>
       </div>

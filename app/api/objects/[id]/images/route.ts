@@ -69,7 +69,8 @@ export async function POST(
 
   // Insert the image record
   const body = await request.json()
-  const { url, is_primary, sort_order, caption } = body
+  const { url, is_primary, sort_order, caption, phash } = body
+  const phashValid = typeof phash === 'string' && /^[01]{64}$/.test(phash)
 
   const { data: newImage, error } = await supabase
     .from('object_images')
@@ -80,6 +81,7 @@ export async function POST(
       is_primary: is_primary ?? false,
       sort_order: sort_order ?? 0,
       ...(caption ? { caption } : {}),
+      ...(phashValid ? { phash } : {}),
     })
     .select()
     .single()

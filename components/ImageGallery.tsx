@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
+import { computeDHash } from '@/lib/phash'
+import SimilarImagesWarning, { type SimilarMatch } from '@/components/SimilarImagesWarning'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
 
@@ -27,6 +29,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [similarWarning, setSimilarWarning] = useState<{ matches: SimilarMatch[]; proceed: () => void; cancel: () => void } | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -55,6 +58,40 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       localUrl: URL.createObjectURL(file),
     }))
     setPendingImages(prev => [...prev, ...newPending])
+
+    // Pre-flight: compute phash for the first file and check for near-duplicates.
+    // If matches exist in other objects, let the user bail before we upload.
+    const firstPhash = await computeDHash(filesToUpload[0]).catch(() => null)
+    if (firstPhash) {
+      try {
+        const res = await fetch('/api/objects/similar-by-phash', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ museum_id: museumId, phash: firstPhash, exclude_object_id: objectId, threshold: 8, limit: 5 }),
+        })
+        if (res.ok) {
+          const { matches } = await res.json() as { matches: SimilarMatch[] }
+          if (matches && matches.length > 0) {
+            const proceed = await new Promise<boolean>(resolve => {
+              setSimilarWarning({
+                matches,
+                proceed: () => { setSimilarWarning(null); resolve(true) },
+                cancel: () => { setSimilarWarning(null); resolve(false) },
+              })
+            })
+            if (!proceed) {
+              newPending.forEach(p => URL.revokeObjectURL(p.localUrl))
+              setPendingImages(prev => prev.filter(p => !newPending.some(np => np.id === p.id)))
+              e.target.value = ''
+              return
+            }
+          }
+        }
+      } catch {
+        // silently fall through — duplicate check is best-effort
+      }
+    }
+
     setUploadProgress({ done: 0, total: filesToUpload.length })
 
     let currentImages = images
@@ -67,6 +104,9 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       const compressed = await compressImage(file)
       const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
       const filename = `${museumId}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+      // Reuse first file's phash; compute for subsequent files.
+      const phash = i === 0 ? firstPhash : await computeDHash(file).catch(() => null)
 
       let publicUrl: string
       try {
@@ -83,7 +123,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       const res = await fetch(`/api/objects/${objectId}/images`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length }),
+        body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length, phash }),
       })
 
       URL.revokeObjectURL(pending.localUrl)
@@ -138,6 +178,13 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
 
   return (
     <div>
+      {similarWarning && (
+        <SimilarImagesWarning
+          matches={similarWarning.matches}
+          onContinue={similarWarning.proceed}
+          onCancel={similarWarning.cancel}
+        />
+      )}
       {!hidePrimary && (
         <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
           Image Gallery

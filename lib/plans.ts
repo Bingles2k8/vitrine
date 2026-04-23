@@ -27,6 +27,7 @@ export const PLANS: Record<PlanId, {
   wishlist: boolean  // Wanted/wishlist feature — Community & Hobbyist only
   changeSlug: boolean  // Allow changing the public URL slug after initial setup
   hideVitrineBranding: boolean  // Option to remove "Powered by Vitrine" from public site footer
+  shareLinks: number | null  // Max active private share links. null = unlimited. 0 = disabled.
   features: string[]
   missingFeatures: string[]  // Shown on homepage pricing cards as "not included"
   featureGroups: FeatureGroup[]  // Rich grouped feature list for homepage pricing cards
@@ -51,6 +52,7 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: false,
     hideVitrineBranding: false,
+    shareLinks: 1,
     features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wishlist'],
     missingFeatures: ['Document storage', 'Premium templates', 'Analytics'],
     featureGroups: [
@@ -88,6 +90,7 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: true,
     hideVitrineBranding: true,
+    shareLinks: null,
     features: ['Up to 1,000 collection items', 'Public collection website', 'Full site customisation', 'Purchase price & value tracking', 'Wishlist', '100 MB document storage'],
     missingFeatures: ['Visit & About pages', '21 collection management procedures', 'Visitor analytics', 'Staff management'],
     featureGroups: [
@@ -124,6 +127,7 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     hideVitrineBranding: true,
+    shareLinks: null,
     features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', '1 GB document storage'],
     missingFeatures: ['Over 5,000 collection items', 'Unlimited staff accounts'],
     featureGroups: [
@@ -162,6 +166,7 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     hideVitrineBranding: true,
+    shareLinks: null,
     features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', '10 GB document storage'],
     missingFeatures: [],
     featureGroups: [
@@ -197,6 +202,7 @@ export const PLANS: Record<PlanId, {
     wishlist: false,
     changeSlug: true,
     hideVitrineBranding: true,
+    shareLinks: null,
     features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
     missingFeatures: [],
     featureGroups: [

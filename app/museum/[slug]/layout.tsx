@@ -15,11 +15,12 @@ export async function generateMetadata({
   const supabase = await createServerSideClient()
   const { data: museum } = await supabase
     .from('museums')
-    .select('name, tagline, seo_description, hero_image_url, plan')
+    .select('name, tagline, seo_description, hero_image_url, plan, locked_at')
     .eq('slug', slug)
     .single()
 
-  if (!museum) return {}
+  // Locked museums (cancelled / trial expired) are not publicly visible
+  if (!museum || museum.locked_at) return {}
 
   const isPaid = getPlan(museum.plan).advancedCustomisation
   const description = isPaid
@@ -55,7 +56,8 @@ export default async function MuseumLayout({
     .eq('slug', slug)
     .single()
 
-  if (!museum) notFound()
+  // Locked museums are hidden from the public — the owner must resubscribe.
+  if (!museum || museum.locked_at) notFound()
 
   const { count: eventCount } = await supabase
     .from('events')
