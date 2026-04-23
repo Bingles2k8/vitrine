@@ -8,6 +8,7 @@ import { PLANS, PLAN_ORDER, getPlan, type PlanId } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
 import { formatSize } from '@/lib/formatSize'
+import DashboardTopBar from '@/components/DashboardTopBar'
 
 const CHECK = '✓'
 const CROSS = '—'
@@ -188,9 +189,7 @@ export default function PlanPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/plan" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Plans &amp; Pricing</span>
-        </div>
+        <DashboardTopBar title="Plans & Pricing" />
 
         <div className="p-4 md:p-8 max-w-5xl">
           {checkoutResult === 'success' && (

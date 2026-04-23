@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 
@@ -287,9 +288,7 @@ export default function AnalyticsPage() {
   if (!getPlan(museum?.plan).analytics) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-          <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
-          </div>
+          <DashboardTopBar title="Analytics" />
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="text-5xl mb-5">◈</div>
@@ -315,23 +314,19 @@ export default function AnalyticsPage() {
   return (
     <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Analytics</span>
-          <div className="flex items-center gap-2">
-            {hasExport && (
-              <a href="/print/insurance" target="_blank"
-                className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+        <DashboardTopBar
+          title="Analytics"
+          actions={hasExport && (
+            <>
+              <TopBarButton as="a" href="/print/insurance" target="_blank" variant="primary">
                 Insurance Pack ↗
-              </a>
-            )}
-            {hasExport && (
-              <button onClick={() => setShowExport(true)}
-                className="text-xs font-mono px-3 py-1.5 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+              </TopBarButton>
+              <TopBarButton variant="primary" onClick={() => setShowExport(true)}>
                 Export CSV ↓
-              </button>
-            )}
-          </div>
-        </div>
+              </TopBarButton>
+            </>
+          )}
+        />
 
         {objects.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">

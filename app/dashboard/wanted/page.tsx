@@ -9,6 +9,7 @@ import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import { TableSkeleton } from '@/components/Skeleton'
 import WantedItemModal from '@/components/WantedItemModal'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const PRIORITY_STYLES: Record<string, string> = {
   high:   'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
@@ -135,17 +136,50 @@ export default function WantedPage() {
       isOwner={isOwner}
       staffAccess={staffAccess}
     >
-      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-        <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Wishlist</span>
-        {canEdit && (
-          <button
-            onClick={openAdd}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors"
-          >
+      <DashboardTopBar
+        title="Wishlist"
+        actions={canEdit && (
+          <TopBarButton variant="primary" onClick={openAdd}>
             + Add item
-          </button>
+          </TopBarButton>
         )}
-      </div>
+        subRow={
+          <div className="flex flex-wrap gap-3 items-center">
+            <input
+              type="text"
+              placeholder="Search by title…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-48"
+            />
+            <div className="flex gap-1">
+              {['all', 'high', 'medium', 'low'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPriorityFilter(p)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-colors ${
+                    priorityFilter === p
+                      ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900 border-stone-900 dark:border-white'
+                      : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+                  }`}
+                >
+                  {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowAcquired(!showAcquired)}
+              className={`px-3 py-1.5 rounded text-xs font-mono border transition-colors ${
+                showAcquired
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                  : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+              }`}
+            >
+              {showAcquired ? '✓ Showing acquired' : 'Show acquired'}
+            </button>
+          </div>
+        }
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Public toggle */}
@@ -165,41 +199,6 @@ export default function WantedPage() {
             </button>
           </div>
         )}
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
-            placeholder="Search by title…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-48"
-          />
-          <div className="flex gap-1">
-            {['all', 'high', 'medium', 'low'].map(p => (
-              <button
-                key={p}
-                onClick={() => setPriorityFilter(p)}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-colors ${
-                  priorityFilter === p
-                    ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900 border-stone-900 dark:border-white'
-                    : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
-                }`}
-              >
-                {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowAcquired(!showAcquired)}
-            className={`px-3 py-1.5 rounded text-xs font-mono border transition-colors ${
-              showAcquired
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
-                : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
-            }`}
-          >
-            {showAcquired ? '✓ Showing acquired' : 'Show acquired'}
-          </button>
-        </div>
 
         {/* List */}
         {filtered.length === 0 ? (

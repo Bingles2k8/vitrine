@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { getPlan } from '@/lib/plans'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { TableSkeleton } from '@/components/Skeleton'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 interface Event {
   id: string
@@ -158,9 +159,7 @@ export default function EventsPage() {
   if (!getPlan(museum?.plan).ticketing) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/events" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Events</span>
-        </div>
+        <DashboardTopBar title="Events" />
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center max-w-sm">
             <div className="text-5xl mb-5">◎</div>
@@ -183,15 +182,14 @@ export default function EventsPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/events" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-        <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Events</span>
-        <button
-          onClick={() => router.push('/dashboard/events/new')}
-          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
-        >
-          Create Event
-        </button>
-      </div>
+      <DashboardTopBar
+        title="Events"
+        actions={
+          <TopBarButton variant="primary" onClick={() => router.push('/dashboard/events/new')}>
+            Create Event
+          </TopBarButton>
+        }
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Stripe Connect — admin controls */}

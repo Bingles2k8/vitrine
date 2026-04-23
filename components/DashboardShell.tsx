@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CommandPalette from '@/components/CommandPalette'
 import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp'
+import { DashboardProvider } from '@/components/DashboardTopBar'
 import { useGoShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
@@ -17,11 +18,26 @@ interface DashboardShellProps {
   children: React.ReactNode
 }
 
+// `/dashboard` or `/dashboard/<single-segment>` counts as shallow; anything
+// deeper (e.g. `/dashboard/events/new`) hides the auto-appended "View public
+// site" button. `/dashboard/objects/*` is always hidden — object detail & new
+// pages are deep-detail workflows even though some pages set
+// activePath="/dashboard".
+function isShallowDashboardPath(path: string): boolean {
+  if (!path.startsWith('/dashboard')) return false
+  if (path.startsWith('/dashboard/objects')) return false
+  const rest = path.slice('/dashboard'.length).replace(/\/+$/, '')
+  if (rest === '') return true
+  const segments = rest.split('/').filter(Boolean)
+  return segments.length <= 1
+}
+
 export default function DashboardShell({
   museum, activePath, onSignOut, isOwner, staffAccess, children
 }: DashboardShellProps) {
   const isMobile = useIsMobile()
   const router = useRouter()
+  const pathname = usePathname() ?? activePath
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // g+key navigation shortcuts
@@ -44,6 +60,8 @@ export default function DashboardShell({
       return () => { document.body.style.overflow = '' }
     }
   }, [isMobile, sidebarOpen])
+
+  const isShallow = !isMobile && isShallowDashboardPath(pathname)
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex overflow-x-clip">
@@ -120,13 +138,15 @@ export default function DashboardShell({
             )}
           </div>
         )}
-{museum?.payment_past_due && (
+        {museum?.payment_past_due && (
           <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <span>Your last payment failed. Please update your payment method to keep your plan active.</span>
             <a href="/dashboard/plan" className="underline font-medium whitespace-nowrap">Update billing →</a>
           </div>
         )}
-        {children}
+        <DashboardProvider value={{ museum, pathname, isShallow }}>
+          {children}
+        </DashboardProvider>
       </main>
       <CommandPalette museumId={museum?.id ?? null} />
       <KeyboardShortcutsHelp />

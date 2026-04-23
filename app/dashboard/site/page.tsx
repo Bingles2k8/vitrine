@@ -10,6 +10,7 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan, FREE_TIER_TEMPLATES } from '@/lib/plans'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const FONTS = [
   { id: 'playfair',   name: 'Playfair Display',   sample: 'Elegant & refined',    google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                 css: "'Playfair Display', serif" },
@@ -368,9 +369,7 @@ export default function SiteBuilder() {
 
       {isMobile ? (
         <>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 sticky top-0 z-10">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
-        </div>
+        <DashboardTopBar title="Site Builder" />
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center max-w-xs">
             <div className="text-4xl mb-4">🖥</div>
@@ -381,21 +380,18 @@ export default function SiteBuilder() {
         </>
       ) : (
       <>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Site Builder</span>
-          <div className="flex items-center gap-3">
-            {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
-            {error && <span className="text-xs font-mono text-red-500">{error}</span>}
-            <button onClick={handleSave} disabled={saving}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-            <button onClick={() => window.open('/museum/' + museum.slug, '_blank')}
-              className="hidden sm:block border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
-              View public site
-            </button>
-          </div>
-        </div>
+        <DashboardTopBar
+          title="Site Builder"
+          actions={
+            <>
+              {saved && <span className="text-xs font-mono text-emerald-600">Saved</span>}
+              {error && <span className="text-xs font-mono text-red-500">{error}</span>}
+              <TopBarButton variant="primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save changes'}
+              </TopBarButton>
+            </>
+          }
+        />
 
         <div className="h-[calc(100vh-3.5rem)] grid grid-cols-2 gap-8 overflow-hidden">
 

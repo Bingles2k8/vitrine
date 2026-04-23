@@ -11,6 +11,8 @@ import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES } from '@/components/tabs/shared'
 import CSVImportModal from '@/components/CSVImportModal'
+import BarcodeScannerModal from '@/components/BarcodeScannerModal'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const OUTCOME_STYLES: Record<string, string> = {
   'Pending':                 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
@@ -51,6 +53,9 @@ export default function EntryRegisterPage() {
     condition_grade: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
+  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [lookupSource, setLookupSource] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
@@ -145,6 +150,57 @@ export default function EntryRegisterPage() {
     router.push(`/dashboard/objects/${newObject.id}?tab=entry`)
   }
 
+  async function handleBarcodeDetected(code: string, format: string) {
+    setScannerOpen(false)
+
+    // If we already catalogued this code, offer to jump to the existing object.
+    if (museum?.id) {
+      const { data: existing } = await supabase
+        .from('objects')
+        .select('id, title')
+        .eq('museum_id', museum.id)
+        .eq('barcode', code)
+        .is('deleted_at', null)
+        .maybeSingle()
+      if (existing) {
+        if (confirm(`You already have this item: "${existing.title}". Open it?`)) {
+          router.push(`/dashboard/objects/${existing.id}`)
+          return
+        }
+      }
+    }
+
+    setScannedBarcode(code)
+    toast(`Scanned ${code} — looking up…`)
+
+    try {
+      const res = await fetch('/api/lookup/barcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, format }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast(payload.error || 'Lookup failed', 'error')
+        return
+      }
+      if (!payload.match) {
+        toast('No match found — enter manually')
+        return
+      }
+      const m = payload.match
+      setNewEntry(v => ({
+        ...v,
+        object_title: v.object_title || m.title || '',
+        object_description: v.object_description || [m.artist, m.year, m.description].filter(Boolean).join(' · ') || '',
+      }))
+      setLookupSource(m.source || null)
+      toast(`Filled from ${m.source}`)
+    } catch {
+      toast('Lookup failed', 'error')
+    }
+  }
+
   async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
     const trackDepositor = getPlan(museum?.plan).depositorTracking
@@ -200,6 +256,7 @@ export default function EntryRegisterPage() {
         status: 'Entry',
         emoji: '🖼️',
         condition_grade: newEntry.condition_grade || null,
+        barcode: scannedBarcode || null,
       }),
     })
     const payload = await res.json().catch(() => ({}))
@@ -213,6 +270,8 @@ export default function EntryRegisterPage() {
       setNewEntry(defaultEntry())
       setShowForm(false)
       setSubmitting(false)
+      setScannedBarcode(null)
+      setLookupSource(null)
       toast(`Entry ${entryNumber} recorded.`, 'success')
     }
   }
@@ -279,9 +338,31 @@ export default function EntryRegisterPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/entry" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Entry Register</span>
-        </div>
+        <DashboardTopBar
+          title="Object Entry Register"
+          actions={canEdit && (
+            <>
+              {getPlan(museum?.plan).analytics && (
+                <TopBarButton variant="primary" onClick={() => setShowImport(true)}>
+                  Import CSV
+                </TopBarButton>
+              )}
+              <TopBarButton variant="primary" onClick={() => setShowForm(v => !v)}>
+                {showForm ? 'Cancel' : '+ New Entry'}
+              </TopBarButton>
+            </>
+          )}
+          subRow={
+            <SearchFilterBar
+              searchQuery={searchQuery} onSearchChange={setSearchQuery}
+              filters={filters} onFiltersChange={setFilters}
+              sortBy={sortBy} onSortChange={setSortBy}
+              isFullMode={fullMode}
+              mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
+              placeholder="Search entries…"
+            />
+          }
+        />
 
         <div className="p-4 md:p-8 space-y-6">
           {/* Stats */}
@@ -301,57 +382,37 @@ export default function EntryRegisterPage() {
             ))}
           </div>
 
-          {/* Object usage bar + action buttons */}
-          <div className="flex flex-wrap items-center gap-3">
-            {(() => {
-              const planInfo = getPlan(museum?.plan)
-              const limit = planInfo.objects
-              if (limit === null) return <div className="flex-1" />
-              const count = objects.length
-              const pct = Math.min(100, Math.round((count / limit) * 100))
-              const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
-              const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
-              return (
-                <div className="w-full sm:flex-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
-                      <span className={`text-xs font-mono ${textColor}`}>{count.toLocaleString()} / {limit.toLocaleString()} objects</span>
-                    </div>
-                    <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
-                    </div>
+          {/* Object usage bar */}
+          {(() => {
+            const planInfo = getPlan(museum?.plan)
+            const limit = planInfo.objects
+            if (limit === null) return null
+            const count = objects.length
+            const pct = Math.min(100, Math.round((count / limit) * 100))
+            const barColor = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-stone-400 dark:bg-stone-500'
+            const textColor = pct >= 95 ? 'text-red-600 dark:text-red-400' : pct >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'
+            return (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Collection usage</span>
+                    <span className={`text-xs font-mono ${textColor}`}>{count.toLocaleString()} / {limit.toLocaleString()} objects</span>
                   </div>
-                  {pct >= 80 && (
-                    <button
-                      onClick={() => router.push('/dashboard/plan')}
-                      className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
-                    >
-                      Upgrade →
-                    </button>
-                  )}
+                  <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-              )
-            })()}
-            {canEdit && (
-              <div className="flex gap-2 shrink-0">
-                {getPlan(museum?.plan).analytics && (
+                {pct >= 80 && (
                   <button
-                    onClick={() => setShowImport(true)}
-                    className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                    onClick={() => router.push('/dashboard/plan')}
+                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
                   >
-                    Import CSV
+                    Upgrade →
                   </button>
                 )}
-                <button
-                  onClick={() => setShowForm(v => !v)}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
-                >
-                  {showForm ? 'Cancel' : '+ New Entry'}
-                </button>
               </div>
-            )}
-          </div>
+            )
+          })()}
 
 
           {/* Info banner */}
@@ -359,24 +420,35 @@ export default function EntryRegisterPage() {
             <p className="text-xs text-stone-500 dark:text-stone-400">Entry details are edited on each object&apos;s page. Click an entry below to open it, or create a new object to begin.</p>
           </div>
 
-          {/* Search */}
-          <SearchFilterBar
-            searchQuery={searchQuery} onSearchChange={setSearchQuery}
-            filters={filters} onFiltersChange={setFilters}
-            sortBy={sortBy} onSortChange={setSortBy}
-            isFullMode={fullMode}
-            mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
-            placeholder="Search entries…"
-          />
-
           {/* New Entry Form */}
           {showForm && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
-                  <label className={labelCls}>Object Title <span className="text-red-400">*</span></label>
+                  <label className={labelCls + ' flex items-center justify-between'}>
+                    <span>Object Title <span className="text-red-400">*</span></span>
+                    <button
+                      type="button"
+                      onClick={() => setScannerOpen(true)}
+                      className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors normal-case tracking-normal"
+                    >
+                      📷 Scan barcode
+                    </button>
+                  </label>
                   <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
+                  {scannedBarcode && (
+                    <div className="text-xs text-stone-400 dark:text-stone-500 font-mono mt-1 flex items-center justify-between">
+                      <span>Barcode: {scannedBarcode}{lookupSource ? ` · filled from ${lookupSource}` : ''}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setScannedBarcode(null); setLookupSource(null) }}
+                        className="underline hover:text-stone-700 dark:hover:text-stone-300"
+                      >
+                        clear
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
@@ -613,6 +685,12 @@ export default function EntryRegisterPage() {
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); window.location.reload() }}
           titleOnly={!getPlan(museum?.plan).fullMode}
+        />
+      )}
+      {scannerOpen && (
+        <BarcodeScannerModal
+          onClose={() => setScannerOpen(false)}
+          onDetected={handleBarcodeDetected}
         />
       )}
     </DashboardShell>

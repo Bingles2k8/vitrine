@@ -12,6 +12,10 @@ import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
+import { buildRateMap } from '@/lib/fx'
+import CollectionTimeline from '@/components/CollectionTimeline'
+import CollectionMap from '@/components/CollectionMap'
+import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -43,6 +47,9 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState(false)
   const [duplicateObjectIds, setDuplicateObjectIds] = useState<Set<string>>(new Set())
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
+  const [personalLoanObjectIds, setPersonalLoanObjectIds] = useState<Set<string>>(new Set())
+  const [fxRates, setFxRates] = useState<{ base: string; quote: string; rate: number }[]>([])
+  const [collectionView, setCollectionView] = useState<'grid' | 'timeline' | 'map'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [sortBy, setSortBy] = useState<SortBy>('')
@@ -133,7 +140,7 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }, { data: personalLoans }, { data: fxRateRows }] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(200),
@@ -141,6 +148,8 @@ export default function Dashboard() {
           supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
           supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
           supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
+          supabase.from('personal_loans').select('object_id').eq('museum_id', museum.id).is('returned_on', null),
+          supabase.from('fx_rates').select('base, quote, rate'),
         ])
 
         setMuseum(museum)
@@ -150,6 +159,8 @@ export default function Dashboard() {
         setCollectionCategory(museum.collection_category || '')
         setTrashedCount(trashed ?? 0)
         setDuplicateObjectIds(new Set((dupeLinks || []).map((d: any) => d.object_id)))
+        setPersonalLoanObjectIds(new Set((personalLoans || []).map((l: any) => l.object_id)))
+        setFxRates((fxRateRows || []).map((r: any) => ({ base: r.base, quote: r.quote, rate: typeof r.rate === 'number' ? r.rate : parseFloat(String(r.rate)) })))
         setConditionDueIds(new Set((conditionDue || []).map((c: any) => c.object_id)))
         setObjects(objects || [])
         setLoans(activeLoans || [])
@@ -291,12 +302,16 @@ export default function Dashboard() {
   function fmtCurrency(amount: number, currency: string) {
     return new Intl.NumberFormat('en-GB', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
   }
-  const { total: collectionValue, currency: collectionValueCurrency } = getCollectionValue(objects, valuations)
+  const rateMap = buildRateMap(fxRates)
+  const displayCurrencies: string[] = (museum?.display_currencies && museum.display_currencies.length > 0) ? museum.display_currencies : []
+  const baseCurrency = displayCurrencies[0]
+  const { total: collectionValue, currency: collectionValueCurrency } = getCollectionValue(objects, valuations, { rates: rateMap, targetCurrency: baseCurrency })
+  const secondaryCurrencies = displayCurrencies.slice(1).filter(c => c.toUpperCase() !== collectionValueCurrency.toUpperCase())
   const SIMPLE_CARDS = [
     { label: 'Total Objects',  filterKey: null,                   value: String(objects.length + trashedCount),       sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection`, learnKey: 'dashboard.total_objects', isValue: false },
     { label: 'On Public Site', filterKey: '__on_public_site__',   value: String(onPublicSiteCount),                    sub: objects.length ? `${Math.round(onPublicSiteCount/objects.length*100)}% of collection` : '—', learnKey: 'dashboard.on_public_site', isValue: false },
     { label: 'On Loan',        filterKey: 'On Loan',              value: String(statusCount('On Loan')),               sub: '—', learnKey: 'dashboard.on_loan', isValue: false },
-    { label: 'Collection Value', filterKey: null,                 value: hideMoneyValues ? '—' : (collectionValue > 0 ? formatCollectionValue(collectionValue, collectionValueCurrency) : '—'), sub: hideMoneyValues ? 'Hidden' : (collectionValue > 0 ? 'Latest valuation, estimate, or purchase' : '—'), learnKey: 'dashboard.collection_value', isValue: true },
+    { label: 'Collection Value', filterKey: null,                 value: hideMoneyValues ? '—' : (collectionValue > 0 ? formatCollectionValue(collectionValue, collectionValueCurrency) : '—'), sub: hideMoneyValues ? 'Hidden' : (collectionValue > 0 ? (secondaryCurrencies.length > 0 && rateMap.size > 0 ? secondaryCurrencies.map(c => `~${fmtCurrency(getCollectionValue(objects, valuations, { rates: rateMap, targetCurrency: c }).total, c)}`).join(' · ') : 'Latest valuation, estimate, or purchase') : '—'), learnKey: 'dashboard.collection_value', isValue: true },
   ]
   const CARDS = fullMode ? FULL_CARDS.map(c => ({ ...c, value: String(c.value), isValue: false })) : SIMPLE_CARDS
   const objectLimit = getPlan(museum?.plan).objects
@@ -315,14 +330,14 @@ export default function Dashboard() {
             titleOnly={!fullMode}
           />
         )}
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collection</span>
-          {canEdit && canImport && (
-            <button onClick={() => setShowImport(true)} className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors" data-learn="action.import_csv">
+        <DashboardTopBar
+          title="Collection"
+          actions={canEdit && canImport && (
+            <TopBarButton variant="primary" onClick={() => setShowImport(true)}>
               Import CSV
-            </button>
+            </TopBarButton>
           )}
-        </div>
+        />
 
         <div className="p-4 md:p-8">
           <div className={`grid grid-cols-2 ${fullMode ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 mb-8`}>
@@ -524,7 +539,29 @@ export default function Dashboard() {
                   }
                 />
               </div>
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
+            <div className="flex items-center gap-1 mb-3">
+              {(['grid', 'timeline', ...(getPlan(museum?.plan).fullMode || museum?.plan === 'hobbyist' ? ['map' as const] : [])]).map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setCollectionView(v as any)}
+                  className={`text-xs font-mono px-3 py-1.5 rounded border transition-colors ${
+                    collectionView === v
+                      ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900 border-stone-900 dark:border-white'
+                      : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+                  }`}
+                >
+                  {v === 'grid' ? 'Grid' : v === 'timeline' ? 'Timeline' : 'Map'}
+                </button>
+              ))}
+            </div>
+            {collectionView === 'timeline' && (
+              <CollectionTimeline objects={visibleObjects} basis="production" />
+            )}
+            {collectionView === 'map' && (
+              <CollectionMap objects={visibleObjects} />
+            )}
+            <div className={`bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto ${collectionView !== 'grid' ? 'hidden' : ''}`}>
               {/* Filter bar */}
               {(filter || showDuplicatesOnly) && selectedIds.size === 0 && (
                 <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
@@ -616,6 +653,14 @@ export default function Dashboard() {
                               {duplicateObjectIds.has(a.id) && (
                                 <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                                   Duplicate
+                                </span>
+                              )}
+                              {personalLoanObjectIds.has(a.id) && (
+                                <span
+                                  className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                                  title="Currently lent out"
+                                >
+                                  📤 On loan
                                 </span>
                               )}
                               {a.hazard_note && (
