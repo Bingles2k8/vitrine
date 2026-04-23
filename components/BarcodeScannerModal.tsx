@@ -17,6 +17,7 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
   const [state, setState] = useState<ScanState>('requesting')
   const [manualCode, setManualCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [mirror, setMirror] = useState(true)
   const { toast } = useToast()
 
   useEffect(() => { onDetectedRef.current = onDetected }, [onDetected])
@@ -49,6 +50,10 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
         })
         if (cancelled) { controls.stop(); return }
         controlsRef.current = controls
+        const stream = videoRef.current?.srcObject as MediaStream | null
+        const track = stream?.getVideoTracks?.()[0]
+        const facing = track?.getSettings?.().facingMode
+        if (facing === 'environment') setMirror(false)
         setState('scanning')
       } catch (err: any) {
         if (cancelled) return
@@ -96,7 +101,7 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
           )}
 
           <div className={`relative rounded-lg overflow-hidden bg-black aspect-video ${videoHidden ? 'hidden' : ''}`}>
-            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+            <video ref={videoRef} className="w-full h-full object-cover" style={{ transform: mirror ? 'scaleX(-1)' : undefined }} playsInline muted />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="border-2 border-white/70 rounded-lg w-4/5 h-16" />
             </div>
