@@ -56,6 +56,7 @@ export default function EntryRegisterPage() {
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [lookupSource, setLookupSource] = useState<string | null>(null)
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'looking' | 'matched' | 'nomatch' | 'error'>('idle')
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
@@ -170,7 +171,8 @@ export default function EntryRegisterPage() {
     }
 
     setScannedBarcode(code)
-    toast(`Scanned ${code} — looking up…`)
+    setLookupSource(null)
+    setLookupStatus('looking')
 
     try {
       const res = await fetch('/api/lookup/barcode', {
@@ -179,14 +181,8 @@ export default function EntryRegisterPage() {
         body: JSON.stringify({ code, format }),
       })
       const payload = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        toast(payload.error || 'Lookup failed', 'error')
-        return
-      }
-      if (!payload.match) {
-        toast('No match found — enter manually')
-        return
-      }
+      if (!res.ok) { setLookupStatus('error'); return }
+      if (!payload.match) { setLookupStatus('nomatch'); return }
       const m = payload.match
       setNewEntry(v => ({
         ...v,
@@ -194,9 +190,9 @@ export default function EntryRegisterPage() {
         object_description: v.object_description || [m.artist, m.year, m.description].filter(Boolean).join(' · ') || '',
       }))
       setLookupSource(m.source || null)
-      toast(`Filled from ${m.source}`)
+      setLookupStatus('matched')
     } catch {
-      toast('Lookup failed', 'error')
+      setLookupStatus('error')
     }
   }
 
@@ -271,6 +267,7 @@ export default function EntryRegisterPage() {
       setSubmitting(false)
       setScannedBarcode(null)
       setLookupSource(null)
+      setLookupStatus('idle')
       toast(`Entry ${entryNumber} recorded.`, 'success')
     }
   }
@@ -423,31 +420,66 @@ export default function EntryRegisterPage() {
           {showForm && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <label className={labelCls + ' flex items-center justify-between'}>
-                    <span>Object Title <span className="text-red-400">*</span></span>
+
+              {(() => {
+                const clearBarcode = () => { setScannedBarcode(null); setLookupSource(null); setLookupStatus('idle') }
+                const panelBase = 'w-full flex items-center gap-4 px-4 py-4 rounded-lg border-2 transition-colors text-left'
+                const stateClass =
+                  lookupStatus === 'matched'  ? 'border-solid border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-700' :
+                  lookupStatus === 'nomatch'  ? 'border-solid border-stone-300 bg-stone-50 dark:bg-stone-800/40 dark:border-stone-700' :
+                  lookupStatus === 'error'    ? 'border-solid border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800' :
+                  lookupStatus === 'looking'  ? 'border-solid border-stone-300 bg-stone-50 dark:bg-stone-800/40 dark:border-stone-700 cursor-wait' :
+                  'border-dashed border-stone-300 dark:border-stone-700 hover:border-stone-900 dark:hover:border-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/40'
+                const icon =
+                  lookupStatus === 'matched'  ? '✓' :
+                  lookupStatus === 'nomatch'  ? 'ℹ' :
+                  lookupStatus === 'error'    ? '⚠' :
+                  lookupStatus === 'looking'  ? '⏳' :
+                  '📷'
+                const title =
+                  lookupStatus === 'matched'  ? `Filled from ${lookupSource || 'lookup'}` :
+                  lookupStatus === 'nomatch'  ? 'No match found — enter manually' :
+                  lookupStatus === 'error'    ? 'Lookup failed — tap to try again' :
+                  lookupStatus === 'looking'  ? `Looking up ${scannedBarcode}…` :
+                  'Scan a barcode to auto-fill'
+                const subtitle =
+                  lookupStatus === 'idle'     ? 'Books (ISBN), music, or retail items (UPC / EAN)' :
+                  scannedBarcode              ? `Barcode: ${scannedBarcode}` :
+                  null
+                return (
+                  <div className="relative">
                     <button
                       type="button"
                       onClick={() => setScannerOpen(true)}
-                      className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors normal-case tracking-normal"
+                      disabled={lookupStatus === 'looking'}
+                      className={`${panelBase} ${stateClass}`}
                     >
-                      📷 Scan barcode
+                      <span className="text-2xl flex-shrink-0" aria-hidden>{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{title}</div>
+                        {subtitle && <div className="text-xs font-mono text-stone-500 dark:text-stone-400 mt-0.5 truncate">{subtitle}</div>}
+                      </div>
+                      {lookupStatus === 'idle' && (
+                        <span className="text-xs font-mono text-stone-400 dark:text-stone-500 flex-shrink-0">Tap to scan →</span>
+                      )}
                     </button>
-                  </label>
-                  <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
-                  {scannedBarcode && (
-                    <div className="text-xs text-stone-400 dark:text-stone-500 font-mono mt-1 flex items-center justify-between">
-                      <span>Barcode: {scannedBarcode}{lookupSource ? ` · filled from ${lookupSource}` : ''}</span>
+                    {scannedBarcode && lookupStatus !== 'looking' && (
                       <button
                         type="button"
-                        onClick={() => { setScannedBarcode(null); setLookupSource(null) }}
-                        className="underline hover:text-stone-700 dark:hover:text-stone-300"
+                        onClick={clearBarcode}
+                        className="absolute top-2 right-2 text-xs font-mono underline text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100"
                       >
                         clear
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )
+              })()}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Object Title <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
                 </div>
                 <div>
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
