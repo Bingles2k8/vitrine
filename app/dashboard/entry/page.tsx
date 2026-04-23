@@ -11,7 +11,6 @@ import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES } from '@/components/tabs/shared'
 import CSVImportModal from '@/components/CSVImportModal'
-import BarcodeScannerModal from '@/components/BarcodeScannerModal'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -53,9 +52,6 @@ export default function EntryRegisterPage() {
     condition_grade: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
-  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
-  const [scannerOpen, setScannerOpen] = useState(false)
-  const [lookupSource, setLookupSource] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
   const supabase = createClient()
@@ -150,57 +146,6 @@ export default function EntryRegisterPage() {
     router.push(`/dashboard/objects/${newObject.id}?tab=entry`)
   }
 
-  async function handleBarcodeDetected(code: string, format: string) {
-    setScannerOpen(false)
-
-    // If we already catalogued this code, offer to jump to the existing object.
-    if (museum?.id) {
-      const { data: existing } = await supabase
-        .from('objects')
-        .select('id, title')
-        .eq('museum_id', museum.id)
-        .eq('barcode', code)
-        .is('deleted_at', null)
-        .maybeSingle()
-      if (existing) {
-        if (confirm(`You already have this item: "${existing.title}". Open it?`)) {
-          router.push(`/dashboard/objects/${existing.id}`)
-          return
-        }
-      }
-    }
-
-    setScannedBarcode(code)
-    toast(`Scanned ${code} — looking up…`)
-
-    try {
-      const res = await fetch('/api/lookup/barcode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, format }),
-      })
-      const payload = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        toast(payload.error || 'Lookup failed', 'error')
-        return
-      }
-      if (!payload.match) {
-        toast('No match found — enter manually')
-        return
-      }
-      const m = payload.match
-      setNewEntry(v => ({
-        ...v,
-        object_title: v.object_title || m.title || '',
-        object_description: v.object_description || [m.artist, m.year, m.description].filter(Boolean).join(' · ') || '',
-      }))
-      setLookupSource(m.source || null)
-      toast(`Filled from ${m.source}`)
-    } catch {
-      toast('Lookup failed', 'error')
-    }
-  }
-
   async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
     const trackDepositor = getPlan(museum?.plan).depositorTracking
@@ -256,7 +201,6 @@ export default function EntryRegisterPage() {
         status: 'Entry',
         emoji: '🖼️',
         condition_grade: newEntry.condition_grade || null,
-        barcode: scannedBarcode || null,
       }),
     })
     const payload = await res.json().catch(() => ({}))
@@ -270,8 +214,6 @@ export default function EntryRegisterPage() {
       setNewEntry(defaultEntry())
       setShowForm(false)
       setSubmitting(false)
-      setScannedBarcode(null)
-      setLookupSource(null)
       toast(`Entry ${entryNumber} recorded.`, 'success')
     }
   }
@@ -426,29 +368,8 @@ export default function EntryRegisterPage() {
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
-                  <label className={labelCls + ' flex items-center justify-between'}>
-                    <span>Object Title <span className="text-red-400">*</span></span>
-                    <button
-                      type="button"
-                      onClick={() => setScannerOpen(true)}
-                      className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors normal-case tracking-normal"
-                    >
-                      📷 Scan barcode
-                    </button>
-                  </label>
+                  <label className={labelCls}>Object Title <span className="text-red-400">*</span></label>
                   <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
-                  {scannedBarcode && (
-                    <div className="text-xs text-stone-400 dark:text-stone-500 font-mono mt-1 flex items-center justify-between">
-                      <span>Barcode: {scannedBarcode}{lookupSource ? ` · filled from ${lookupSource}` : ''}</span>
-                      <button
-                        type="button"
-                        onClick={() => { setScannedBarcode(null); setLookupSource(null) }}
-                        className="underline hover:text-stone-700 dark:hover:text-stone-300"
-                      >
-                        clear
-                      </button>
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
@@ -685,12 +606,6 @@ export default function EntryRegisterPage() {
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); window.location.reload() }}
           titleOnly={!getPlan(museum?.plan).fullMode}
-        />
-      )}
-      {scannerOpen && (
-        <BarcodeScannerModal
-          onClose={() => setScannerOpen(false)}
-          onDetected={handleBarcodeDetected}
         />
       )}
     </DashboardShell>
