@@ -133,7 +133,7 @@ export const PLANS: Record<PlanId, {
     featureGroups: [
       { items: [
         'Up to 5,000 objects, 10 staff accounts',
-        '21 Spectrum-aligned procedures',
+        '21 Spectrum-aligned procedures (entry, loans, conservation & more)',
         'Event ticketing — free & paid',
         'Plan your visit page',
         'Visitor & collection analytics',
@@ -173,6 +173,7 @@ export const PLANS: Record<PlanId, {
       { items: [
         'Up to 100,000 objects',
         'Unlimited staff accounts',
+        '21 Spectrum-aligned procedures',
         '10 GB document storage',
         'All Professional features included',
       ]},
@@ -208,6 +209,7 @@ export const PLANS: Record<PlanId, {
     featureGroups: [
       { items: [
         'Unlimited objects, staff & storage',
+        '21 Spectrum-aligned procedures',
         'SSO & enterprise authentication',
         'Dedicated support & SLA',
         'Custom contract & PO invoicing',

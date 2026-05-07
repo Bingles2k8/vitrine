@@ -202,6 +202,26 @@ export default function Home() {
                 <p className="text-sm text-stone-500 leading-relaxed font-light">{f.desc}</p>
               </div>
             ))}
+
+            {/* Compliance — full-width Pro+ feature */}
+            <Link
+              href="/compliance"
+              className="bg-stone-950 hover:bg-stone-900 p-8 md:col-span-3 group transition-colors flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">📋</span>
+                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Professional+</span>
+                </div>
+                <div className="font-serif text-xl italic text-white mb-3">Spectrum-aligned compliance tools</div>
+                <p className="text-sm text-stone-500 leading-relaxed font-light max-w-2xl">
+                  All 21 procedures of the recognised UK collection management standard, built in — object entry, loans, condition checks, conservation, valuation, insurance, deaccession, audits and more. Each procedure mapped to specific data fields and screens in the app.
+                </p>
+              </div>
+              <span className="text-amber-500 font-mono text-sm group-hover:text-amber-400 transition-colors shrink-0 self-start md:self-center">
+                See all 21 procedures →
+              </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -351,7 +371,7 @@ export default function Home() {
                     )}
                     <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
                     <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                    <div className="space-y-5 mb-8">
+                    <div className="space-y-5 mb-4">
                       {plan.featureGroups.map((group, gi) => (
                         <div key={gi}>
                           {group.title && (
@@ -371,6 +391,12 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
+                    {(id === 'professional' || id === 'institution') && (
+                      <Link href="/compliance" className="block font-mono text-xs text-amber-500 hover:text-amber-400 transition-colors mb-8">
+                        See all 21 procedures →
+                      </Link>
+                    )}
+                    {!(id === 'professional' || id === 'institution') && <div className="mb-4" />}
                     <div className="mt-auto flex flex-col gap-2">
                       <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
                         Learn more
