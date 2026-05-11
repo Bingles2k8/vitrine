@@ -7,7 +7,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
     <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
-      <div className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex gap-4">
+      <div className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex gap-4">
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={i} className="h-3 flex-1" />
         ))}

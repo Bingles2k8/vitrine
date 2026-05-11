@@ -166,7 +166,7 @@ export default function OnLoanPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-6 md:p-10 space-y-6">
         {filtered.length === 0 ? (
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-12 text-center">
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">

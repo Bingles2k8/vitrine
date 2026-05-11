@@ -97,7 +97,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
         </div>
         {canEdit && (
           <button type="submit" disabled={saving}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {saving ? 'Saving\u2026' : 'Save \u2192'}
           </button>
         )}
@@ -124,7 +124,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           </div>
           {canEdit && (
             <button type="submit" disabled={saving}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
               {saving ? 'Saving\u2026' : 'Save \u2192'}
             </button>
           )}
@@ -140,7 +140,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           <button
             type="button"
             onClick={() => { setValuationForm(emptyForm); setStagedDocs([]); setShowRecordModal(true) }}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors flex-shrink-0"
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors flex-shrink-0"
           >
             Record Official Valuation
           </button>
@@ -194,7 +194,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
               )}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={addValuation} disabled={!valuationForm.value || submitting}
-                  className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono py-2.5 rounded disabled:opacity-50">
+                  className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50">
                   {submitting ? 'Saving\u2026' : 'Save valuation \u2192'}
                 </button>
                 <button type="button" onClick={() => { if (!submitting) setShowRecordModal(false) }} disabled={submitting}
@@ -211,21 +211,21 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{ marginBottom: 0 }}>Valuation History</div></div>
           <table className="w-full">
-            <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Value</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Purpose</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Valuer</th>
+            <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Date</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Value</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Purpose</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Valuer</th>
             </tr></thead>
             <tbody>
               {valuations.map(v => (
                 <tr key={v.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(v)}>
-                  <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(v.valuation_date).toLocaleDateString('en-GB')}</td>
-                  <td className="px-4 py-3 text-sm font-mono text-stone-900 dark:text-stone-100">{fmtCurrency(v.value, v.currency)}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.method || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.purpose || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.valuer || '—'}</td>
+                  <td className="px-6 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(v.valuation_date).toLocaleDateString('en-GB')}</td>
+                  <td className="px-4 py-4 text-sm font-mono text-stone-900 dark:text-stone-100">{fmtCurrency(v.value, v.currency)}</td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.method || '—'}</td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.purpose || '—'}</td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.valuer || '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -251,7 +251,7 @@ export default function DocumentAttachments({ objectId, museumId, relatedToType,
               type="button"
               onClick={handleUpload}
               disabled={uploading || !file || !label.trim()}
-              className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 py-1.5 rounded disabled:opacity-40"
+              className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-3 py-1.5 rounded disabled:opacity-40"
             >
               {uploading ? 'Uploading…' : 'Upload →'}
             </button>

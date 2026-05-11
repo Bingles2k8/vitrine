@@ -181,7 +181,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
           </div>
         )}
         <button type="button" onClick={addLoan} disabled={submitting}
-          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+          className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
           {submitting ? 'Saving…' : 'Save loan record →'}
         </button>
       </div>}
@@ -324,30 +324,30 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Loan History</div></div>
           <table className="w-full">
-            <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Loan No.</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Direction</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Institution</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-              <th className="px-4 py-3"></th>
+            <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Loan No.</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Direction</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Institution</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Dates</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+              <th className="px-4 py-4"></th>
             </tr></thead>
             <tbody>
               {loanHistory.map(l => (
                 <Fragment key={l.id}>
                   <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer ${l.status === 'Active' ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`} onClick={() => setSelectedRecord(l)}>
-                    <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{l.loan_number || '—'}</td>
-                    <td className="px-6 py-3"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
-                    <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100">{l.borrowing_institution}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                    <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{l.loan_number || '—'}</td>
+                    <td className="px-6 py-4"><span className="text-xs font-mono px-2 py-1 rounded bg-stone-100 text-stone-600">Loan {l.direction}</span></td>
+                    <td className="px-4 py-4 text-sm text-stone-900 dark:text-stone-100">{l.borrowing_institution}</td>
+                    <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                       {l.loan_start_date ? new Date(l.loan_start_date).toLocaleDateString('en-GB') : '—'}
                       {' → '}
                       {l.loan_end_date ? new Date(l.loan_end_date).toLocaleDateString('en-GB') : '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                       <span className={`text-xs font-mono px-2 py-1 rounded-full ${l.status === 'Active' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : l.status === 'Returned' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : l.status === 'Agreed' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400' : l.status === 'Cancelled' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{l.status}</span>
                     </td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         {canEdit && l.status === 'Requested' && (
                           <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Agreed' }).eq('id', l.id); setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Agreed' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Agreed →</button>
@@ -400,7 +400,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                           <button
                             type="button"
                             onClick={() => confirmEndLoan(l.id)}
-                            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded whitespace-nowrap"
+                            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded whitespace-nowrap"
                           >
                             Confirm return
                           </button>

@@ -374,7 +374,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
       {canEdit && (
         <div className="flex gap-3 items-center flex-wrap">
           <button type="button" onClick={saveEntry} disabled={savingEntry}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {savingEntry ? 'Saving…' : 'Save entry record →'}
           </button>
           {entryRecord && (

@@ -280,7 +280,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
             )}
             <div className="flex gap-2">
               <button type="button" onClick={addRightsRecord} disabled={submitting}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
                 {submitting ? 'Saving…' : 'Add rights record →'}
               </button>
               <button type="button" onClick={() => setShowRightsForm(false)}
@@ -302,27 +302,27 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
           {showRightsHistory && (
           <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
             <table className="w-full">
-              <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Ref</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Holder</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Expiry</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Licence</th>
+              <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Ref</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Holder</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Expiry</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Licence</th>
               </tr></thead>
               <tbody>
                 {rightsRecords.map(r => (
                   <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(r)}>
-                    <td className="px-4 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.rights_reference}</td>
-                    <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{r.rights_type}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.rights_reference}</td>
+                    <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{r.rights_type}</td>
+                    <td className="px-4 py-4">
                       <span className={`text-xs font-mono px-2 py-1 rounded-full ${r.rights_status === 'Active' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : r.rights_status === 'Expired' ? 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>
                         {r.rights_status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{r.rights_holder || '—'}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{r.expiry_date ? new Date(r.expiry_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
-                    <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.licence_terms || '—'}</td>
+                    <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{r.rights_holder || '—'}</td>
+                    <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{r.expiry_date ? new Date(r.expiry_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                    <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{r.licence_terms || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -408,7 +408,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
             )}
             <div className="flex gap-2">
               <button type="button" onClick={addReproductionRequest} disabled={!reproductionForm.requester_name || !reproductionForm.request_date || submitting}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
                 {submitting ? 'Saving…' : 'Log reproduction request →'}
               </button>
               <button type="button" onClick={() => setShowReproForm(false)}
@@ -489,7 +489,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
       {canEdit && (
         <div className="flex gap-3 items-center">
           <button type="submit" disabled={saving}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {saving ? 'Saving…' : 'Save changes →'}
           </button>
           <button type="button" onClick={() => router.push('/dashboard')}

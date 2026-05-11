@@ -73,7 +73,7 @@ export default function ObjectExitsPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Record and track objects leaving your care. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -134,7 +134,7 @@ export default function ObjectExitsPage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Object Exit Register</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -176,15 +176,15 @@ export default function ObjectExitsPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Exit No.</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Exit Reason</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Recipient</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Expected Return</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Exit No.</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Exit Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Recipient</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Receipt</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Expected Return</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,11 +195,11 @@ export default function ObjectExitsPage() {
                         className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${status.label === 'Overdue' ? 'bg-red-50/20' : ''}`}
                         onClick={() => e.object_id && router.push(`/dashboard/objects/${e.object_id}?tab=exits`)}
                       >
-                        <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                        <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{e.exit_number}</td>
+                        <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                           {new Date(e.exit_date + 'T00:00:00').toLocaleDateString('en-GB')}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
                             <span className="text-base">{e.objects?.emoji}</span>
                             <div>
@@ -208,18 +208,18 @@ export default function ObjectExitsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
-                        <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
+                        <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
+                        <td className="px-4 py-4">
                           {e.signed_receipt
                             ? <span className="text-xs font-mono text-emerald-600">✓ Signed</span>
                             : <span className="text-xs font-mono text-amber-600">Pending</span>
                           }
                         </td>
-                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                        <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                           {e.expected_return_date ? new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${status.cls}`}>{status.label}</span>
                         </td>
                       </tr>

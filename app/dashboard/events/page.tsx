@@ -167,7 +167,7 @@ export default function EventsPage() {
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Create events, manage time slots, and sell tickets directly through your museum website. Available on Professional, Institution, and Enterprise plans.</p>
             <button
               onClick={() => router.push('/dashboard/plan')}
-              className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
             >
               View plans →
             </button>
@@ -191,7 +191,7 @@ export default function EventsPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-6 md:p-10 space-y-6">
         {/* Stripe Connect — admin controls */}
         {(isOwner || staffAccess === 'Admin') ? (
           <>
@@ -205,7 +205,7 @@ export default function EventsPage() {
                     <button
                       onClick={startConnectOnboarding}
                       disabled={connectLoading}
-                      className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
                     >
                       {connectLoading ? 'Redirecting...' : 'Connect Stripe account →'}
                     </button>
@@ -224,7 +224,7 @@ export default function EventsPage() {
                       <button
                         onClick={startConnectOnboarding}
                         disabled={connectLoading}
-                        className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                        className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
                       >
                         {connectLoading ? 'Redirecting...' : 'Complete verification in Stripe →'}
                       </button>
@@ -299,7 +299,7 @@ export default function EventsPage() {
               onClick={() => setFilter(f)}
               className={`text-xs font-mono px-3 py-1.5 rounded transition-colors capitalize ${
                 filter === f
-                  ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900'
+                  ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400'
                   : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
               }`}
             >
@@ -322,12 +322,12 @@ export default function EventsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-stone-200 dark:border-stone-700 text-left">
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Title</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Type</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Price</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Status</th>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal text-right">Tickets</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Title</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Type</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Price</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Status</th>
+                    <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal text-right">Tickets</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -337,16 +337,16 @@ export default function EventsPage() {
                       onClick={() => router.push(`/dashboard/events/${event.id}`)}
                       className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3 text-stone-900 dark:text-stone-100 font-medium">{event.title}</td>
-                      <td className="px-4 py-3 text-stone-500 dark:text-stone-400">{TYPE_LABELS[event.event_type] || event.event_type}</td>
-                      <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatDate(event.start_date)}</td>
-                      <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatPrice(event.price_cents, event.currency)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-stone-900 dark:text-stone-100 font-medium">{event.title}</td>
+                      <td className="px-4 py-4 text-stone-500 dark:text-stone-400">{TYPE_LABELS[event.event_type] || event.event_type}</td>
+                      <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatDate(event.start_date)}</td>
+                      <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatPrice(event.price_cents, event.currency)}</td>
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-0.5 rounded capitalize ${STATUS_STYLES[event.status] || ''}`}>
                           {event.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono text-xs text-right">
+                      <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono text-xs text-right">
                         {ticketCounts[event.id] || 0}
                       </td>
                     </tr>

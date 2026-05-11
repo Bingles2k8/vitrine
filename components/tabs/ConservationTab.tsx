@@ -441,7 +441,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
             type="button"
             onClick={addConservation}
             disabled={submitting || !conservationForm.treatment_type}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
           >
             {submitting ? 'Saving\u2026' : 'Save report \u2192'}
           </button>
@@ -455,12 +455,12 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
           </div>
           <table className="w-full">
             <thead>
-              <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Name / Type</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Conservator</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
-                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
+              <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Name / Type</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Conservator</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Dates</th>
+                <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                <th className="px-4 py-4"></th>
               </tr>
             </thead>
             <tbody>
@@ -470,22 +470,22 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer"
                   onClick={() => { setSelectedTreatment(t); setIsEditing(false) }}
                 >
-                  <td className="px-6 py-3">
+                  <td className="px-6 py-4">
                     <div className="text-sm text-stone-900 dark:text-stone-100">{t.treatment_name || t.treatment_type}</div>
                     {t.treatment_name && <div className="text-xs text-stone-400 dark:text-stone-500">{t.treatment_type}</div>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{t.conservator}</td>
-                  <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{t.conservator}</td>
+                  <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                     {t.start_date ? new Date(t.start_date).toLocaleDateString('en-GB') : '—'}
                     {' → '}
                     {t.end_date ? new Date(t.end_date).toLocaleDateString('en-GB') : <span className="text-amber-600">Ongoing</span>}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <span className={`text-xs font-mono px-2 py-1 rounded-full ${isActive(t) ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : t.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
                       {t.status || 'Active'}
                     </span>
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-2 items-center">
                       {isActive(t) && canEdit && (
                         <>
@@ -677,7 +677,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   <textarea value={editForm.recommendation_future} onChange={e => setEditForm((f: any) => ({ ...f, recommendation_future: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
                 </div>
                 <div className="flex gap-3 pt-2 border-t border-stone-100 dark:border-stone-800">
-                  <button type="button" onClick={saveEdit} disabled={editSubmitting} className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded px-4 py-1.5 disabled:opacity-50">
+                  <button type="button" onClick={saveEdit} disabled={editSubmitting} className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-1.5 disabled:opacity-50">
                     {editSubmitting ? 'Saving…' : 'Save changes'}
                   </button>
                   <button type="button" onClick={() => setIsEditing(false)} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-4 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">

@@ -187,9 +187,9 @@ export default function TrashPage() {
           <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                   {canEdit && (
-                    <th className="px-4 py-3 w-8">
+                    <th className="px-4 py-4 w-8">
                       <input
                         type="checkbox"
                         checked={selectedIds.size === objects.length}
@@ -198,17 +198,17 @@ export default function TrashPage() {
                       />
                     </th>
                   )}
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                  {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Accession No.</th>}
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Deleted</th>
-                  {canEdit && <th className="text-right text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Actions</th>}
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
+                  {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Accession No.</th>}
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Deleted</th>
+                  {canEdit && <th className="text-right text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {objects.map(a => (
                   <tr key={a.id} className={`border-b border-stone-100 dark:border-stone-800 ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800/50' : ''}`}>
                     {canEdit && (
-                      <td className="px-4 py-3 w-8">
+                      <td className="px-4 py-4 w-8">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(a.id)}
@@ -217,18 +217,18 @@ export default function TrashPage() {
                         />
                       </td>
                     )}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <span className="text-base">{a.emoji || '🖼️'}</span>
                         <span className="text-sm text-stone-700 dark:text-stone-300">{a.title}</span>
                       </div>
                     </td>
-                    {fullMode && <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.accession_no || '—'}</td>}
-                    <td className="px-4 py-3 text-xs font-mono text-stone-400">
+                    {fullMode && <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{a.accession_no || '—'}</td>}
+                    <td className="px-4 py-4 text-xs font-mono text-stone-400">
                       {a.deleted_at ? new Date(a.deleted_at).toLocaleDateString('en-GB') : '—'}
                     </td>
                     {canEdit && (
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => handleRestore(a.id)}

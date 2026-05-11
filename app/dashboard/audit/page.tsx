@@ -123,7 +123,7 @@ export default function AuditPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Run collection audits and track inventory checks. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -243,7 +243,7 @@ export default function AuditPage() {
           </button>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -305,7 +305,7 @@ export default function AuditPage() {
                 <div><label className={labelCls}>Notes</label><textarea rows={2} value={exerciseForm.notes} onChange={e => setExerciseForm(f => ({ ...f, notes: e.target.value }))} className={`${inputCls} resize-none`} /></div>
                 <div className="flex items-center gap-3">
                   <button onClick={saveExercise} disabled={!exerciseForm.audit_reference || savingExercise}
-                    className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                    className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
                     {savingExercise ? 'Saving…' : editingExerciseId ? 'Save changes →' : 'Save audit exercise →'}
                   </button>
                   {editingExerciseId && exerciseForm.status !== 'Completed' && (
@@ -324,27 +324,27 @@ export default function AuditPage() {
               </div>
             ) : (
               <table className="w-full">
-                <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Reference</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Auditor</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Checked</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Not Found / Discrepancy</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
+                <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Reference</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Auditor</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Checked</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Not Found / Discrepancy</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
                 </tr></thead>
                 <tbody>
                   {exercises.map(ex => (
                     <tr key={ex.id} onClick={() => openExercise(ex)} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer">
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{ex.audit_reference}</td>
-                      <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">{ex.auditor || '—'}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{ex.date_started ? new Date(ex.date_started + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{exerciseCounts[ex.id] ?? 0}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{ex.audit_reference}</td>
+                      <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{ex.auditor || '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{ex.date_started ? new Date(ex.date_started + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{exerciseCounts[ex.id] ?? 0}</td>
+                      <td className="px-4 py-4">
                         {(exerciseIssueCounts[ex.id] ?? 0) > 0
                           ? <span className="text-xs font-mono text-amber-600 dark:text-amber-400">{exerciseIssueCounts[ex.id]}</span>
                           : <span className="text-xs font-mono text-stone-400">0</span>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${ex.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : ex.status === 'In Progress' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
                           {ex.status}
                         </span>
@@ -372,12 +372,12 @@ export default function AuditPage() {
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Last Inventoried</th>
-                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">By</th>
+                <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Object</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Location</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Last Inventoried</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">By</th>
                 </tr>
               </thead>
               <tbody>
@@ -388,7 +388,7 @@ export default function AuditPage() {
                   return (
                     <tr key={a.id} onClick={() => router.push(`/dashboard/objects/${a.id}?tab=location`)}
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${isNever || isOld ? 'bg-amber-50/20' : ''}`}>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{a.emoji}</div>
                           <div>
@@ -397,11 +397,11 @@ export default function AuditPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <span className="text-xs text-stone-500 dark:text-stone-400">{a.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.current_location || '—'}</td>
-                      <td className="px-4 py-3 text-xs font-mono">
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{a.current_location || '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono">
                         {isNever ? (
                           <span className="text-amber-600">Never</span>
                         ) : isOld ? (
@@ -410,7 +410,7 @@ export default function AuditPage() {
                           <span className="text-stone-500 dark:text-stone-400">{new Date(a.last_inventoried).toLocaleDateString('en-GB')}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.inventoried_by || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{a.inventoried_by || '—'}</td>
                     </tr>
                   )
                 })}
@@ -506,7 +506,7 @@ export default function AuditPage() {
             <div className="flex gap-1 px-6 py-3 border-b border-stone-100 dark:border-stone-800 shrink-0">
               {(['all', 'found', 'not_found', 'discrepancy'] as const).map(f => (
                 <button key={f} type="button" onClick={() => setExerciseFilter(f)}
-                  className={`px-3 py-1 rounded text-xs font-mono border transition-colors ${exerciseFilter === f ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 border-transparent' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                  className={`px-3 py-1 rounded text-xs font-mono border transition-colors ${exerciseFilter === f ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 border-transparent' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
                   {f === 'all' ? 'All' : f === 'found' ? 'Present' : f === 'not_found' ? 'Not Found' : 'Discrepancy'}
                 </button>
               ))}
@@ -520,12 +520,12 @@ export default function AuditPage() {
                 <div className="p-8 text-center text-xs text-stone-400 dark:text-stone-500">No audit records linked to this exercise yet.</div>
               ) : (
                 <table className="w-full">
-                  <thead className="sticky top-0 bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <thead className="sticky top-0 bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <tr>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location Found</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Object</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Outcome</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Location Found</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -542,7 +542,7 @@ export default function AuditPage() {
                         return (
                           <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer"
                             onClick={() => { setSelectedExercise(null); router.push(`/dashboard/objects/${obj?.id}?tab=location`) }}>
-                            <td className="px-6 py-3">
+                            <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <span>{obj?.emoji}</span>
                                 <div>
@@ -551,15 +551,15 @@ export default function AuditPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(r.inventoried_at).toLocaleDateString('en-GB')}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(r.inventoried_at).toLocaleDateString('en-GB')}</td>
+                            <td className="px-4 py-4">
                               {r.inventory_outcome ? (
                                 <span className={`text-xs font-mono px-2 py-1 rounded-full ${r.inventory_outcome === 'Present and correct' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : r.inventory_outcome === 'Not found' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>
                                   {r.inventory_outcome}
                                 </span>
                               ) : '—'}
                             </td>
-                            <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.location_confirmed || '—'}</td>
+                            <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{r.location_confirmed || '—'}</td>
                           </tr>
                         )
                       })}

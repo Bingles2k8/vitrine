@@ -483,7 +483,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             type="button"
             onClick={addLocation}
             disabled={submitting || !locationForm.building || !locationForm.room_gallery || !locationForm.position1}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
           >
             {submitting ? 'Saving…' : 'Save movement →'}
           </button>
@@ -580,7 +580,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             </div>
           )}
           <button type="button" onClick={addAudit} disabled={auditSubmitting}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {auditSubmitting ? 'Saving…' : 'Save audit record →'}
           </button>
         </div>
@@ -609,18 +609,18 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
               </div>
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3 w-16">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-2 py-3">Location</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-3 py-3">Moved By</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 w-16">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-2 py-4">Location</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-3 py-4">Moved By</th>
                   </tr>
                 </thead>
                 <tbody>
                   {locationHistory.map((h: any) => (
                     <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400 whitespace-nowrap">{(() => { const d = new Date(h.moved_at); return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(2)}` })()}</td>
-                      <td className="px-2 py-3 text-xs font-mono text-stone-700 dark:text-stone-300">{h.location_code || h.location}</td>
-                      <td className="px-3 py-3 text-xs text-stone-500 dark:text-stone-400">{h.moved_by || '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 whitespace-nowrap">{(() => { const d = new Date(h.moved_at); return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(2)}` })()}</td>
+                      <td className="px-2 py-4 text-xs font-mono text-stone-700 dark:text-stone-300">{h.location_code || h.location}</td>
+                      <td className="px-3 py-4 text-xs text-stone-500 dark:text-stone-400">{h.moved_by || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -636,24 +636,24 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
               </div>
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">By</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Outcome</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">By</th>
                   </tr>
                 </thead>
                 <tbody>
                   {auditHistory.map((h: any) => (
                     <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(h)}>
-                      <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
+                      <td className="px-4 py-4">
                         {h.inventory_outcome ? (
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${h.inventory_outcome === 'Present and correct' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>
                             {h.inventory_outcome}
                           </span>
                         ) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.inventoried_by || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{h.inventoried_by || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -756,7 +756,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                 type="button"
                 onClick={confirmAddNew}
                 disabled={!addNewModal.value.trim()}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-4 py-2 rounded disabled:opacity-50"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-4 py-2 rounded disabled:opacity-50"
               >
                 Add →
               </button>

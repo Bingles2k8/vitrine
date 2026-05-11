@@ -246,7 +246,7 @@ export default function DocumentsTab({ canEdit, object, museum, supabase }: Prop
               <button
                 onClick={upload}
                 disabled={!file || uploading}
-                className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded px-4 py-1.5 disabled:opacity-50 transition-colors"
+                className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-1.5 disabled:opacity-50 transition-colors"
               >
                 {uploading ? 'Uploading…' : 'Upload'}
               </button>

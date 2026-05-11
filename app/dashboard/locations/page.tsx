@@ -153,7 +153,7 @@ export default function LocationsPage() {
         <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Location Register</span>
       </div>
 
-      <div className="p-4 md:p-8 space-y-6 max-w-6xl">
+      <div className="p-6 md:p-10 space-y-6 max-w-6xl">
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -237,7 +237,7 @@ export default function LocationsPage() {
                   <thead>
                     <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                       {['Date', 'Object', 'Location', 'Move Type', 'Expected Return', 'Moved By'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">{h}</th>
+                        <th key={h} className="text-left px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -246,10 +246,10 @@ export default function LocationsPage() {
                       const isOverdue = m.expected_return_date && m.expected_return_date < today
                       return (
                         <tr key={m.id} className={`hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors ${isOverdue ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''}`}>
-                          <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400 whitespace-nowrap">
+                          <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 whitespace-nowrap">
                             {m.moved_at ? new Date(m.moved_at).toLocaleDateString('en-GB') : '—'}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-4">
                             <button onClick={() => router.push(`/dashboard/objects/${m.object_id}?tab=location`)}
                               className="flex items-center gap-2 text-left hover:underline">
                               <span>{m.objects?.emoji || '📦'}</span>
@@ -257,11 +257,11 @@ export default function LocationsPage() {
                               {m.objects?.accession_no && <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{m.objects.accession_no}</span>}
                             </button>
                           </td>
-                          <td className="px-4 py-3 text-stone-700 dark:text-stone-300">
+                          <td className="px-4 py-4 text-stone-700 dark:text-stone-300">
                             {m.locations?.name || '—'}
                             {m.locations?.location_code && <span className="ml-1 text-xs font-mono text-stone-400 dark:text-stone-500">({m.locations.location_code})</span>}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-4">
                             <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
                               m.move_type === 'Temporary' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' :
                               m.move_type === 'Return' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' :
@@ -270,11 +270,11 @@ export default function LocationsPage() {
                               {m.move_type || 'Permanent'}
                             </span>
                           </td>
-                          <td className={`px-4 py-3 text-xs font-mono whitespace-nowrap ${isOverdue ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-stone-500 dark:text-stone-400'}`}>
+                          <td className={`px-4 py-4 text-xs font-mono whitespace-nowrap ${isOverdue ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-stone-500 dark:text-stone-400'}`}>
                             {m.expected_return_date ? fmt(m.expected_return_date) : '—'}
                             {isOverdue && <span className="ml-1">⚠</span>}
                           </td>
-                          <td className="px-4 py-3 text-stone-500 dark:text-stone-400 text-xs">{m.moved_by || '—'}</td>
+                          <td className="px-4 py-4 text-stone-500 dark:text-stone-400 text-xs">{m.moved_by || '—'}</td>
                         </tr>
                       )
                     })}

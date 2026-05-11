@@ -139,7 +139,7 @@ export default function SharePage() {
         )}
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-6 md:p-10 space-y-6">
         <p className="text-sm text-stone-500 dark:text-stone-400 max-w-2xl leading-relaxed">
           Share a passcode-protected view of part of your collection with an insurance broker, family member, or collaborator. Recipients don't need an account.
         </p>

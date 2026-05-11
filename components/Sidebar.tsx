@@ -146,14 +146,15 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     return (
       <div
         onClick={() => { router.push(path); onNavigate?.() }}
-        className={`flex items-center gap-2 px-3 py-2 rounded text-xs font-mono mb-1 cursor-pointer transition-colors ${
+        className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm mb-0.5 cursor-pointer transition-colors ${
           active
-            ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900'
-            : 'text-stone-500 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-800'
+            ? 'bg-amber-50 text-amber-900 font-medium dark:bg-amber-950/40 dark:text-amber-100'
+            : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/60 dark:hover:text-stone-200'
         }`}
         {...(learnKey ? { 'data-learn': learnKey } : {})}
       >
-        <span>{icon}</span> {label}
+        <span className="text-base leading-none">{icon}</span>
+        <span>{label}</span>
       </div>
     )
   }
@@ -244,7 +245,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   }
 
   return (
-    <aside data-sidebar className="w-56 bg-white dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
+    <aside data-sidebar className="w-64 bg-stone-50 dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
       <div className="p-5 border-b border-stone-200 dark:border-stone-800">
         <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
@@ -280,19 +281,19 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
         {nav && (<>
-        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2">Collections</div>
+        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
         {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
 
         {nav.simple ? (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Record</div>
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Record</div>
             {navItem('/dashboard/entry', '🗂', 'Add Object', 'nav.entry')}
             {navItem('/dashboard/on-loan', '📤', 'On Loan', 'nav.on-loan')}
           </>
         ) : (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Collection Management</div>
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Collection Management</div>
             {navItem('/dashboard/entry', '🗂', 'Object Entry', 'nav.entry')}
             {navItem('/dashboard/register', '📋', 'Accession Register', 'nav.register')}
             {navItem('/dashboard/loans', '⇄', 'Loans Register', 'nav.loans')}
@@ -313,19 +314,19 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           </>
         )}
 
-        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Website</div>
+        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Website</div>
         {navItem('/dashboard/site', '◫', 'Site Builder', 'nav.site')}
         {nav.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
         {nav.shareLinks && navItem('/dashboard/share', '🔗', 'Private Shares', 'nav.share')}
 
         {!nav.simple && (isOwner || staffAccess === 'Admin') && (
           <>
-            <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">People</div>
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">People</div>
             {navItem('/dashboard/staff', '◉', 'Staff & Roles', 'nav.staff')}
           </>
         )}
 
-        <div className="text-xs tracking-widest uppercase text-stone-300 dark:text-stone-600 px-2 py-2 mt-2">Data</div>
+        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
         </>)}
       </nav>
@@ -334,7 +335,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       <div className="relative border-t border-stone-200 dark:border-stone-800" ref={settingsRef}>
         {/* Settings panel */}
         {settingsOpen && (
-          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 dark:border-stone-800">
               <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Settings</span>
               <button
@@ -356,7 +357,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                       onClick={() => changeTheme(t)}
                       className={`flex-1 py-1.5 text-xs font-mono rounded transition-colors capitalize ${
                         theme === t
-                          ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900'
+                          ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400'
                           : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
                       }`}
                     >

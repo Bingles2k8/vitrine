@@ -93,7 +93,7 @@ export default function AccessionRegisterPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Maintain a formal accession register for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -152,7 +152,7 @@ export default function AccessionRegisterPage() {
           <span className="hidden sm:inline text-xs font-mono text-stone-400 dark:text-stone-500">{confirmed} of {objects.length} register entries confirmed</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
@@ -208,7 +208,7 @@ export default function AccessionRegisterPage() {
               <div className="text-5xl mb-4">📋</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No accession numbers assigned</div>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Assign accession numbers to objects in the collection to populate the register.</p>
-              <button onClick={() => router.push('/dashboard')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">
+              <button onClick={() => router.push('/dashboard')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded">
                 Go to Collection →
               </button>
             </div>
@@ -216,34 +216,34 @@ export default function AccessionRegisterPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Accession No.</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Acquisition Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Source</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Authorised By</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Register ✓</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Accession No.</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Acquisition Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Source</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Authorised By</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Register ✓</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(a => (
                     <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer"
                       onClick={() => router.push(`/dashboard/objects/${a.id}?tab=acquisition`)}>
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{a.accession_no}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{a.accession_no}</td>
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           <span>{a.emoji}</span>
                           <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {a.acquisition_date ? new Date(a.acquisition_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_method || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_source || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_authorised_by || '—'}</td>
-                      <td className="px-4 py-3" onClick={ev => ev.stopPropagation()}>
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_method || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_source || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{a.acquisition_authorised_by || '—'}</td>
+                      <td className="px-4 py-4" onClick={ev => ev.stopPropagation()}>
                         <button
                           onClick={() => toggleConfirmed(a.id, a.accession_register_confirmed, a)}
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${

@@ -77,7 +77,7 @@ export default function ValuationPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track valuations and insurance values for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -138,7 +138,7 @@ export default function ValuationPage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Valuation Register</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
@@ -176,13 +176,13 @@ export default function ValuationPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Value</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Purpose</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Valuer</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Value</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Purpose</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Valuer</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,7 +190,7 @@ export default function ValuationPage() {
                     <tr key={v.id}
                       onClick={() => router.push(`/dashboard/objects/${v.object_id}?tab=valuation`)}
                       className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer">
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base">{v.objects?.emoji}</div>
                           <div>
@@ -199,13 +199,13 @@ export default function ValuationPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm font-mono text-stone-900 dark:text-stone-100">
+                      <td className="px-4 py-4 text-sm font-mono text-stone-900 dark:text-stone-100">
                         {formatCurrency(parseFloat(v.value), v.currency || 'GBP')}
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.method || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.purpose || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{v.valuer || '—'}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.method || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.purpose || '—'}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.valuer || '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {v.valuation_date ? new Date(v.valuation_date).toLocaleDateString('en-GB') : '—'}
                       </td>
                     </tr>

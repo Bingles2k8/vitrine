@@ -98,7 +98,7 @@ export default function CollectionsReviewPage() {
               <div className="text-5xl mb-5">&square;</div>
               <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Collections Review is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Conduct formal reviews of your collection to ensure alignment with your museum&apos;s mission and policies.</p>
-              <button onClick={() => router.push('/dashboard/plan')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
+              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
             </div>
           </div>
       </DashboardShell>
@@ -114,7 +114,7 @@ export default function CollectionsReviewPage() {
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Collections Review</span>
         </div>
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -197,7 +197,7 @@ export default function CollectionsReviewPage() {
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
               <button type="button" onClick={addReview} disabled={!form.review_title || !form.review_date_start || submitting}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
                 {submitting ? 'Saving...' : 'Start review \u2192'}
               </button>
             </div>
@@ -213,35 +213,35 @@ export default function CollectionsReviewPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Reference</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Title</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Reviewer</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    {canEdit && <th className="px-4 py-3"></th>}
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Reference</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Title</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Reviewer</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Objects</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    {canEdit && <th className="px-4 py-4"></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {reviews.map(r => (
                     <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800">
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.review_reference}</td>
-                      <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100">{r.review_title}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.reviewer || '—'}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.review_reference}</td>
+                      <td className="px-4 py-4 text-sm text-stone-900 dark:text-stone-100">{r.review_title}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{r.reviewer || '—'}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {r.review_date_start ? new Date(r.review_date_start).toLocaleDateString('en-GB') : '—'}
                         {r.review_date_end ? ` — ${new Date(r.review_date_end).toLocaleDateString('en-GB')}` : ''}
                       </td>
-                      <td className="px-4 py-3 text-sm font-mono text-stone-900 dark:text-stone-100">{r.objects_reviewed || 0}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-sm font-mono text-stone-900 dark:text-stone-100">{r.objects_reviewed || 0}</td>
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${
                           r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
                           : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
                         }`}>{r.status}</span>
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-4 text-right">
                           {r.status === 'In Progress' && (
                             <button type="button" onClick={() => updateStatus(r.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Complete</button>
                           )}

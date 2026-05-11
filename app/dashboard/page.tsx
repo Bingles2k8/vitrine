@@ -328,7 +328,7 @@ export default function Dashboard() {
           )}
         />
 
-        <div className="p-4 md:p-8">
+        <div className="p-6 md:p-10">
           <div className={`grid grid-cols-2 ${fullMode ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 mb-8`}>
             {CARDS.map(card => {
               const active = !card.isValue && filter === card.filterKey
@@ -340,15 +340,15 @@ export default function Dashboard() {
                   data-learn={card.learnKey}
                   className={`text-left rounded-lg p-5 border transition-all ${
                     active
-                      ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white'
+                      ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700'
                       : card.isValue
-                        ? 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700'
-                        : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 hover:shadow-sm'
+                        ? 'bg-white dark:bg-stone-900 border-stone-150 dark:border-stone-700 shadow-sm'
+                        : 'bg-white dark:bg-stone-900 border-stone-150 dark:border-stone-700 shadow-sm hover:shadow-md hover:border-stone-300 dark:hover:border-stone-500'
                   }`}
                 >
-                  <div className={`text-xs uppercase tracking-widest mb-2 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.label}</div>
-                  <div className={`font-serif ${card.isValue ? 'text-3xl' : 'text-4xl'} ${active ? 'text-white dark:text-stone-900' : 'text-stone-900 dark:text-stone-100'}`}>{card.value}</div>
-                  <div className={`text-xs mt-1 ${active ? 'text-stone-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.sub}</div>
+                  <div className={`text-xs uppercase tracking-widest mb-2 ${active ? 'text-amber-700 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'}`}>{card.label}</div>
+                  <div className={`font-serif ${card.isValue ? 'text-3xl' : 'text-4xl'} ${active ? 'text-amber-900 dark:text-amber-100' : 'text-stone-900 dark:text-stone-100'}`}>{card.value}</div>
+                  <div className={`text-xs mt-1 ${active ? 'text-amber-600 dark:text-amber-500' : 'text-stone-400 dark:text-stone-500'}`}>{card.sub}</div>
                 </Element>
               )
             })}
@@ -465,7 +465,7 @@ export default function Dashboard() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">{fullMode ? 'Log an object in the Entry Register to begin.' : 'Add your first object to begin.'}</p>
               <button
                 onClick={() => router.push('/dashboard/entry')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono px-5 py-2.5 rounded transition-colors"
                 data-learn="action.new_entry"
               >
                 {fullMode ? '+ New Entry Record' : '+ Add an object'}
@@ -531,7 +531,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {/* Filter bar */}
               {(filter || showDuplicatesOnly) && selectedIds.size === 0 && (
-                <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
+                <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50 dark:bg-stone-800">
                   <span className="text-xs font-mono text-stone-500 dark:text-stone-400">
                     Showing {visibleObjects.length} {visibleObjects.length === 1 ? 'object' : 'objects'}
                     {filter ? ` — ${filter === '__on_public_site__' ? 'On public site' : filter}` : ''}
@@ -575,9 +575,9 @@ export default function Dashboard() {
               )}
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     {canEdit && fullMode && (
-                      <th className="px-4 py-3 w-10">
+                      <th className="px-4 py-4 w-10">
                         <input
                           type="checkbox"
                           checked={visibleObjects.length > 0 && selectedIds.size === visibleObjects.length}
@@ -586,23 +586,23 @@ export default function Dashboard() {
                         />
                       </th>
                     )}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3" data-learn="dashboard.col.object">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.year">Year</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.medium">Medium</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.status">Status</th>
-                    {!fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3" data-learn="dashboard.col.public">Public</th>}
-                    {canEdit && <th className="w-10 px-2 py-3" />}
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4" data-learn="dashboard.col.object">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.year">Year</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.medium">Medium</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.status">Status</th>
+                    {!fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.public">Public</th>}
+                    {canEdit && <th className="w-10 px-2 py-4" />}
                   </tr>
                 </thead>
                 <tbody>
                   {visibleObjects.map(a => (
                     <tr
                       key={a.id}
-                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${a.status === 'Deaccessioned' ? 'opacity-50' : ''} ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800' : ''}`}
+                      className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50/80 dark:hover:bg-stone-800/60 cursor-pointer transition-colors ${a.status === 'Deaccessioned' ? 'opacity-50' : ''} ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800' : ''}`}
                       onClick={() => router.push(`/dashboard/objects/${a.id}`)}
                     >
                       {canEdit && fullMode && (
-                        <td className="px-4 py-3 w-10" onClick={e => { e.stopPropagation(); toggleSelect(a.id) }}>
+                        <td className="px-4 py-4 w-10" onClick={e => { e.stopPropagation(); toggleSelect(a.id) }}>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(a.id)}
@@ -611,9 +611,9 @@ export default function Dashboard() {
                           />
                         </td>
                       )}
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">{a.emoji}</div>
+                          <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-xl flex-shrink-0">{a.emoji}</div>
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{a.title}</span>
@@ -644,9 +644,9 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{a.production_date || a.year}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{a.production_date || a.year}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
+                      <td className="px-4 py-4">
                         {(() => {
                           const loan = loanByObject[a.id]
                           const days = a.status === 'On Loan' ? overdueDays(loan) : 0
@@ -677,7 +677,7 @@ export default function Dashboard() {
                         })()}
                       </td>
                       {!fullMode && (
-                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                           <label className={`inline-flex items-center gap-2 ${canEdit ? 'cursor-pointer' : 'cursor-default opacity-60'}`} title={a.show_on_site ? 'Visible on your public site' : 'Hidden from your public site'}>
                             <input
                               type="checkbox"
@@ -690,7 +690,7 @@ export default function Dashboard() {
                         </td>
                       )}
                       {canEdit && (
-                        <td className="px-2 py-3 w-10" onClick={e => e.stopPropagation()}>
+                        <td className="px-2 py-4 w-10" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={e => handleDeleteObject(a.id, a.title, e)}
                             className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
@@ -731,9 +731,9 @@ export default function Dashboard() {
                     return `${Math.floor(hrs / 24)}d ago`
                   })()
                   return (
-                    <div key={entry.id} className={`flex items-center justify-between px-5 py-3 text-sm ${i < activityLog.length - 1 ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}>
+                    <div key={entry.id} className={`flex items-center justify-between px-6 py-4 text-sm ${i < activityLog.length - 1 ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}>
                       <div className="flex items-center gap-3">
-                        <span className="text-stone-300 dark:text-stone-600 text-xs font-mono">◎</span>
+                        <span className="text-amber-400 dark:text-amber-600 text-xs">◎</span>
                         <span className="text-stone-700 dark:text-stone-300">{entry.description}</span>
                         {fullMode && entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500">by {entry.user_name}</span>}
                       </div>

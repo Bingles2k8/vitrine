@@ -59,13 +59,13 @@ export default function QRLabelModal({ object, museum, onClose }: QRLabelModalPr
           <div className="flex w-full rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden text-xs font-mono">
             <button
               onClick={() => setDestination('public')}
-              className={`flex-1 py-2 transition-colors ${destination === 'public' ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+              className={`flex-1 py-2 transition-colors ${destination === 'public' ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
             >
               Public site
             </button>
             <button
               onClick={() => setDestination('cms')}
-              className={`flex-1 py-2 transition-colors ${destination === 'cms' ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+              className={`flex-1 py-2 transition-colors ${destination === 'cms' ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
             >
               CMS
             </button>
@@ -93,7 +93,7 @@ export default function QRLabelModal({ object, museum, onClose }: QRLabelModalPr
           <button onClick={() => window.print()} className="border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-50 dark:hover:bg-stone-800">
             Print label
           </button>
-          <button onClick={downloadQR} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded">
+          <button onClick={downloadQR} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded">
             Download PNG
           </button>
         </div>

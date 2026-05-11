@@ -269,7 +269,7 @@ export default function EventDetailPage() {
           </span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+          <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
             Scan tickets →
           </button>
           {event.status === 'draft' && (
@@ -324,7 +324,7 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <div className="p-4 md:p-8">
+      <div className="p-6 md:p-10">
         {/* Overview Tab */}
         {tab === 'overview' && (
           <div className="max-w-2xl space-y-6">
@@ -387,7 +387,7 @@ export default function EventDetailPage() {
             </div>
             <div className="flex gap-3">
               <button onClick={handleSaveOverview} disabled={saving}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
               <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)}
@@ -427,7 +427,7 @@ export default function EventDetailPage() {
                     <input type="number" value={slotCapacity} onChange={e => setSlotCapacity(e.target.value)} min="1" required
                       className="flex-1 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-stone-400" />
                     <button type="submit"
-                      className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                       Add
                     </button>
                   </div>
@@ -497,12 +497,12 @@ export default function EventDetailPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-stone-200 dark:border-stone-700 text-left">
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Buyer</th>
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Email</th>
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Qty</th>
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Amount</th>
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Status</th>
-                        <th className="px-4 py-3 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Buyer</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Email</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Qty</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Amount</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Status</th>
+                        <th className="px-4 py-4 text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal">Date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -513,11 +513,11 @@ export default function EventDetailPage() {
                             onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                             className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer transition-colors"
                           >
-                            <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{order.buyer_name}</td>
-                            <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono text-xs">{order.buyer_email}</td>
-                            <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono">{order.quantity}</td>
-                            <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatPrice(order.amount_cents, order.currency)}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-4 text-stone-900 dark:text-stone-100">{order.buyer_name}</td>
+                            <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{order.buyer_email}</td>
+                            <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono">{order.quantity}</td>
+                            <td className="px-4 py-4 text-stone-500 dark:text-stone-400 font-mono text-xs">{formatPrice(order.amount_cents, order.currency)}</td>
+                            <td className="px-4 py-4">
                               <span className={`text-xs font-mono px-2 py-0.5 rounded capitalize ${
                                 order.status === 'completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
                                 : order.status === 'pending' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
@@ -526,13 +526,13 @@ export default function EventDetailPage() {
                                 {order.status}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-stone-400 dark:text-stone-500 font-mono text-xs">
+                            <td className="px-4 py-4 text-stone-400 dark:text-stone-500 font-mono text-xs">
                               {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                             </td>
                           </tr>
                           {expandedOrder === order.id && order.tickets && (
                             <tr key={`${order.id}-tickets`}>
-                              <td colSpan={6} className="px-4 py-3 bg-stone-50 dark:bg-stone-800">
+                              <td colSpan={6} className="px-4 py-4 bg-stone-50 dark:bg-stone-800">
                                 {order.status === 'completed' && (
                                   <div className="flex items-center gap-3 pb-2 mb-2 border-b border-stone-200 dark:border-stone-700">
                                     {refundingOrder === order.id ? (

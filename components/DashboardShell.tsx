@@ -85,7 +85,7 @@ export default function DashboardShell({
           />
 
           <div
-            className={`fixed top-0 left-0 bottom-0 z-50 w-56 transition-transform duration-300 ease-in-out ${
+            className={`fixed top-0 left-0 bottom-0 z-50 w-64 transition-transform duration-300 ease-in-out ${
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
@@ -111,7 +111,7 @@ export default function DashboardShell({
         </>
       )}
 
-      <main className={`${isMobile ? '' : 'ml-56'} flex-1 flex flex-col min-w-0`}>
+      <main className={`${isMobile ? '' : 'ml-64'} flex-1 flex flex-col min-w-0`}>
         {isMobile && (
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 sticky top-0 z-30">
             <button

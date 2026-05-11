@@ -189,7 +189,7 @@ export default function InsurancePage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Manage insurance policies and coverage for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -224,7 +224,7 @@ export default function InsurancePage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Insurance & Indemnity</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -243,7 +243,7 @@ export default function InsurancePage() {
           {canEdit && (
             <div className="flex justify-end">
               <button onClick={() => setShowForm(s => !s)}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                 {showForm ? 'Cancel' : '+ Add policy'}
               </button>
             </div>
@@ -369,7 +369,7 @@ export default function InsurancePage() {
               </div>
               <div className="flex justify-end">
                 <button onClick={addPolicy} disabled={saving || !form.policy_number || !form.provider || !form.start_date}
-                  className="px-4 py-2 text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
                   {saving ? 'Saving…' : 'Add policy'}
                 </button>
               </div>
@@ -397,14 +397,14 @@ export default function InsurancePage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Policy</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Provider</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Coverage</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                    {canEdit && <th className="px-4 py-3"></th>}
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Policy</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Provider</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Coverage</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Objects</th>
+                    {canEdit && <th className="px-4 py-4"></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -425,15 +425,15 @@ export default function InsurancePage() {
                     return (
                       <Fragment key={p.id}>
                       <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${expiringSoon ? 'bg-amber-50/20' : ''}`}>
-                        <td className="px-6 py-3">
+                        <td className="px-6 py-4">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{p.policy_number}</div>
                           <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{p.coverage_type}</div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">{p.provider}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-stone-900 dark:text-stone-100">
+                        <td className="px-4 py-4 text-sm text-stone-600 dark:text-stone-400">{p.provider}</td>
+                        <td className="px-4 py-4 text-sm font-mono text-stone-900 dark:text-stone-100">
                           {p.coverage_amount ? formatCurrency(p.coverage_amount, p.currency) : '—'}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
                             {new Date(p.start_date).toLocaleDateString('en-GB')}
                             {p.end_date && ` — ${new Date(p.end_date).toLocaleDateString('en-GB')}`}
@@ -445,19 +445,19 @@ export default function InsurancePage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[p.status] || STATUS_STYLES.Active}`}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <button type="button" onClick={() => setExpandedPolicyId(isExpanded ? null : p.id)}
                             className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">
                             {coveredObjects.length} {isExpanded ? '▲' : '▼'}
                           </button>
                         </td>
                         {canEdit && (
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-4 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {p.status === 'Active' && (
                                 <button onClick={() => updateStatus(p.id, 'Pending Renewal')}
@@ -565,7 +565,7 @@ export default function InsurancePage() {
                                         <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                       </label>
                                       <button type="button" onClick={() => uploadInsuranceDoc(p.id)} disabled={!docFile || docUploading}
-                                        className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                        className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
                                         {docUploading ? 'Uploading…' : 'Upload'}
                                       </button>
                                       <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}

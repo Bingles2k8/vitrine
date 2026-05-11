@@ -153,7 +153,7 @@ export default function ShareLinkModal({ onClose, onCreated }: ShareLinkModalPro
                     onClick={() => toggleStatus(s)}
                     className={`text-xs font-mono px-2.5 py-1 rounded border transition-colors ${
                       active
-                        ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 border-stone-900 dark:border-white'
+                        ? 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 border-stone-900 dark:border-white'
                         : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
                     }`}
                   >
@@ -168,7 +168,7 @@ export default function ShareLinkModal({ onClose, onCreated }: ShareLinkModalPro
             <button
               type="submit"
               disabled={saving || passcode.length < 4}
-              className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono py-2.5 rounded disabled:opacity-50 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors"
+              className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors"
             >
               {saving ? 'Creating…' : 'Create link'}
             </button>

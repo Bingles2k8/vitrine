@@ -182,7 +182,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
           </div>
         )}
         <button type="button" onClick={addAudit} disabled={submitting}
-          className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+          className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
           {submitting ? 'Saving…' : 'Save audit record →'}
         </button>
       </div>}
@@ -198,27 +198,27 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{marginBottom:0}}>Audit History</div></div>
           <table className="w-full">
-            <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Date</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">By</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Location Found</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Condition</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Action</th>
+            <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Date</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">By</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Outcome</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Location Found</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Condition</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Action</th>
             </tr></thead>
             <tbody>
               {auditHistory.map(h => (
                 <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(h)}>
-                  <td className="px-6 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.inventoried_by}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{h.inventoried_by}</td>
+                  <td className="px-4 py-4">
                     {h.inventory_outcome && (
                       <span className={`text-xs font-mono px-2 py-1 rounded-full ${h.inventory_outcome === 'Present and correct' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>{h.inventory_outcome}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{h.location_confirmed}</td>
-                  <td className="px-4 py-3">{h.condition_confirmed && <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.condition_confirmed] || 'bg-stone-100 text-stone-500'}`}>{h.condition_confirmed}</span>}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{h.location_confirmed}</td>
+                  <td className="px-4 py-4">{h.condition_confirmed && <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[h.condition_confirmed] || 'bg-stone-100 text-stone-500'}`}>{h.condition_confirmed}</span>}</td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">
                     {h.action_required && (
                       <span className={h.action_completed ? 'text-emerald-600 dark:text-emerald-400 line-through' : 'text-amber-600 dark:text-amber-400'}>{h.action_required}</span>
                     )}

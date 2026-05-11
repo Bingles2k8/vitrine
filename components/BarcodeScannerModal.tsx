@@ -138,7 +138,7 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
                 <button
                   type="submit"
                   disabled={submitting || !manualCode.trim()}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-50"
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-50"
                 >
                   {submitting ? '…' : 'Look up'}
                 </button>

@@ -152,7 +152,7 @@ function ExportModal({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <a href={buildUrl()} download onClick={onClose}
-            className="flex-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2.5 rounded text-center hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors">
+            className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2.5 rounded text-center hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors">
             Download CSV ↓
           </a>
         </div>
@@ -296,7 +296,7 @@ export default function AnalyticsPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Understand your collection with value tracking, status breakdowns, acquisition trends, and more. Available from £5/mo on the Hobbyist plan.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -333,10 +333,10 @@ export default function AnalyticsPage() {
             <div className="text-5xl mb-4">📊</div>
             <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No data yet</div>
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Add objects to your collection to see analytics.</p>
-            <button onClick={() => router.push('/dashboard/objects/new')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">+ Add your first object</button>
+            <button onClick={() => router.push('/dashboard/objects/new')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded">+ Add your first object</button>
           </div>
         ) : (
-          <div className="p-4 md:p-8 space-y-6">
+          <div className="p-6 md:p-10 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Total Objects</div>
@@ -505,7 +505,7 @@ export default function AnalyticsPage() {
                 <tbody>
                   {objects.slice(0, 5).map(a => (
                     <tr key={a.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer" onClick={() => router.push(`/dashboard/objects/${a.id}`)}>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-base flex-shrink-0">{a.emoji}</div>
                           <div>
@@ -514,11 +514,11 @@ export default function AnalyticsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-400 dark:text-stone-500">{a.medium}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-xs text-stone-400 dark:text-stone-500">{a.medium}</td>
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[a.status] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{a.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-300 dark:text-stone-600 text-right pr-6">
+                      <td className="px-4 py-4 text-xs font-mono text-stone-300 dark:text-stone-600 text-right pr-6">
                         {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                     </tr>

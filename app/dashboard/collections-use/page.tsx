@@ -86,7 +86,7 @@ export default function CollectionsUsePage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track research requests, exhibition loans, educational use, and other access to your collections. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -186,7 +186,7 @@ export default function CollectionsUsePage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Use of Collections</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -206,7 +206,7 @@ export default function CollectionsUsePage() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 {showForm ? 'Cancel' : '+ New record'}
               </button>
@@ -352,7 +352,7 @@ export default function CollectionsUsePage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Saving…' : 'Create record'}
                 </button>
@@ -371,25 +371,25 @@ export default function CollectionsUsePage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Reference</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Requester</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Dates</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Actions</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Reference</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Requester</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Dates</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {records.map(r => (
                     <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.reference}</td>
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{r.use_type}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.reference}</td>
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{r.use_type}</td>
+                      <td className="px-4 py-4">
                         <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.requester_name}</div>
                         {r.requester_org && <div className="text-xs text-stone-400 dark:text-stone-500">{r.requester_org}</div>}
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {r.use_date_start
                           ? <>
                               {new Date(r.use_date_start + 'T00:00:00').toLocaleDateString('en-GB')}
@@ -398,10 +398,10 @@ export default function CollectionsUsePage() {
                           : '—'
                         }
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${statusBadge(r.status)}`}>{r.status}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         {canEdit && (
                           <div className="flex gap-2">
                             {r.status === 'Pending' && (

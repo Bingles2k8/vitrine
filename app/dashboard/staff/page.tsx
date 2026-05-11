@@ -237,7 +237,7 @@ export default function StaffPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Add team members, assign roles (Admin, Editor, Viewer), and manage access to your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -253,7 +253,7 @@ export default function StaffPage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Staff & Roles</span>
         </div>
 
-        <div className="p-4 md:p-8">
+        <div className="p-6 md:p-10">
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -273,7 +273,7 @@ export default function StaffPage() {
             <div className="flex justify-end mb-4">
               <button
                 onClick={openAdd}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 + Invite staff
               </button>
@@ -306,7 +306,7 @@ export default function StaffPage() {
               {(isOwner || staffAccess === 'Admin') && (
                 <button
                   onClick={openAdd}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded"
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded"
                 >
                   + Invite your first team member
                 </button>
@@ -316,20 +316,20 @@ export default function StaffPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Name</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Department</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Job Title</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Email</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Access</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    <th className="px-4 py-3"></th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Name</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Department</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Job Title</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Email</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Access</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    <th className="px-4 py-4"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(member => (
                     <tr key={member.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-mono flex-shrink-0"
@@ -340,18 +340,18 @@ export default function StaffPage() {
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{member.name}</div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{member.department}</td>
-                      <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{member.role}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-400 dark:text-stone-500">{member.email}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{member.department}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{member.role}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-400 dark:text-stone-500">{member.email}</td>
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${ACCESS_STYLES[member.access]}`}>
                           {member.access}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <InviteStatusBadge member={member} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
                           {(isOwner || staffAccess === 'Admin') && !member.user_id && (
                             <button
@@ -497,7 +497,7 @@ export default function StaffPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2 rounded disabled:opacity-50"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2 rounded disabled:opacity-50"
               >
                 {saving ? 'Saving…' : editingId ? 'Save changes →' : 'Add to team →'}
               </button>

@@ -181,7 +181,7 @@ export default function WantedPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-6 md:p-10 space-y-6">
         {/* Public toggle */}
         {canEdit && (
           <div className="flex items-center justify-between bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-4">

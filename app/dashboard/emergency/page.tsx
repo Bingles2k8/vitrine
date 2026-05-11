@@ -216,7 +216,7 @@ export default function EmergencyPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Create and manage emergency response plans for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 View plans →
               </button>
@@ -240,14 +240,14 @@ export default function EmergencyPage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Emergency Plans</span>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Emergency Events */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Emergency Events</h2>
               {canEdit && (
                 <button onClick={() => setShowEventForm(s => !s)}
-                  className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                   {showEventForm ? 'Cancel' : '+ Log event'}
                 </button>
               )}
@@ -307,7 +307,7 @@ export default function EmergencyPage() {
                 </div>
                 <div className="flex justify-end">
                   <button onClick={addEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
-                    className="px-4 py-2 text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                    className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
                     {savingEvent ? 'Saving…' : 'Log event'}
                   </button>
                 </div>
@@ -318,13 +318,13 @@ export default function EmergencyPage() {
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Event</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                      <th className="px-4 py-3"></th>
+                    <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Event</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                      <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Objects</th>
+                      <th className="px-4 py-4"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -341,17 +341,17 @@ export default function EmergencyPage() {
                       return (
                         <Fragment key={ev.id}>
                           <tr className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : ev.id)}>
-                            <td className="px-6 py-3">
+                            <td className="px-6 py-4">
                               <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{ev.event_reference}</div>
                               <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{ev.description}</div>
                             </td>
-                            <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{ev.event_type}</td>
-                            <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-GB') : '—'}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{ev.event_type}</td>
+                            <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-GB') : '—'}</td>
+                            <td className="px-4 py-4">
                               <span className={`text-xs font-mono px-2 py-1 rounded-full ${ev.status === 'Closed' || ev.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : ev.status === 'Open' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{ev.status}</span>
                             </td>
-                            <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{affectedObjects.length || '—'}</td>
-                            <td className="px-4 py-3 text-right text-xs font-mono text-stone-400">{isExpanded ? '▲' : '▼'}</td>
+                            <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{affectedObjects.length || '—'}</td>
+                            <td className="px-4 py-4 text-right text-xs font-mono text-stone-400">{isExpanded ? '▲' : '▼'}</td>
                           </tr>
                           {isExpanded && (
                             <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
@@ -420,7 +420,7 @@ export default function EmergencyPage() {
           {canEdit && (
             <div className="flex justify-end">
               <button onClick={() => setShowForm(s => !s)}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                 {showForm ? 'Cancel' : '+ Add plan'}
               </button>
             </div>
@@ -505,7 +505,7 @@ export default function EmergencyPage() {
               </div>
               <div className="flex justify-end">
                 <button onClick={addPlan} disabled={saving || !form.plan_title}
-                  className="px-4 py-2 text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
                   {saving ? 'Saving…' : 'Add plan'}
                 </button>
               </div>
@@ -533,13 +533,13 @@ export default function EmergencyPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Plan</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Responsible</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Next Review</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    {canEdit && <th className="px-4 py-3"></th>}
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Plan</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Responsible</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Next Review</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    {canEdit && <th className="px-4 py-4"></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -549,13 +549,13 @@ export default function EmergencyPage() {
                     return (
                       <Fragment key={p.id}>
                       <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${overdue ? 'bg-amber-50/20' : ''}`}>
-                        <td className="px-6 py-3">
+                        <td className="px-6 py-4">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{p.plan_title}</div>
                           {p.notes && <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{p.notes}</div>}
                         </td>
-                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{p.plan_type}</td>
-                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{p.responsible_person || '—'}</td>
-                        <td className="px-4 py-3 text-xs font-mono">
+                        <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{p.plan_type}</td>
+                        <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{p.responsible_person || '—'}</td>
+                        <td className="px-4 py-4 text-xs font-mono">
                           {p.next_review_date ? (
                             <span className={overdue ? 'text-amber-600 font-medium' : 'text-stone-500 dark:text-stone-400'}>
                               {new Date(p.next_review_date).toLocaleDateString('en-GB')}
@@ -563,13 +563,13 @@ export default function EmergencyPage() {
                             </span>
                           ) : <span className="text-stone-400 dark:text-stone-500">—</span>}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[p.status] || STATUS_STYLES.Draft}`}>
                             {p.status}
                           </span>
                         </td>
                         {canEdit && (
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-4 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {p.status === 'Draft' && (
                                 <button onClick={() => updateStatus(p.id, 'Active')}
@@ -657,7 +657,7 @@ export default function EmergencyPage() {
                                       <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                     </label>
                                     <button type="button" onClick={() => uploadEmergencyDoc(p.id)} disabled={!docFile || docUploading}
-                                      className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                      className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
                                       {docUploading ? 'Uploading…' : 'Upload'}
                                     </button>
                                     <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}

@@ -212,7 +212,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
             type="button"
             onClick={addCondition}
             disabled={submitting || !conditionForm.grade || !conditionForm.assessed_at}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50"
           >
             {submitting ? 'Saving\u2026' : 'Log assessment \u2192'}
           </button>
@@ -282,7 +282,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                     </tr>
                     {docsAssessmentId === h.id && (
                       <tr className="border-b border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50">
-                        <td colSpan={5} className="py-3 px-2">
+                        <td colSpan={5} className="py-4 px-2">
                           <DocumentAttachments
                             objectId={object.id}
                             museumId={museum.id}

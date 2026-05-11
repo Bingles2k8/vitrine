@@ -179,7 +179,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
             </div>
           )}
           <button type="button" onClick={addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting}
-            className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
             {submitting ? 'Saving\u2026' : 'Save report \u2192'}
           </button>
         </div>
@@ -189,27 +189,27 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800"><div className={sectionTitle} style={{ marginBottom: 0 }}>Damage History</div></div>
           <table className="w-full">
-            <thead><tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Report</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Type</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Severity</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-              {canEdit && <th className="px-4 py-3"></th>}
+            <thead><tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Report</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Severity</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+              <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+              {canEdit && <th className="px-4 py-4"></th>}
             </tr></thead>
             <tbody>
               {damageHistory.map(r => (
                 <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(r)}>
-                  <td className="px-6 py-3">
+                  <td className="px-6 py-4">
                     <div className="text-sm font-medium font-mono text-stone-900 dark:text-stone-100">{r.report_number}</div>
                     <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 max-w-xs truncate">{r.description}</div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{r.damage_type}</td>
-                  <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${DAMAGE_SEVERITY_STYLES[r.severity] || DAMAGE_SEVERITY_STYLES.Minor}`}>{r.severity}</span></td>
-                  <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{r.incident_date ? new Date(r.incident_date).toLocaleDateString('en-GB') : '—'}</td>
-                  <td className="px-4 py-3"><span className={`text-xs font-mono px-2 py-1 rounded-full ${statusStyle(r.status)}`}>{r.status}</span></td>
+                  <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{r.damage_type}</td>
+                  <td className="px-4 py-4"><span className={`text-xs font-mono px-2 py-1 rounded-full ${DAMAGE_SEVERITY_STYLES[r.severity] || DAMAGE_SEVERITY_STYLES.Minor}`}>{r.severity}</span></td>
+                  <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{r.incident_date ? new Date(r.incident_date).toLocaleDateString('en-GB') : '—'}</td>
+                  <td className="px-4 py-4"><span className={`text-xs font-mono px-2 py-1 rounded-full ${statusStyle(r.status)}`}>{r.status}</span></td>
                   {canEdit && (
-                    <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-4 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         {r.status === 'Open' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Under Investigation')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Investigate</button>}
                         {(r.status === 'Open' || r.status === 'Under Investigation') && <button type="button" onClick={() => updateDamageStatus(r.id, 'Repaired')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Repaired</button>}

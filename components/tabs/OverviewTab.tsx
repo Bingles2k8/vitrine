@@ -30,7 +30,7 @@ function SaveBar({ saving, onCancel }: { saving: boolean; onCancel: () => void }
   return (
     <div className="flex gap-3 items-center">
       <button type="submit" disabled={saving}
-        className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+        className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
         {saving ? 'Saving\u2026' : 'Save changes \u2192'}
       </button>
       <button type="button" onClick={onCancel}
@@ -223,7 +223,7 @@ function SupportingDocuments({ objectId, museumId, canEdit }: { objectId: string
           {error && <p className="text-xs text-red-500 font-mono">{error}</p>}
           <div className="flex gap-2">
             <button type="button" onClick={upload} disabled={!file || uploading}
-              className="text-xs font-mono bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded px-4 py-1.5 disabled:opacity-50 transition-colors">
+              className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-1.5 disabled:opacity-50 transition-colors">
               {uploading ? 'Uploading…' : 'Upload'}
             </button>
             <button type="button" onClick={() => { setShowForm(false); setLabel(''); setDocType(''); setFile(null); setError(null) }}

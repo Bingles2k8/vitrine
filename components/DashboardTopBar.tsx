@@ -55,7 +55,7 @@ type TopBarButtonProps =
 function variantClasses(variant: Variant): string {
   switch (variant) {
     case 'primary':
-      return 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-700 dark:hover:bg-stone-100 px-4 py-2'
+      return 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-4 py-2'
     case 'secondary':
       return 'border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 px-3 py-1.5'
     case 'ghost':

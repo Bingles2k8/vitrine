@@ -176,7 +176,7 @@ export default function DisposalPage() {
               <div className="text-5xl mb-5">&oslash;</div>
               <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Disposal management is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Document and track the formal disposal of objects from your collection with full governance compliance.</p>
-              <button onClick={() => router.push('/dashboard/plan')} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
+              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
             </div>
           </div>
       </DashboardShell>
@@ -225,7 +225,7 @@ export default function DisposalPage() {
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Disposal Register</span>
         </div>
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {error && <div className="text-xs font-mono text-red-500">{error}</div>}
 
           <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-5 py-3">
@@ -336,7 +336,7 @@ export default function DisposalPage() {
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
               <button type="button" onClick={addRecord} disabled={!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
                 {submitting ? 'Saving...' : 'Propose disposal \u2192'}
               </button>
             </div>
@@ -362,13 +362,13 @@ export default function DisposalPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Reference</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Method</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Status</th>
-                    {canEdit && <th className="px-4 py-3"></th>}
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Reference</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    {canEdit && <th className="px-4 py-4"></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -377,8 +377,8 @@ export default function DisposalPage() {
                     return (
                     <Fragment key={r.id}>
                     <tr className="border-b border-stone-100 dark:border-stone-800">
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{r.disposal_reference}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.disposal_reference}</td>
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           <span className="text-base">{r.objects?.emoji}</span>
                           <div>
@@ -387,9 +387,9 @@ export default function DisposalPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{r.disposal_method}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{r.deaccession_date ? new Date(r.deaccession_date).toLocaleDateString('en-GB') : '—'}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{r.disposal_method}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{r.deaccession_date ? new Date(r.deaccession_date).toLocaleDateString('en-GB') : '—'}</td>
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${
                           r.status === 'Completed' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                           : r.status === 'In Progress' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400'
@@ -398,7 +398,7 @@ export default function DisposalPage() {
                         }`}>{r.status}</span>
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {r.status === 'Proposed' && <button type="button" onClick={() => updateStatus(r.id, 'Approved')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Approve</button>}
                             {r.status === 'Approved' && <button type="button" onClick={() => updateStatus(r.id, 'In Progress')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Begin</button>}
@@ -462,7 +462,7 @@ export default function DisposalPage() {
                                     <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                   </label>
                                   <button type="button" onClick={() => uploadDisposalDoc(r.id)} disabled={!docFile || docUploading}
-                                    className="text-xs font-mono px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                    className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
                                     {docUploading ? 'Uploading…' : 'Upload'}
                                   </button>
                                   <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}

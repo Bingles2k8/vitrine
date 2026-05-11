@@ -112,7 +112,7 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
                   Upload a CSV file with columns: <span className="font-mono text-xs">{EXPECTED_COLS.slice(0, 4).join(', ')}</span> and more
                 </p>
                 <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" />
-                <button onClick={() => fileRef.current?.click()} className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded">
+                <button onClick={() => fileRef.current?.click()} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded">
                   Choose CSV file
                 </button>
               </div>
@@ -170,7 +170,7 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
                 ← Choose different file
               </button>
               <button onClick={handleImport} disabled={importing}
-                className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-50 transition-colors">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded disabled:opacity-50 transition-colors">
                 {importing ? 'Importing…' : `Import ${rows.length} object${rows.length === 1 ? '' : 's'} →`}
               </button>
             </>

@@ -360,7 +360,7 @@ export default function EntryRegisterPage() {
           }
         />
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-6 md:p-10 space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -623,16 +623,16 @@ export default function EntryRegisterPage() {
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-3">Entry No.</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Date</th>
-                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Donor</th>}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry Reason</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Objects</th>
-                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Entry By</th>}
-                    {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Outcome</th>}
-                    {!simple && trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Receipt</th>}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-3">Object</th>
+                  <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Entry No.</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
+                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Donor</th>}
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Entry Reason</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Objects</th>
+                    {trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Entry By</th>}
+                    {fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Outcome</th>}
+                    {!simple && trackDepositor && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Receipt</th>}
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -645,35 +645,35 @@ export default function EntryRegisterPage() {
                         if (canEdit) handlePromote(e)
                       }}
                     >
-                      <td className="px-6 py-3 text-xs font-mono text-stone-600 dark:text-stone-400">{e.entry_number}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{e.entry_number}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">
                         {new Date(e.entry_date + 'T00:00:00').toLocaleDateString('en-GB')}
                       </td>
                       {trackDepositor && (
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{e.depositor_name}</div>
                           {e.objects && <div className="text-xs text-stone-400 dark:text-stone-500">{e.objects.accession_no || e.objects.title}</div>}
                         </td>
                       )}
-                      <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-400">{e.entry_reason}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{e.object_count}</td>
-                      {trackDepositor && <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{e.received_by}</td>}
+                      <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{e.entry_reason}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{e.object_count}</td>
+                      {trackDepositor && <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{e.received_by}</td>}
                       {fullMode && (
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${OUTCOME_STYLES[e.outcome] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
                             {e.outcome || 'Pending'}
                           </span>
                         </td>
                       )}
                       {!simple && trackDepositor && (
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           {e.receipt_issued
                             ? <span className="text-xs font-mono text-emerald-600">✓ Issued</span>
                             : <span className="text-xs font-mono text-amber-600">Pending</span>
                           }
                         </td>
                       )}
-                      <td className="px-4 py-3 text-right" onClick={ev => ev.stopPropagation()}>
+                      <td className="px-4 py-4 text-right" onClick={ev => ev.stopPropagation()}>
                         {e.object_id && e.objects?.deleted_at ? (
                           <button
                             onClick={() => router.push('/dashboard/trash')}
