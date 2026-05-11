@@ -157,6 +157,17 @@ async function deleteStorageFiles(
 
 // ── Delete user + all data ────────────────────────────────────────────────────
 
+export async function toggleTestAccount(museumId: string, currentValue: boolean) {
+  await assertAdmin()
+  const admin = adminClient()
+  const { error } = await admin
+    .from('museums')
+    .update({ is_test_account: !currentValue })
+    .eq('id', museumId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin')
+}
+
 export async function deleteUser(museumId: string) {
   await assertAdmin()
   const admin = adminClient()

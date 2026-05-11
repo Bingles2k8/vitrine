@@ -1,7 +1,12 @@
+export const dynamic = 'force-dynamic'
+
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { DeleteUserButton } from './DeleteUserModal'
+import { TestFilterToggle } from './TestFilterToggle'
+import { TestAccountToggle } from './TestAccountToggle'
 
 const PLAN_ORDER = ['community', 'hobbyist', 'professional', 'institution'] as const
 const PLAN_COLOURS: Record<string, string> = {
@@ -24,7 +29,10 @@ function subStatus(plan: string, stripeSubId: string | null, pastDue: boolean) {
   return                                           { label: 'active',    cls: 'text-green-600' }
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ hideTest?: string }> }) {
+  const { hideTest: hideTestParam } = await searchParams
+  const hideTest = hideTestParam === '1'
+
   // ── Gate: must be logged in and match ADMIN_USER_ID ───────────────
   const supabase = await createServerSideClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -49,7 +57,7 @@ export default async function AdminPage() {
   ] = await Promise.all([
     admin
       .from('museums')
-      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id')
+      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id, is_test_account')
       .order('created_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('objects').select('museum_id'),
@@ -72,30 +80,50 @@ export default async function AdminPage() {
     }
   }
 
-  const rows = museums ?? []
+  const allRows = museums ?? []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
 
-  // ── Summary stats ──────────────────────────────────────────────────
+  // ── Test account filtering ─────────────────────────────────────────
+  const testMuseumIds = new Set(allRows.filter(m => m.is_test_account).map(m => m.id))
+  const rows = hideTest ? allRows.filter(m => !m.is_test_account) : allRows
+  const testCount = testMuseumIds.size
+
+  // ── Summary stats (based on visible rows) ─────────────────────────
   const planCounts = PLAN_ORDER.reduce<Record<string, number>>((acc, p) => {
     acc[p] = rows.filter(m => m.plan === p).length
     return acc
   }, {})
-  const pastDueCount  = rows.filter(m => m.payment_past_due).length
-  const paidCount     = rows.filter(m => m.plan !== 'community').length
-  const totalObjects  = objects?.length ?? 0
-  const mrr           = rows.reduce((sum, m) => sum + (PLAN_MRR[m.plan] ?? 0), 0)
+  const pastDueCount = rows.filter(m => m.payment_past_due).length
+  const paidCount    = rows.filter(m => m.plan !== 'community').length
+  const totalObjects = hideTest
+    ? (objects ?? []).filter(o => o.museum_id && !testMuseumIds.has(o.museum_id)).length
+    : (objects?.length ?? 0)
+  const mrr = rows.reduce((sum, m) => sum + (PLAN_MRR[m.plan] ?? 0), 0)
 
   return (
     <div className="min-h-screen bg-white p-8 font-sans">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <div className="flex items-baseline justify-between mb-8">
+        <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold tracking-tight">Vitrine Admin</h1>
-          <span className="text-sm text-gray-400">
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </span>
+          <div className="flex items-center gap-4">
+            <Suspense>
+              <TestFilterToggle hideTest={hideTest} />
+            </Suspense>
+            <span className="text-sm text-gray-400">
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          </div>
         </div>
+
+        {testCount > 0 && (
+          <div className="mb-4 text-xs text-gray-400">
+            {hideTest
+              ? `Hiding ${testCount} test account${testCount !== 1 ? 's' : ''} — stats reflect real accounts only`
+              : `${testCount} test account${testCount !== 1 ? 's' : ''} included in stats`}
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-10">
@@ -147,18 +175,22 @@ export default async function AdminPage() {
                 const isEmpty    = objCount === 0
                 const lastActive = lastActivityByMuseum.get(m.id)
                 const status     = subStatus(m.plan, m.stripe_subscription_id, m.payment_past_due)
+                const isTest     = m.is_test_account
 
                 return (
-                  <tr key={m.id} className={`transition-colors ${isEmpty ? 'opacity-50 hover:opacity-100' : 'hover:bg-gray-50'}`}>
+                  <tr key={m.id} className={`transition-colors ${isTest ? 'bg-gray-50/80' : isEmpty ? 'opacity-50 hover:opacity-100' : 'hover:bg-gray-50'}`}>
                     <td className="px-4 py-3">
-                      <a
-                        href={`${siteUrl}/museum/${m.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-gray-900 hover:underline"
-                      >
-                        {m.name ?? '—'}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`${siteUrl}/museum/${m.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-gray-900 hover:underline"
+                        >
+                          {m.name ?? '—'}
+                        </a>
+                        <TestAccountToggle museumId={m.id} isTest={isTest} />
+                      </div>
                       <div className="text-xs text-gray-400 font-mono">{m.slug}</div>
                     </td>
                     <td className="px-4 py-3">
@@ -198,7 +230,10 @@ export default async function AdminPage() {
           </table>
         </div>
 
-        <p className="mt-4 text-xs text-gray-300 text-right">{rows.length} row{rows.length !== 1 ? 's' : ''}</p>
+        <p className="mt-4 text-xs text-gray-300 text-right">
+          {rows.length} row{rows.length !== 1 ? 's' : ''}
+          {hideTest && testCount > 0 ? ` (${testCount} test account${testCount !== 1 ? 's' : ''} hidden)` : ''}
+        </p>
       </div>
     </div>
   )
