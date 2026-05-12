@@ -53,6 +53,7 @@ export default function ObjectDetail() {
   const [duplicating, setDuplicating] = useState(false)
   const [qrModalOpen, setQrModalOpen] = useState(false)
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [linkedDuplicates, setLinkedDuplicates] = useState<any[]>([])
   const { toast } = useToast()
   const router = useRouter()
@@ -435,7 +436,7 @@ export default function ObjectDetail() {
   return (
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={async () => { await supabase.auth.signOut(); router.push('/login') }} isOwner={isOwner} staffAccess={staffAccess}>
         {/* Top bar */}
-        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+        <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-14 md:top-0 z-10">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => router.push('/dashboard')}
               className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors shrink-0">
@@ -467,6 +468,49 @@ export default function ObjectDetail() {
                 Link duplicate
               </button>
             )}
+            {/* Mobile overflow menu for utility actions */}
+            {(fullMode || canEdit) && (
+              <div className="relative sm:hidden">
+                <button
+                  onClick={() => setMoreOpen(o => !o)}
+                  className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors px-1"
+                  aria-label="More actions"
+                >
+                  •••
+                </button>
+                {moreOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg z-50 py-1 min-w-[150px]">
+                      {fullMode && museum?.slug && (
+                        <button onClick={() => { setMoreOpen(false); setQrModalOpen(true) }}
+                          className="w-full text-left px-4 py-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          QR label
+                        </button>
+                      )}
+                      {fullMode && (
+                        <button onClick={() => { setMoreOpen(false); window.open(`/print/object/${params.id}`, '_blank') }}
+                          className="w-full text-left px-4 py-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          Print record
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button onClick={() => { setMoreOpen(false); handleDuplicate() }} disabled={duplicating}
+                          className="w-full text-left px-4 py-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50">
+                          {duplicating ? 'Duplicating…' : 'Duplicate'}
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button onClick={() => { setMoreOpen(false); setDuplicateModalOpen(true) }}
+                          className="w-full text-left px-4 py-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          Link duplicate
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {canEdit && (
               <button onClick={handleDelete} disabled={deleting}
                 className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50">
@@ -487,7 +531,27 @@ export default function ObjectDetail() {
           )}
         </div>
 
-        <div className="flex gap-8 p-8">
+        {/* Mobile/tablet tab strip — hidden at lg where sidebar takes over */}
+        <div className="lg:hidden border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 overflow-x-auto sticky top-28 md:top-14 z-10">
+          <div className="flex px-4">
+            {(fullMode ? TABS : TABS.filter(t => SIMPLE_TABS.includes(t.id))).map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-3 text-xs font-mono whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
+                  activeTab === tab.id
+                    ? 'border-amber-600 text-stone-900 dark:text-stone-100'
+                    : 'border-transparent text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-4 p-4 md:gap-8 md:p-8">
         <form onSubmit={handleSave} className="flex-1 min-w-0 max-w-3xl space-y-6">
 
           {!canEdit && (

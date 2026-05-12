@@ -117,7 +117,7 @@ export default function DashboardTopBar({ title, actions, subRow }: DashboardTop
 
   return (
     <>
-      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+      <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-14 md:top-0 z-10">
         <div className="flex items-center min-w-0">{titleNode}</div>
         <div className="flex items-center gap-3 flex-shrink-0">
           {actions}
@@ -135,7 +135,7 @@ export default function DashboardTopBar({ title, actions, subRow }: DashboardTop
         </div>
       </div>
       {subRow && (
-        <div className="px-4 md:px-8 py-3 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 sticky top-14 z-10">
+        <div className="px-4 md:px-8 py-3 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 sticky top-28 md:top-14 z-10">
           {subRow}
         </div>
       )}

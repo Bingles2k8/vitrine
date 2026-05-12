@@ -587,8 +587,8 @@ export default function Dashboard() {
                       </th>
                     )}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4" data-learn="dashboard.col.object">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.year">Year</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.medium">Medium</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.year">Year</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.medium">Medium</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.status">Status</th>
                     {!fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.public">Public</th>}
                     {canEdit && <th className="w-10 px-2 py-4" />}
@@ -644,8 +644,8 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{a.production_date || a.year}</td>
-                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{a.medium}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.production_date || a.year}</td>
+                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.medium}</td>
                       <td className="px-4 py-4">
                         {(() => {
                           const loan = loanByObject[a.id]
@@ -732,10 +732,10 @@ export default function Dashboard() {
                   })()
                   return (
                     <div key={entry.id} className={`flex items-center justify-between px-6 py-4 text-sm ${i < activityLog.length - 1 ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-amber-400 dark:text-amber-600 text-xs">◎</span>
-                        <span className="text-stone-700 dark:text-stone-300">{entry.description}</span>
-                        {fullMode && entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500">by {entry.user_name}</span>}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-amber-400 dark:text-amber-600 text-xs flex-shrink-0">◎</span>
+                        <span className="text-stone-700 dark:text-stone-300 truncate">{entry.description}</span>
+                        {fullMode && entry.user_name && <span className="text-xs text-stone-400 dark:text-stone-500 flex-shrink-0">by {entry.user_name}</span>}
                       </div>
                       <span className="text-xs font-mono text-stone-400 dark:text-stone-500 flex-shrink-0 ml-4">{ago}</span>
                     </div>

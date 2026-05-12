@@ -86,7 +86,7 @@ export default function SearchFilterBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Filter toggle */}
         <button
           type="button"
@@ -122,7 +122,7 @@ export default function SearchFilterBar({
         )}
 
         {/* Search input */}
-        <div className="relative flex-1 min-w-0">
+        <div className="relative flex-1 min-w-[120px]">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>

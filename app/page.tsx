@@ -1,9 +1,11 @@
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 import PublicFooter from '@/components/PublicFooter'
 import PublicNav from '@/components/PublicNav'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
-import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
+
+export const revalidate = 3600
 
 export const metadata = buildPageMetadata({
   title: 'Vitrine – Collection Management App for Museums & Collectors',
@@ -51,23 +53,79 @@ const organizationSchema = {
   ],
 }
 
-// Presentation-layer copy that lives outside lib/plans.ts (taglines, CTAs, learn-more links)
-const PAGE_EXTRAS: Record<PlanId, { desc: string; cta: string; ctaHref: string | null; learnMoreHref: string; muted: boolean }> = {
-  community:    { desc: 'A complete home for a small collection — forever.',                                          cta: 'Start free →',       ctaHref: '/signup',                learnMoreHref: '/plans/community',    muted: true  },
-  hobbyist:     { desc: 'For collectors who are serious about their collection.',                                      cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/hobbyist',     muted: false },
-  professional: { desc: 'For museums ready to run their public presence from one place.',                              cta: 'Start free trial →', ctaHref: '/signup',                learnMoreHref: '/plans/professional',  muted: false },
-  institution:  { desc: 'For regional and national collections that need room to grow.',                               cta: 'Get started →',      ctaHref: '/signup',                learnMoreHref: '/plans/institution',   muted: false },
-  enterprise:   { desc: 'For national institutions with complex needs and teams to match.',                            cta: 'Get in touch →',     ctaHref: '/contact/enterprise',    learnMoreHref: '/plans/enterprise',    muted: true  },
+type FeaturedCollection = {
+  name: string
+  slug: string
+  count: number
+  preview_image: string | null
+  preview_emoji: string
 }
 
-export default function Home() {
+async function getFeaturedCollections(): Promise<FeaturedCollection[]> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: museums } = await supabase
+      .from('museums')
+      .select('id, name, slug')
+      .eq('discoverable', true)
+      .is('locked_at', null)
+      .limit(10)
+
+    if (!museums?.length) return []
+
+    const results: FeaturedCollection[] = []
+
+    for (const museum of museums) {
+      if (results.length >= 4) break
+
+      const { count } = await supabase
+        .from('objects')
+        .select('*', { count: 'exact', head: true })
+        .eq('museum_id', museum.id)
+        .eq('show_on_site', true)
+        .is('deleted_at', null)
+
+      if (!count) continue
+
+      const { data: obj } = await supabase
+        .from('objects')
+        .select('image_url, emoji')
+        .eq('museum_id', museum.id)
+        .eq('show_on_site', true)
+        .is('deleted_at', null)
+        .not('image_url', 'is', null)
+        .limit(1)
+        .maybeSingle()
+
+      results.push({
+        name: museum.name,
+        slug: museum.slug,
+        count,
+        preview_image: obj?.image_url ?? null,
+        preview_emoji: obj?.emoji ?? '🏛️',
+      })
+    }
+
+    return results
+  } catch {
+    return []
+  }
+}
+
+export default async function Home() {
+  const featured = await getFeaturedCollections()
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
       <JsonLd data={organizationSchema} />
 
       <PublicNav />
 
-      {/* Hero */}
+      {/* ── Hero ───────────────────────────────────────────── */}
       <section className="pt-40 pb-28 px-6 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
@@ -76,26 +134,24 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto relative flex flex-col lg:flex-row lg:items-center lg:gap-12">
           <div className="max-w-3xl lg:max-w-xl lg:flex-shrink-0">
+
             <h1 className="font-serif text-4xl sm:text-6xl lg:text-8xl italic font-normal leading-none tracking-tight mb-6">
               Your collection,<br />
               <span className="text-amber-500">beautifully</span><br />
               managed.
             </h1>
 
-            <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-4">
-              Vitrine gives every collection, large or small, a professional Collection Management System and Public-Facing website.
-            </p>
-            <p className="text-base text-stone-500 font-light leading-relaxed max-w-xl mb-10">
-              Built for individual collectors and small museums. No technical knowledge required — just your collection.
+            <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-10">
+              An easy-to-use Collection Management System<br />with a beautiful public website built in.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
               <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-6 py-3 rounded transition-colors">
                 Start for free →
               </Link>
-              <a href="#features" className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-6 py-3 rounded transition-colors">
-                See features
-              </a>
+              <Link href="/discover" className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-6 py-3 rounded transition-colors">
+                Browse examples
+              </Link>
             </div>
             <p className="text-xs text-stone-600 mt-4 font-mono">Free plan available · No credit card required</p>
           </div>
@@ -109,21 +165,21 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
               </div>
               <div className="flex-1 text-center">
-                <span className="text-xs font-mono text-stone-600">vitrine.app/dashboard</span>
+                <span className="text-xs font-mono text-stone-600">vitrine.app/my-collection</span>
               </div>
             </div>
             <div className="bg-stone-900 flex">
               <div className="w-32 lg:w-44 border-r border-white/5 p-3 flex-shrink-0">
                 <div className="text-amber-500 font-serif italic text-base mb-4 px-2">Vitrine.</div>
-                <div className="text-xs text-stone-600 uppercase tracking-widest px-2 mb-2">Collections</div>
+                <div className="text-xs text-stone-600 uppercase tracking-widest px-2 mb-2">My collection</div>
                 <div className="bg-white/10 text-white text-xs font-mono px-3 py-2 rounded mb-1">⬡ Objects</div>
-                <div className="text-stone-500 text-xs font-mono px-3 py-2 mb-1">◫ Site Builder</div>
-                <div className="text-stone-500 text-xs font-mono px-3 py-2 mb-1">◉ Staff & Roles</div>
-                <div className="text-stone-500 text-xs font-mono px-3 py-2">◈ Analytics</div>
+                <div className="text-stone-500 text-xs font-mono px-3 py-2 mb-1">◫ My site</div>
+                <div className="text-stone-500 text-xs font-mono px-3 py-2 mb-1">◈ Analytics</div>
+                <div className="text-stone-500 text-xs font-mono px-3 py-2">⋯ Settings</div>
               </div>
               <div className="flex-1 p-3 lg:p-5">
                 <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3 mb-4 lg:mb-5">
-                  {[['Total', '142'],['On Display','84'],['On Loan','12'],['Restoration','6']].map(([l,v]) => (
+                  {[['Total', '347'], ['Est. value', '£12,400'], ['Added this year', '48'], ['For sale', '3']].map(([l, v]) => (
                     <div key={l} className="bg-white/5 rounded-lg p-2 lg:p-3 border border-white/5">
                       <div className="text-xs text-stone-500 mb-1">{l}</div>
                       <div className="font-serif text-xl lg:text-2xl text-white">{v}</div>
@@ -132,25 +188,25 @@ export default function Home() {
                 </div>
                 <div className="bg-white/5 rounded-lg border border-white/5 overflow-hidden">
                   <div className="grid grid-cols-3 gap-2 lg:grid-cols-4 lg:gap-4 px-3 lg:px-4 py-2 border-b border-white/5">
-                    {['Object','Year','Medium','Status'].map(h => (
-                      <div key={h} className={`text-xs text-stone-600 uppercase tracking-widest${h === 'Medium' ? ' hidden lg:block' : ''}`}>{h}</div>
+                    {['Object', 'Year', 'Value', 'Condition'].map(h => (
+                      <div key={h} className={`text-xs text-stone-600 uppercase tracking-widest${h === 'Value' ? ' hidden lg:block' : ''}`}>{h}</div>
                     ))}
                   </div>
                   {[
-                    ['🏺','The Portland Vase','25 CE','Cameo glass','On Display','emerald'],
-                    ['🖼️','The Arnolfini Portrait','1434','Oil on canvas','On Display','emerald'],
-                    ['💎',"Tippoo's Tiger",'1793','Wood & metal','On Loan','amber'],
-                  ].map(([emoji, title, year, medium, status, color]) => (
+                    ['💿', 'Beatles — Please Please Me', '1963', '£340', 'Mint', 'emerald'],
+                    ['📻', 'Braun T3 Pocket Radio', '1958', '£210', 'Good', 'amber'],
+                    ['📷', 'Leica M3 (Chrome)', '1954', '£1,200', 'Excellent', 'emerald'],
+                  ].map(([emoji, title, year, value, condition, color]) => (
                     <div key={title} className="grid grid-cols-3 gap-2 lg:grid-cols-4 lg:gap-4 px-3 lg:px-4 py-2.5 border-b border-white/5 last:border-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-sm flex-shrink-0">{emoji}</span>
                         <span className="text-xs text-stone-300 truncate">{title}</span>
                       </div>
                       <div className="text-xs font-mono text-stone-500">{year}</div>
-                      <div className="text-xs text-stone-500 hidden lg:block">{medium}</div>
+                      <div className="text-xs font-mono text-stone-500 hidden lg:block">{value}</div>
                       <div>
                         <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                          {status}
+                          {condition}
                         </span>
                       </div>
                     </div>
@@ -162,39 +218,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Logos */}
-      <div className="border-y border-white/5 py-10 px-6">
+      {/* ── Live collections (social proof) ─────────────────── */}
+      <div className="border-y border-white/5 py-12 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-mono text-stone-600 uppercase tracking-widest text-center mb-8">Designed for institutions of all sizes</p>
-          <div className="flex flex-wrap items-center justify-center gap-12">
-            {([
-              ['National museums', '/for/museum-collection-management-software'],
-              ['Regional galleries', '/for/art-collection-app'],
-              ['Local heritage centres', '/for/local-history-society-collection-app'],
-              ['University collections', '/for/university-archive-management'],
-              ['Independent museums', '/for/museum-collection-management-software'],
-            ] as [string, string][]).map(([name, href]) => (
-              <Link key={name} href={href} className="font-serif italic text-stone-600 text-lg hover:text-stone-400 transition-colors">{name}</Link>
+          <p className="text-xs font-mono text-stone-600 uppercase tracking-widest text-center mb-8">
+            Example collections
+          </p>
+          <div className="flex flex-wrap items-stretch justify-center gap-4">
+            {featured.map(col => (
+              <Link
+                key={col.slug}
+                href={`/museum/${col.slug}`}
+                className="group flex items-center gap-3 bg-stone-900/50 border border-white/8 rounded-lg px-5 py-3.5 hover:border-white/15 hover:bg-stone-900 transition-all"
+              >
+                {col.preview_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={col.preview_image}
+                    alt=""
+                    className="w-8 h-8 rounded object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <span className="text-xl flex-shrink-0">{col.preview_emoji}</span>
+                )}
+                <div>
+                  <div className="font-serif italic text-sm text-stone-300 group-hover:text-white transition-colors">{col.name}</div>
+                  <div className="text-xs font-mono text-stone-600">{col.count.toLocaleString()} objects</div>
+                </div>
+              </Link>
             ))}
+            <Link
+              href="/discover"
+              className="flex items-center gap-2 border border-dashed border-white/10 rounded-lg px-5 py-3.5 text-stone-600 hover:text-stone-400 hover:border-white/20 transition-all font-mono text-xs"
+            >
+              Browse all collections →
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Features */}
+      {/* ── Features ────────────────────────────────────────── */}
       <section id="features" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Everything you need</p>
-          <h2 className="font-serif text-5xl italic font-normal mb-4">Built for curators,<br />not developers.</h2>
-          <p className="text-stone-400 font-light text-lg max-w-xl mb-16">A complete platform for managing your collection and presenting it to the world.</p>
+          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Everything a collector needs</p>
+          <h2 className="font-serif text-5xl italic font-normal mb-4">One place for<br />your whole collection.</h2>
+          <p className="text-stone-400 font-light text-lg max-w-xl mb-16">Whether it&apos;s 10 items or 1,000 — every piece deserves a proper record.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5 rounded-xl overflow-hidden border border-white/5">
             {[
-              { icon: '🗄️', title: 'Collection CMS', desc: 'Add, edit and organise every item in your collection. Rich metadata fields, status tracking, and image uploads.' },
-              { icon: '🌐', title: 'Public Website', desc: 'Your collection beautifully presented online. Visitors can browse, search, and filter your objects with a world-class collection interface.' },
-              { icon: '🎨', title: 'Brand Customisation', desc: 'Upload your logo, set your colours, write your story. Your public site looks like yours — Vitrine stays invisible to visitors.' },
-              { icon: '🎫', title: 'Ticket Booking', desc: 'Accept ticket bookings online, manage capacity, and issue digital confirmations. Works for free entry and paid exhibitions.' },
-              { icon: '👥', title: 'Staff & Roles', desc: 'Invite your team with role-based access. Curators manage items, volunteers add records, directors see everything.' },
-              { icon: '📊', title: 'Analytics', desc: 'Understand your collection at a glance — breakdowns by medium, culture, status, and growth over time.' },
+              { icon: '🗄️', title: 'Your catalog', desc: 'Add every item with photos, notes, acquisition details, condition, and estimated value. Up to 1,000 objects and 5 photos each on Hobbyist.' },
+              { icon: '🌐', title: 'Your public site', desc: 'Get a beautiful public site at vitrine.app/your-collection instantly. Pick a template, add your logo, and share it with anyone.' },
+              { icon: '📊', title: 'Track what matters', desc: 'Monitor your collection\'s growth, value over time, and condition history. Know exactly what you have and what it\'s worth.' },
+              { icon: '📥', title: 'Import & export', desc: 'Already have a spreadsheet? Import your whole collection in minutes with CSV. Export anytime — your data is always yours.' },
+              { icon: '🔗', title: 'Share links', desc: 'Create private share links for specific pieces — perfect for insurance claims, fellow collectors, or potential buyers.' },
+              { icon: '🎨', title: 'Make it yours', desc: 'Upload your logo, set your colour scheme, write your collection story. Your site looks like yours, not like a generic app.' },
             ].map(f => (
               <div key={f.title} className="bg-stone-950 p-8 hover:bg-stone-900 transition-colors">
                 <div className="text-3xl mb-5">{f.icon}</div>
@@ -203,7 +280,7 @@ export default function Home() {
               </div>
             ))}
 
-            {/* Compliance — full-width Pro+ feature */}
+            {/* Compliance — Pro+ callout */}
             <Link
               href="/compliance"
               className="bg-stone-950 hover:bg-stone-900 p-8 md:col-span-3 group transition-colors flex flex-col md:flex-row md:items-center md:justify-between gap-6"
@@ -215,7 +292,7 @@ export default function Home() {
                 </div>
                 <div className="font-serif text-xl italic text-white mb-3">Spectrum-aligned compliance tools</div>
                 <p className="text-sm text-stone-500 leading-relaxed font-light max-w-2xl">
-                  All 21 procedures of the recognised UK collection management standard, built in — object entry, loans, condition checks, conservation, valuation, insurance, deaccession, audits and more. Each procedure mapped to specific data fields and screens in the app.
+                  All 21 procedures of the recognised UK collection management standard, built in — object entry, loans, condition checks, conservation, valuation, insurance, deaccession, audits and more.
                 </p>
               </div>
               <span className="text-amber-500 font-mono text-sm group-hover:text-amber-400 transition-colors shrink-0 self-start md:self-center">
@@ -226,206 +303,162 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Guide CTA */}
+      {/* ── Pricing ─────────────────────────────────────────── */}
+      <section id="pricing" className="py-28 px-6 border-t border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Simple pricing</p>
+          <h2 className="font-serif text-5xl italic font-normal mb-4">Start free.<br />Go further for £5/mo.</h2>
+          <p className="text-stone-400 font-light text-lg max-w-xl mb-16">No hidden fees. Cancel anytime. Your data is always exportable.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+            {/* Community */}
+            <div className="rounded-xl border bg-stone-900/30 border-white/5 p-7 flex flex-col">
+              <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">Community</div>
+              <div className="font-serif text-4xl text-white mb-4">Free</div>
+              <p className="text-sm text-stone-500 font-light mb-6">Start cataloguing your collection today.</p>
+              <hr className="border-white/5 mb-6" />
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  'Up to 100 objects',
+                  '1 photo per object',
+                  'Public collection website',
+                  'Value & condition tracking',
+                  'Wishlist',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-stone-400">
+                    <span className="text-amber-500 text-xs mt-0.5 shrink-0">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup" className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 hover:border-white/20 text-stone-300 transition-colors">
+                Start free →
+              </Link>
+              <p className="text-center text-xs font-mono text-stone-600 mt-2">No credit card required</p>
+            </div>
+
+            {/* Hobbyist */}
+            <div className="rounded-xl border bg-stone-900 border-amber-500/30 p-7 flex flex-col relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
+                Most popular
+              </div>
+              <div className="text-xs font-mono text-amber-400 uppercase tracking-widest mb-2">Hobbyist</div>
+              <div className="font-serif text-4xl text-white mb-4">
+                £5<span className="text-2xl text-stone-400">/mo</span>
+              </div>
+              <p className="text-sm text-stone-500 font-light mb-6">For collectors who are serious about their collection.</p>
+              <hr className="border-white/8 mb-6" />
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  'Everything in Community',
+                  'Up to 1,000 objects',
+                  '5 photos per object',
+                  'Collection analytics',
+                  'CSV bulk import & export',
+                  '100 MB document storage',
+                  'All site templates',
+                  'Remove Vitrine branding',
+                  'Unlimited share links',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-stone-300">
+                    <span className="text-amber-500 text-xs mt-0.5 shrink-0">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup" className="block text-center font-mono text-sm py-2.5 rounded bg-amber-500 hover:bg-amber-400 text-stone-950 transition-colors">
+                Get Hobbyist →
+              </Link>
+              <p className="text-center text-xs font-mono text-stone-600 mt-2">Cancel anytime</p>
+            </div>
+
+            {/* Professional teaser */}
+            <div className="rounded-xl border bg-stone-900/50 border-white/8 p-7 flex flex-col">
+              <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">Professional</div>
+              <div className="font-serif text-4xl text-white mb-1">
+                £79<span className="text-2xl text-stone-400">/mo</span>
+              </div>
+              <p className="text-xs font-mono text-amber-500/80 mb-4">30 days free trial</p>
+              <p className="text-sm text-stone-500 font-light mb-6">For small museums and galleries.</p>
+              <hr className="border-white/8 mb-6" />
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  'Up to 5,000 objects, 10 staff',
+                  'Event ticketing',
+                  '21 Spectrum compliance procedures',
+                  'Visitor & collection analytics',
+                  'Plan your visit page',
+                  '1 GB document storage',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-stone-300">
+                    <span className="text-amber-500 text-xs mt-0.5 shrink-0">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup" className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 hover:border-white/20 text-stone-300 transition-colors">
+                Start free trial →
+              </Link>
+            </div>
+
+          </div>
+
+          <p className="text-center text-sm text-stone-600 font-mono">
+            Larger institution?{' '}
+            <Link href="/plans/institution" className="text-stone-500 hover:text-stone-400 underline underline-offset-2 transition-colors">
+              See Institution & Enterprise plans →
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* ── Museum callout ──────────────────────────────────── */}
       <section className="py-20 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">How it works</p>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
+          <div className="bg-stone-900/50 border border-white/8 rounded-2xl p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
-              <h2 className="font-serif text-4xl italic font-normal mb-3">Want to see it in action?</h2>
-              <p className="text-stone-400 font-light max-w-lg">Step-by-step guides that walk you through every feature — from adding your first object to selling tickets for an event.</p>
-              <p className="mt-3 text-sm text-stone-500">
-                Or read the{' '}
-                <Link href="/blog" className="text-amber-400 hover:text-amber-300 transition-colors">Vitrine blog</Link>
-                {' '}for tips, comparisons, and collection management advice.
+              <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-3">For museums & institutions</p>
+              <h2 className="font-serif text-3xl italic font-normal mb-3">Running a gallery or museum?</h2>
+              <p className="text-stone-400 font-light max-w-lg">
+                Professional and Institution plans include event ticketing, 21 Spectrum-aligned compliance procedures, visitor analytics, staff roles, and a full public-facing website — everything a public institution needs from one platform.
               </p>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Link href="/guide/essentials" className="group bg-stone-900/50 border border-white/8 rounded-2xl p-7 hover:bg-stone-900 hover:border-white/15 transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex gap-2">
-                  <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full border border-white/5">Community</span>
-                  <span className="text-xs font-mono bg-stone-800 text-stone-400 px-2.5 py-1 rounded-full border border-white/5">Hobbyist</span>
-                </div>
-                <span className="text-stone-600 group-hover:text-stone-400 transition-colors font-mono text-sm">→</span>
-              </div>
-              <h3 className="font-serif text-2xl italic font-normal mb-2">Essentials guide</h3>
-              <p className="text-stone-500 text-sm font-light leading-relaxed mb-5">Everything you need to catalogue your collection and publish it online. Adding objects, customising your site, managing your account.</p>
-              <div className="flex flex-wrap gap-2">
-                {['Getting started', 'Your collection', 'Public site', 'Customisation', 'Settings'].map(t => (
-                  <span key={t} className="text-xs font-mono text-stone-600 bg-white/4 px-2.5 py-1 rounded-full">{t}</span>
-                ))}
-              </div>
-            </Link>
-            <Link href="/guide/professional" className="group bg-stone-900/50 border border-amber-500/15 rounded-2xl p-7 hover:bg-stone-900 hover:border-amber-500/30 transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Professional</span>
-                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Institution</span>
-                  <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Enterprise</span>
-                </div>
-                <span className="text-stone-600 group-hover:text-amber-400 transition-colors font-mono text-sm">→</span>
-              </div>
-              <h3 className="font-serif text-2xl italic font-normal mb-2">Professional guide</h3>
-              <p className="text-stone-500 text-sm font-light leading-relaxed mb-5">The complete platform walkthrough — analytics, event ticketing, compliance documentation, staff management, and more.</p>
-              <div className="flex flex-wrap gap-2">
-                {['Collection at scale', 'Analytics', 'Ticketing', 'Staff & roles', 'Compliance'].map(t => (
-                  <span key={t} className="text-xs font-mono text-stone-600 bg-white/4 px-2.5 py-1 rounded-full">{t}</span>
-                ))}
-              </div>
-            </Link>
+            <div className="flex flex-col gap-3 shrink-0">
+              <Link href="/signup" className="block text-center font-mono text-sm px-8 py-3 rounded border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors whitespace-nowrap">
+                Start professional trial →
+              </Link>
+              <Link href="/compliance" className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
+                See all 21 procedures →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-28 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Simple pricing</p>
-          <h2 className="font-serif text-5xl italic font-normal mb-4">Right-sized for<br />every museum.</h2>
-          <p className="text-stone-400 font-light text-lg max-w-xl mb-16">From village heritage centres to national institutions.</p>
-
-          <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
-
-            {/* Collectors group */}
-            <div className="w-full xl:w-[38%] flex flex-col gap-5">
-              <p className="text-xs font-mono text-stone-600 uppercase tracking-widest">For collectors</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 flex-1 xl:grid-rows-1">
-                {(['community', 'hobbyist'] as PlanId[]).map(id => {
-                  const plan = PLANS[id]
-                  const extras = PAGE_EXTRAS[id]
-                  return (
-                  <div key={id} className={`rounded-xl border relative flex flex-col h-full p-8 transition-transform ${extras.muted ? 'scale-[0.95] origin-top bg-stone-900/30 border-white/5' : plan.featured ? 'bg-stone-900 border-amber-500/30' : 'bg-stone-900/50 border-white/8'}`}>
-                    {plan.featured && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
-                        Most popular
-                      </div>
-                    )}
-                    <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
-                    <div className="flex items-baseline gap-1 mb-2">
-                      <span className="font-serif text-4xl text-white">{plan.price}</span>
-                    </div>
-                    {id === 'professional' && (
-                      <p className="text-xs font-mono text-amber-500/80 mb-2">30 days free, then £79/mo</p>
-                    )}
-                    <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
-                    <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                    <div className="space-y-5 mb-8">
-                      {plan.featureGroups.map((group, gi) => (
-                        <div key={gi}>
-                          {group.title && (
-                            <p className={`text-xs font-mono uppercase tracking-widest mb-2 ${group.muted ? 'text-stone-700' : 'text-stone-600'}`}>{group.title}</p>
-                          )}
-                          <ul className="space-y-2">
-                            {group.items.map(f => (
-                              <li key={f} className={`flex items-start gap-2.5 text-sm ${group.muted ? 'text-stone-600' : 'text-stone-300'}`}>
-                                <span className={`mt-0.5 text-xs shrink-0 ${group.muted ? 'text-stone-700' : 'text-amber-500'}`}>{group.muted ? '–' : '✓'}</span>
-                                {f}
-                              </li>
-                            ))}
-                          </ul>
-                          {group.note && (
-                            <p className="mt-2 text-xs text-stone-600 italic">{group.note}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-auto flex flex-col gap-2">
-                      <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
-                        Learn more
-                      </Link>
-                      <Link href={extras.ctaHref!} className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}>
-                        {extras.cta}
-                      </Link>
-                    </div>
-                  </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="hidden xl:block self-stretch w-px bg-white/8 mt-7" />
-
-            {/* Museums group */}
-            <div className="w-full xl:flex-1 flex flex-col gap-5">
-              <p className="text-xs font-mono text-stone-600 uppercase tracking-widest">For museums & institutions</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 flex-1 xl:grid-rows-1">
-                {(['professional', 'institution', 'enterprise'] as PlanId[]).map(id => {
-                  const plan = PLANS[id]
-                  const extras = PAGE_EXTRAS[id]
-                  return (
-                  <div key={id} className={`rounded-xl border relative flex flex-col h-full p-8 transition-transform ${extras.muted ? 'scale-[0.95] origin-top bg-stone-900/30 border-white/5' : plan.featured ? 'bg-stone-900 border-amber-500/30' : 'bg-stone-900/50 border-white/8'}`}>
-                    {plan.featured && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-stone-950 text-xs font-mono px-3 py-1 rounded-full">
-                        Most popular
-                      </div>
-                    )}
-                    <div className="text-xs font-mono text-stone-500 uppercase tracking-widest mb-2">{plan.label}</div>
-                    <div className="flex items-baseline gap-1 mb-2">
-                      <span className="font-serif text-4xl text-white">{plan.price}</span>
-                    </div>
-                    {id === 'professional' && (
-                      <p className="text-xs font-mono text-amber-500/80 mb-2">30 days free, then £79/mo</p>
-                    )}
-                    <p className="text-sm text-stone-500 font-light mb-6">{extras.desc}</p>
-                    <hr className={`mb-6 ${extras.muted ? 'border-white/5' : 'border-white/8'}`} />
-                    <div className="space-y-5 mb-4">
-                      {plan.featureGroups.map((group, gi) => (
-                        <div key={gi}>
-                          {group.title && (
-                            <p className={`text-xs font-mono uppercase tracking-widest mb-2 ${group.muted ? 'text-stone-700' : 'text-stone-600'}`}>{group.title}</p>
-                          )}
-                          <ul className="space-y-2">
-                            {group.items.map(f => (
-                              <li key={f} className={`flex items-start gap-2.5 text-sm ${group.muted ? 'text-stone-600' : 'text-stone-300'}`}>
-                                <span className={`mt-0.5 text-xs shrink-0 ${group.muted ? 'text-stone-700' : 'text-amber-500'}`}>{group.muted ? '–' : '✓'}</span>
-                                {f}
-                              </li>
-                            ))}
-                          </ul>
-                          {group.note && (
-                            <p className="mt-2 text-xs text-stone-600 italic">{group.note}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {(id === 'professional' || id === 'institution') && (
-                      <Link href="/compliance" className="block font-mono text-xs text-amber-500 hover:text-amber-400 transition-colors mb-8">
-                        See all 21 procedures →
-                      </Link>
-                    )}
-                    {!(id === 'professional' || id === 'institution') && <div className="mb-4" />}
-                    <div className="mt-auto flex flex-col gap-2">
-                      <Link href={extras.learnMoreHref} className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
-                        Learn more
-                      </Link>
-                      {plan.comingSoon ? (
-                        <span className="block text-center font-mono text-sm py-2.5 rounded border border-white/10 text-stone-600 cursor-default">
-                          Coming soon
-                        </span>
-                      ) : (
-                        <Link
-                          href={extras.ctaHref!}
-                          className={`block text-center font-mono text-sm py-2.5 rounded transition-colors ${plan.featured ? 'bg-amber-500 hover:bg-amber-400 text-stone-950' : 'border border-white/10 hover:border-white/20 text-stone-300'}`}
-                        >
-                          {extras.cta}
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                  )
-                })}
-              </div>
-            </div>
-
+      {/* ── Final CTA ───────────────────────────────────────── */}
+      <section className="py-28 px-6 border-t border-white/5 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="font-serif text-5xl italic font-normal mb-5">
+            Give your collection<br />
+            <span className="text-amber-500">the home it deserves.</span>
+          </h2>
+          <p className="text-stone-400 font-light text-lg mb-10">
+            Start cataloguing today. Free plan available, or go serious with Hobbyist for £5/mo.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-8 py-3.5 rounded transition-colors">
+              Get started — £5/mo →
+            </Link>
+            <Link href="/signup" className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-8 py-3.5 rounded transition-colors">
+              Start free
+            </Link>
           </div>
+          <p className="text-xs text-stone-600 font-mono mt-5">No credit card required for free plan · Cancel paid plans anytime</p>
         </div>
       </section>
 
       <PublicFooter />
-
     </div>
   )
 }
