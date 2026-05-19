@@ -43,22 +43,29 @@ export async function middleware(request: NextRequest) {
   // For POST/PUT/PATCH/DELETE requests, verify the Origin header matches
   // our own host. Browsers always send Origin for cross-origin requests,
   // so a mismatch means the request originated from a different domain.
+  // Bearer-authenticated requests (native mobile app) are exempt: browsers
+  // never auto-send Authorization headers cross-origin, so a Bearer token
+  // is itself proof the request didn't originate from a malicious site.
   if (
     ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
     pathname.startsWith('/api/') &&
     !isCsrfExempt(pathname)
   ) {
-    const origin = request.headers.get('origin')
-    const host = request.headers.get('host')
-    if (!origin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    try {
-      if (new URL(origin).host !== host) {
+    const authHeader = request.headers.get('authorization')
+    const hasBearer = authHeader?.toLowerCase().startsWith('bearer ')
+    if (!hasBearer) {
+      const origin = request.headers.get('origin')
+      const host = request.headers.get('host')
+      if (!origin) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
-    } catch {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      try {
+        if (new URL(origin).host !== host) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
   }
 

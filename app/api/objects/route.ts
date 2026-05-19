@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createBearerClient, createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
 import { objectCreateSchema } from '@/lib/validations'
 import { rateLimit, apiLimiter } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
-  const supabase = await createServerSideClient()
+  const supabase = (await createBearerClient()) ?? (await createServerSideClient())
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

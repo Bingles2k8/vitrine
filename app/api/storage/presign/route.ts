@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createServerSideClient } from '@/lib/supabase-server'
+import { createBearerClient, createServerSideClient } from '@/lib/supabase-server'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { r2, r2PublicUrl, PutObjectCommand } from '@/lib/r2'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { parseBody, presignSchema } from '@/lib/validations'
 
 export async function POST(req: Request) {
-  const supabase = await createServerSideClient()
+  const supabase = (await createBearerClient()) ?? (await createServerSideClient())
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

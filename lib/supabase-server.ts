@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 
 // Cookie-free anon client for public pages that don't need the user session.
 // Safe to use inside server components under `export const revalidate = ...`,
@@ -22,6 +22,26 @@ export async function createReadOnlyServerClient() {
       cookies: {
         getAll() { return cookieStore.getAll() },
       },
+    }
+  )
+}
+
+// Bearer-token Supabase client for native mobile clients that send their JWT
+// via `Authorization: Bearer ...` instead of cookies. Returns null if the
+// incoming request has no Bearer header — callers fall back to the cookie
+// client. The token is validated by Supabase on each call (e.g. auth.getUser).
+export async function createBearerClient() {
+  const h = await headers()
+  const auth = h.get('authorization') ?? ''
+  if (!auth.toLowerCase().startsWith('bearer ')) return null
+  const token = auth.slice(7).trim()
+  if (!token) return null
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     }
   )
 }
