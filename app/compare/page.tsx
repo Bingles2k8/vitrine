@@ -45,17 +45,34 @@ export default function CompareIndex() {
         </nav>
 
         {/* Header */}
-        <section className="mb-16">
+        <section className="mb-12">
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl italic font-normal leading-tight mb-6">
             Vitrine vs the alternatives
           </h1>
-          <p className="text-lg text-stone-400 leading-relaxed max-w-2xl">
-            How does Vitrine compare to other collection management tools? We&apos;ve put together honest, detailed comparisons with the most common alternatives.
+          <p className="text-lg text-stone-400 leading-relaxed max-w-2xl mb-8">
+            Honest, detailed comparisons against the most common collection management tools. Read on, or skip ahead and try Vitrine free.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/signup"
+              className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-6 py-3 rounded transition-colors inline-block"
+            >
+              Try it free, no card needed
+            </Link>
+            <a
+              href="#alternatives"
+              className="text-sm text-stone-400 hover:text-stone-200 transition-colors font-mono px-3 py-3"
+            >
+              See comparisons ↓
+            </a>
+          </div>
+          <p className="text-xs text-stone-500 mt-3 font-mono">
+            No credit card. Free forever up to 100 items.
           </p>
         </section>
 
         {/* Competitors list */}
-        <div className="space-y-2">
+        <div id="alternatives" className="space-y-2 scroll-mt-24">
           {competitors.map((competitor) => {
             const meta = competitorMeta[competitor.slug] ?? { tagline: '' }
             return (
@@ -95,12 +112,12 @@ export default function CompareIndex() {
         </div>
 
         {/* CTA */}
-        <section className="mt-8 p-8 border border-white/10 rounded-lg text-center">
+        <section className="mt-8 p-8 border border-amber-500/30 bg-amber-500/[0.03] rounded-lg text-center">
           <h2 className="text-2xl font-medium text-white mb-3">
             See for yourself
           </h2>
           <p className="text-stone-400 mb-6 max-w-md mx-auto">
-            Free to start, no credit card required. Try Vitrine and compare it against any tool yourself.
+            Try Vitrine and compare it against any tool yourself. Free up to 100 items, no credit card.
           </p>
           <Link
             href="/signup"
@@ -108,6 +125,9 @@ export default function CompareIndex() {
           >
             Start for free →
           </Link>
+          <p className="text-xs text-stone-500 mt-4 font-mono">
+            Export to CSV anytime · Cancel in one click · Free up to 100 items
+          </p>
         </section>
 
       </main>
