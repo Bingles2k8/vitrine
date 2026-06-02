@@ -16,21 +16,19 @@ export function DeleteUserButton({ museumId, museumName, slug, ownerEmail }: Pro
   return (
     <>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(true) }}
+        onClick={() => setOpen(true)}
         className="text-xs text-red-400 hover:text-red-600 transition-colors"
       >
         Delete
       </button>
       {open && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <DeleteUserModal
-            museumId={museumId}
-            museumName={museumName}
-            slug={slug}
-            ownerEmail={ownerEmail}
-            onClose={() => setOpen(false)}
-          />
-        </div>
+        <DeleteUserModal
+          museumId={museumId}
+          museumName={museumName}
+          slug={slug}
+          ownerEmail={ownerEmail}
+          onClose={() => setOpen(false)}
+        />
       )}
     </>
   )

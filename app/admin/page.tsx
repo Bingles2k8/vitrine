@@ -198,7 +198,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           href={`${siteUrl}/museum/${m.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
                           title="Open public site"
                           className="text-xs text-gray-300 hover:text-gray-600"
                         >

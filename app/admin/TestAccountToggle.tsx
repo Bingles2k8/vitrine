@@ -8,8 +8,7 @@ export function TestAccountToggle({ museumId, isTest }: { museumId: string; isTe
 
   return (
     <button
-      onClick={(e) => {
-        e.stopPropagation()
+      onClick={() => {
         const msg = isTest
           ? 'Unmark this as a test account? It will count towards stats and revenue.'
           : 'Mark this as a test account? It will be excluded from stats and revenue.'
