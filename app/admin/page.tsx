@@ -7,6 +7,8 @@ import { createClient } from '@supabase/supabase-js'
 import { DeleteUserButton } from './DeleteUserModal'
 import { TestFilterToggle } from './TestFilterToggle'
 import { TestAccountToggle } from './TestAccountToggle'
+import { DeleteToggle } from './DeleteToggle'
+import { ClickableRow } from './ClickableRow'
 
 const PLAN_ORDER = ['community', 'hobbyist', 'professional', 'institution'] as const
 const PLAN_COLOURS: Record<string, string> = {
@@ -29,9 +31,10 @@ function subStatus(plan: string, stripeSubId: string | null, pastDue: boolean) {
   return                                           { label: 'active',    cls: 'text-green-600' }
 }
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ hideTest?: string }> }) {
-  const { hideTest: hideTestParam } = await searchParams
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ hideTest?: string; delete?: string }> }) {
+  const { hideTest: hideTestParam, delete: deleteParam } = await searchParams
   const hideTest = hideTestParam === '1'
+  const showDelete = deleteParam === '1'
 
   // ── Gate: must be logged in and match ADMIN_USER_ID ───────────────
   const supabase = await createServerSideClient()
@@ -109,6 +112,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <h1 className="text-2xl font-semibold tracking-tight">Vitrine Admin</h1>
           <div className="flex items-center gap-4">
             <Suspense>
+              <DeleteToggle showDelete={showDelete} />
+            </Suspense>
+            <Suspense>
               <TestFilterToggle hideTest={hideTest} />
             </Suspense>
             <span className="text-sm text-gray-400">
@@ -178,16 +184,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const isTest     = m.is_test_account
 
                 return (
-                  <tr key={m.id} className={`transition-colors ${isTest ? 'bg-gray-50/80' : isEmpty ? 'opacity-50 hover:opacity-100' : 'hover:bg-gray-50'}`}>
+                  <ClickableRow
+                    key={m.id}
+                    href={`/admin/${m.id}`}
+                    className={`transition-colors ${isTest ? 'bg-gray-50/80 hover:bg-gray-100' : isEmpty ? 'opacity-50 hover:opacity-100 hover:bg-gray-50' : 'hover:bg-gray-50'}`}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {m.name ?? '—'}
+                        </span>
                         <a
                           href={`${siteUrl}/museum/${m.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-medium text-gray-900 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open public site"
+                          className="text-xs text-gray-300 hover:text-gray-600"
                         >
-                          {m.name ?? '—'}
+                          ↗
                         </a>
                         <TestAccountToggle museumId={m.id} isTest={isTest} />
                       </div>
@@ -211,14 +226,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     </td>
                     <td className="px-4 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
                     <td className="px-4 py-3 text-right">
-                      <DeleteUserButton
-                        museumId={m.id}
-                        museumName={m.name ?? m.slug}
-                        slug={m.slug}
-                        ownerEmail={emailByOwnerId.get(m.owner_id) ?? '—'}
-                      />
+                      {showDelete ? (
+                        <DeleteUserButton
+                          museumId={m.id}
+                          museumName={m.name ?? m.slug}
+                          slug={m.slug}
+                          ownerEmail={emailByOwnerId.get(m.owner_id) ?? '—'}
+                        />
+                      ) : null}
                     </td>
-                  </tr>
+                  </ClickableRow>
                 )
               })}
               {rows.length === 0 && (
