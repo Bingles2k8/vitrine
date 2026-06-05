@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe } from '@/lib/stripe'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
-import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const supabase = await createServerSideClient()
@@ -55,24 +54,27 @@ export async function POST(request: Request) {
   }
 
   // Issue Stripe refund for paid orders.
-  // Refund = amount_cents - platform_fee_cents - stripe_processing_fee so that neither the
-  // Vitrine booking fee nor Stripe's card processing fee (which Stripe does not return on refund)
-  // come out of Vitrine's pocket. The exact Stripe fee is fetched from the balance transaction.
+  //
+  // Tickets are charged as Connect destination charges (see ticket-checkout):
+  // the buyer's card is charged ticket price + booking fee, the booking fee is
+  // taken as the Stripe application_fee (kept by Vitrine), and the ticket price
+  // is transferred to the museum's connected account.
+  //
+  // On refund we therefore:
+  //   - refund the full ticket price (amount_cents) to the buyer, so they only
+  //     forfeit the non-refundable booking fee,
+  //   - reverse_transfer: true — claw the transferred amount back from the
+  //     museum's connected account so the refund is NOT drained from Vitrine's
+  //     platform balance,
+  //   - refund_application_fee: false — Vitrine keeps the full booking fee
+  //     (4%+20p), which covers Stripe's non-refundable card processing fee and
+  //     leaves Vitrine its margin.
   if (order.stripe_payment_intent_id) {
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      order.stripe_payment_intent_id,
-      { expand: ['latest_charge.balance_transaction'] }
-    )
-    const charge = paymentIntent.latest_charge as Stripe.Charge | null
-    const stripeFee = (charge?.balance_transaction as Stripe.BalanceTransaction | null)?.fee ?? 0
-
-    const refundAmount = Math.max(
-      order.amount_cents - (order.platform_fee_cents ?? 0) - stripeFee,
-      0
-    )
     await stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
-      amount: refundAmount,
+      amount: order.amount_cents,
+      reverse_transfer: true,
+      refund_application_fee: false,
     })
   }
 

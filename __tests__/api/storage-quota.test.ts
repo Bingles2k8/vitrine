@@ -69,6 +69,14 @@ vi.mock('@/lib/supabase-server', () => ({
   createServerSideClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
     from: (...args: any[]) => mockFrom(...args),
+  })),
+}))
+
+// The route resolves the museum/object via the cookie client (above) but invokes
+// the SECURITY DEFINER quota RPC through a service-role client, since EXECUTE is
+// revoked from the authenticated role. Mock that client's rpc to the same spy.
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => ({
     rpc: (...args: any[]) => mockRpc(...args),
   })),
 }))

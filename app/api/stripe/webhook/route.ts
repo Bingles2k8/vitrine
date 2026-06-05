@@ -436,11 +436,14 @@ export async function POST(request: Request) {
     if (paymentIntentId) {
       const { data: order } = await supabase
         .from('ticket_orders')
-        .select('id, slot_id, quantity, museum_id')
+        .select('id, slot_id, quantity, museum_id, status')
         .eq('stripe_payment_intent_id', paymentIntentId)
         .maybeSingle()
 
-      if (order) {
+      // Idempotency: a refund issued via /api/ticket-refund already cancels the
+      // order and releases capacity, and Stripe may retry this webhook. Skip if
+      // the order is already cancelled so we don't decrement slot bookings twice.
+      if (order && order.status !== 'cancelled') {
         // Cross-check: the order's museum must own the Stripe Connect account the charge was
         // made on behalf of. Prevents a spoofed refund event from cancelling a foreign
         // museum's order (tickets use destination charges via on_behalf_of).

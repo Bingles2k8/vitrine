@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { getPlan } from '@/lib/plans'
 import { documentUploadSchema, parseBody } from '@/lib/validations'
@@ -102,7 +103,15 @@ export async function POST(
   // Quota check + insert run atomically inside a Postgres function that
   // locks the museum row (FOR UPDATE), preventing concurrent uploads from
   // both passing the quota check and together exceeding the limit.
-  const { data: doc, error } = await supabase.rpc('insert_document_if_quota_ok', {
+  // Called via the service-role client: the function is SECURITY DEFINER and
+  // EXECUTE is revoked from the anon/authenticated roles, so it must not be
+  // invoked through the user's cookie session. Ownership is already verified
+  // above (resolveMuseum + object/museum check).
+  const service = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: doc, error } = await service.rpc('insert_document_if_quota_ok', {
     p_museum_id:       museum.id,
     p_object_id:       objectId,
     p_uploaded_by:     user.id,

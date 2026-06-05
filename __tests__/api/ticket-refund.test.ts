@@ -9,13 +9,6 @@ vi.mock('@/lib/stripe', () => ({
     refunds: {
       create: vi.fn().mockResolvedValue({ id: 're_test' }),
     },
-    paymentIntents: {
-      retrieve: vi.fn().mockResolvedValue({
-        latest_charge: {
-          balance_transaction: { fee: 36 }, // £0.36 Stripe processing fee
-        },
-      }),
-    },
   },
 }))
 
@@ -178,14 +171,16 @@ describe('POST /api/ticket-refund', () => {
 
   // ── Paid order refund ─────────────────────────────────────────────────────
 
-  it('issues a Stripe refund for amount_cents minus platform_fee_cents minus Stripe processing fee', async () => {
+  it('refunds the full ticket price and reverses the Connect transfer, keeping the booking fee', async () => {
     const res = await POST(makeRequest({ order_id: 'order-uuid' }))
 
     expect(res.status).toBe(200)
     expect(stripeRefundsCreate).toHaveBeenCalledOnce()
     expect(stripeRefundsCreate).toHaveBeenCalledWith({
       payment_intent: 'pi_test',
-      amount: 904, // 1000 (ticket price) - 60 (platform fee) - 36 (Stripe fee) = 904
+      amount: 1000,                  // full ticket price back to the buyer
+      reverse_transfer: true,        // clawed back from the museum's connected account
+      refund_application_fee: false, // Vitrine keeps the booking fee
     })
   })
 
@@ -207,36 +202,6 @@ describe('POST /api/ticket-refund', () => {
       'decrement_slot_bookings',
       { slot_uuid: 'slot-uuid', qty: 2 }
     )
-  })
-
-  // ── Stripe fee edge cases ─────────────────────────────────────────────────
-
-  it('defaults Stripe fee to 0 when balance_transaction is null', async () => {
-    vi.mocked(stripe.paymentIntents.retrieve).mockResolvedValueOnce({
-      latest_charge: { balance_transaction: null },
-    } as any)
-
-    const res = await POST(makeRequest({ order_id: 'order-uuid' }))
-
-    expect(res.status).toBe(200)
-    expect(stripeRefundsCreate).toHaveBeenCalledWith({
-      payment_intent: 'pi_test',
-      amount: 940, // 1000 - 60 - 0 = 940
-    })
-  })
-
-  it('clamps refund to 0 when fees exceed amount_cents', async () => {
-    vi.mocked(stripe.paymentIntents.retrieve).mockResolvedValueOnce({
-      latest_charge: { balance_transaction: { fee: 980 } }, // fee alone exceeds amount
-    } as any)
-
-    const res = await POST(makeRequest({ order_id: 'order-uuid' }))
-
-    expect(res.status).toBe(200)
-    expect(stripeRefundsCreate).toHaveBeenCalledWith({
-      payment_intent: 'pi_test',
-      amount: 0, // Math.max(1000 - 60 - 980, 0) = 0
-    })
   })
 
   // ── Free order cancellation ───────────────────────────────────────────────

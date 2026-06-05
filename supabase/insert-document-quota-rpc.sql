@@ -68,3 +68,11 @@ BEGIN
   RETURN v_doc;
 END;
 $$;
+
+-- Lock execution to the service role only. This function is SECURITY DEFINER
+-- (bypasses RLS), so leaving the default PUBLIC EXECUTE grant would let any
+-- authenticated browser session call it directly with an arbitrary p_museum_id
+-- and bypass the API route's ownership + quota checks. It is only ever invoked
+-- via the service-role client in app/api/objects/[id]/documents/route.ts.
+REVOKE EXECUTE ON FUNCTION insert_document_if_quota_ok(uuid, uuid, uuid, text, uuid, text, text, text, text, bigint, text, bigint) FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION insert_document_if_quota_ok(uuid, uuid, uuid, text, uuid, text, text, text, text, bigint, text, bigint) TO service_role;
