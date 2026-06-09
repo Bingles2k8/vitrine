@@ -5,9 +5,9 @@ import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
 export const metadata = buildPageMetadata({
-  title: 'Collection Compliance Tools – Vitrine Professional',
+  title: 'Spectrum 5.1 Collection Compliance Tools – Vitrine Professional',
   description:
-    'Vitrine Professional and Institution plans include built-in tools for every recognised collection management standard. Browse all 21 procedures, data fields, and where to find them in the app.',
+    'Vitrine Professional and Institution plans include built-in tools for all 21 Spectrum 5.1 procedures. Browse every procedure, its data fields, and where to find them in the app.',
   path: '/compliance',
   keywords: [
     'museum collection management compliance',
@@ -557,7 +557,7 @@ export default function CompliancePage() {
         {/* Hero */}
         <div className="mb-12 max-w-3xl">
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl italic font-normal leading-tight mb-6">
-            Collection compliance,{' '}
+            Spectrum 5.1 compliance,{' '}
             <span className="text-amber-500">built in.</span>
           </h1>
           <p className="text-xl text-stone-300 leading-relaxed border-l-2 border-amber-500/40 pl-5 mb-6">

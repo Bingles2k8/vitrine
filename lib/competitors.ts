@@ -699,6 +699,102 @@ export const competitors: Competitor[] = [
       },
     ],
   },
+  {
+    slug: 'discogs-alternative',
+    name: 'Discogs',
+    metaTitle: 'Best Discogs Alternative for Vinyl Collectors (2026)',
+    metaDescription:
+      'Discogs is a marketplace first, catalogue second. Vitrine is the best Discogs alternative for cataloguing vinyl: your photos, your condition notes, your data. Free to start.',
+    keywords: [
+      'discogs alternative',
+      'vinyl collection management software',
+      'vinyl record cataloguing app',
+      'discogs vs vitrine',
+    ],
+    h1: 'Best Discogs Alternative for Vinyl Collectors (2026)',
+    answerCapsule:
+      'Discogs is the biggest music database and marketplace in the world, and its collection tool is built around that marketplace. Your copy of a record — its photos, its condition story, its paperwork — has nowhere to live. Vitrine is a catalogue-first alternative for vinyl collectors. Free to start, with paid plans from £5/month.',
+    socialProofLine:
+      'Photos of your actual copies, condition and provenance notes, value history, and a public collection page. Plus 34 other collection types in the same account.',
+    featureComparison: [
+      { feature: 'Built for', vitrine: 'Cataloguing your collection', competitor: 'Marketplace & database', vitrineIcon: 'check', competitorIcon: 'neutral' },
+      { feature: 'Photos of your copy', vitrine: 'Up to 10 per record', competitor: 'Shared release images only', vitrineIcon: 'check', competitorIcon: 'cross' },
+      { feature: 'Collection types', vitrine: '35 categories', competitor: 'Physical music only', vitrineIcon: 'check', competitorIcon: 'cross' },
+      { feature: 'Storage location & insurance', vitrine: 'Built in', competitor: 'Not supported', vitrineIcon: 'check', competitorIcon: 'cross' },
+      { feature: 'Value tracking', vitrine: 'Your value, with history', competitor: 'Marketplace min/median/max', vitrineIcon: 'check', competitorIcon: 'neutral' },
+      { feature: 'Public collection page', vitrine: 'Custom site, your branding', competitor: 'Database list view', vitrineIcon: 'check', competitorIcon: 'neutral' },
+      { feature: 'Built-in marketplace', vitrine: 'No', competitor: 'The biggest in music', vitrineIcon: 'cross', competitorIcon: 'check' },
+      { feature: 'Price', vitrine: 'Free up to 100 items', competitor: 'Collection tool is free', vitrineIcon: 'neutral', competitorIcon: 'check' },
+    ],
+    weaknessesHeading: 'Where Discogs falls short as a catalogue',
+    weaknesses: [
+      {
+        heading: 'Your records, the database’s photos',
+        body: 'A Discogs collection entry points at the shared release page. You cannot attach photos of your copy: the one with the corner ding, the original inner sleeve, the signature on the cover. For condition documentation and insurance, your copy is the whole point.',
+      },
+      {
+        heading: 'Music only',
+        body: 'Vinyl, CDs, cassettes. The same person who collects records usually collects other things too: gig posters, band shirts, books, hi-fi. None of it has a home on Discogs, so the rest of the collection ends up in a spreadsheet anyway.',
+      },
+      {
+        heading: 'Market statistics are not a valuation record',
+        body: 'Discogs shows minimum, median, and maximum from marketplace sales: a genuinely useful signal. But it is not a valuation register. No valuer, no basis, no date, no attached documents. Nothing an insurer would accept.',
+      },
+    ],
+    whySwitchPoints: [
+      {
+        heading: 'A record of your actual copies',
+        body: 'Every record in Vitrine gets its own photos, condition notes, provenance, and purchase-price-versus-current-value tracking. Your catalogue describes what is on your shelf, not the idealised release in a database.',
+      },
+      {
+        heading: 'Every collection in one catalogue',
+        body: 'Vinyl alongside everything else you collect: 35 built-in categories with structured fields per type, plus custom fields for anything that does not fit a template.',
+      },
+      {
+        heading: 'A public page that does your shelves justice',
+        body: 'Every Vitrine account includes a public collection website with your branding, not a database grid. A per-item privacy toggle keeps the valuable pieces private while the rest is on show.',
+      },
+    ],
+    competitorPrice: 'Free',
+    competitorPriceNote: 'collection tool is free; selling carries marketplace fees',
+    whyNow: 'Every record logged only on Discogs is one more without photos of your copy, paperwork, or a value you can stand behind.',
+    migrationSteps: [
+      {
+        heading: 'Export your Discogs collection',
+        body: 'Discogs supports CSV export of your full collection, including artist, title, label, catalogue number, and your media and sleeve condition grades.',
+      },
+      {
+        heading: 'Import into Vitrine',
+        body: 'On the Hobbyist plan and above, upload the CSV via the importer and map the columns: artist, title, catalogue number, and condition all have homes. Max 500 rows per import.',
+      },
+      {
+        heading: 'Photograph your copies',
+        body: 'Add photos of each copy: sleeve, labels, inners, inserts. This is the part Discogs could never hold, and the part your catalogue has been missing.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Should I delete my Discogs account?',
+        answer:
+          'No. Discogs is unbeatable as a music database and marketplace, and most collectors should keep using it for discography reference, buying, and selling. Vitrine replaces it as the catalogue of record: the place where your copies, their condition, and their value actually live.',
+      },
+      {
+        question: 'Can I import my Discogs collection into Vitrine?',
+        answer:
+          'Yes. Export your collection from Discogs as CSV and import it on the Hobbyist plan and above. Artist, title, label, catalogue number, and condition grades map directly to Vitrine fields.',
+      },
+      {
+        question: 'Does Vitrine handle pressing details and catalogue numbers?',
+        answer:
+          'Yes. The vinyl category includes structured fields for pressing and catalogue details, and custom fields cover anything specific to your collecting niche, from matrix numbers to mono/stereo variants.',
+      },
+      {
+        question: 'Is Vitrine free like Discogs?',
+        answer:
+          'The Community plan is free for up to 100 items, then the Hobbyist plan is £5/month for up to 1,000. If all you want is a list tied to the Discogs database, Discogs costs nothing and does that well. Vitrine is for collectors who want more than a list.',
+      },
+    ],
+  },
 ]
 
 export function getCompetitor(slug: string): Competitor | undefined {
