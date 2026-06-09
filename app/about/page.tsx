@@ -25,7 +25,7 @@ const organizationSchema = {
   logo: `${SITE_URL}/logo.png`,
   description:
     'Vitrine is a modern collection management platform for museums, galleries, and hobbyist collectors. Catalog, organise, track value, and showcase any collection — coins, stamps, trading cards, vinyl records, comic books, LEGO, watches, wine, art, and more.',
-  sameAs: [] as string[],
+  sameAs: ['https://www.instagram.com/vitrinecms/'],
 }
 
 const breadcrumbSchema = {

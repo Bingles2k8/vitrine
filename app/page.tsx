@@ -32,7 +32,7 @@ const organizationSchema = {
       logo: `${SITE_URL}/logo.png`,
       description:
         'Vitrine is a modern collection management platform for museums, galleries, and hobbyist collectors.',
-      sameAs: [] as string[],
+      sameAs: ['https://www.instagram.com/vitrinecms/'],
     },
     {
       '@type': 'WebApplication',
