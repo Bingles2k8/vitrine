@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Claude Code worktrees/config — nested git worktrees here are full repo
+    // copies; without this, ESLint lints a duplicate of the whole source tree.
+    ".claude/**",
   ]),
 ]);
 

@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
 
   // ── Auth protection for dashboard, print, and admin routes ────────
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/print') || pathname.startsWith('/admin')) {
-    let supabaseResponse = NextResponse.next({ request })
+    const supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

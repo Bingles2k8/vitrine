@@ -12,7 +12,9 @@ interface Shortcut {
 
 export function useKeyboardShortcuts(shortcuts: Shortcut[]) {
   const shortcutsRef = useRef(shortcuts)
-  shortcutsRef.current = shortcuts
+  useEffect(() => {
+    shortcutsRef.current = shortcuts
+  })
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -37,7 +39,9 @@ export function useKeyboardShortcuts(shortcuts: Shortcut[]) {
 export function useGoShortcuts(shortcuts: Record<string, () => void>) {
   const pendingRef = useRef(false)
   const shortcutsRef = useRef(shortcuts)
-  shortcutsRef.current = shortcuts
+  useEffect(() => {
+    shortcutsRef.current = shortcuts
+  })
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>

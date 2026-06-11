@@ -12,6 +12,9 @@ vi.mock('@/lib/r2', () => ({
 
 const mockGetUser = vi.fn()
 vi.mock('@/lib/supabase-server', () => ({
+  // No Bearer header on these requests, so the real client returns null and the
+  // route falls back to the cookie client — mirror that here.
+  createBearerClient: vi.fn(async () => null),
   createServerSideClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
   })),

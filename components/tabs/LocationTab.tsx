@@ -46,6 +46,50 @@ const FIELD_PLACEHOLDERS: Record<string, string> = {
   position3: 'e.g. Bay 3',
 }
 
+type CascadeField = 'building' | 'room_gallery' | 'position1' | 'position2' | 'position3'
+
+// Module-level so React keeps the same component identity across LocationTab
+// re-renders — defining this inside LocationTab remounted all five selects
+// (and dropped focus) on every state change.
+function CascadeSelect({
+  field,
+  label,
+  options,
+  extras,
+  required,
+  disabled,
+  value,
+  onChange,
+}: {
+  field: CascadeField
+  label: string
+  options: string[]
+  extras: string[]
+  required?: boolean
+  disabled?: boolean
+  value: string
+  onChange: (field: CascadeField, value: string) => void
+}) {
+  const allOptions = [...new Set([...options, ...extras])].sort()
+  return (
+    <div>
+      <label className={labelCls}>
+        {label}{required && <span className="text-red-400 ml-1">*</span>}
+      </label>
+      <select
+        value={value}
+        onChange={e => onChange(field, e.target.value)}
+        className={inputCls}
+        disabled={disabled}
+      >
+        <option value="">— Select —</option>
+        {allOptions.map(o => <option key={o} value={o}>{o}</option>)}
+        <option value={ADD_NEW}>— Add New —</option>
+      </select>
+    </div>
+  )
+}
+
 export default function LocationTab({ form, set, canEdit, saving, object, museum, supabase, logActivity, locations, setLocations, currentUserName }: LocationTabProps) {
   const { toast } = useToast()
 
@@ -203,41 +247,6 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     if (field === 'position3') setExtraPositions3(prev => [...new Set([...prev, val])])
     handleDropdownChange(field, val)
     setAddNewModal({ open: false, field: 'building', value: '' })
-  }
-
-  function CascadeSelect({
-    field,
-    label,
-    options,
-    extras,
-    required,
-    disabled,
-  }: {
-    field: 'building' | 'room_gallery' | 'position1' | 'position2' | 'position3'
-    label: string
-    options: string[]
-    extras: string[]
-    required?: boolean
-    disabled?: boolean
-  }) {
-    const allOptions = [...new Set([...options, ...extras])].sort()
-    return (
-      <div>
-        <label className={labelCls}>
-          {label}{required && <span className="text-red-400 ml-1">*</span>}
-        </label>
-        <select
-          value={locationForm[field]}
-          onChange={e => handleDropdownChange(field, e.target.value)}
-          className={inputCls}
-          disabled={disabled || !canEdit}
-        >
-          <option value="">— Select —</option>
-          {allOptions.map(o => <option key={o} value={o}>{o}</option>)}
-          <option value={ADD_NEW}>— Add New —</option>
-        </select>
-      </div>
-    )
   }
 
   async function addLocation() {
@@ -447,14 +456,14 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
           <div className={sectionTitle}>Record a Movement</div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <CascadeSelect field="building" label="Building" options={buildings} extras={extraBuildings} required disabled={false} />
-            <CascadeSelect field="room_gallery" label="Room / Gallery" options={roomGalleries} extras={extraRoomGalleries} required disabled={!locationForm.building} />
+            <CascadeSelect field="building" label="Building" options={buildings} extras={extraBuildings} required disabled={!canEdit} value={locationForm.building} onChange={handleDropdownChange} />
+            <CascadeSelect field="room_gallery" label="Room / Gallery" options={roomGalleries} extras={extraRoomGalleries} required disabled={!locationForm.building || !canEdit} value={locationForm.room_gallery} onChange={handleDropdownChange} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <CascadeSelect field="position1" label="Position 1" options={positions1} extras={extraPositions1} required disabled={!locationForm.room_gallery} />
-            <CascadeSelect field="position2" label="Position 2" options={positions2} extras={extraPositions2} disabled={!locationForm.position1} />
-            <CascadeSelect field="position3" label="Position 3" options={positions3} extras={extraPositions3} disabled={!locationForm.position2} />
+            <CascadeSelect field="position1" label="Position 1" options={positions1} extras={extraPositions1} required disabled={!locationForm.room_gallery || !canEdit} value={locationForm.position1} onChange={handleDropdownChange} />
+            <CascadeSelect field="position2" label="Position 2" options={positions2} extras={extraPositions2} disabled={!locationForm.position1 || !canEdit} value={locationForm.position2} onChange={handleDropdownChange} />
+            <CascadeSelect field="position3" label="Position 3" options={positions3} extras={extraPositions3} disabled={!locationForm.position2 || !canEdit} value={locationForm.position3} onChange={handleDropdownChange} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

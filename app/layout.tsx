@@ -24,7 +24,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB">
+    // suppressHydrationWarning: the beforeInteractive theme script adds `dark`
+    // to <html> before hydration, which otherwise logs a mismatch on every page
+    <html lang="en-GB" suppressHydrationWarning>
       <head>
         <Script id="theme-detect" strategy="beforeInteractive">{`try{var t=localStorage.getItem('theme');if(t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`}</Script>
       </head>
