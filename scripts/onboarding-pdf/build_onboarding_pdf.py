@@ -99,13 +99,13 @@ CSS = r"""
 @page {
   size: A4;
   margin: 20mm 17mm 18mm 17mm;
-  @top-left  { content: "Vitrine"; font-family: "Liberation Serif"; font-style: italic;
+  @top-left  { content: "Vitrine"; font-family: "Gelasio"; font-style: italic;
                font-size: 9pt; color: #b8b2ab; }
-  @top-right { content: "Onboarding & User Guide"; font-family: "Liberation Sans";
-               font-size: 7.5pt; letter-spacing: 1px; text-transform: uppercase; color: #c4beb6; }
-  @bottom-left  { content: "vitrinecms.com"; font-family: "DejaVu Sans Mono";
+  @top-right { content: "Onboarding & User Guide"; font-family: "Geist";
+               font-size: 7.5pt; letter-spacing: 1px; color: #c4beb6; }
+  @bottom-left  { content: "vitrinecms.com"; font-family: "DM Sans";
                   font-size: 7.5pt; color: #c4beb6; }
-  @bottom-right { content: counter(page) " / " counter(pages); font-family: "DejaVu Sans Mono";
+  @bottom-right { content: counter(page) " / " counter(pages); font-family: "DM Sans";
                   font-size: 8pt; color: #78716c; }
 }
 @page cover  { margin: 0; @top-left{content:""} @top-right{content:""}
@@ -115,10 +115,10 @@ CSS = r"""
 * { box-sizing: border-box; }
 html { -weasy-hyphens: auto; }
 body {
-  font-family: "Liberation Sans", "DejaVu Sans", sans-serif;
+  font-family: "Geist", "DejaVu Sans", sans-serif;
   font-size: 9.6pt; line-height: 1.5; color: #292524; margin: 0;
 }
-h1, h2, h3 { font-family: "Liberation Serif", serif; color: #1c1917; font-weight: normal; }
+h1, h2, h3 { font-family: "Gelasio", serif; color: #1c1917; font-weight: normal; }
 em, .it { font-style: italic; }
 
 /* ── cover ── */
@@ -132,19 +132,19 @@ em, .it { font-style: italic; }
   top: -90px; right: -70px; }
 .cover .inner { position: relative; padding: 34mm 26mm; height: 100%;
   display: flex; flex-direction: column; }
-.cover .wm { font-family: "Liberation Serif"; font-style: italic; font-size: 30pt; color: #f5f5f4; }
+.cover .wm { font-family: "Gelasio"; font-style: italic; font-size: 30pt; color: #f5f5f4; }
 .cover .wm span { color: #f59e0b; }
-.cover .eyebrow { margin-top: 60mm; font-family: "DejaVu Sans Mono"; font-size: 9pt;
-  letter-spacing: 3px; text-transform: uppercase; color: #a8a29e; }
-.cover h1 { font-size: 40pt; line-height: 1.06; color: #f5f2ec; margin: 8mm 0 0; }
+.cover .eyebrow { margin-top: 60mm; font-family: "DM Sans"; font-size: 9pt;
+  letter-spacing: 1.5px; color: #a8a29e; }
+.cover h1 { font-size: 33pt; line-height: 1.1; color: #f5f2ec; margin: 8mm 0 0; }
 .cover h1 em { color: #fbbf24; }
 .cover .sub { margin-top: 8mm; font-size: 12pt; color: #d6d3d1; max-width: 130mm; line-height: 1.55; }
 .cover .meta { margin-top: auto; display: flex; justify-content: space-between;
-  align-items: flex-end; font-family: "DejaVu Sans Mono"; font-size: 8.5pt; color: #a8a29e;
+  align-items: flex-end; font-family: "DM Sans"; font-size: 8.5pt; color: #a8a29e;
   border-top: 1px solid #ffffff1f; padding-top: 6mm; }
 .cover .meta .big { font-size: 10pt; color: #f5f2ec; }
 .cover .chips { margin-top: 7mm; display: flex; flex-wrap: wrap; gap: 6px; max-width: 150mm; }
-.cover .chip { font-family: "DejaVu Sans Mono"; font-size: 7.5pt; color: #e7e5e4;
+.cover .chip { font-family: "DM Sans"; font-size: 7.5pt; color: #e7e5e4;
   border: 1px solid #ffffff26; border-radius: 20px; padding: 3px 10px; }
 
 /* ── table of contents ── */
@@ -155,14 +155,14 @@ em, .it { font-style: italic; }
 .toc > ol > li { counter-increment: toc; margin: 0; padding: 2.6mm 0;
   border-bottom: 1px solid #ececea; display: flex; align-items: baseline; }
 .toc > ol > li::before { content: counter(toc, decimal-leading-zero);
-  font-family: "DejaVu Sans Mono"; font-size: 9pt; color: #f59e0b; width: 12mm; flex: none; }
-.toc .t { font-family: "Liberation Serif"; font-size: 12pt; color: #1c1917; }
+  font-family: "DM Sans"; font-size: 9pt; color: #f59e0b; width: 12mm; flex: none; }
+.toc .t { font-family: "Gelasio"; font-size: 12pt; color: #1c1917; }
 .toc .d { color: #a8a29e; font-size: 8.6pt; margin-left: 3mm; }
 
 /* ── sections ── */
 .chapter { break-before: page; }
-.kicker { font-family: "DejaVu Sans Mono"; font-size: 7.5pt; letter-spacing: 2.5px;
-  text-transform: uppercase; color: #f59e0b; margin: 0 0 1mm; }
+.kicker { font-family: "DM Sans"; font-size: 7.5pt; letter-spacing: 1px;
+  color: #f59e0b; margin: 0 0 1mm; }
 
 /* Prominent chapter-header band (matches the cover's dark, glowing identity) */
 .chead { background: #0c0a09; border-radius: 14px; padding: 13mm 12mm 11mm;
@@ -171,9 +171,9 @@ em, .it { font-style: italic; }
   background: radial-gradient(circle, #f59e0b30, transparent 70%); top: -130px; right: -90px; }
 .chead .cglow2 { position: absolute; width: 200px; height: 200px; border-radius: 50%;
   background: radial-gradient(circle, #10b98118, transparent 70%); bottom: -120px; left: -40px; }
-.chead .cknum { font-family: "DejaVu Sans Mono"; font-size: 8pt; letter-spacing: 3px;
-  text-transform: uppercase; color: #f59e0b; margin: 0 0 3mm; position: relative; }
-.chead h2 { font-family: "Liberation Serif", serif; font-style: italic; font-size: 27pt;
+.chead .cknum { font-family: "DM Sans"; font-size: 8pt; letter-spacing: 1.5px;
+  color: #f59e0b; margin: 0 0 3mm; position: relative; }
+.chead h2 { font-family: "Gelasio", serif; font-style: italic; font-size: 27pt;
   color: #f5f5f4; border: 0; margin: 0; padding: 0; line-height: 1.04; position: relative; }
 .chead .mono { font-style: normal; font-size: 8.5pt; vertical-align: middle;
   background: #2a2110; border: 1px solid #5a4410; color: #fbbf24; }
@@ -194,7 +194,7 @@ p { margin: 0 0 2.6mm; }
 .lead { font-size: 10.4pt; color: #44403c; margin-bottom: 4mm; }
 a { color: #b45309; text-decoration: none; }
 strong { color: #1c1917; }
-code, .mono { font-family: "DejaVu Sans Mono"; font-size: 8.4pt;
+code, .mono { font-family: "DM Sans"; font-size: 8.4pt;
   background: #f4f2ef; border: 1px solid #e7e5e4; border-radius: 3px; padding: 0.5px 4px; color: #44403c; }
 
 /* ── steps ── */
@@ -203,7 +203,7 @@ ol.steps li { counter-increment: st; position: relative; padding: 1mm 0 1mm 9mm;
   margin: 0 0 1mm; min-height: 6mm; break-inside: avoid; }
 ol.steps li::before { content: counter(st); position: absolute; left: 0; top: 0.3mm;
   width: 5.4mm; height: 5.4mm; background: #1c1917; color: #fff; border-radius: 50%;
-  font-family: "DejaVu Sans Mono"; font-size: 8pt; text-align: center; line-height: 5.4mm; }
+  font-family: "DM Sans"; font-size: 8pt; text-align: center; line-height: 5.4mm; }
 
 /* ── callout boxes ── */
 .cb { display: flex; gap: 3mm; align-items: flex-start; border-radius: 7px;
@@ -222,14 +222,14 @@ ol.steps li::before { content: counter(st); position: absolute; left: 0; top: 0.
 figure.fig { margin: 4mm 0 4mm; break-inside: avoid; }
 .figframe { background: #0c0a09; border-radius: 12px; padding: 5mm; }
 figcaption { font-size: 8.4pt; color: #57534e; margin: 2mm 0 0; }
-.figlabel { font-family: "DejaVu Sans Mono"; font-size: 7.5pt; color: #b45309;
+.figlabel { font-family: "DM Sans"; font-size: 7.5pt; color: #b45309;
   background: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px; padding: 1px 5px; margin-right: 4px; }
 ol.legend { counter-reset: lg; list-style: none; margin: 3mm 0 0; padding: 0;
   column-count: 2; column-gap: 7mm; }
 ol.legend li { position: relative; padding: 0 0 0 7mm; margin: 0 0 2mm; font-size: 8.5pt;
   line-height: 1.4; color: #44403c; break-inside: avoid; }
 .cnum { position: absolute; left: 0; top: 0; width: 4.8mm; height: 4.8mm; background: #f59e0b;
-  color: #1c1917; border-radius: 50%; font-family: "DejaVu Sans Mono"; font-size: 7.5pt;
+  color: #1c1917; border-radius: 50%; font-family: "DM Sans"; font-size: 7.5pt;
   font-weight: bold; text-align: center; line-height: 4.8mm; }
 
 /* ── tables ── */
@@ -244,7 +244,7 @@ tr:nth-child(even) td { background: #faf9f8; }
 td.c, th.c { text-align: center; }
 .yes { color: #059669; font-weight: bold; }
 .no { color: #d1d0cd; }
-.tag { font-family: "DejaVu Sans Mono"; font-size: 7.4pt; padding: 1px 6px; border-radius: 20px;
+.tag { font-family: "DM Sans"; font-size: 7.4pt; padding: 1px 6px; border-radius: 20px;
   white-space: nowrap; }
 .t-disp { background: #ecfdf5; color: #047857; }
 .t-hide { background: #f5f5f4; color: #78716c; }
@@ -256,7 +256,7 @@ td.c, th.c { text-align: center; }
 .card { border: 1px solid #e7e5e4; border-radius: 8px; padding: 3mm 3.4mm; background: #fff;
   break-inside: avoid; }
 .card .ic { font-family: "DejaVu Sans"; font-size: 14pt; color: #d97706; line-height: 1; }
-.card .ti { font-family: "Liberation Serif"; font-size: 10.5pt; color: #1c1917; margin: 1mm 0 1mm; }
+.card .ti { font-family: "Gelasio"; font-size: 10.5pt; color: #1c1917; margin: 1mm 0 1mm; }
 .card .bd { font-size: 8.7pt; color: #57534e; line-height: 1.42; }
 
 .endnote { margin-top: 4mm; padding: 3mm 4mm; background: #1c1917; color: #d6d3d1;
@@ -269,10 +269,6 @@ td.c, th.c { text-align: center; }
 
 # ── cover & TOC ───────────────────────────────────────────────────────────────
 def cover():
-    chips = ["Collection catalogue", "Public website", "Site Builder", "Analytics",
-             "Event ticketing", "Staff & roles", "SPECTRUM compliance", "CSV import",
-             "QR labels", "Document storage"]
-    chiphtml = "".join('<span class="chip">' + c + "</span>" for c in chips)
     return (
         '<section class="cover"><div class="glow"></div><div class="glow2"></div>'
         '<div class="inner">'
@@ -282,7 +278,6 @@ def cover():
         '<div class="sub">A complete, step-by-step walkthrough of Vitrine — from creating your '
         "account to cataloguing objects, publishing your public website, selling event tickets, "
         "managing staff, and meeting collections-documentation standards.</div>"
-        '<div class="chips">' + chiphtml + "</div>"
         '<div class="meta">'
         '<div><div class="big">The all-in-one Collection Management System</div>'
         "for museums &amp; heritage collections of every size</div>"
@@ -301,7 +296,7 @@ def toc():
         ("Ticketing &amp; events", "Create events and sell tickets online"),
         ("Staff &amp; roles", "Invite your team and control access"),
         ("Compliance", "Provenance, rights, conservation &amp; loans"),
-        ("Collections-management procedures", "All 21 SPECTRUM procedures, step by step"),
+        ("Collections-management procedures", "All 21 Spectrum procedures, step by step"),
         ("Everyday tools", "Wishlist, share links, trash, export"),
         ("Settings, plans &amp; billing", "Account, subscription and storage"),
         ("Power tips &amp; shortcuts", "Command palette, scanning, Learn mode, Discover"),
@@ -323,7 +318,7 @@ def ch_orientation():
         ("◫", "Site Builder", "Logo, colours, templates, homepage text, About &amp; Visit pages — no code, no designer."),
         ("▦", "Analytics", "First-party visitor stats: page views, top objects and traffic sources. No cookie banner."),
         ("★", "Ticketing", "Create events, set capacity and take bookings (free or paid via Stripe) on your own site."),
-        ("◆", "Compliance", "Track documentation across the collection with a live, SPECTRUM-aligned score."),
+        ("◆", "Compliance", "Track documentation across the collection with a live, Spectrum-aligned score."),
     ]
     cardhtml = "".join('<div class="card"><div class="ic">' + i + '</div><div class="ti">' + t
                        + '</div><div class="bd">' + b + "</div></div>" for i, t, b in cards)
@@ -333,7 +328,7 @@ def ch_orientation():
         ["<td><strong>Hobbyist</strong></td>", '<td class="c">£5/mo</td>', '<td class="c">1,000</td>',
          '<td class="c">5</td>', '<td class="c">1</td>', "<td>+ Analytics, CSV import/export, all templates, 100&nbsp;MB docs</td>"],
         ["<td><strong>Professional</strong></td>", '<td class="c">£79/mo</td>', '<td class="c">5,000</td>',
-         '<td class="c">10</td>', '<td class="c">10</td>', "<td>+ 21 SPECTRUM procedures, ticketing, Visit/About pages, 1&nbsp;GB docs</td>"],
+         '<td class="c">10</td>', '<td class="c">10</td>', "<td>+ 21 Spectrum procedures, ticketing, Visit/About pages, 1&nbsp;GB docs</td>"],
         ["<td><strong>Institution</strong></td>", '<td class="c">£349/mo</td>', '<td class="c">100,000</td>',
          '<td class="c">10</td>', '<td class="c">∞</td>', "<td>+ Unlimited staff, 10&nbsp;GB document storage</td>"],
         ["<td><strong>Enterprise</strong></td>", '<td class="c">Contact</td>', '<td class="c">∞</td>',
@@ -642,7 +637,7 @@ def ch_compliance():
           "requires. Vitrine tracks five areas across the whole collection and gives a live score — the "
           "share of objects with complete documentation.", "lead"),
         figure(D.compliance, "The compliance dashboard. A live score, a progress bar, and a per-category breakdown with gaps flagged."),
-        callout("info", "Vitrine's compliance tools are built around the UK's SPECTRUM collections-management "
+        callout("info", "Vitrine's compliance tools are built around the UK's Spectrum collections-management "
                 "standard and align with the documentation requirements for Arts Council England accreditation."),
         h3("Check your score", tight=True),
         steps([
@@ -745,9 +740,9 @@ def ch_reference():
 
 def ch_procedures():
     return chapter([
-        chead(10, "procedures", "Collections-management procedures", "All 21 SPECTRUM 5.1 procedures, step by step." + plan_tag("Professional / Institution")),
+        chead(10, "procedures", "Collections-management procedures", "All 21 Spectrum 5.1 procedures, step by step." + plan_tag("Professional / Institution")),
         p("This is what sets Vitrine apart from a simple catalogue: it implements all "
-          "<strong>21 SPECTRUM 5.1 procedures</strong> — the UK collections-management standard. "
+          "<strong>21 Spectrum 5.1 procedures</strong> — the UK collections-management standard. "
           "Each procedure has a central register in the sidebar and/or a tab on the object record, "
           "and feeds the live compliance score from Chapter 9. Procedures 1–8 are available on "
           "Professional; the rest on Institution and above.", "lead"),
@@ -969,10 +964,10 @@ def ch_power():
 
         h3("Learn mode"),
         p("A built-in tutor for everyone on your team — especially new volunteers."),
-        figure(D.learn_mode, "Learn mode — hover any field label for an explanation and its SPECTRUM relevance."),
+        figure(D.learn_mode, "Learn mode — hover any field label for an explanation and its Spectrum relevance."),
         steps([
             "Toggle <strong>Learn mode</strong> on from the sidebar (your choice is remembered).",
-            "Hover any form-field label to see what it's for and which SPECTRUM procedure it supports — guidance exactly where you need it.",
+            "Hover any form-field label to see what it's for and which Spectrum procedure it supports — guidance exactly where you need it.",
         ]),
 
         h3("Vitrine Discover"),
@@ -1005,12 +1000,28 @@ def build_html():
             "<style>" + CSS + "</style></head><body>" + body + "</body></html>")
 
 
+def _check_brand_fonts():
+    """Warn loudly if the brand fonts aren't installed, so we never silently
+    fall back to substitutes. Run setup-fonts.sh to install them."""
+    try:
+        import subprocess
+        listing = subprocess.run(["fc-list"], capture_output=True, text=True).stdout.lower()
+    except Exception:
+        return
+    missing = [f for f in ("geist", "dm sans", "gelasio") if f not in listing]
+    if missing:
+        print("WARNING: brand fonts missing (" + ", ".join(missing) + "). "
+              "The PDF will use fallback fonts. Run `bash setup-fonts.sh` first.")
+
+
 def main():
+    _check_brand_fonts()
+    here = os.path.dirname(os.path.abspath(__file__))
     html = build_html()
-    with open("onboarding.html", "w", encoding="utf-8") as f:
+    with open(os.path.join(here, "onboarding.html"), "w", encoding="utf-8") as f:
         f.write(html)
     from weasyprint import HTML
-    HTML(string=html, base_url=".").write_pdf(OUT)
+    HTML(string=html, base_url=here).write_pdf(OUT)
     print("Wrote " + OUT)
 
 

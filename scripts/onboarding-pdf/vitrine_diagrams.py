@@ -28,12 +28,12 @@ EMERBG  = "#064e3b"
 WHITE   = "#ffffff"
 BLUE    = "#60a5fa"
 
-SANS  = "Liberation Sans, DejaVu Sans, sans-serif"
-SERIF = "Liberation Serif, DejaVu Serif, serif"
-MONO  = "DejaVu Sans Mono, monospace"
+SANS  = "Geist, DejaVu Sans, sans-serif"
+SERIF = "Gelasio, DejaVu Serif, serif"
+MONO  = "DM Sans, DejaVu Sans, sans-serif"
 # Geometric glyphs (●◆■▲▼★◉◈◫⬡ …) come from DejaVu Sans and render reliably in
 # WeasyPrint; colour emoji do not, so we use drawn icons / geometric glyphs instead.
-GEOM  = "DejaVu Sans, Liberation Sans, sans-serif"
+GEOM  = "DejaVu Sans, Geist, sans-serif"
 
 W = 720  # diagram content width (viewBox units)
 
@@ -163,7 +163,7 @@ def sidebar(active="Objects", top=30):
     b = [rect(1, top, SIDE_W, 999, BAR)]
     b.append(line(SIDE_W, top, SIDE_W, top + 999, LINE))
     b.append(txt(14, top + 26, "Vitrine.", AMBERT, 15, italic=True, family=SERIF))
-    b.append(txt(16, top + 50, "MENU", DIM, 7.5, family=MONO, spacing=1.5))
+    b.append(txt(16, top + 50, "Menu", DIM, 7.5, family=MONO, spacing=0.5))
     y = top + 64
     for ic, label in NAV:
         on = label == active
@@ -214,10 +214,10 @@ def dashboard_overview():
     # table
     ty = 160
     b.append(rect(x, ty, cw, 132, PANEL, rx=7, stroke=LINE))
-    cols = ["OBJECT", "YEAR", "MEDIUM", "STATUS"]
+    cols = ["Object", "Year", "Medium", "Status"]
     cxs = [x + 12, x + cw * 0.50, x + cw * 0.66, x + cw * 0.83]
     for c, cxp in zip(cols, cxs):
-        b.append(txt(cxp, ty + 15, c, DIM, 7.5, family=MONO, spacing=1))
+        b.append(txt(cxp, ty + 15, c, DIM, 7.5, family=MONO, spacing=0.4))
     b.append(line(x, ty + 26, x + cw, ty + 26, LINE))
     rows = [("🖼️", "Turner's Thames at Sunset", "1809", "Oil on canvas", "On Display", True),
             ("🏺", "Egyptian shabti — Amenhotep II", "1400 BCE", "Faience", "On Display", True),
@@ -268,13 +268,13 @@ def onboarding_flow():
             b.append(line(sx + 9, 62, sx + 51, 62, "#1c1917"))
     # three cards
     cw = (W - 2 * 24 - 2 * 14) / 3
-    titles = ["STEP 1 — YOUR MUSEUM", "STEP 2 — TEMPLATE", "STEP 3 — PLAN"]
+    titles = ["Step 1 — Your museum", "Step 2 — Template", "Step 3 — Plan"]
     cardx = 24
     cardtops = 84
     cardh = 142
     for i in range(3):
         b.append(rect(cardx, cardtops, cw, cardh, "#ffffff", rx=9, stroke="#e7e5e4"))
-        b.append(txt(cardx + 12, cardtops + 16, titles[i], "#a8a29e", 7, family=MONO, spacing=1))
+        b.append(txt(cardx + 12, cardtops + 16, titles[i], "#a8a29e", 7.5, family=MONO, spacing=0.3))
         cardx += cw + 14
     # card 1 contents
     c1 = 24
@@ -490,7 +490,7 @@ def site_builder():
     # preview panel
     py = yy2 + 44
     b.append(rect(x, py, cw, 60, PANEL2, rx=7, stroke=LINE))
-    b.append(txt(x + 10, py + 14, "LIVE PREVIEW", DIM, 7, family=MONO, spacing=1.5))
+    b.append(txt(x + 10, py + 14, "Live preview", DIM, 7, family=MONO, spacing=0.5))
     b.append(txt(x + 10, py + 32, "Victoria Hamlet Collection.", TXT, 12, italic=True, family=SERIF))
     b.append(txt(x + 10, py + 46, "Exploring two centuries of British textile craft", MUT, 8.5))
     b.append(badge("1", x + tw + 8 + tw / 2, yy + 8 + 26))
@@ -749,7 +749,7 @@ def settings_plan():
     # plan card
     py = ty + 24
     b.append(rect(x, py, cw, 52, "#2a2110", rx=8, stroke="#5a4410"))
-    b.append(txt(x + 12, py + 16, "PROFESSIONAL", AMBERT, 8, family=MONO, spacing=1.5))
+    b.append(txt(x + 12, py + 16, "Professional", AMBERT, 8, family=MONO, spacing=0.5))
     b.append(txt(x + 12, py + 36, "£79", TXT, 18, family=SERIF))
     b.append(txt(x + 52, py + 38, "/ month", DIM, 9))
     b.append(pill(x + cw - 70, py + 10, 58, "Active", EMER, EMERBG))
@@ -785,7 +785,7 @@ def settings_plan():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Generic register-page builder + SPECTRUM procedure / tool diagrams
+# Generic register-page builder + Spectrum procedure / tool diagrams
 # ══════════════════════════════════════════════════════════════════════════════
 def _pill_kind(kind):
     return {
@@ -936,11 +936,11 @@ def object_tab(url, active_tab, tabs, title, subtitle, entries, add_label, badge
     return chrome(url, ry + 36, "".join(b)), callouts
 
 
-# ── Group A: SPECTRUM procedure pages ─────────────────────────────────────────
+# ── Group A: Spectrum procedure pages ─────────────────────────────────────────
 def entry_register():
     return register_page(
         "vitrine.app/dashboard/entry", "Objects", "Object entry",
-        ["ENTRY NO", "DEPOSITOR", "RECEIVED", "STATUS"], [0.26, 0.30, 0.22, 0.22],
+        ["Entry no", "Depositor", "Received", "Status"], [0.26, 0.30, 0.22, 0.22],
         [["EN-2026-019", "Mrs A. Okafor", "12 Jun 2026", ("pill", "Awaiting promotion", "warn")],
          ["EN-2026-018", "Hartley estate", "9 Jun 2026", ("pill", "Promoted", "ok")],
          ["EN-2026-017", "Field collection", "2 Jun 2026", ("pill", "Returned", "neutral")]],
@@ -955,7 +955,7 @@ def entry_register():
 def accession_register():
     return register_page(
         "vitrine.app/dashboard/register", "Objects", "Accession register",
-        ["ACCESSION NO", "OBJECT", "METHOD", "STATUS"], [0.24, 0.36, 0.20, 0.20],
+        ["Accession no", "Object", "Method", "Status"], [0.24, 0.36, 0.20, 0.20],
         [["LCV-2026-044", "Spitalfields silk panel", "Donation", ("pill", "Confirmed", "ok")],
          ["LCV-2026-045", "Linen sampler", "Purchase", ("pill", "Unconfirmed", "warn")],
          ["LCV-2026-046", "Loom shuttle", "Bequest", ("pill", "Unconfirmed", "warn")]],
@@ -969,7 +969,7 @@ def accession_register():
 def locations_register():
     return register_page(
         "vitrine.app/dashboard/locations", "Objects", "Locations & movements",
-        ["OBJECT", "FROM / TO", "MOVED", "TYPE"], [0.34, 0.30, 0.18, 0.18],
+        ["Object", "From / to", "Moved", "Type"], [0.34, 0.30, 0.18, 0.18],
         [["Roman mosaic fragment", "Store A2 / Gallery 3", "10 Jun", ("pill", "Temporary", "warn")],
          ["Egyptian shabti", "Gallery 3 / Store B1", "4 Jun", ("pill", "Permanent", "neutral")],
          ["Linen sampler", "Conservation / Store A2", "1 Jun", ("pill", "Return", "ok")]],
@@ -984,7 +984,7 @@ def locations_register():
 def loans_register():
     return register_page(
         "vitrine.app/dashboard/loans", "Objects", "Loans register",
-        ["LOAN NO", "INSTITUTION", "DATES", "STATUS"], [0.22, 0.34, 0.24, 0.20],
+        ["Loan no", "Institution", "Dates", "Status"], [0.22, 0.34, 0.24, 0.20],
         [["LN-2026-007", "Tate Britain (out)", "Mar–Sep 2026", ("pill", "Active", "ok")],
          ["LN-2026-006", "V&A (in)", "Jan–Jul 2026", ("pill", "Active", "ok")],
          ["LN-2026-005", "Hunterian (out)", "ended 30 May", ("pill", "Returned", "neutral")]],
@@ -1001,7 +1001,7 @@ def loans_register():
 def exits_register():
     return register_page(
         "vitrine.app/dashboard/exits", "Objects", "Object exits",
-        ["EXIT NO", "OBJECT", "DESTINATION", "STATUS"], [0.22, 0.32, 0.26, 0.20],
+        ["Exit no", "Object", "Destination", "Status"], [0.22, 0.32, 0.26, 0.20],
         [["EX-2026-031", "Turner's Thames", "Tate Britain", ("pill", "Out (temp)", "warn")],
          ["EX-2026-030", "Bronze figurine", "Photographer", ("pill", "Overdue", "bad")],
          ["EX-2026-029", "Ceramic bowl", "Deaccession sale", ("pill", "Permanent", "neutral")]],
@@ -1015,7 +1015,7 @@ def exits_register():
 def audit_inventory():
     return register_page(
         "vitrine.app/dashboard/audit", "Objects", "Inventory & audit",
-        ["AUDIT REF", "SCOPE", "CHECKED", "STATUS"], [0.22, 0.36, 0.20, 0.22],
+        ["Audit ref", "Scope", "Checked", "Status"], [0.22, 0.36, 0.20, 0.22],
         [["AUD-2026-002", "Gallery 3 textiles", "210 / 240", ("pill", "In progress", "warn")],
          ["AUD-2026-001", "Store A full count", "1,512 / 1,512", ("pill", "Completed", "ok")]],
         [("stats", "Surfaces the objects never inventoried and those overdue a check (>12 months), so you can prioritise."),
@@ -1029,7 +1029,7 @@ def audit_inventory():
 def conservation_register():
     return register_page(
         "vitrine.app/dashboard/conservation", "Objects", "Conservation treatments",
-        ["TREATMENT", "OBJECT", "CONSERVATOR", "STATUS"], [0.24, 0.32, 0.24, 0.20],
+        ["Treatment", "Object", "Conservator", "Status"], [0.24, 0.32, 0.24, 0.20],
         [["CT-2026-012", "Egyptian shabti", "J. Reyes", ("pill", "Active", "warn")],
          ["CT-2026-011", "Oak chest", "M. Idris", ("pill", "Completed", "ok")],
          ["CT-2026-010", "Silk panel", "J. Reyes", ("pill", "Completed", "ok")]],
@@ -1043,7 +1043,7 @@ def conservation_register():
 def valuation_register():
     return register_page(
         "vitrine.app/dashboard/valuation", "Objects", "Valuations",
-        ["OBJECT", "BASIS", "VALUE", "VALID TO"], [0.38, 0.22, 0.20, 0.20],
+        ["Object", "Basis", "Value", "Valid to"], [0.38, 0.22, 0.20, 0.20],
         [["Turner's Thames at Sunset", "Insurance", "£1,200,000", "2027"],
          ["Egyptian shabti", "Market", "£8,500", "2026"],
          ["Roman mosaic fragment", "Replacement", "£3,200", "2028"]],
@@ -1057,7 +1057,7 @@ def valuation_register():
 def insurance_page():
     return register_page(
         "vitrine.app/dashboard/insurance", "Objects", "Insurance policies",
-        ["POLICY NO", "PROVIDER", "COVER", "STATUS"], [0.24, 0.30, 0.22, 0.24],
+        ["Policy no", "Provider", "Cover", "Status"], [0.24, 0.30, 0.22, 0.24],
         [["POL-AXA-4471", "AXA Art", "£5,000,000", ("pill", "Active", "ok")],
          ["POL-HIS-2210", "Hiscox (transit)", "£500,000", ("pill", "Renewing soon", "warn")]],
         [("add", "+ Add policy — record provider, coverage amount, excess, dates and what it covers (loans, transit, exhibitions)."),
@@ -1070,7 +1070,7 @@ def insurance_page():
 def emergency_page():
     return register_page(
         "vitrine.app/dashboard/plan", "Objects", "Emergency plans",
-        ["PLAN", "TYPE", "LAST TESTED", "STATUS"], [0.36, 0.20, 0.22, 0.22],
+        ["Plan", "Type", "Last tested", "Status"], [0.36, 0.20, 0.22, 0.22],
         [["Fire response — main store", "Fire", "Mar 2026", ("pill", "Active", "ok")],
          ["Flood plan — basement", "Flood", "not tested", ("pill", "Under review", "warn")],
          ["Theft & security", "Theft", "Jan 2026", ("pill", "Active", "ok")]],
@@ -1083,7 +1083,7 @@ def emergency_page():
 def damage_register():
     return register_page(
         "vitrine.app/dashboard/damage", "Objects", "Loss & damage reports",
-        ["OBJECT", "TYPE", "SEVERITY", "STATUS"], [0.34, 0.22, 0.22, 0.22],
+        ["Object", "Type", "Severity", "Status"], [0.34, 0.22, 0.22, 0.22],
         [["Ceramic bowl", "Accidental", ("pill", "Significant", "bad"), ("pill", "Under investigation", "warn")],
          ["Bronze figurine", "Theft", ("pill", "Total loss", "bad"), ("pill", "Claimed", "neutral")],
          ["Oil portrait", "Accidental", ("pill", "Minor", "neutral"), ("pill", "Repaired", "ok")]],
@@ -1097,7 +1097,7 @@ def damage_register():
 def disposal_page():
     return register_page(
         "vitrine.app/dashboard/disposal", "Objects", "Disposal & deaccession",
-        ["OBJECT", "METHOD", "AUTHORISED BY", "STATUS"], [0.32, 0.22, 0.24, 0.22],
+        ["Object", "Method", "Authorised by", "Status"], [0.32, 0.22, 0.24, 0.22],
         [["Duplicate print", "Transfer", "Board, May 2026", ("pill", "Completed", "ok")],
          ["Damaged frame", "Destruction", "Board, Jun 2026", ("pill", "Approved", "warn")],
          ["Surplus coin", "Sale", "pending", ("pill", "Proposed", "neutral")]],
@@ -1111,7 +1111,7 @@ def disposal_page():
 def collections_use():
     return register_page(
         "vitrine.app/dashboard/collections-use", "Objects", "Use of collections",
-        ["USE REF", "REQUESTER", "TYPE", "STATUS"], [0.22, 0.30, 0.24, 0.24],
+        ["Use ref", "Requester", "Type", "Status"], [0.22, 0.30, 0.24, 0.24],
         [["CU-2026-061", "Dr S. Patel", "Research", ("pill", "In use", "warn")],
          ["CU-2026-060", "City Museum", "Exhibition", ("pill", "Approved", "ok")],
          ["CU-2026-059", "BBC History", "Photography", ("pill", "Completed", "neutral")]],
@@ -1125,7 +1125,7 @@ def collections_use():
 def collections_review():
     return register_page(
         "vitrine.app/dashboard/collections-review", "Objects", "Collections review",
-        ["REVIEW REF", "SCOPE", "REVIEWER", "STATUS"], [0.22, 0.34, 0.22, 0.22],
+        ["Review ref", "Scope", "Reviewer", "Status"], [0.22, 0.34, 0.22, 0.22],
         [["CR-2026-002", "Numismatics rationalisation", "Curatorial team", ("pill", "In progress", "warn")],
          ["CR-2026-001", "Textiles relevance review", "Dr R. Mensah", ("pill", "Completed", "ok")]],
         [("add", "+ New review — define scope and criteria for a formal collections review against your mission."),
@@ -1138,7 +1138,7 @@ def collections_review():
 def risk_register():
     return register_page(
         "vitrine.app/dashboard/risk", "Objects", "Risk register",
-        ["RISK", "OBJECT / SCOPE", "SEVERITY", "STATUS"], [0.30, 0.28, 0.20, 0.22],
+        ["Risk", "Object / scope", "Severity", "Status"], [0.30, 0.28, 0.20, 0.22],
         [["Light damage to dyes", "Textiles gallery", ("pill", "High", "bad"), ("pill", "Open", "warn")],
          ["Pest activity", "Store A2", ("pill", "Medium", "warn"), ("pill", "Mitigated", "ok")],
          ["Mount fatigue", "Bronze figurine", ("pill", "Low", "neutral"), ("pill", "Open", "warn")]],
@@ -1181,7 +1181,7 @@ def reproduction_tab():
 def wishlist_page():
     return register_page(
         "vitrine.app/dashboard/wanted", "Objects", "Wishlist / wanted items",
-        ["ITEM", "PERIOD", "PRIORITY", "STATUS"], [0.34, 0.22, 0.22, 0.22],
+        ["Item", "Period", "Priority", "Status"], [0.34, 0.22, 0.22, 0.22],
         [["Edward III gold noble", "1350s", ("pill", "High", "bad"), ("pill", "Wanted", "neutral")],
          ["Tudor silver groat", "1540s", ("pill", "Medium", "info"), ("pill", "Wanted", "neutral")],
          ["Celtic stater", "50 BCE", ("pill", "Low", "neutral"), ("pill", "Acquired", "ok")]],
@@ -1194,7 +1194,7 @@ def wishlist_page():
 def share_links_page():
     return register_page(
         "vitrine.app/dashboard/share", "Objects", "Private share links",
-        ["LABEL", "SCOPE", "EXPIRES", "STATUS"], [0.30, 0.26, 0.22, 0.22],
+        ["Label", "Scope", "Expires", "Status"], [0.30, 0.26, 0.22, 0.22],
         [["Insurer review", "On Loan only", "in 28 days", ("pill", "Active", "ok")],
          ["Trustee preview", "All statuses", "in 5 days", ("pill", "Active", "ok")],
          ["Grant assessor", "On Display", "expired", ("pill", "Expired", "neutral")]],
@@ -1207,7 +1207,7 @@ def share_links_page():
 def trash_page():
     return register_page(
         "vitrine.app/dashboard/trash", "Objects", "Trash",
-        ["OBJECT", "DELETED", "ACTION"], [0.50, 0.28, 0.22],
+        ["Object", "Deleted", "Action"], [0.50, 0.28, 0.22],
         [["Duplicate vase record", "2 days ago", ("pill", "Restore", "ok")],
          ["Test object", "6 days ago", ("pill", "Restore", "ok")],
          ["Mis-scanned coin", "11 days ago", ("pill", "Restore", "ok")]],
@@ -1241,7 +1241,7 @@ def command_palette():
     b.append(txt(px + 42, py + 27.5, "silver", TXT, 10))
     kb, kw = _kbd(px + pw - 52, py + 19, "⌘K")
     b.append(kb)
-    b.append(txt(px + 20, py + 54, "OBJECTS", DIM, 7, family=MONO, spacing=1.5))
+    b.append(txt(px + 20, py + 54, "Objects", DIM, 7, family=MONO, spacing=0.5))
     res = [("Roman denarius — Hadrian", "117 CE"),
            ("Tudor shilling — Henry VIII", "1544")]
     ry = py + 66
@@ -1252,7 +1252,7 @@ def command_palette():
         b.append(txt(px + 38, ry, t, TXT, 9))
         b.append(txt(px + pw - 20, ry, hint, DIM, 8, anchor="end", family=MONO))
         ry += 22
-    b.append(txt(px + 20, ry + 4, "PAGES", DIM, 7, family=MONO, spacing=1.5))
+    b.append(txt(px + 20, ry + 4, "Pages", DIM, 7, family=MONO, spacing=0.5))
     ry += 16
     for t in ["Site Builder", "Analytics"]:
         b.append(emoji(px + 20, ry, "◫", 9, fill=DIM))
@@ -1372,7 +1372,7 @@ def learn_mode():
     callouts = [
         "Turn on Learn mode from the sidebar (or with the toggle shown). Your preference is remembered.",
         "With it on, every form field label across the dashboard becomes interactive.",
-        "Hover a label to see a plain-English explanation of the field and which SPECTRUM procedure it supports — like a built-in tutor while you catalogue.",
+        "Hover a label to see a plain-English explanation of the field and which Spectrum procedure it supports — like a built-in tutor while you catalogue.",
     ]
     return chrome("vitrine.app/dashboard/objects/new", h, "".join(b)), callouts
 

@@ -28,10 +28,29 @@ system Pango/Cairo/GDK-Pixbuf libraries):
 ```bash
 pip install weasyprint
 cd scripts/onboarding-pdf
+bash setup-fonts.sh                     # one-time: install the brand fonts (see below)
 python3 build_onboarding_pdf.py        # writes ../../public/vitrine-onboarding-guide.pdf
 # or pass an explicit output path:
 python3 build_onboarding_pdf.py /tmp/preview.pdf
 ```
+
+## Brand fonts
+
+The PDF uses the same fonts as the website:
+
+| Role | Font | Site source |
+|------|------|-------------|
+| Body / sans | **Geist** | `--font-geist-sans` |
+| Labels (the app's "mono") | **DM Sans** | `--font-geist-mono` |
+| Serif headings & wordmark | **Gelasio** | OFL twin of Georgia, which `font-serif` resolves to |
+
+`setup-fonts.sh` downloads these (all SIL Open Font License) and instantiates the
+static weights/italics WeasyPrint needs. The committed PDF already has them
+embedded, so this step is only required to **regenerate** the file. The build
+prints a warning if the fonts aren't found rather than silently substituting.
+
+Decorative UI glyphs in the diagrams (e.g. `⬡ ◫ ▦ ★ ◆`) come from DejaVu Sans,
+since the brand text fonts don't include those symbols.
 
 ## Notes
 
