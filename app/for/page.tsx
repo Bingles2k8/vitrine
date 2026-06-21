@@ -154,12 +154,20 @@ export default function ForIndex() {
           <p className="text-stone-400 mb-6 max-w-md mx-auto">
             Vitrine supports any type of collection. If you can describe an item, you can catalogue it — free to start.
           </p>
-          <Link
-            href="/signup"
-            className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-8 py-3 rounded transition-colors inline-block"
-          >
-            Start for free →
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono text-sm px-8 py-3 rounded transition-colors inline-block"
+            >
+              Start for free →
+            </Link>
+            <Link
+              href="/guide/essentials"
+              className="border border-white/10 hover:border-white/20 text-stone-400 hover:text-white font-mono text-sm px-8 py-3 rounded transition-colors inline-block"
+            >
+              Read the guide
+            </Link>
+          </div>
         </section>
 
       </main>

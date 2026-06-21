@@ -97,6 +97,11 @@ export default async function DiscoverPage({
           <p className="text-stone-400 text-lg font-light">
             Browse objects from public collections on Vitrine.
           </p>
+          <p className="mt-4 text-sm font-mono">
+            <a href="/guide/essentials" className="text-amber-500 hover:text-amber-400 transition-colors">
+              Want a collection like these? See how it works →
+            </a>
+          </p>
         </div>
 
         <div className="flex gap-10">
