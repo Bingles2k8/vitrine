@@ -267,7 +267,10 @@ def toc():
         ("Ticketing &amp; events", "Create events and sell tickets online"),
         ("Staff &amp; roles", "Invite your team and control access"),
         ("Compliance", "Provenance, rights, conservation &amp; loans"),
+        ("Collections-management procedures", "All 21 SPECTRUM procedures, step by step"),
+        ("Everyday tools", "Wishlist, share links, trash, export"),
         ("Settings, plans &amp; billing", "Account, subscription and storage"),
+        ("Power tips &amp; shortcuts", "Command palette, scanning, Learn mode, Discover"),
         ("Quick reference", "Statuses, checklist, FAQ &amp; support"),
     ]
     li = "".join('<li><span class="t">' + t + '</span><span class="d">— ' + d + "</span></li>"
@@ -626,7 +629,7 @@ def ch_compliance():
 
 def ch_settings():
     return chapter([
-        kicker("Chapter 10"), h2("settings", "Settings, plans &amp; billing"),
+        kicker("Chapter 12"), h2("settings", "Settings, plans &amp; billing"),
         p("Settings holds your profile, security, plan, billing history, document storage and museum "
           "details. Reach it via <strong>Settings</strong> at the bottom of the sidebar.", "lead"),
         figure(D.settings_plan, "The Plan tab. Your tier, usage bars, and the buttons to upgrade, downgrade or cancel."),
@@ -684,7 +687,7 @@ def ch_reference():
     ]
     faqhtml = "".join('<div class="faqq">' + q + '</div><div class="faqa">' + a + "</div>" for q, a in faqs)
     return chapter([
-        kicker("Chapter 11"), h2("reference", "Quick reference"),
+        kicker("Chapter 14"), h2("reference", "Quick reference"),
         h3("Status &amp; public visibility", tight=True),
         table(status_rows, ["<th>Status</th>", '<th class="c">On public site?</th>', "<th>Typical use</th>"]),
         h3("A sensible first-week checklist"),
@@ -706,13 +709,262 @@ def ch_reference():
     ])
 
 
+def ch_procedures():
+    return chapter([
+        kicker("Chapter 10"), h2("procedures", "Collections-management procedures" + plan_tag("Professional / Institution")),
+        p("This is what sets Vitrine apart from a simple catalogue: it implements all "
+          "<strong>21 SPECTRUM 5.1 procedures</strong> — the UK collections-management standard. "
+          "Each procedure has a central register in the sidebar and/or a tab on the object record, "
+          "and feeds the live compliance score from Chapter 9. Procedures 1–8 are available on "
+          "Professional; the rest on Institution and above.", "lead"),
+        callout("info", "You don't have to use every procedure. Start with the ones your accreditation or "
+                "insurer needs (entry, location, loans, condition) and grow into the rest. Every register "
+                "supports document attachments and is isolated to your museum."),
+
+        h3("Object entry &amp; intake", tight=True),
+        p("The front door of the collection: log objects the moment they arrive, before they're formally accessioned."),
+        figure(D.entry_register, "Object entry (Procedure 1) — the entry register, with barcode scanning and 'promote to object'."),
+        steps([
+            "Click <strong>Objects → Entry</strong> (or press <code>N</code>). Click <strong>+ New entry</strong>, or <strong>Scan barcode</strong> to pre-fill from a label.",
+            "Record the depositor, condition on entry, GDPR consent, terms accepted and whether a receipt was issued. An entry number (EN-YYYY-NNN) is generated.",
+            "When the object is accepted, open the entry and click <strong>Promote</strong> to create a full catalogue object with an accession number.",
+        ]),
+
+        h3("Accession &amp; accessioning"),
+        p("The formal, permanent register of everything accepted into the collection."),
+        figure(D.accession_register, "Accession register (Procedure 2) — confirm accessions only when their records are complete."),
+        steps([
+            "Open <strong>Objects → Accession register</strong>. Unconfirmed rows flag records that are still missing required data.",
+            "Open an object to complete its acquisition details (method, source, justification, value), then <strong>Confirm</strong> it into the permanent register.",
+        ]),
+
+        h3("Location &amp; movement control"),
+        p("Always know where every object is, and never lose track of a temporary move."),
+        figure(D.locations_register, "Location & movement (Procedure 3) — movement register, current locations, and overdue-move alerts."),
+        steps([
+            "Go to <strong>Objects → Locations</strong>. The <strong>Movement register</strong> lists every move; <strong>Current locations</strong> groups objects by where they are now.",
+            "Click <strong>+ Record move</strong>, choosing from/to (structured location codes), type (permanent/temporary/return) and an expected return date for temporary moves.",
+            "Overdue temporary moves are flagged at the top of the page so they're chased up.",
+        ]),
+
+        h3("Object exit"),
+        p("A controlled record of anything leaving the building — for loan, conservation, photography, research or disposal."),
+        figure(D.exits_register, "Object exit (Procedure 6) — what's out, where it went, and what's overdue back."),
+        steps([
+            "From an object, open the <strong>Exits</strong> tab and <strong>Record exit</strong>: reason, recipient, destination, transport, insurance check and (if temporary) an expected return.",
+            "The <strong>Objects → Exits</strong> register shows everything currently out; overdue returns turn red.",
+        ]),
+
+        h3("Loans in &amp; out"),
+        p("Full lifecycle for borrowing and lending, with agreements, insurance values and due-date alerts."),
+        figure(D.loans_register, "Loans (Procedures 7 & 8) — one register, filtered by direction, with due-soon alerts."),
+        steps([
+            "Open <strong>Objects → Loans</strong> and click <strong>+ New loan</strong>. Pick direction (in/out), institution, dates, purpose, insurance value and conditions.",
+            "Use the <strong>Loans in / Loans out / Overdue</strong> tabs to track status; attach the signed agreement in Documents.",
+            "For a loan out, set the object's status to <strong>On Loan</strong>; run the return workflow (with return condition) when it comes back.",
+        ]),
+
+        h3("Inventory &amp; audit exercises"),
+        p("Prove you know what you hold with planned counts and discrepancy reporting."),
+        figure(D.audit_inventory, "Inventory & audit (Procedures 4 & 21) — find never-checked and overdue objects, run audit exercises."),
+        steps([
+            "Open <strong>Objects → Audit</strong>. The stats surface objects never inventoried and those overdue (>12 months).",
+            "Click <strong>+ New audit</strong> to start an exercise (scope, method, auditor); record each object as checked, noting any discrepancy.",
+            "On completion you get a governance-ready report; export the inventory to CSV any time.",
+        ]),
+
+        h3("Condition checking"),
+        p("Dated technical assessments of an object's physical state, separate from active treatments."),
+        figure(D.condition_tab, "Condition checking (Procedure 11) — grades and notes over time, on the object's Condition tab."),
+        steps([
+            "Open an object → <strong>Condition</strong> tab → <strong>+ New condition assessment</strong>.",
+            "Record a grade (Excellent → Critical), specific issues, any handling hazard, recommendations and a next-check date.",
+        ]),
+
+        h3("Conservation &amp; collections care"),
+        p("Treatment history with before/after images and costs."),
+        figure(D.conservation_register, "Conservation (Procedure 12) — the treatments register; treatments are created from an object's Conservation tab."),
+        steps([
+            "From an object's <strong>Conservation</strong> tab, log a treatment: type, conservator, dates, materials, cost and before/after images.",
+            "The <strong>Objects → Conservation</strong> register collects every treatment with active/completed status and yearly cost totals.",
+        ]),
+
+        h3("Loss &amp; damage"),
+        p("A governance record of incidents, with severity, claims and notification tracking."),
+        figure(D.damage_register, "Loss & damage (Procedure 16) — incidents by severity, with police reference and claim outcome."),
+        steps([
+            "From an object's <strong>Damage</strong> tab, file a report: incident/discovery dates, type, severity, repair estimate and police reference.",
+            "Track it through Open → Under investigation → Repaired/Claimed/Closed, and flag when the governing body was notified.",
+        ]),
+
+        h3("Valuation"),
+        p("Current values for insurance and board reporting, with a live total collection value."),
+        figure(D.valuation_register, "Valuation (Procedure 13) — every current valuation, plus total value and unvalued count."),
+        steps([
+            "From an object's <strong>Valuation</strong> tab, add a valuation: valuer, basis (insurance / market / replacement), amount, currency and expiry.",
+            "The <strong>Objects → Valuation</strong> register aggregates the whole collection's value and lists what's still unvalued.",
+        ]),
+
+        h3("Insurance &amp; indemnity"),
+        p("Policies, what they cover, and which objects they protect."),
+        figure(D.insurance_page, "Insurance (Procedure 14) — policies with coverage, renewals and linked objects."),
+        steps([
+            "Open <strong>Objects → Insurance</strong> → <strong>+ Add policy</strong>: provider, coverage amount, excess, dates and what it covers (loans, transit, exhibitions).",
+            "Expand a policy to link the specific objects it covers, and attach the certificate. Renewals due soon are flagged.",
+        ]),
+
+        h3("Risk management"),
+        p("Identify, rate and mitigate risks to objects or the whole collection."),
+        figure(D.risk_register, "Risk register — severity, mitigation and review dates for preventive conservation and security."),
+        steps([
+            "Open <strong>Objects → Risk</strong> → <strong>+ New risk</strong> (or raise one against a specific object).",
+            "Set severity and mitigation, and a review date; track each risk through Open → Mitigated → Closed.",
+        ]),
+
+        h3("Emergency planning"),
+        p("Be ready for fire, flood or theft — with salvage priorities and incident logging."),
+        figure(D.emergency_page, "Emergency planning (Procedure 15) — response plans with ranked salvage priorities."),
+        steps([
+            "Open <strong>Objects → Plan</strong> → <strong>+ New plan</strong>: plan type, contacts and salvage-equipment location.",
+            "Add a ranked <strong>salvage-priority</strong> list — which objects to rescue first.",
+            "Log real incidents and the objects they affected in the companion <strong>Emergency</strong> (incident) register.",
+        ]),
+
+        h3("Use of collections"),
+        p("Manage research, exhibition, education and photography requests through an approval workflow."),
+        figure(D.collections_use, "Use of collections (Procedure 10) — requests from Pending through to Completed."),
+        steps([
+            "Open <strong>Objects → Collections use</strong> → <strong>+ New request</strong>: requester, organisation, type and purpose.",
+            "Approve and progress it (Pending → Approved → In use → Completed); link a reproduction request where relevant.",
+        ]),
+
+        h3("Reproduction rights"),
+        p("Decide and record requests to reproduce images of an object, checked against its copyright status."),
+        figure(D.reproduction_tab, "Reproduction rights (Procedure 19) — requests and decisions on the object's Reproduction tab."),
+        steps([
+            "On an object's <strong>Reproduction</strong> tab, click <strong>+ New reproduction request</strong>.",
+            "Record requester, intended use, the decision (Approved / Refused / Pending), terms issued and any fee.",
+        ]),
+
+        h3("Collections review"),
+        p("Formal, mission-aligned reviews of parts of the collection — the basis for responsible rationalisation."),
+        figure(D.collections_review, "Collections review (Procedure 20) — scope, criteria and disposal recommendations."),
+        steps([
+            "Open <strong>Objects → Collections review</strong> → <strong>+ New review</strong>: scope, criteria and reviewer.",
+            "Record objects assessed and any recommended for disposal, with governing-body reporting.",
+        ]),
+
+        h3("Disposal &amp; deaccession"),
+        p("A governed workflow for removing objects from the collection, with full justification."),
+        figure(D.disposal_page, "Disposal (Procedure 17) — Proposed → Approved → Completed, with governance sign-off."),
+        steps([
+            "Open <strong>Objects → Disposal</strong> → <strong>+ Propose disposal</strong>: method, reason and detailed justification.",
+            "Record governing-body approval, then complete it — the object's status becomes <strong>Deaccessioned</strong>.",
+        ]),
+        callout("note", "A <strong>deaccession-protected</strong> flag on important objects prevents accidental disposal. "
+                "Documentation planning (Procedure 9) lives in your dashboard settings rather than a register page."),
+    ])
+
+
+def ch_tools():
+    return chapter([
+        kicker("Chapter 11"), h2("tools", "Everyday tools"),
+        p("Beyond the formal procedures, a handful of tools make day-to-day work easier and safer.", "lead"),
+
+        h3("Wishlist / wanted items" + plan_tag("Community &amp; Hobbyist"), tight=True),
+        p("Track objects you'd like to acquire — and turn them into real records when you do."),
+        figure(D.wishlist_page, "The wishlist — desired acquisitions with priority, convertible to objects, optionally public."),
+        steps([
+            "Open <strong>Objects → Wishlist</strong> → <strong>+ Add item</strong>: title, period, priority and notes.",
+            "When you acquire one, click <strong>Mark acquired</strong> to convert it into a new catalogue object.",
+            "Optionally publish the wishlist on your public site so donors and sellers can see what you're seeking.",
+        ]),
+
+        h3("Private share links"),
+        p("Give insurers, trustees or grant assessors a private view of your collection without creating logins."),
+        figure(D.share_links_page, "Share links — passcode-protected, time-limited, scoped views of your collection."),
+        steps([
+            "Open <strong>Objects → Share</strong> → <strong>+ Create link</strong>. Set a passcode (4+ characters, shared separately).",
+            "Choose an expiry (1/7/30/90 days or never), an optional view limit, and scope it to certain object statuses.",
+            "Send the link and passcode; <strong>revoke</strong> it any time. Community includes 1 active link; paid plans, unlimited.",
+        ]),
+
+        h3("Trash &amp; restore"),
+        p("Deleting an object isn't instantly permanent — there's a safety net."),
+        figure(D.trash_page, "Trash — restore a deleted object, or permanently empty the bin when you're sure."),
+        steps([
+            "Deleted objects move to <strong>Objects → Trash</strong>. Click <strong>Restore</strong> to bring one back (subject to your plan's object limit).",
+            "Click <strong>Empty trash</strong> to permanently delete — this can't be undone.",
+        ]),
+
+        h3("CSV export &amp; duplicate detection"),
+        steps([
+            "<strong>CSV export:</strong> most registers (objects, locations, audit, analytics) have an <strong>Export CSV</strong> button for spreadsheets, reports and backups.",
+            "<strong>Duplicate detection:</strong> Vitrine flags likely duplicate objects (matching titles/makers) so you can merge or clean up — useful after a bulk import.",
+        ]),
+    ])
+
+
+def ch_power():
+    return chapter([
+        kicker("Chapter 13"), h2("power", "Power tips &amp; shortcuts"),
+        p("A few features that make Vitrine fast to live in — well worth learning early.", "lead"),
+
+        h3("Command palette", tight=True),
+        p("The quickest way to get anywhere or find anything."),
+        figure(D.command_palette, "The command palette — search every page and object from one box."),
+        steps([
+            "Press <code>⌘K</code> (Mac) or <code>Ctrl+K</code> (Windows) anywhere in the dashboard.",
+            "Type to search your objects (title, maker, accession number) and the dashboard's pages at once.",
+            "Use <code>↑ ↓</code> to highlight a result and <code>↵</code> to open it; <code>esc</code> closes.",
+        ]),
+
+        h3("Keyboard shortcuts"),
+        figure(D.shortcuts_help, "Press ? to see the full shortcut cheat-sheet at any time."),
+        p("Press <code>?</code> for the full list. Highlights: <code>⌘K</code> search, <code>N</code> new entry, and "
+          "two-key 'G then …' chords to jump between sections (<code>G O</code> Objects, <code>G E</code> Events, "
+          "<code>G L</code> Loans, <code>G S</code> Site Builder, <code>G P</code> Plan)."),
+
+        h3("Barcode scanning"),
+        p("Speed up intake and stock-takes with your device camera."),
+        figure(D.barcode_scanner, "The barcode scanner — auto-detects the format, with manual entry as a fallback."),
+        steps([
+            "On the <strong>Entry</strong> page (or an entry record) tap <strong>Scan barcode</strong> and point your phone/tablet at the code.",
+            "It looks the object up or pre-fills a new entry. No camera? Type the code and click <strong>Look up</strong>.",
+        ]),
+
+        h3("Learn mode"),
+        p("A built-in tutor for everyone on your team — especially new volunteers."),
+        figure(D.learn_mode, "Learn mode — hover any field label for an explanation and its SPECTRUM relevance."),
+        steps([
+            "Toggle <strong>Learn mode</strong> on from the sidebar (your choice is remembered).",
+            "Hover any form-field label to see what it's for and which SPECTRUM procedure it supports — guidance exactly where you need it.",
+        ]),
+
+        h3("Vitrine Discover"),
+        p("Opt in to a free public directory and reach new visitors."),
+        figure(D.discover_directory, "Vitrine Discover — opted-in collections, browsable by category at vitrinecms.com/discover."),
+        steps([
+            "From your dashboard, mark your collection as discoverable and pick a category.",
+            "Your museum then appears in the public Discover directory, where visitors browse by category and click through to your site. Available on every plan.",
+        ]),
+
+        h3("Dark mode, map &amp; timeline"),
+        steps([
+            "<strong>Theme:</strong> switch between System, Light and Dark from the sidebar; your preference is saved per device.",
+            "<strong>Map &amp; timeline views:</strong> where objects have location or date data, visualise the collection geographically on a map and chronologically on a timeline.",
+        ]),
+    ])
+
+
 # ── assemble ──────────────────────────────────────────────────────────────────
 def build_html():
     body = "".join([
         cover(), toc(),
         ch_orientation(), ch_getting_started(), ch_collection(), ch_public(),
         ch_customisation(), ch_analytics(), ch_ticketing(), ch_staff(),
-        ch_compliance(), ch_settings(), ch_reference(),
+        ch_compliance(), ch_procedures(), ch_tools(), ch_settings(),
+        ch_power(), ch_reference(),
     ])
     return ("<!DOCTYPE html><html><head><meta charset='utf-8'>"
             "<title>Vitrine — Onboarding &amp; User Guide</title>"

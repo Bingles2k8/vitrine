@@ -782,3 +782,636 @@ def settings_plan():
         "Cancel / Upgrade — change plan any time. Cancelling keeps access until the period ends, then reverts to free Community; nothing is deleted.",
     ]
     return chrome("vitrine.app/dashboard/settings", h, "".join(b)), callouts
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Generic register-page builder + SPECTRUM procedure / tool diagrams
+# ══════════════════════════════════════════════════════════════════════════════
+def _pill_kind(kind):
+    return {
+        "ok":      (EMER, EMERBG),
+        "warn":    (AMBERT, "#3a2f15"),
+        "bad":     ("#f87171", "#3f1d1d"),
+        "neutral": (MUT, "#292524"),
+        "info":    (BLUE, "#1e3a5f"),
+    }.get(kind, (MUT, "#292524"))
+
+
+def register_page(url, active, title, cols, widths, rows, badges,
+                  stats=None, tabs=None, add_label="+ New", extra=None, alert=None):
+    """Generic 'register' dashboard page: title, optional stat cards, optional
+    tab strip, a toolbar (add + optional extra button), and a data table whose
+    last-column cells may be ('pill', text, kind) status chips.
+
+    `badges` is a list of (anchor_key, callout_text); anchors:
+      title, stats, tabs, add, extra, row, row2.  Badges are numbered in order.
+    """
+    sb, _, _ = sidebar(active)
+    x = cx0()
+    cw = W - x - 18
+    b = [sb]
+    anchors = {}
+    b.append(txt(x, 48, title, TXT, 11, family=MONO))
+    anchors["title"] = (x + 4, 48)
+    # toolbar (right-aligned)
+    bx = W - 18
+    if add_label:
+        wadd = len(add_label) * 5.2 + 16
+        bx -= wadd
+        b.append(rect(bx, 40, wadd, 20, AMBER, rx=5))
+        b.append(txt(bx + wadd / 2, 50.5, add_label, "#1c1917", 9, anchor="middle", weight="bold", family=MONO))
+        anchors["add"] = (bx + wadd / 2, 40)
+    if extra:
+        wex = len(extra) * 5.2 + 16
+        bx -= wex + 6
+        b.append(rect(bx, 40, wex, 20, PANEL, rx=5, stroke=LINE))
+        b.append(txt(bx + wex / 2, 50.5, extra, MUT, 9, anchor="middle", family=MONO))
+        anchors["extra"] = (bx + wex / 2, 40)
+    y = 70
+    if alert:
+        b.append(rect(x, y, cw, 22, "#3a2f15", rx=6, stroke="#5a4410"))
+        b.append(emoji(x + 12, y + 11, "▲", 8, fill=AMBERT))
+        b.append(txt(x + 24, y + 11.5, alert, AMBERT, 8.5))
+        y += 30
+    if stats:
+        n = len(stats)
+        gap = 8
+        sw_ = (cw - (n - 1) * gap) / n
+        sx = x
+        for i, (lab, val) in enumerate(stats):
+            b.append(rect(sx, y, sw_, 44, PANEL, rx=7, stroke=LINE))
+            b.append(txt(sx + 10, y + 14, lab, DIM, 8))
+            b.append(txt(sx + 10, y + 31, val, TXT, 15, family=SERIF))
+            if i == 0:
+                anchors["stats"] = (sx + sw_ / 2, y)
+            sx += sw_ + gap
+        y += 54
+    if tabs:
+        tx = x
+        for i, t in enumerate(tabs):
+            wt = len(t) * 5.6 + 16
+            if i == 0:
+                b.append(line(tx + 4, y + 11, tx + wt - 4, y + 11, AMBER, 2))
+            b.append(txt(tx + wt / 2, y, t, AMBERT if i == 0 else DIM, 9, anchor="middle", family=MONO))
+            if i == 0:
+                anchors["tabs"] = (tx + wt / 2, y)
+            tx += wt
+        b.append(line(x, y + 11, x + cw, y + 11, LINE))
+        y += 22
+    # table
+    th = len(rows) * 24 + 28
+    b.append(rect(x, y, cw, th, PANEL, rx=7, stroke=LINE))
+    xs = [x + 12]
+    acc = 0
+    for wfrac in widths[:-1]:
+        acc += wfrac
+        xs.append(x + 12 + cw * acc)
+    for c, cxp in zip(cols, xs):
+        b.append(txt(cxp, y + 15, c, DIM, 7.5, family=MONO, spacing=0.6))
+    b.append(line(x, y + 26, x + cw, y + 26, LINE))
+    ry = y + 40
+    for ri, row in enumerate(rows):
+        for ci, cell in enumerate(row):
+            cxp = xs[ci]
+            if isinstance(cell, tuple) and cell[0] == "pill":
+                fg, bgc = _pill_kind(cell[2])
+                b.append(pill(cxp, ry - 7, len(cell[1]) * 5 + 14, cell[1], fg, bgc))
+            else:
+                col = TXT if ci == 0 else MUT
+                fam = SANS if ci == 0 else MONO
+                b.append(txt(cxp, ry, cell, col, 9 if ci == 0 else 8.3, family=fam))
+        if ri == 0:
+            anchors["row"] = (xs[0] + 2, ry)
+        if ri == 1:
+            anchors["row2"] = (xs[-1], ry)
+        ry += 24
+        if ri < len(rows) - 1:
+            b.append(line(x + 10, ry - 12, x + cw - 10, ry - 12, "#2a2522"))
+    # badges
+    callouts = []
+    for i, (key, text_) in enumerate(badges):
+        ax, ay = anchors.get(key, (x, y))
+        b.append(badge(str(i + 1), ax, ay))
+        callouts.append(text_)
+    return chrome(url, ry + 14, "".join(b)), callouts
+
+
+def object_tab(url, active_tab, tabs, title, subtitle, entries, add_label, badges):
+    """Per-object detail page showing one tab's content as a list of dated entries."""
+    sb, _, _ = sidebar("Objects")
+    x = cx0()
+    cw = W - x - 18
+    b = [sb]
+    anchors = {}
+    b.append(txt(x, 46, title, TXT, 11))
+    b.append(txt(x, 60, subtitle, DIM, 8.5))
+    anchors["title"] = (x + 4, 46)
+    tx = x
+    ty = 78
+    for t in tabs:
+        wt = len(t) * 5.4 + 14
+        on = t == active_tab
+        if on:
+            b.append(line(tx + 4, ty + 11, tx + wt - 4, ty + 11, AMBER, 2))
+            anchors["tab"] = (tx + wt / 2, ty)
+        b.append(txt(tx + wt / 2, ty, t, AMBERT if on else DIM, 9, anchor="middle", family=MONO))
+        tx += wt
+    b.append(line(x, ty + 11, x + cw, ty + 11, LINE))
+    ry = ty + 26
+    for i, (date, desc) in enumerate(entries):
+        b.append(rect(x, ry, cw, 30, PANEL, rx=6, stroke=LINE))
+        b.append(txt(x + 12, ry + 15, date, AMBERT, 8.5, family=MONO))
+        b.append(txt(x + 86, ry + 15, desc, MUT, 8.7))
+        if i == 0:
+            anchors["row"] = (x + 4, ry + 15)
+        ry += 36
+    b.append(rect(x, ry, cw, 22, PANEL2, rx=6, stroke=LINE, dash="4 3"))
+    b.append(txt(x + cw / 2, ry + 11, add_label, DIM, 8.5, anchor="middle"))
+    anchors["add"] = (x + cw / 2, ry)
+    callouts = []
+    for i, (key, t_) in enumerate(badges):
+        ax, ay = anchors.get(key, (x, ry))
+        b.append(badge(str(i + 1), ax, ay))
+        callouts.append(t_)
+    return chrome(url, ry + 36, "".join(b)), callouts
+
+
+# ── Group A: SPECTRUM procedure pages ─────────────────────────────────────────
+def entry_register():
+    return register_page(
+        "vitrine.app/dashboard/entry", "Objects", "Object entry",
+        ["ENTRY NO", "DEPOSITOR", "RECEIVED", "STATUS"], [0.26, 0.30, 0.22, 0.22],
+        [["EN-2026-019", "Mrs A. Okafor", "12 Jun 2026", ("pill", "Awaiting promotion", "warn")],
+         ["EN-2026-018", "Hartley estate", "9 Jun 2026", ("pill", "Promoted", "ok")],
+         ["EN-2026-017", "Field collection", "2 Jun 2026", ("pill", "Returned", "neutral")]],
+        [("extra", "Scan barcode — look up or pre-fill an entry from a printed barcode using your device camera."),
+         ("add", "+ New entry — log an object the moment it arrives: depositor, GDPR consent, condition on entry, terms and receipt."),
+         ("row", "Each entry gets an auto entry number (EN-YYYY-NNN). Open one and click Promote to turn it into a full catalogue object with an accession number."),
+         ("stats", "See what's awaiting promotion and your intake over time at a glance.")],
+        stats=[("Awaiting promotion", "6"), ("This month", "23"), ("Received YTD", "184")],
+        add_label="+ New entry", extra="Scan barcode")
+
+
+def accession_register():
+    return register_page(
+        "vitrine.app/dashboard/register", "Objects", "Accession register",
+        ["ACCESSION NO", "OBJECT", "METHOD", "STATUS"], [0.24, 0.36, 0.20, 0.20],
+        [["LCV-2026-044", "Spitalfields silk panel", "Donation", ("pill", "Confirmed", "ok")],
+         ["LCV-2026-045", "Linen sampler", "Purchase", ("pill", "Unconfirmed", "warn")],
+         ["LCV-2026-046", "Loom shuttle", "Bequest", ("pill", "Unconfirmed", "warn")]],
+        [("stats", "The register shows how many accessions are formally confirmed versus still incomplete."),
+         ("add", "Confirm selected — the register blocks confirmation until every required field is filled, keeping accessions complete."),
+         ("row", "Unconfirmed rows flag missing data; open an object to complete it, then confirm it into the permanent register.")],
+        stats=[("Unconfirmed", "14"), ("Confirmed", "2,833")],
+        add_label="Confirm selected")
+
+
+def locations_register():
+    return register_page(
+        "vitrine.app/dashboard/locations", "Objects", "Locations & movements",
+        ["OBJECT", "FROM / TO", "MOVED", "TYPE"], [0.34, 0.30, 0.18, 0.18],
+        [["Roman mosaic fragment", "Store A2 / Gallery 3", "10 Jun", ("pill", "Temporary", "warn")],
+         ["Egyptian shabti", "Gallery 3 / Store B1", "4 Jun", ("pill", "Permanent", "neutral")],
+         ["Linen sampler", "Conservation / Store A2", "1 Jun", ("pill", "Return", "ok")]],
+        [("tabs", "Two views: a Movement register (every move, filterable) and Current locations (objects grouped by where they are now)."),
+         ("add", "+ Record move — log a move with from/to location, mover, type and an expected return for temporary moves."),
+         ("row", "Locations use structured codes (building / floor / room / unit / position) so anything can be found fast.")],
+        tabs=["Movement register", "Current locations"],
+        add_label="+ Record move", extra="Export CSV",
+        alert="2 temporary moves overdue for return")
+
+
+def loans_register():
+    return register_page(
+        "vitrine.app/dashboard/loans", "Objects", "Loans register",
+        ["LOAN NO", "INSTITUTION", "DATES", "STATUS"], [0.22, 0.34, 0.24, 0.20],
+        [["LN-2026-007", "Tate Britain (out)", "Mar–Sep 2026", ("pill", "Active", "ok")],
+         ["LN-2026-006", "V&A (in)", "Jan–Jul 2026", ("pill", "Active", "ok")],
+         ["LN-2026-005", "Hunterian (out)", "ended 30 May", ("pill", "Returned", "neutral")]],
+        [("tabs", "Filter by Loans in, Loans out, or Overdue. Each loan tracks agreement, insurance value, conditions and dates."),
+         ("add", "+ New loan — record a loan in or out with the institution, dates, purpose, insurance value and conditions."),
+         ("row", "Loan numbers auto-generate (LN-YYYY-NNN); open a loan to add documents or run the return workflow."),
+         ("stats", "Headline counts of active loans in/out and any due back soon.")],
+        stats=[("Active in", "4"), ("Active out", "7"), ("Due soon", "3")],
+        tabs=["Loans in", "Loans out", "Overdue"],
+        add_label="+ New loan",
+        alert="2 loans due back within 14 days")
+
+
+def exits_register():
+    return register_page(
+        "vitrine.app/dashboard/exits", "Objects", "Object exits",
+        ["EXIT NO", "OBJECT", "DESTINATION", "STATUS"], [0.22, 0.32, 0.26, 0.20],
+        [["EX-2026-031", "Turner's Thames", "Tate Britain", ("pill", "Out (temp)", "warn")],
+         ["EX-2026-030", "Bronze figurine", "Photographer", ("pill", "Overdue", "bad")],
+         ["EX-2026-029", "Ceramic bowl", "Deaccession sale", ("pill", "Permanent", "neutral")]],
+        [("add", "+ Record exit — log anything leaving the building (loan, conservation, photography, research, disposal) with recipient, transport and insurance check."),
+         ("stats", "See what's out now and, crucially, what's overdue back."),
+         ("row", "Temporary exits track an expected return date; overdue ones turn red so nothing is forgotten.")],
+        stats=[("Out now", "12"), ("Overdue", "2"), ("This year", "45")],
+        add_label="+ Record exit")
+
+
+def audit_inventory():
+    return register_page(
+        "vitrine.app/dashboard/audit", "Objects", "Inventory & audit",
+        ["AUDIT REF", "SCOPE", "CHECKED", "STATUS"], [0.22, 0.36, 0.20, 0.22],
+        [["AUD-2026-002", "Gallery 3 textiles", "210 / 240", ("pill", "In progress", "warn")],
+         ["AUD-2026-001", "Store A full count", "1,512 / 1,512", ("pill", "Completed", "ok")]],
+        [("stats", "Surfaces the objects never inventoried and those overdue a check (>12 months), so you can prioritise."),
+         ("add", "+ New audit — start a planned inventory exercise: scope, method, auditor, and record discrepancies as you go."),
+         ("row", "Each exercise tracks objects checked vs. discrepancies and produces a governance-ready report."),
+         ("extra", "Export the inventory to CSV for spreadsheets or trustees.")],
+        stats=[("Never inventoried", "312"), ("Overdue >12mo", "148"), ("Checked YTD", "2,387")],
+        add_label="+ New audit", extra="Export CSV")
+
+
+def conservation_register():
+    return register_page(
+        "vitrine.app/dashboard/conservation", "Objects", "Conservation treatments",
+        ["TREATMENT", "OBJECT", "CONSERVATOR", "STATUS"], [0.24, 0.32, 0.24, 0.20],
+        [["CT-2026-012", "Egyptian shabti", "J. Reyes", ("pill", "Active", "warn")],
+         ["CT-2026-011", "Oak chest", "M. Idris", ("pill", "Completed", "ok")],
+         ["CT-2026-010", "Silk panel", "J. Reyes", ("pill", "Completed", "ok")]],
+        [("stats", "Live counts of active treatments, completions this year and total treatment cost."),
+         ("row", "Treatments (auto ref CT-YYYY-NNN) record type, materials, cost and before/after images. Created from an object's Conservation tab."),
+         ("title", "The register collects every treatment across the collection; open one for full detail and documents.")],
+        stats=[("Active", "8"), ("Completed (yr)", "34"), ("Total cost (yr)", "£12,480")],
+        add_label=None)
+
+
+def valuation_register():
+    return register_page(
+        "vitrine.app/dashboard/valuation", "Objects", "Valuations",
+        ["OBJECT", "BASIS", "VALUE", "VALID TO"], [0.38, 0.22, 0.20, 0.20],
+        [["Turner's Thames at Sunset", "Insurance", "£1,200,000", "2027"],
+         ["Egyptian shabti", "Market", "£8,500", "2026"],
+         ["Roman mosaic fragment", "Replacement", "£3,200", "2028"]],
+        [("stats", "Aggregates the total collection value and counts how many objects still lack a valuation."),
+         ("row", "Valuations record valuer, basis (insurance / market / replacement), amount, currency and an expiry date. Added from an object's Valuation tab."),
+         ("title", "A central view of every current valuation, useful for insurance and board reporting.")],
+        stats=[("Total collection value", "£4.2M"), ("Objects valued", "2,540"), ("Unvalued", "307")],
+        add_label=None)
+
+
+def insurance_page():
+    return register_page(
+        "vitrine.app/dashboard/insurance", "Objects", "Insurance policies",
+        ["POLICY NO", "PROVIDER", "COVER", "STATUS"], [0.24, 0.30, 0.22, 0.24],
+        [["POL-AXA-4471", "AXA Art", "£5,000,000", ("pill", "Active", "ok")],
+         ["POL-HIS-2210", "Hiscox (transit)", "£500,000", ("pill", "Renewing soon", "warn")]],
+        [("add", "+ Add policy — record provider, coverage amount, excess, dates and what it covers (loans, transit, exhibitions)."),
+         ("stats", "Track active policies, total cover and any renewals coming up."),
+         ("row", "Expand a policy to link the specific objects it covers, and attach the certificate as a document.")],
+        stats=[("Active policies", "3"), ("Total cover", "£5.0M"), ("Renewing soon", "1")],
+        add_label="+ Add policy")
+
+
+def emergency_page():
+    return register_page(
+        "vitrine.app/dashboard/plan", "Objects", "Emergency plans",
+        ["PLAN", "TYPE", "LAST TESTED", "STATUS"], [0.36, 0.20, 0.22, 0.22],
+        [["Fire response — main store", "Fire", "Mar 2026", ("pill", "Active", "ok")],
+         ["Flood plan — basement", "Flood", "not tested", ("pill", "Under review", "warn")],
+         ["Theft & security", "Theft", "Jan 2026", ("pill", "Active", "ok")]],
+        [("add", "+ New plan — write a response plan with contacts and the location of salvage equipment."),
+         ("row", "Each plan holds a ranked salvage-priority list — which objects to rescue first if the worst happens."),
+         ("title", "A companion Incident register (/emergency) logs real events and the objects they affected.")],
+        add_label="+ New plan")
+
+
+def damage_register():
+    return register_page(
+        "vitrine.app/dashboard/damage", "Objects", "Loss & damage reports",
+        ["OBJECT", "TYPE", "SEVERITY", "STATUS"], [0.34, 0.22, 0.22, 0.22],
+        [["Ceramic bowl", "Accidental", ("pill", "Significant", "bad"), ("pill", "Under investigation", "warn")],
+         ["Bronze figurine", "Theft", ("pill", "Total loss", "bad"), ("pill", "Claimed", "neutral")],
+         ["Oil portrait", "Accidental", ("pill", "Minor", "neutral"), ("pill", "Repaired", "ok")]],
+        [("stats", "Open reports, critical cases and the running repair estimate at a glance."),
+         ("row", "Reports capture incident/discovery dates, severity, police report reference and the insurance-claim outcome. Filed from an object's Damage tab."),
+         ("title", "Damage and loss is tracked for governance — including whether the governing body was notified.")],
+        stats=[("Open", "3"), ("Critical", "1"), ("Repair est.", "£3,200")],
+        add_label=None)
+
+
+def disposal_page():
+    return register_page(
+        "vitrine.app/dashboard/disposal", "Objects", "Disposal & deaccession",
+        ["OBJECT", "METHOD", "AUTHORISED BY", "STATUS"], [0.32, 0.22, 0.24, 0.22],
+        [["Duplicate print", "Transfer", "Board, May 2026", ("pill", "Completed", "ok")],
+         ["Damaged frame", "Destruction", "Board, Jun 2026", ("pill", "Approved", "warn")],
+         ["Surplus coin", "Sale", "pending", ("pill", "Proposed", "neutral")]],
+        [("add", "+ Propose disposal — start the formal workflow: method, reason, justification and governing-body approval."),
+         ("stats", "Watch items move through Proposed → Approved → Completed."),
+         ("row", "Completing a disposal sets the object's status to Deaccessioned. A deaccession-protected flag guards against accidental disposal.")],
+        stats=[("Proposed", "2"), ("Approved", "1"), ("Completed (yr)", "5")],
+        add_label="+ Propose disposal")
+
+
+def collections_use():
+    return register_page(
+        "vitrine.app/dashboard/collections-use", "Objects", "Use of collections",
+        ["USE REF", "REQUESTER", "TYPE", "STATUS"], [0.22, 0.30, 0.24, 0.24],
+        [["CU-2026-061", "Dr S. Patel", "Research", ("pill", "In use", "warn")],
+         ["CU-2026-060", "City Museum", "Exhibition", ("pill", "Approved", "ok")],
+         ["CU-2026-059", "BBC History", "Photography", ("pill", "Completed", "neutral")]],
+        [("add", "+ New request — log a request to use an object for research, exhibition, education or photography."),
+         ("stats", "See pending, in-use and completed requests at a glance."),
+         ("row", "Each request runs an approval workflow (Pending → Approved → In use → Completed) and can link to a reproduction request.")],
+        stats=[("Pending", "4"), ("In use", "2"), ("Completed (yr)", "61")],
+        add_label="+ New request")
+
+
+def collections_review():
+    return register_page(
+        "vitrine.app/dashboard/collections-review", "Objects", "Collections review",
+        ["REVIEW REF", "SCOPE", "REVIEWER", "STATUS"], [0.22, 0.34, 0.22, 0.22],
+        [["CR-2026-002", "Numismatics rationalisation", "Curatorial team", ("pill", "In progress", "warn")],
+         ["CR-2026-001", "Textiles relevance review", "Dr R. Mensah", ("pill", "Completed", "ok")]],
+        [("add", "+ New review — define scope and criteria for a formal collections review against your mission."),
+         ("row", "Reviews record how many objects were assessed and how many are recommended for disposal, with governance reporting."),
+         ("stats", "Track reviews in progress and completed.")],
+        stats=[("In progress", "1"), ("Completed", "3")],
+        add_label="+ New review")
+
+
+def risk_register():
+    return register_page(
+        "vitrine.app/dashboard/risk", "Objects", "Risk register",
+        ["RISK", "OBJECT / SCOPE", "SEVERITY", "STATUS"], [0.30, 0.28, 0.20, 0.22],
+        [["Light damage to dyes", "Textiles gallery", ("pill", "High", "bad"), ("pill", "Open", "warn")],
+         ["Pest activity", "Store A2", ("pill", "Medium", "warn"), ("pill", "Mitigated", "ok")],
+         ["Mount fatigue", "Bronze figurine", ("pill", "Low", "neutral"), ("pill", "Open", "warn")]],
+        [("stats", "Open risks, high-severity items and any risks due for review."),
+         ("row", "Risks capture severity, mitigation and a review date; raise them against a specific object or the whole collection."),
+         ("title", "The register keeps preventive-conservation and security risks visible and actively managed.")],
+        stats=[("Open", "9"), ("High severity", "2"), ("Review due", "3")],
+        add_label="+ New risk")
+
+
+def condition_tab():
+    return object_tab(
+        "vitrine.app/dashboard/objects/…", "Condition",
+        ["Details", "Condition", "Conservation", "Rights", "Documents"],
+        "Egyptian shabti — Amenhotep II", "Faience · LCV-1923-041",
+        [("2026", "Grade: Good. Minor surface abrasion to base; stable. Next check 2028."),
+         ("2022", "Grade: Good. Hairline crack monitored; no change since 2019."),
+         ("2019", "Grade: Fair. Cleaned and consolidated during conservation.")],
+        "+ New condition assessment",
+        [("tab", "The Condition tab holds dated technical assessments separate from active treatments."),
+         ("row", "Each assessment records a grade (Excellent → Critical), specific issues, hazards and a next-check date."),
+         ("add", "+ New condition assessment — log the current state so future staff can see how condition changes over time.")])
+
+
+def reproduction_tab():
+    return object_tab(
+        "vitrine.app/dashboard/objects/…", "Reproduction",
+        ["Details", "Rights", "Reproduction", "Documents"],
+        "Turner's Thames at Sunset", "Oil on canvas · LCV-1947-003",
+        [("Jun 2026", "BBC History — broadcast. Approved; terms issued, £150 fee."),
+         ("Apr 2026", "Dr S. Patel — academic print. Approved; no fee (non-commercial)."),
+         ("Feb 2026", "Greetings-card firm — commercial. Refused (in copyright).")],
+        "+ New reproduction request",
+        [("tab", "Reproduction requests sit alongside the object's Rights records."),
+         ("row", "Each request tracks requester, intended use, the decision (Approved / Refused / Pending), terms and any fee."),
+         ("add", "+ New reproduction request — decisions are checked against the object's recorded copyright status.")])
+
+
+# ── Group B: everyday tools ───────────────────────────────────────────────────
+def wishlist_page():
+    return register_page(
+        "vitrine.app/dashboard/wanted", "Objects", "Wishlist / wanted items",
+        ["ITEM", "PERIOD", "PRIORITY", "STATUS"], [0.34, 0.22, 0.22, 0.22],
+        [["Edward III gold noble", "1350s", ("pill", "High", "bad"), ("pill", "Wanted", "neutral")],
+         ["Tudor silver groat", "1540s", ("pill", "Medium", "info"), ("pill", "Wanted", "neutral")],
+         ["Celtic stater", "50 BCE", ("pill", "Low", "neutral"), ("pill", "Acquired", "ok")]],
+        [("add", "+ Add item — note something you'd like to acquire, with a priority and free-text notes."),
+         ("row", "When you get one, click Mark acquired and it converts straight into a new catalogue object."),
+         ("title", "Optional: publish your wishlist on your public site so donors and sellers can see what you're seeking. (Community & Hobbyist.)")],
+        add_label="+ Add item")
+
+
+def share_links_page():
+    return register_page(
+        "vitrine.app/dashboard/share", "Objects", "Private share links",
+        ["LABEL", "SCOPE", "EXPIRES", "STATUS"], [0.30, 0.26, 0.22, 0.22],
+        [["Insurer review", "On Loan only", "in 28 days", ("pill", "Active", "ok")],
+         ["Trustee preview", "All statuses", "in 5 days", ("pill", "Active", "ok")],
+         ["Grant assessor", "On Display", "expired", ("pill", "Expired", "neutral")]],
+        [("add", "+ Create link — generate a passcode-protected link to a private view of your collection without giving anyone a login."),
+         ("row", "Set an expiry (1/7/30/90 days or never), an optional view limit, and scope it to certain object statuses. Revoke any link instantly."),
+         ("title", "Great for insurers, trustees and grant assessors. Community includes 1 active link; paid plans, unlimited.")],
+        add_label="+ Create link")
+
+
+def trash_page():
+    return register_page(
+        "vitrine.app/dashboard/trash", "Objects", "Trash",
+        ["OBJECT", "DELETED", "ACTION"], [0.50, 0.28, 0.22],
+        [["Duplicate vase record", "2 days ago", ("pill", "Restore", "ok")],
+         ["Test object", "6 days ago", ("pill", "Restore", "ok")],
+         ["Mis-scanned coin", "11 days ago", ("pill", "Restore", "ok")]],
+        [("row", "Deleted objects land here first. Click Restore to bring one back (subject to your plan's object limit)."),
+         ("extra", "Empty trash — permanently delete everything here. Permanent deletion can't be undone."),
+         ("title", "A safety net between hiding/deleting and losing a record for good.")],
+        add_label=None, extra="Empty trash")
+
+
+# ── Group C: power-user UX ─────────────────────────────────────────────────────
+def _kbd(x, y, label, w=None):
+    w = w or (len(label) * 6.5 + 12)
+    return (rect(x, y, w, 16, "#1c1917", rx=4, stroke=LINE)
+            + txt(x + w / 2, y + 8.5, label, TXT, 8.5, anchor="middle", family=MONO)), w
+
+
+def command_palette():
+    h = 300
+    sb, _, _ = sidebar("Objects")
+    # dimmed dashboard behind
+    b = [sb]
+    b.append(rect(SIDE_W + 1, 31, W - SIDE_W - 2, h - 32, "#0c0a09", op=0.55))
+    # centered palette
+    pw = 380
+    px = (W - pw) / 2 + 30
+    py = 70
+    b.append(rect(px, py, pw, 168, "#26221f", rx=12, stroke="#4a4440", sw=1.5))
+    # search row
+    b.append(rect(px + 14, py + 14, pw - 28, 26, "#1c1917", rx=6, stroke=LINE))
+    b.append(magnifier(px + 28, py + 27, 4.5))
+    b.append(txt(px + 42, py + 27.5, "silver", TXT, 10))
+    kb, kw = _kbd(px + pw - 52, py + 19, "⌘K")
+    b.append(kb)
+    b.append(txt(px + 20, py + 54, "OBJECTS", DIM, 7, family=MONO, spacing=1.5))
+    res = [("Roman denarius — Hadrian", "117 CE"),
+           ("Tudor shilling — Henry VIII", "1544")]
+    ry = py + 66
+    for i, (t, hint) in enumerate(res):
+        if i == 0:
+            b.append(rect(px + 12, ry - 9, pw - 24, 20, "#3a3531", rx=5))
+        b.append(thumb(px + 18, ry - 7, 13))
+        b.append(txt(px + 38, ry, t, TXT, 9))
+        b.append(txt(px + pw - 20, ry, hint, DIM, 8, anchor="end", family=MONO))
+        ry += 22
+    b.append(txt(px + 20, ry + 4, "PAGES", DIM, 7, family=MONO, spacing=1.5))
+    ry += 16
+    for t in ["Site Builder", "Analytics"]:
+        b.append(emoji(px + 20, ry, "◫", 9, fill=DIM))
+        b.append(txt(px + 38, ry, t, MUT, 9))
+        ry += 20
+    b.append(line(px, py + 168 - 22, px + pw, py + 168 - 22, LINE))
+    b.append(txt(px + 16, py + 168 - 11, "↵  open      ↑↓  navigate      esc  close", DIM, 7.5, family=MONO))
+    b.append(badge("1", px + pw - 52 + kw / 2, py + 19))
+    b.append(badge("2", px + 28, py + 27))
+    b.append(badge("3", px + 12, py + 57))
+    callouts = [
+        "Open from anywhere with ⌘K (Mac) or Ctrl+K (Windows) — the fastest way to move around Vitrine.",
+        "Type to search both your objects (by title, maker or accession number) and the dashboard's pages at once.",
+        "Use ↑ ↓ to highlight a result and ↵ to jump straight to it; esc closes. No mouse needed.",
+    ]
+    return chrome("vitrine.app/dashboard", h, "".join(b)), callouts
+
+
+def shortcuts_help():
+    h = 250
+    sb, _, _ = sidebar("Objects")
+    b = [sb]
+    b.append(rect(SIDE_W + 1, 31, W - SIDE_W - 2, h - 32, "#0c0a09", op=0.5))
+    pw = 400
+    px = (W - pw) / 2 + 30
+    py = 56
+    ph = 168
+    b.append(rect(px, py, pw, ph, "#26221f", rx=12, stroke="#4a4440", sw=1.5))
+    b.append(txt(px + 18, py + 20, "Keyboard shortcuts", TXT, 12, family=SERIF, italic=True))
+    b.append(txt(px + pw - 18, py + 20, "?", DIM, 11, anchor="end", family=MONO))
+    rows = [("⌘K", "Search / command palette"), ("?", "Show this help"),
+            ("N", "New entry"), ("G O", "Go to Objects"),
+            ("G E", "Go to Events"), ("G L", "Go to Loans"),
+            ("G S", "Go to Site Builder"), ("G P", "Go to Plan")]
+    colx = [px + 18, px + pw / 2 + 6]
+    rowy = py + 42
+    for i, (keys, desc) in enumerate(rows):
+        cx = colx[i % 2]
+        yy = rowy + (i // 2) * 30
+        kx = cx
+        for k in keys.split(" "):
+            kb, kw = _kbd(kx, yy - 8, k)
+            b.append(kb)
+            kx += kw + 4
+        b.append(txt(cx + 56, yy, desc, MUT, 8.7))
+    b.append(badge("1", px + pw - 18, py + 20))
+    b.append(badge("2", colx[0] + 14, rowy + 60))
+    callouts = [
+        "Press ? at any time to open this cheat-sheet of keyboard shortcuts.",
+        "Two-key 'G then …' chords jump between sections (G O = Objects, G E = Events, and so on); N starts a new entry.",
+    ]
+    return chrome("vitrine.app/dashboard", h, "".join(b)), callouts
+
+
+def barcode_scanner():
+    h = 250
+    sb, _, _ = sidebar("Objects")
+    b = [sb]
+    b.append(rect(SIDE_W + 1, 31, W - SIDE_W - 2, h - 32, "#0c0a09", op=0.5))
+    pw = 320
+    px = (W - pw) / 2 + 30
+    py = 52
+    b.append(rect(px, py, pw, 176, "#26221f", rx=12, stroke="#4a4440", sw=1.5))
+    b.append(txt(px + pw / 2, py + 18, "Scan barcode", TXT, 11, anchor="middle", family=MONO))
+    # camera viewport
+    vx, vy, vw, vh = px + 24, py + 32, pw - 48, 88
+    b.append(rect(vx, vy, vw, vh, "#0c0a09", rx=8, stroke=LINE))
+    br = 14
+    for cxn, cyn, dx, dy in [(vx, vy, 1, 1), (vx + vw, vy, -1, 1), (vx, vy + vh, 1, -1), (vx + vw, vy + vh, -1, -1)]:
+        b.append(line(cxn, cyn, cxn + dx * br, cyn, AMBER, 2))
+        b.append(line(cxn, cyn, cxn, cyn + dy * br, AMBER, 2))
+    b.append(line(vx + 8, vy + vh / 2, vx + vw - 8, vy + vh / 2, AMBER, 1.5, dash="2 3"))
+    b.append(txt(px + pw / 2, vy + vh + 14, "Point your camera at a barcode", DIM, 8.5, anchor="middle"))
+    # manual entry
+    b.append(rect(px + 24, py + 140, pw - 100, 20, "#1c1917", rx=5, stroke=LINE))
+    b.append(txt(px + 32, py + 150, "…or type a code manually", DIM, 8.5))
+    b.append(rect(px + pw - 70, py + 140, 46, 20, AMBER, rx=5))
+    b.append(txt(px + pw - 47, py + 150.5, "Look up", "#1c1917", 8.5, anchor="middle", weight="bold", family=MONO))
+    b.append(badge("1", vx + vw / 2, vy + 8))
+    b.append(badge("2", px + 32, py + 150))
+    callouts = [
+        "From an entry record (or the Entry page) tap Scan barcode to use your phone or tablet camera — it auto-detects the format and looks the object up.",
+        "No camera, or prefer typing? Enter the code by hand and click Look up. Either way it pre-fills or finds the matching record.",
+    ]
+    return chrome("vitrine.app/dashboard/entry", h, "".join(b)), callouts
+
+
+def learn_mode():
+    h = 236
+    sb, _, _ = sidebar("Objects")
+    x = cx0()
+    cw = W - x - 18
+    b = [sb]
+    # learn-mode toggle in a settings strip
+    b.append(txt(x, 48, "Add object", TXT, 11, family=MONO))
+    b.append(rect(W - 18 - 118, 41, 118, 18, "#2a2110", rx=9, stroke="#5a4410"))
+    b.append(f'<circle cx="{W-18-26}" cy="50" r="6" fill="{AMBER}"/>')
+    b.append(rect(W - 18 - 38, 44, 24, 12, "#5a4410", rx=6))
+    b.append(f'<circle cx="{W-18-20}" cy="50" r="5" fill="{AMBERT}"/>')
+    b.append(txt(W - 18 - 44, 50.5, "Learn mode on", AMBERT, 8.5, anchor="end", family=MONO))
+    # a field label being hovered
+    fy = 92
+    b.append(txt(x, fy, "Acquisition method", MUT, 9, family=MONO))
+    b.append(rect(x, fy + 8, cw * 0.5, 18, PANEL, rx=4, stroke=AMBER))
+    b.append(txt(x + 8, fy + 17, "Donation", TXT, 9))
+    b.append(emoji(x + cw * 0.5 - 12, fy + 17, "▼", 6, "end", DIM))
+    # tooltip bubble
+    tx, ty, tw, thh = x + 6, fy + 36, cw * 0.7, 52
+    b.append(rect(tx, ty, tw, thh, "#26221f", rx=8, stroke=AMBER, sw=1.2))
+    b.append(f'<path d="M{tx+30} {ty} L{tx+38} {ty-7} L{tx+46} {ty} Z" fill="#26221f" stroke="{AMBER}"/>')
+    b.append(txt(tx + 12, ty + 16, "Acquisition method", AMBERT, 8.5, weight="bold"))
+    b.append(txt(tx + 12, ty + 30, "How the object entered the collection.", MUT, 8))
+    b.append(txt(tx + 12, ty + 41, "Spectrum: Acquisition & Accessioning (Procedure 2).", DIM, 7.5, italic=True))
+    b.append(badge("1", W - 18 - 100, 41))
+    b.append(badge("2", x + 4, fy))
+    b.append(badge("3", tx + 6, ty + 6))
+    callouts = [
+        "Turn on Learn mode from the sidebar (or with the toggle shown). Your preference is remembered.",
+        "With it on, every form field label across the dashboard becomes interactive.",
+        "Hover a label to see a plain-English explanation of the field and which SPECTRUM procedure it supports — like a built-in tutor while you catalogue.",
+    ]
+    return chrome("vitrine.app/dashboard/objects/new", h, "".join(b)), callouts
+
+
+def discover_directory():
+    h = 240
+    b = [rect(1, 1, W - 2, h - 2, BG, rx=12, stroke=LINE, sw=1.5)]
+    b.append(rect(1, 1, W - 2, 30, BAR, rx=12))
+    b.append(rect(1, 16, W - 2, 15, BAR))
+    b.append(rect(W / 2 - 110, 8, 220, 16, "#1c1917", rx=8, stroke=LINE))
+    b.append(txt(W / 2, 16.5, "vitrinecms.com/discover", DIM, 9.5, anchor="middle", family=MONO))
+    b.append(txt(40, 54, "Discover collections", TXT, 15, italic=True, family=SERIF))
+    b.append(txt(40, 72, "Browse public museum collections on Vitrine", MUT, 9))
+    # category chips
+    chips = ["All", "Numismatics", "Textiles", "Fine art", "Natural history", "Social history"]
+    cxp = 40
+    for i, c in enumerate(chips):
+        wc = len(c) * 5.2 + 16
+        sel = i == 0
+        b.append(rect(cxp, 84, wc, 16, AMBER if sel else PANEL, rx=8, stroke=None if sel else LINE))
+        b.append(txt(cxp + wc / 2, 92, c, "#1c1917" if sel else MUT, 8, anchor="middle", family=MONO))
+        cxp += wc + 6
+    # museum cards
+    cards = [("Victoria Hamlet Collection", "Textiles", "2,847 objects"),
+             ("Matt's Coin Collection", "Numismatics", "342 objects"),
+             ("The Old Brickworks", "Social history", "1,120 objects")]
+    gw = (W - 80 - 2 * 10) / 3
+    for i, (name, cat, count) in enumerate(cards):
+        gx = 40 + i * (gw + 10)
+        b.append(rect(gx, 112, gw, 96, PANEL, rx=8, stroke=LINE))
+        b.append(rect(gx + 10, 122, gw - 20, 40, PANEL2, rx=5, stroke=LINE))
+        b.append(photo_placeholder(gx + gw / 2, 142, 22))
+        b.append(txt(gx + 10, 176, name, TXT, 8.7))
+        b.append(pill(gx + 10, 184, len(cat) * 5 + 12, cat, AMBERT, "#3a2f15"))
+        b.append(txt(gx + gw - 10, 191, count, DIM, 7.5, anchor="end", family=MONO))
+    b.append(badge("1", 40 + 6, 84))
+    b.append(badge("2", 40 + gw / 2, 112))
+    callouts = [
+        "Discover is Vitrine's public directory of opted-in collections. Turn it on from your dashboard (set a collection category) and your museum appears here for the public to find — a free way to reach new visitors.",
+        "Visitors filter by category and click any collection to open its public site. Every plan, including Community, can opt in.",
+    ]
+    return wrap(h, "".join(b)), callouts
