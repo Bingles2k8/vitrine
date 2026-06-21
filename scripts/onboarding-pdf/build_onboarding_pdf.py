@@ -54,6 +54,14 @@ def kicker(t):
     return '<div class="kicker">' + t + "</div>"
 
 
+def chead(n, id_, title, desc):
+    """Prominent dark chapter-header band, echoing the cover."""
+    return ('<div class="chead"><div class="cglow"></div><div class="cglow2"></div>'
+            '<div class="cknum">Chapter ' + str(n) + "</div>"
+            + h2(id_, title)
+            + '<div class="cdesc">' + desc + "</div></div>")
+
+
 def h3(t, tight=False):
     return '<h3 class="tight">' + t + "</h3>" if tight else "<h3>" + t + "</h3>"
 
@@ -110,18 +118,17 @@ em, .it { font-style: italic; }
 
 /* ── cover ── */
 .cover { page: cover; height: 297mm; width: 210mm; position: relative;
-  background: #1c1917; color: #f5f2ec; overflow: hidden; }
-.cover .grid { position: absolute; inset: 0;
-  background-image: linear-gradient(#ffffff0a 1px, transparent 1px),
-                    linear-gradient(90deg, #ffffff0a 1px, transparent 1px);
-  background-size: 26px 26px; }
-.cover .glow { position: absolute; width: 460px; height: 460px; border-radius: 50%;
-  background: radial-gradient(circle, #f59e0b33, transparent 70%);
-  top: -120px; right: -120px; }
+  background: #0c0a09; color: #f5f5f4; overflow: hidden; }
+.cover .glow { position: absolute; width: 620px; height: 460px; border-radius: 50%;
+  background: radial-gradient(circle, #f59e0b2e, transparent 68%);
+  top: 120px; left: 40px; }
+.cover .glow2 { position: absolute; width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(circle, #10b98122, transparent 70%);
+  top: -90px; right: -70px; }
 .cover .inner { position: relative; padding: 34mm 26mm; height: 100%;
   display: flex; flex-direction: column; }
-.cover .wm { font-family: "Liberation Serif"; font-style: italic; font-size: 30pt; color: #fbbf24; }
-.cover .wm span { color: #f5f2ec; }
+.cover .wm { font-family: "Liberation Serif"; font-style: italic; font-size: 30pt; color: #f5f5f4; }
+.cover .wm span { color: #f59e0b; }
 .cover .eyebrow { margin-top: 60mm; font-family: "DejaVu Sans Mono"; font-size: 9pt;
   letter-spacing: 3px; text-transform: uppercase; color: #a8a29e; }
 .cover h1 { font-size: 40pt; line-height: 1.06; color: #f5f2ec; margin: 8mm 0 0; }
@@ -151,11 +158,33 @@ em, .it { font-style: italic; }
 .chapter { break-before: page; }
 .kicker { font-family: "DejaVu Sans Mono"; font-size: 7.5pt; letter-spacing: 2.5px;
   text-transform: uppercase; color: #f59e0b; margin: 0 0 1mm; }
-h2 { font-size: 18pt; margin: 0 0 3mm; padding-bottom: 2mm; border-bottom: 2px solid #1c1917;
-  line-height: 1.1; }
+
+/* Prominent chapter-header band (matches the cover's dark, glowing identity) */
+.chead { background: #0c0a09; border-radius: 14px; padding: 13mm 12mm 11mm;
+  margin: 0 0 7mm; position: relative; overflow: hidden; break-after: avoid; }
+.chead .cglow { position: absolute; width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, #f59e0b30, transparent 70%); top: -130px; right: -90px; }
+.chead .cglow2 { position: absolute; width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, #10b98118, transparent 70%); bottom: -120px; left: -40px; }
+.chead .cknum { font-family: "DejaVu Sans Mono"; font-size: 8pt; letter-spacing: 3px;
+  text-transform: uppercase; color: #f59e0b; margin: 0 0 3mm; position: relative; }
+.chead h2 { font-family: "Liberation Serif", serif; font-style: italic; font-size: 27pt;
+  color: #f5f5f4; border: 0; margin: 0; padding: 0; line-height: 1.04; position: relative; }
+.chead .mono { font-style: normal; font-size: 8.5pt; vertical-align: middle;
+  background: #2a2110; border: 1px solid #5a4410; color: #fbbf24; }
+.chead .cdesc { color: #a8a29e; font-weight: 300; font-size: 10.5pt; line-height: 1.5;
+  margin: 3.5mm 0 0; position: relative; max-width: 150mm; }
+
+h2 { font-size: 18pt; margin: 0 0 3mm; line-height: 1.1; }
 h2 .mono { vertical-align: middle; }
-h3 { font-size: 12.2pt; margin: 6mm 0 2mm; color: #1c1917; }
+h3 { font-size: 12.2pt; margin: 6mm 0 2mm; color: #1c1917; break-after: avoid; }
 h3.tight { margin-top: 4mm; }
+
+/* Page-break discipline */
+p { orphans: 2; widows: 2; }
+figure.fig, table, .cb, .cards, .card, .endnote, ol.legend, ol.steps > li,
+.faqq, .faqa { break-inside: avoid; }
+.faqq { break-after: avoid; }
 p { margin: 0 0 2.6mm; }
 .lead { font-size: 10.4pt; color: #44403c; margin-bottom: 4mm; }
 a { color: #b45309; text-decoration: none; }
@@ -240,7 +269,7 @@ def cover():
              "QR labels", "Document storage"]
     chiphtml = "".join('<span class="chip">' + c + "</span>" for c in chips)
     return (
-        '<section class="cover"><div class="grid"></div><div class="glow"></div>'
+        '<section class="cover"><div class="glow"></div><div class="glow2"></div>'
         '<div class="inner">'
         '<div class="wm">Vitrine<span>.</span></div>'
         '<div class="eyebrow">Onboarding &amp; User Guide</div>'
@@ -308,7 +337,7 @@ def ch_orientation():
     plan_hdr = ["<th>Plan</th>", '<th class="c">Price</th>', '<th class="c">Objects</th>',
                 '<th class="c">Images / object</th>', '<th class="c">Staff</th>', "<th>Headline features</th>"]
     return chapter([
-        kicker("Chapter 1"), h2("orientation", "Orientation"),
+        chead(1, "orientation", "Orientation", "What Vitrine is, and how the dashboard is laid out."),
         p("Vitrine is an all-in-one Collection Management System (CMS) and public platform for "
           "museums and heritage collections of every size. It joins three jobs that usually need "
           "three separate tools — cataloguing your collection, running your website, and selling "
@@ -341,7 +370,7 @@ def ch_getting_started():
         ["<td><strong>Settings</strong></td>", "<td>Profile, plan, billing and museum details</td>", '<td class="c">All</td>'],
     ]
     return chapter([
-        kicker("Chapter 2"), h2("getting-started", "Getting started"),
+        chead(2, "getting-started", "Getting started", "Create your account and set up your museum in minutes."),
         p("Two short tasks stand between you and a live museum site: create an account, then run the "
           "three-step setup wizard.", "lead"),
         h3("Create your account", tight=True),
@@ -377,7 +406,7 @@ def ch_collection():
         ['<td><span class="tag t-hide">Deaccessioned</span></td>', "<td>Permanently left the collection; kept in your archive view</td>", '<td class="c">Hidden</td>'],
     ]
     return chapter([
-        kicker("Chapter 3"), h2("collection", "Your collection"),
+        chead(3, "collection", "Your collection", "Add, edit, import and organise the objects in your collection."),
         p("The Objects section is the heart of Vitrine. Every physical item gets its own record; the "
           "more detail you add, the richer your public pages become. Capacity ranges from 100 objects "
           "on Community to unlimited on Enterprise.", "lead"),
@@ -435,7 +464,7 @@ def ch_public():
         ["<td><strong>Events</strong></td>", "<td>Upcoming events with online booking</td>", '<td class="c">Professional+</td>'],
     ]
     return chapter([
-        kicker("Chapter 4"), h2("public", "Your public website"),
+        chead(4, "public", "Your public website", "Publish your collection online — live from day one."),
         p("Every account has a live public site at <code>yourslug.vitrine.app</code> from the moment you "
           "sign up — nothing to switch on. It's fast, mobile-optimised and accessible out of the box.", "lead"),
         figure(D.public_site, "Your public site. On Professional+ it's a full multi-page website with About, Visit and Events."),
@@ -457,7 +486,7 @@ def ch_public():
 
 def ch_customisation():
     return chapter([
-        kicker("Chapter 5"), h2("customisation", "Customisation &amp; Site Builder"),
+        chead(5, "customisation", "Customisation &amp; Site Builder", "Make your public site look and feel like yours — no code."),
         p("The Site Builder is where your site becomes yours — logo, colours, template, homepage text, "
           "featured objects and (on Professional+) full About and Visit pages. No design skill or code "
           "needed. Changes preview live and go public only when you click <strong>Publish</strong>.", "lead"),
@@ -496,7 +525,7 @@ def ch_customisation():
 
 def ch_analytics():
     return chapter([
-        kicker("Chapter 6"), h2("analytics", "Analytics" + plan_tag("Hobbyist+")),
+        chead(6, "analytics", "Analytics" + plan_tag("Hobbyist+"), "Understand who visits your site and what they look at."),
         p("Analytics shows how people find and use your public site. All data is collected first-party by "
           "Vitrine — no third-party cookies, no Google Analytics, no consent banner on your site.", "lead"),
         figure(D.analytics, "The Analytics page. Headline numbers, a daily chart, your top objects and traffic sources."),
@@ -514,7 +543,7 @@ def ch_analytics():
 
 def ch_ticketing():
     return chapter([
-        kicker("Chapter 7"), h2("ticketing", "Ticketing &amp; events" + plan_tag("Professional+")),
+        chead(7, "ticketing", "Ticketing &amp; events" + plan_tag("Professional+"), "Create events and sell tickets directly on your own site."),
         p("Create events, manage capacity and take bookings directly on your own site — no Eventbrite. "
           "Free events work instantly; paid events use Stripe and pay out to your bank.", "lead"),
         h3("How it works, end to end", tight=True),
@@ -575,7 +604,7 @@ def ch_staff():
     perm_hdr = ["<th>Capability</th>", '<th class="c">Admin</th>', '<th class="c">Curator</th>',
                 '<th class="c">Registrar</th>', '<th class="c">Volunteer</th>']
     return chapter([
-        kicker("Chapter 8"), h2("staff", "Staff &amp; roles" + plan_tag("Professional+")),
+        chead(8, "staff", "Staff &amp; roles" + plan_tag("Professional+"), "Invite your team and control exactly who can do what."),
         p("Give each team member their own login with a role that precisely controls what they can see "
           "and do. Professional supports 10 staff; Institution and Enterprise are unlimited.", "lead"),
         figure(D.staff, "The Staff page. Each person has an individual login, a role, and an active/pending status."),
@@ -603,7 +632,7 @@ def ch_compliance():
         ["<td><strong>Loans</strong></td>", "<td>Loans</td>", "<td><strong>+ Add loan record</strong>: type (Loan in/out), institution, start/end dates, conditions. Also set Status to <strong>On Loan</strong>.</td>"],
     ]
     return chapter([
-        kicker("Chapter 9"), h2("compliance", "Compliance" + plan_tag("Professional+")),
+        chead(9, "compliance", "Compliance" + plan_tag("Professional+"), "Provenance, rights, conservation and loans — with a live score."),
         p("The Compliance section helps you build and keep the documentation responsible museum practice "
           "requires. Vitrine tracks five areas across the whole collection and gives a live score — the "
           "share of objects with complete documentation.", "lead"),
@@ -629,7 +658,7 @@ def ch_compliance():
 
 def ch_settings():
     return chapter([
-        kicker("Chapter 12"), h2("settings", "Settings, plans &amp; billing"),
+        chead(12, "settings", "Settings, plans &amp; billing", "Your account, subscription, storage and museum details."),
         p("Settings holds your profile, security, plan, billing history, document storage and museum "
           "details. Reach it via <strong>Settings</strong> at the bottom of the sidebar.", "lead"),
         figure(D.settings_plan, "The Plan tab. Your tier, usage bars, and the buttons to upgrade, downgrade or cancel."),
@@ -687,7 +716,7 @@ def ch_reference():
     ]
     faqhtml = "".join('<div class="faqq">' + q + '</div><div class="faqa">' + a + "</div>" for q, a in faqs)
     return chapter([
-        kicker("Chapter 14"), h2("reference", "Quick reference"),
+        chead(14, "reference", "Quick reference", "Statuses, a first-week checklist, FAQ and where to get help."),
         h3("Status &amp; public visibility", tight=True),
         table(status_rows, ["<th>Status</th>", '<th class="c">On public site?</th>', "<th>Typical use</th>"]),
         h3("A sensible first-week checklist"),
@@ -711,7 +740,7 @@ def ch_reference():
 
 def ch_procedures():
     return chapter([
-        kicker("Chapter 10"), h2("procedures", "Collections-management procedures" + plan_tag("Professional / Institution")),
+        chead(10, "procedures", "Collections-management procedures", "All 21 SPECTRUM 5.1 procedures, step by step." + plan_tag("Professional / Institution")),
         p("This is what sets Vitrine apart from a simple catalogue: it implements all "
           "<strong>21 SPECTRUM 5.1 procedures</strong> — the UK collections-management standard. "
           "Each procedure has a central register in the sidebar and/or a tab on the object record, "
@@ -868,7 +897,7 @@ def ch_procedures():
 
 def ch_tools():
     return chapter([
-        kicker("Chapter 11"), h2("tools", "Everyday tools"),
+        chead(11, "tools", "Everyday tools", "Wishlist, private share links, trash, export and more."),
         p("Beyond the formal procedures, a handful of tools make day-to-day work easier and safer.", "lead"),
 
         h3("Wishlist / wanted items" + plan_tag("Community &amp; Hobbyist"), tight=True),
@@ -907,7 +936,7 @@ def ch_tools():
 
 def ch_power():
     return chapter([
-        kicker("Chapter 13"), h2("power", "Power tips &amp; shortcuts"),
+        chead(13, "power", "Power tips &amp; shortcuts", "Work faster: command palette, scanning, Learn mode, Discover."),
         p("A few features that make Vitrine fast to live in — well worth learning early.", "lead"),
 
         h3("Command palette", tight=True),
