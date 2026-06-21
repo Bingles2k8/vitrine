@@ -1,9 +1,13 @@
 # Vitrine Onboarding Guide — PDF generator
 
-Generates `Vitrine-Onboarding-Guide.pdf` (committed at the repo root): a
-comprehensive, concise-reference onboarding & user guide covering every feature
-across all plans, with custom annotated UI diagrams that mirror the real
-interface.
+Generates `public/vitrine-onboarding-guide.pdf`: a comprehensive,
+concise-reference onboarding & user guide covering every feature across all
+plans, with custom annotated UI diagrams that mirror the real interface.
+
+Because it lives under `public/`, the site serves it at
+`/vitrine-onboarding-guide.pdf`. It's linked from the guide pages
+(`/guide/essentials`, `/guide/professional`), the dashboard sidebar (Help),
+the onboarding wizard, and the FAQ page.
 
 ## Files
 
@@ -24,7 +28,9 @@ system Pango/Cairo/GDK-Pixbuf libraries):
 ```bash
 pip install weasyprint
 cd scripts/onboarding-pdf
-python3 build_onboarding_pdf.py ../../Vitrine-Onboarding-Guide.pdf
+python3 build_onboarding_pdf.py        # writes ../../public/vitrine-onboarding-guide.pdf
+# or pass an explicit output path:
+python3 build_onboarding_pdf.py /tmp/preview.pdf
 ```
 
 ## Notes

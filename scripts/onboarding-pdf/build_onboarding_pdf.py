@@ -13,10 +13,15 @@ f-strings, because Python < 3.12 forbids backslashes inside f-string
 expressions (and the prose uses apostrophes/quotes freely).
 """
 import sys
+import os
 import datetime
 import vitrine_diagrams as D
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "Vitrine-Onboarding-Guide.pdf"
+# Default output: the web-served copy under /public so the site can link it at
+# /vitrine-onboarding-guide.pdf. Pass an explicit path to override.
+_DEFAULT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "..", "..", "public", "vitrine-onboarding-guide.pdf")
+OUT = sys.argv[1] if len(sys.argv) > 1 else _DEFAULT_OUT
 TODAY = datetime.date.today().strftime("%B %Y")
 
 # ── helpers ───────────────────────────────────────────────────────────────────

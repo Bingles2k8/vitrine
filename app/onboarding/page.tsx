@@ -364,6 +364,18 @@ export default function Onboarding() {
             </div>
           </div>
         )}
+
+        <p className="text-center text-xs text-stone-400 mt-10">
+          New to Vitrine?{' '}
+          <a
+            href="/guide/essentials"
+            target="_blank"
+            rel="noopener"
+            className="text-stone-600 underline underline-offset-2 hover:text-stone-900 transition-colors"
+          >
+            Read the getting-started guide →
+          </a>
+        </p>
       </div>
     </main>
   )

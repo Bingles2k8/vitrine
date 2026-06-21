@@ -18,6 +18,7 @@ export default async function EssentialsGuidePage() {
       title="How Vitrine works"
       subtitle="Everything you need to know to get started — from adding your first object to publishing your collection website."
       tierBadges={['Community', 'Hobbyist']}
+      pdfHref="/vitrine-onboarding-guide.pdf"
     />
   )
 }

@@ -43,9 +43,10 @@ interface Props {
   title: string
   subtitle: string
   tierBadges: string[]
+  pdfHref?: string
 }
 
-export default function GuideLayout({ sections, title, subtitle, tierBadges }: Props) {
+export default function GuideLayout({ sections, title, subtitle, tierBadges, pdfHref }: Props) {
   const [activeSlug, setActiveSlug] = useState(sections[0]?.slug ?? '')
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -82,6 +83,16 @@ export default function GuideLayout({ sections, title, subtitle, tierBadges }: P
           </div>
           <h1 className="font-serif text-4xl italic font-normal mb-2">{title}</h1>
           <p className="text-stone-400 font-light">{subtitle}</p>
+          {pdfHref && (
+            <a
+              href={pdfHref}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 mt-6 border border-amber-500/30 hover:bg-amber-500/10 text-amber-400 font-mono text-sm px-4 py-2 rounded transition-colors"
+            >
+              ↓ Download the full guide (PDF)
+            </a>
+          )}
         </div>
       </header>
 
