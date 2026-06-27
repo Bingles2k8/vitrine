@@ -33,14 +33,61 @@ const EMPTY_FORM = {
   last_review_date: '', next_review_date: '', notes: '',
 }
 
+interface Museum {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface EmergencyPlan {
+  id: string
+  plan_title: string
+  plan_type: string | null
+  responsible_person: string | null
+  next_review_date: string | null
+  status: string
+  notes: string | null
+}
+
+interface EmergencyEvent {
+  id: string
+  event_reference: string
+  event_type: string | null
+  event_date: string | null
+  description: string | null
+  status: string
+}
+
+interface MuseumObject {
+  id: string
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+}
+
+interface EventObjectLink {
+  event_id: string
+  object_id: string
+  objects?: MuseumObject | null
+}
+
+interface PlanDocument {
+  id: string
+  plan_id: string
+  label: string | null
+  document_type: string | null
+  file_url: string
+  file_name: string | null
+}
+
 export default function EmergencyPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [plans, setPlans] = useState<any[]>([])
-  const [events, setEvents] = useState<any[]>([])
-  const [allObjects, setAllObjects] = useState<any[]>([])
-  const [eventObjects, setEventObjects] = useState<Record<string, any[]>>({})
+  const [plans, setPlans] = useState<EmergencyPlan[]>([])
+  const [events, setEvents] = useState<EmergencyEvent[]>([])
+  const [allObjects, setAllObjects] = useState<MuseumObject[]>([])
+  const [eventObjects, setEventObjects] = useState<Record<string, EventObjectLink[]>>({})
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [objectPickerEventId, setObjectPickerEventId] = useState<string | null>(null)
@@ -53,7 +100,7 @@ export default function EmergencyPage() {
   const [eventForm, setEventForm] = useState(EMPTY_EVENT)
   const [saving, setSaving] = useState(false)
   const [savingEvent, setSavingEvent] = useState(false)
-  const [planDocs, setPlanDocs] = useState<Record<string, any[]>>({})
+  const [planDocs, setPlanDocs] = useState<Record<string, PlanDocument[]>>({})
   const [showDocForm, setShowDocForm] = useState<string | null>(null)
   const [docLabel, setDocLabel] = useState('')
   const [docType, setDocType] = useState('')
@@ -86,13 +133,13 @@ export default function EmergencyPage() {
       setEvents(evts || [])
       setAllObjects(objs || [])
       // build map: event_id → [object records]
-      const map: Record<string, any[]> = {}
+      const map: Record<string, EventObjectLink[]> = {}
       for (const link of (eoLinks || [])) {
         if (!map[link.event_id]) map[link.event_id] = []
         map[link.event_id].push(link)
       }
       setEventObjects(map)
-      const docsMap: Record<string, any[]> = {}
+      const docsMap: Record<string, PlanDocument[]> = {}
       for (const d of (eDocs || [])) {
         if (!docsMap[d.plan_id]) docsMap[d.plan_id] = []
         docsMap[d.plan_id].push(d)
@@ -109,7 +156,7 @@ export default function EmergencyPage() {
   }
 
   async function uploadEmergencyDoc(planId: string) {
-    if (!docFile) return
+    if (!docFile || !museum) return
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
     setDocError(null)
@@ -133,14 +180,14 @@ export default function EmergencyPage() {
     setShowDocForm(null); setDocUploading(false)
   }
 
-  async function deleteEmergencyDoc(doc: any) {
+  async function deleteEmergencyDoc(doc: PlanDocument) {
     await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('emergency_plan_documents').delete().eq('id', doc.id)
-    setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter((d: any) => d.id !== doc.id) }))
+    setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter(d => d.id !== doc.id) }))
   }
 
   async function addPlan() {
-    if (!form.plan_title) return
+    if (!form.plan_title || !museum) return
     setSaving(true)
     await supabase.from('emergency_plans').insert({
       ...form,
@@ -165,7 +212,7 @@ export default function EmergencyPage() {
   }
 
   async function addEvent() {
-    if (!eventForm.event_reference || !eventForm.event_date || !eventForm.description) return
+    if (!eventForm.event_reference || !eventForm.event_date || !eventForm.description || !museum) return
     setSavingEvent(true)
     await supabase.from('emergency_events').insert({
       ...eventForm,
@@ -184,6 +231,7 @@ export default function EmergencyPage() {
   }
 
   async function addObjectToEvent(eventId: string, objectId: string) {
+    if (!museum) return
     await supabase.from('emergency_event_objects').insert({ event_id: eventId, object_id: objectId, museum_id: museum.id })
     const obj = allObjects.find(o => o.id === objectId)
     if (obj) setEventObjects(m => ({ ...m, [eventId]: [...(m[eventId] || []), { event_id: eventId, object_id: objectId, objects: obj }] }))
@@ -203,7 +251,7 @@ export default function EmergencyPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/emergency" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -618,7 +666,7 @@ export default function EmergencyPage() {
                                     </div>
                                   </div>
                                 )}
-                                {(planDocs[p.id] || []).map((doc: any) => (
+                                {(planDocs[p.id] || []).map(doc => (
                                   <div key={doc.id} className="flex items-center gap-2">
                                     <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                                       className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">

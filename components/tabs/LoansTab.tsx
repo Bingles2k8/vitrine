@@ -8,39 +8,62 @@ import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+interface LoanRecord {
+  id: string
+  loan_number: string | null
+  direction: string | null
+  status: string | null
+  borrowing_institution: string | null
+  contact_name: string | null
+  contact_email: string | null
+  loan_start_date: string | null
+  loan_end_date: string | null
+  purpose: string | null
+  conditions: string | null
+  insurance_type: string | null
+  insurance_value: number | null
+  environmental_requirements: string | null
+  display_requirements: string | null
+  courier_transport_arrangements: string | null
+  condition_arrival: string | null
+  condition_return: string | null
+  notes: string | null
+}
 
 interface LoansTabProps {
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  form: Record<string, string | number | boolean | null | undefined>
+  set: (field: string, value: string | number | boolean | null) => void
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; title?: string | null; [key: string]: unknown }
+  museum: { id: string; plan: string; [key: string]: unknown }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
 export default function LoansTab({ form, set, canEdit, object, museum, supabase, logActivity }: LoansTabProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [loanHistory, setLoanHistory] = useState<any[]>([])
+  const [loanHistory, setLoanHistory] = useState<LoanRecord[]>([])
   const [loanLoaded, setLoanLoaded] = useState(false)
   const [loanForm, setLoanForm] = useState({ direction: searchParams.get('direction') === 'In' ? 'In' : 'Out', status: 'Requested', borrowing_institution: '', contact_name: '', contact_email: '', loan_start_date: '', loan_end_date: '', purpose: '', conditions: '', insurance_value: '', notes: '', agreement_reference: '', agreement_signed_date: '', lender_object_ref: '', condition_arrival: '', insurance_type: '', loan_coordinator: '', approved_by: '', borrower_address: '', borrower_phone: '', facility_report_reference: '', environmental_requirements: '', display_requirements: '', courier_transport_arrangements: '', object_location_during_loan: '' })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [selectedRecord, setSelectedRecord] = useState<LoanRecord | null>(null)
   const [endingLoanId, setEndingLoanId] = useState<string | null>(null)
   const [returnLocation, setReturnLocation] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
   const [docsLoanId, setDocsLoanId] = useState<string | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
-  const [entryRecord, setEntryRecord] = useState<any>(null)
+  const [entryRecord, setEntryRecord] = useState<{ id: string } | null>(null)
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('loans').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
-      .then(({ data }: any) => { setLoanHistory(data || []); setLoanLoaded(true) })
+      .then(({ data }: { data: LoanRecord[] | null }) => { setLoanHistory(data || []); setLoanLoaded(true) })
     supabase.from('entry_records').select('id').eq('object_id', object.id).maybeSingle()
-      .then(({ data }: any) => setEntryRecord(data))
+      .then(({ data }: { data: { id: string } | null }) => setEntryRecord(data))
   }, [object.id])
 
   async function addLoan() {
@@ -69,7 +92,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
 
   function promptEndLoan(loanId: string) {
     setEndingLoanId(loanId)
-    setReturnLocation(form.current_location || '')
+    setReturnLocation((form.current_location as string) || '')
     setReturnCondition('')
   }
 

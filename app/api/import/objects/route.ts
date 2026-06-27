@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
@@ -39,22 +40,23 @@ export async function POST(request: Request) {
       .maybeSingle()
     if (staffRecord) {
       museumId = staffRecord.museum_id
-      const m = staffRecord.museums as any
-      ownerId = m?.owner_id
+      // Supabase types the to-one join as an array, but it's a single record at runtime.
+      const m = staffRecord.museums as unknown as { owner_id: string | null; plan: string | null } | null
+      ownerId = m?.owner_id ?? null
       plan = m?.plan ?? 'community'
     }
   }
 
   if (!museumId || !ownerId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  let body: any
+  let body: unknown
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { rows } = body
+  const { rows } = body as { rows?: unknown }
   if (!Array.isArray(rows) || rows.length === 0) {
     return NextResponse.json({ error: 'No rows provided' }, { status: 400 })
   }
@@ -103,7 +105,8 @@ export async function POST(request: Request) {
 
   // Build insert records — auto-generate accession_no for any row that doesn't have one
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  const insertRows = rows.map((row: any, i: number) => ({
+  type CsvImportRow = z.infer<typeof csvImportRowSchema>
+  const insertRows = rows.map((row: CsvImportRow, i: number) => ({
     museum_id: museumId,
     owner_id: ownerId,
     created_by: user.id,
@@ -120,7 +123,7 @@ export async function POST(request: Request) {
     acquisition_source: String(row.acquired_from || row.acquisition_source || '').trim() || null,
     acquisition_value: row.purchase_price ?? null,
     condition_grade: String(row.condition || '').trim() || null,
-    status: VALID_STATUSES.includes(row.status) ? row.status : 'Entry',
+    status: row.status && VALID_STATUSES.includes(row.status) ? row.status : 'Entry',
     show_on_site: false,
     emoji: '🖼️',
   }))

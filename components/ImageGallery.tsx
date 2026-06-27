@@ -14,6 +14,12 @@ type PendingImage = {
   localUrl: string
 }
 
+type ObjectImage = {
+  id: string
+  url: string
+  is_primary: boolean
+}
+
 interface Props {
   objectId: string
   museumId: string
@@ -25,7 +31,7 @@ interface Props {
 }
 
 export default function ImageGallery({ objectId, museumId, onPrimaryChange, canEdit, imageLimit, currentPrimaryUrl, hidePrimary }: Props) {
-  const [images, setImages] = useState<any[]>([])
+  const [images, setImages] = useState<ObjectImage[]>([])
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -147,7 +153,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     e.target.value = ''
   }
 
-  async function setPrimary(image: any) {
+  async function setPrimary(image: ObjectImage) {
     const { error: e1 } = await supabase.from('object_images').update({ is_primary: false }).eq('object_id', objectId)
     if (e1) return
     const { error: e2 } = await supabase.from('object_images').update({ is_primary: true }).eq('id', image.id)
@@ -157,7 +163,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     onPrimaryChange(image.url)
   }
 
-  async function deleteImage(image: any) {
+  async function deleteImage(image: ObjectImage) {
     await deleteFromR2('object-images', image.url)
     const { error } = await supabase.from('object_images').delete().eq('id', image.id)
     if (error) return

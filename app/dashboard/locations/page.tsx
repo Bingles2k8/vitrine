@@ -12,12 +12,40 @@ const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded p
 
 const MOVE_TYPES = ['All', 'Permanent', 'Temporary', 'Return']
 
+interface MuseumRow {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface MovementRow {
+  id: string
+  object_id: string
+  moved_at: string | null
+  move_type: string | null
+  expected_return_date: string | null
+  moved_by: string | null
+  notes: string | null
+  location_name: string | null
+  objects: { id: string; title: string | null; accession_no: string | null; emoji: string | null } | null
+  locations: { name: string | null; location_code: string | null } | null
+}
+
+interface ObjectRow {
+  id: string
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+  current_location: string | null
+  status: string | null
+}
+
 function fmt(d: string | null) {
   if (!d) return '—'
   return new Date(d + 'T00:00:00').toLocaleDateString('en-GB')
 }
 
-function exportCsv(rows: any[]) {
+function exportCsv(rows: MovementRow[]) {
   const headers = ['Date', 'Object', 'Accession No.', 'Location', 'Move Type', 'Expected Return', 'Moved By', 'Notes']
   const lines = [
     headers.join(','),
@@ -41,12 +69,12 @@ function exportCsv(rows: any[]) {
 }
 
 export default function LocationsPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<MuseumRow | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [movements, setMovements] = useState<any[]>([])
-  const [objects, setObjects] = useState<any[]>([])
+  const [movements, setMovements] = useState<MovementRow[]>([])
+  const [objects, setObjects] = useState<ObjectRow[]>([])
   const [tab, setTab] = useState<'movements' | 'current'>('movements')
   const [search, setSearch] = useState('')
   const [moveTypeFilter, setMoveTypeFilter] = useState('All')
@@ -113,7 +141,7 @@ export default function LocationsPage() {
 
   // Group objects by current location for the "current" tab
   const byLocation = useMemo(() => {
-    const map = new Map<string, any[]>()
+    const map = new Map<string, ObjectRow[]>()
     for (const obj of objects) {
       const loc = obj.current_location || 'No location recorded'
       if (!map.has(loc)) map.set(loc, [])
@@ -129,7 +157,7 @@ export default function LocationsPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/locations" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -297,7 +325,7 @@ export default function LocationsPage() {
                     <div className="text-xs font-mono text-stone-400 dark:text-stone-500">{objs.length} {objs.length === 1 ? 'object' : 'objects'}</div>
                   </div>
                   <div className="divide-y divide-stone-100 dark:divide-stone-800">
-                    {objs.map((obj: any) => (
+                    {objs.map(obj => (
                       <button key={obj.id} onClick={() => router.push(`/dashboard/objects/${obj.id}`)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
                         <span>{obj.emoji || '📦'}</span>

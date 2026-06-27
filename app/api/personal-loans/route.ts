@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { parseBody, personalLoanCreateSchema } from '@/lib/validations'
 
-async function resolveMuseum(supabase: any, userId: string) {
+async function resolveMuseum(supabase: SupabaseClient, userId: string) {
   const { data: owned } = await supabase.from('museums').select('id').eq('owner_id', userId).maybeSingle()
   if (owned) return { museumId: owned.id as string, canEdit: true }
   const { data: staff } = await supabase.from('staff_members').select('museum_id, access').eq('user_id', userId).maybeSingle()

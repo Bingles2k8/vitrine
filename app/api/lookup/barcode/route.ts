@@ -35,16 +35,24 @@ function looksLikeIsbn(code: string): boolean {
   return false
 }
 
+type OpenLibraryEntry = {
+  title?: string
+  subtitle?: string | null
+  authors?: Array<{ name?: string }>
+  publish_date?: string
+  cover?: { large?: string; medium?: string; small?: string }
+}
+
 async function tryOpenLibrary(code: string): Promise<Normalised | null> {
   try {
     const isbn = stripIsbnHyphens(code)
     const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
-    const json: any = await res.json()
+    const json = (await res.json()) as Record<string, OpenLibraryEntry | undefined> | null
     const entry = json?.[`ISBN:${isbn}`]
     if (!entry?.title) return null
-    const authors = Array.isArray(entry.authors) ? entry.authors.map((a: any) => a.name).filter(Boolean).join(', ') : null
+    const authors = Array.isArray(entry.authors) ? entry.authors.map((a) => a.name).filter(Boolean).join(', ') : null
     const year = entry.publish_date ? String(entry.publish_date).match(/\d{4}/)?.[0] : null
     return {
       title: String(entry.title),
@@ -60,15 +68,22 @@ async function tryOpenLibrary(code: string): Promise<Normalised | null> {
   }
 }
 
+type MusicBrainzRelease = {
+  title?: string
+  date?: string
+  country?: string
+  'artist-credit'?: Array<{ name?: string; artist?: { name?: string } }>
+}
+
 async function tryMusicBrainz(code: string): Promise<Normalised | null> {
   try {
     const url = `https://musicbrainz.org/ws/2/release/?query=barcode:${encodeURIComponent(code)}&fmt=json&limit=1`
     const res = await fetch(url, { headers: { 'User-Agent': 'Vitrine/1.0 (support@vitrinecms.com)' }, next: { revalidate: 0 } })
     if (!res.ok) return null
-    const json: any = await res.json()
+    const json = (await res.json()) as { releases?: MusicBrainzRelease[] } | null
     const release = Array.isArray(json?.releases) ? json.releases[0] : null
     if (!release?.title) return null
-    const artist = Array.isArray(release['artist-credit']) ? release['artist-credit'].map((a: any) => a.name || a?.artist?.name).filter(Boolean).join(', ') : null
+    const artist = Array.isArray(release['artist-credit']) ? release['artist-credit'].map((a) => a.name || a?.artist?.name).filter(Boolean).join(', ') : null
     const year = release.date ? String(release.date).match(/\d{4}/)?.[0] : null
     return {
       title: String(release.title),
@@ -84,12 +99,20 @@ async function tryMusicBrainz(code: string): Promise<Normalised | null> {
   }
 }
 
+type UpcItem = {
+  title?: string
+  brand?: string | null
+  category?: string | null
+  description?: string | null
+  images?: string[]
+}
+
 async function tryUpcItemDb(code: string): Promise<Normalised | null> {
   try {
     const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
-    const json: any = await res.json()
+    const json = (await res.json()) as { items?: UpcItem[] } | null
     const item = Array.isArray(json?.items) ? json.items[0] : null
     if (!item?.title) return null
     return {

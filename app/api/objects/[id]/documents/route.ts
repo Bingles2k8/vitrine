@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { getPlan } from '@/lib/plans'
 import { documentUploadSchema, parseBody } from '@/lib/validations'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 
-async function resolveMuseum(supabase: any, userId: string) {
+async function resolveMuseum(supabase: SupabaseClient, userId: string) {
   const { data: owned } = await supabase
     .from('museums')
     .select('id, plan')

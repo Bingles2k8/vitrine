@@ -6,6 +6,49 @@ import { segments, getSegment } from '@/lib/segments'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import { MockupListView, MockupDetailView } from '@/components/SegmentMockup'
+import { NICHES } from '@/app/tools/insurance-inventory/niches'
+
+// Maps a segment to its most relevant free tool. Collector segments point at the
+// insurance inventory generator (niche-specific where a niche page exists);
+// museum/archive segments point at the condition report generator.
+const SEGMENT_INSURANCE_NICHE: Record<string, string> = {
+  'trading-card-collection-app': 'trading-cards',
+  'coin-collection-app': 'coins',
+  'vinyl-record-collection-app': 'vinyl',
+  'comic-book-collection-app': 'comics',
+  'watch-collection-app': 'watches',
+  'stamp-collection-app': 'stamps',
+  'antique-collection-app': 'antiques',
+}
+const CONDITION_REPORT_SEGMENTS = new Set([
+  'museum-collection-management-software',
+  'local-history-society-collection-app',
+  'university-archive-management',
+  'photography-archive-management',
+])
+
+function toolFor(slug: string, items: string): { href: string; anchor: string; blurb: string } {
+  if (CONDITION_REPORT_SEGMENTS.has(slug)) {
+    return {
+      href: '/tools/condition-report',
+      anchor: 'free condition report generator',
+      blurb: 'Need to record the condition of an object? Mark damage on a photo and download a formatted report with our',
+    }
+  }
+  const niche = SEGMENT_INSURANCE_NICHE[slug]
+  if (niche && NICHES[niche]) {
+    return {
+      href: `/tools/insurance-inventory/${niche}`,
+      anchor: `free ${NICHES[niche].collectionNoun} insurance inventory generator`,
+      blurb: `Documenting your ${items} for insurance? Build an itemised, photographed PDF for your insurer with our`,
+    }
+  }
+  return {
+    href: '/tools/insurance-inventory',
+    anchor: 'free insurance inventory generator',
+    blurb: `Documenting your ${items} for insurance? Build an itemised, photographed PDF for your insurer with our`,
+  }
+}
 
 export function generateStaticParams() {
   return segments.map((s) => ({ segment: s.slug }))
@@ -37,6 +80,7 @@ export default async function SegmentPage({
   if (!data) notFound()
 
   const pageUrl = `${SITE_URL}/for/${data.slug}`
+  const tool = toolFor(data.slug, data.items)
 
   const webAppSchema = {
     '@context': 'https://schema.org',
@@ -184,6 +228,19 @@ export default async function SegmentPage({
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* Related free tool */}
+        <section className="mb-16">
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-6">
+            <p className="text-stone-300 leading-relaxed">
+              {tool.blurb}{' '}
+              <Link href={tool.href} className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors">
+                {tool.anchor}
+              </Link>
+              . It runs in your browser — no account needed.
+            </p>
+          </div>
         </section>
 
         {/* Comparison table */}

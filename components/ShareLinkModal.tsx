@@ -39,7 +39,7 @@ export default function ShareLinkModal({ onClose, onCreated }: ShareLinkModalPro
     if (passcode.length < 4) { toast('Passcode must be at least 4 characters', 'error'); return }
     setSaving(true)
 
-    const body: any = {
+    const body = {
       label: label.trim() || undefined,
       passcode,
       expires_at: computeExpiresAt(),

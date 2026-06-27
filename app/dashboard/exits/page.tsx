@@ -11,11 +11,45 @@ import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/component
 
 const TEMP_REASONS = new Set(['Outgoing loan', 'Conservation', 'Photography'])
 
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface ExitObject {
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+  description: string | null
+  medium: string | null
+  physical_materials: string | null
+  artist: string | null
+  maker_name: string | null
+  object_type: string | null
+  status: string | null
+  created_at: string | null
+  production_date: string | null
+  acquisition_method: string | null
+  accession_register_confirmed: boolean | null
+}
+
+interface ExitRecord {
+  id: string
+  object_id: string | null
+  exit_number: string | null
+  exit_date: string
+  exit_reason: string | null
+  recipient_name: string | null
+  signed_receipt: boolean | null
+  expected_return_date: string | null
+  objects: ExitObject | null
+}
+
 export default function ObjectExitsPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [exits, setExits] = useState<any[]>([])
+  const [exits, setExits] = useState<ExitRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
@@ -60,7 +94,7 @@ export default function ObjectExitsPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/exits" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -86,7 +120,7 @@ export default function ObjectExitsPage() {
   const todayStr = today
   const temporary = exits.filter(e => e.expected_return_date)
   const permanent = exits.filter(e => !e.expected_return_date)
-  const overdue = temporary.filter(e => e.expected_return_date < todayStr)
+  const overdue = temporary.filter(e => e.expected_return_date && e.expected_return_date < todayStr)
 
   const mediumOptions = Array.from(new Set(exits.map(e => e.objects?.medium).filter(Boolean))).sort() as string[]
   const objectTypeOptions = Array.from(new Set(exits.map(e => e.objects?.object_type).filter(Boolean))).sort() as string[]
@@ -122,7 +156,7 @@ export default function ObjectExitsPage() {
       return 0
     })
 
-  function exitStatus(e: any) {
+  function exitStatus(e: ExitRecord) {
     if (!e.expected_return_date) return { label: 'Permanent', cls: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' }
     if (e.expected_return_date < todayStr) return { label: 'Overdue', cls: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' }
     return { label: 'Temporary', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' }

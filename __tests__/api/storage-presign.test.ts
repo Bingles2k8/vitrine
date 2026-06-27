@@ -7,7 +7,7 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 vi.mock('@/lib/r2', () => ({
   r2: {},
   r2PublicUrl: (bucket: string, path: string) => `https://public.example/${bucket}/${path}`,
-  PutObjectCommand: class { constructor(public input: any) {} },
+  PutObjectCommand: class { constructor(public input: unknown) {} },
 }))
 
 const mockGetUser = vi.fn()
@@ -22,7 +22,7 @@ vi.mock('@/lib/supabase-server', () => ({
 
 const mockGetMuseum = vi.fn()
 vi.mock('@/lib/get-museum', () => ({
-  getMuseumForUser: (...args: any[]) => mockGetMuseum(...args),
+  getMuseumForUser: (...args: unknown[]) => mockGetMuseum(...args),
 }))
 
 import { POST } from '@/app/api/storage/presign/route'
@@ -30,7 +30,7 @@ import { POST } from '@/app/api/storage/presign/route'
 const MUSEUM_ID = '11111111-1111-1111-1111-111111111111'
 const OTHER_MUSEUM = '22222222-2222-2222-2222-222222222222'
 
-function makeRequest(body: any) {
+function makeRequest(body: unknown) {
   return new Request('http://localhost/api/storage/presign', {
     method: 'POST',
     body: JSON.stringify(body),

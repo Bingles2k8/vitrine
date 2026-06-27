@@ -20,9 +20,14 @@ export default async function VerifyTicketPage({ params }: { params: Promise<{ c
 
   if (!ticket) notFound()
 
-  const order = ticket.ticket_orders as any
-  const event = order?.events as any
-  const slot = order?.event_time_slots as any
+  const order = ticket.ticket_orders as {
+    buyer_name: string | null
+    quantity: number
+    events: { title: string; start_date: string; end_date: string; location: string | null } | null
+    event_time_slots: { start_time: string; end_time: string } | null
+  } | null
+  const event = order?.events
+  const slot = order?.event_time_slots
 
   const isValid = ticket.status === 'valid'
   const isUsed = ticket.status === 'used'

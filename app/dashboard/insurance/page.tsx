@@ -31,13 +31,54 @@ const EMPTY_FORM = {
   notes: '',
 }
 
+interface Museum {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface InsurancePolicy {
+  id: string
+  policy_number: string
+  provider: string | null
+  coverage_type: string | null
+  coverage_amount: number | null
+  currency: string
+  start_date: string
+  end_date: string | null
+  renewal_date: string | null
+  status: string
+}
+
+interface MuseumObject {
+  id: string
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+}
+
+interface PolicyObjectLink {
+  policy_id: string
+  object_id: string
+  objects?: MuseumObject | null
+}
+
+interface PolicyDocument {
+  id: string
+  policy_id: string
+  label: string | null
+  document_type: string | null
+  file_url: string
+  file_name: string | null
+}
+
 export default function InsurancePage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [policies, setPolicies] = useState<any[]>([])
-  const [allObjects, setAllObjects] = useState<any[]>([])
-  const [policyObjects, setPolicyObjects] = useState<Record<string, any[]>>({})
+  const [policies, setPolicies] = useState<InsurancePolicy[]>([])
+  const [allObjects, setAllObjects] = useState<MuseumObject[]>([])
+  const [policyObjects, setPolicyObjects] = useState<Record<string, PolicyObjectLink[]>>({})
   const [expandedPolicyId, setExpandedPolicyId] = useState<string | null>(null)
   const [objectPickerPolicyId, setObjectPickerPolicyId] = useState<string | null>(null)
   const [objectSearchQ, setObjectSearchQ] = useState('')
@@ -46,7 +87,7 @@ export default function InsurancePage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [policyDocs, setPolicyDocs] = useState<Record<string, any[]>>({})
+  const [policyDocs, setPolicyDocs] = useState<Record<string, PolicyDocument[]>>({})
   const [showDocForm, setShowDocForm] = useState<string | null>(null)
   const [docLabel, setDocLabel] = useState('')
   const [docType, setDocType] = useState('')
@@ -76,13 +117,13 @@ export default function InsurancePage() {
       setStaffAccess(staffAccess)
       setPolicies(policies || [])
       setAllObjects(objs || [])
-      const map: Record<string, any[]> = {}
+      const map: Record<string, PolicyObjectLink[]> = {}
       for (const link of (poLinks || [])) {
         if (!map[link.policy_id]) map[link.policy_id] = []
         map[link.policy_id].push(link)
       }
       setPolicyObjects(map)
-      const docsMap: Record<string, any[]> = {}
+      const docsMap: Record<string, PolicyDocument[]> = {}
       for (const d of (pDocs || [])) {
         if (!docsMap[d.policy_id]) docsMap[d.policy_id] = []
         docsMap[d.policy_id].push(d)
@@ -99,7 +140,7 @@ export default function InsurancePage() {
   }
 
   async function uploadInsuranceDoc(policyId: string) {
-    if (!docFile) return
+    if (!docFile || !museum) return
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
     setDocError(null)
@@ -123,14 +164,14 @@ export default function InsurancePage() {
     setShowDocForm(null); setDocUploading(false)
   }
 
-  async function deleteInsuranceDoc(doc: any) {
+  async function deleteInsuranceDoc(doc: PolicyDocument) {
     await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('insurance_policy_documents').delete().eq('id', doc.id)
-    setPolicyDocs(m => ({ ...m, [doc.policy_id]: (m[doc.policy_id] || []).filter((d: any) => d.id !== doc.id) }))
+    setPolicyDocs(m => ({ ...m, [doc.policy_id]: (m[doc.policy_id] || []).filter(d => d.id !== doc.id) }))
   }
 
   async function addPolicy() {
-    if (!form.policy_number || !form.provider || !form.start_date) return
+    if (!form.policy_number || !form.provider || !form.start_date || !museum) return
     setSaving(true)
     await supabase.from('insurance_policies').insert({
       ...form,
@@ -157,6 +198,7 @@ export default function InsurancePage() {
   }
 
   async function addObjectToPolicy(policyId: string, objectId: string) {
+    if (!museum) return
     await supabase.from('insurance_policy_objects').insert({ policy_id: policyId, object_id: objectId, museum_id: museum.id })
     const obj = allObjects.find(o => o.id === objectId)
     if (obj) setPolicyObjects(m => ({ ...m, [policyId]: [...(m[policyId] || []), { policy_id: policyId, object_id: objectId, objects: obj }] }))
@@ -176,7 +218,7 @@ export default function InsurancePage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/insurance" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -526,7 +568,7 @@ export default function InsurancePage() {
                                       </div>
                                     </div>
                                   )}
-                                  {(policyDocs[p.id] || []).map((doc: any) => (
+                                  {(policyDocs[p.id] || []).map(doc => (
                                     <div key={doc.id} className="flex items-center gap-2">
                                       <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                                         className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">

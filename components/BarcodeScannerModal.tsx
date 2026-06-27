@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import type { IScannerControls } from '@zxing/browser'
 import { useToast } from '@/components/Toast'
 
 interface BarcodeScannerModalProps {
@@ -12,7 +13,7 @@ type ScanState = 'requesting' | 'scanning' | 'denied' | 'unsupported' | 'manual'
 
 export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScannerModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const controlsRef = useRef<any>(null)
+  const controlsRef = useRef<IScannerControls | null>(null)
   const onDetectedRef = useRef(onDetected)
   const [state, setState] = useState<ScanState>('requesting')
   const [manualCode, setManualCode] = useState('')
@@ -35,7 +36,7 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
           import('@zxing/library'),
         ])
         if (cancelled) return
-        const BarcodeFormat = (zxingLibrary as any).BarcodeFormat
+        const BarcodeFormat = zxingLibrary.BarcodeFormat
         const reader = new BrowserMultiFormatReader()
         const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
           if (cancelled) return
@@ -55,9 +56,10 @@ export default function BarcodeScannerModal({ onClose, onDetected }: BarcodeScan
         const facing = track?.getSettings?.().facingMode
         if (facing === 'environment') setMirror(false)
         setState('scanning')
-      } catch (err: any) {
+      } catch (err) {
         if (cancelled) return
-        if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        const errName = err instanceof Error ? err.name : ''
+        if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
           setState('denied')
         } else {
           setState('unsupported')

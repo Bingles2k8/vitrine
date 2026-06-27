@@ -15,7 +15,7 @@ async function fromExchangerateHost(base: string, symbols: string[]): Promise<Pr
     const url = `https://api.exchangerate.host/latest?base=${base}&symbols=${symbols.join(',')}`
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
-    const json: any = await res.json()
+    const json: { rates?: ProviderRates } | null = await res.json()
     if (!json?.rates) return null
     return json.rates as ProviderRates
   } catch {
@@ -28,7 +28,7 @@ async function fromFrankfurter(base: string, symbols: string[]): Promise<Provide
     const url = `https://api.frankfurter.app/latest?from=${base}&to=${symbols.join(',')}`
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
-    const json: any = await res.json()
+    const json: { rates?: ProviderRates } | null = await res.json()
     if (!json?.rates) return null
     return json.rates as ProviderRates
   } catch {

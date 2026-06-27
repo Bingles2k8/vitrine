@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-async function resolveMuseum(supabase: any, userId: string) {
+async function resolveMuseum(supabase: SupabaseClient, userId: string) {
   const { data: owned } = await supabase
     .from('museums').select('id').eq('owner_id', userId).maybeSingle()
   if (owned) return owned

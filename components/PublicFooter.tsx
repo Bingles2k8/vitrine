@@ -9,6 +9,7 @@ export default function PublicFooter() {
           <Link href="/about" className="hover:text-stone-300 transition-colors">About</Link>
           <Link href="/faq" className="hover:text-stone-300 transition-colors">FAQ</Link>
           <Link href="/blog" className="hover:text-stone-300 transition-colors">Blog</Link>
+          <Link href="/tools" className="hover:text-stone-300 transition-colors">Free tools</Link>
           <Link href="/discover" className="hover:text-stone-300 transition-colors">Discover</Link>
           <Link href="/guide/essentials" className="hover:text-stone-300 transition-colors">Guide</Link>
           <Link href="/for" className="hover:text-stone-300 transition-colors">Who is Vitrine for?</Link>

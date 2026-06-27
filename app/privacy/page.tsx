@@ -75,7 +75,7 @@ export default function PrivacyPage() {
               <div className="bg-stone-50 dark:bg-stone-800 rounded-lg p-4">
                 <p className="text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">Lawful basis: Consent</p>
                 <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                  If you accept analytics cookies, we use Vercel Speed Insights to collect anonymous performance data (page load times, Web Vitals). No personal information is included. You may withdraw consent at any time by clearing your browser's local storage or selecting "Essential only" if the cookie banner reappears.
+                  If you accept analytics cookies, we use Vercel Speed Insights to collect anonymous performance data (page load times, Web Vitals). No personal information is included. You may withdraw consent at any time by clearing your browser&apos;s local storage or selecting &quot;Essential only&quot; if the cookie banner reappears.
                 </p>
               </div>
             </div>

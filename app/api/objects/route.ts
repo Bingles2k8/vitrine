@@ -36,8 +36,8 @@ export async function POST(request: Request) {
       .maybeSingle()
     if (staffRecord) {
       museumId = staffRecord.museum_id
-      const m = staffRecord.museums as any
-      ownerId = m?.owner_id
+      const m = staffRecord.museums as { owner_id: string; plan: string | null } | null
+      ownerId = m?.owner_id ?? null
       plan = m?.plan ?? 'community'
     }
   }

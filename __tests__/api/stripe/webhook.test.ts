@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type Stripe from 'stripe'
 import { POST } from '@/app/api/stripe/webhook/route'
 import { stripe } from '@/lib/stripe'
 
@@ -39,13 +40,13 @@ vi.mock('@supabase/supabase-js', () => ({
 
 interface MockClientOpts {
   /** Queued return values for .maybySingle() calls, in order */
-  maybySingleResults?: Array<{ data: any; error: null }>
+  maybySingleResults?: Array<{ data: unknown; error: null }>
   /** Value returned for the tickets count query (default 0 = no existing tickets) */
   ticketCount?: number
   /** Return value for supabase.rpc() — controls slot capacity check (default true = capacity available) */
   rpcResult?: boolean
   /** If set, tickets.insert() resolves with this error instead of succeeding */
-  ticketInsertError?: any
+  ticketInsertError?: { message: string }
 }
 
 /**
@@ -55,23 +56,23 @@ interface MockClientOpts {
  * - Exposes chain.count for count queries (used by the tickets idempotency check)
  */
 function makeMockClient(
-  maybySingleResults: Array<{ data: any; error: null }> = [],
+  maybySingleResults: Array<{ data: unknown; error: null }> = [],
   opts: MockClientOpts = {}
 ) {
   const { ticketCount = 0, rpcResult = true, ticketInsertError } = opts
-  const updates: Array<{ table: string; data: any }> = []
-  const inserts: Array<{ table: string; data: any }> = []
+  const updates: Array<{ table: string; data: Record<string, unknown> }> = []
+  const inserts: Array<{ table: string; data: Record<string, unknown> | Record<string, unknown>[] }> = []
   let callIndex = 0
 
   function makeChain(table: string) {
-    const chain: any = {}
+    const chain: Record<string, unknown> = {}
     // Expose count as a plain property so `await chain` resolves with it.
     // Used by the tickets idempotency check: const { count } = await supabase.from('tickets')...
     chain.count = table === 'tickets' ? ticketCount : undefined
     chain.error = null
     chain.select = vi.fn(() => chain)
-    chain.update = vi.fn((data: any) => { updates.push({ table, data }); return chain })
-    chain.insert = vi.fn((data: any) => {
+    chain.update = vi.fn((data: Record<string, unknown>) => { updates.push({ table, data }); return chain })
+    chain.insert = vi.fn((data: Record<string, unknown> | Record<string, unknown>[]) => {
       if (table === 'tickets' && ticketInsertError) {
         // Return a plain object with an error so the handler's destructure picks it up
         return { error: ticketInsertError }
@@ -113,7 +114,7 @@ function makeRequest(event: object) {
 }
 
 /** Builds a fake Stripe subscription object */
-function makeSub(overrides: any = {}) {
+function makeSub(overrides: Record<string, unknown> = {}) {
   return {
     id: 'sub_test',
     customer: 'cus_test',
@@ -165,7 +166,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.updated',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 
@@ -182,7 +183,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.updated',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -197,7 +198,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.updated',
       data: { object: makeSub({ metadata: {} }) },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -212,7 +213,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.updated',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -228,7 +229,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -253,7 +254,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -274,7 +275,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.created',
       data: { object: makeSub({ status: 'trialing', trial_end: trialEnd }) },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -290,7 +291,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'customer.subscription.updated',
       data: { object: makeSub() },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -318,7 +319,7 @@ describe('POST /api/stripe/webhook', () => {
           customer_email: 'owner@museum.com',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -343,7 +344,7 @@ describe('POST /api/stripe/webhook', () => {
           customer_email: 'owner@museum.com',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -357,7 +358,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'invoice.payment_succeeded',
       data: { object: { customer: 'cus_test', amount_paid: 7900 } },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -370,7 +371,7 @@ describe('POST /api/stripe/webhook', () => {
     constructEvent.mockReturnValue({
       type: 'invoice.payment_succeeded',
       data: { object: { customer: 'cus_test', amount_paid: 0 } },
-    } as any)
+    } as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -392,7 +393,7 @@ describe('POST /api/stripe/webhook', () => {
     status: 'pending',
   }
 
-  function makeTicketSession(overrides: any = {}) {
+  function makeTicketSession(overrides: Record<string, unknown> = {}) {
     return {
       type: 'checkout.session.completed',
       data: {
@@ -420,7 +421,7 @@ describe('POST /api/stripe/webhook', () => {
       ],
       { ticketCount: 0, rpcResult: true }
     )
-    constructEvent.mockReturnValue(makeTicketSession() as any)
+    constructEvent.mockReturnValue(makeTicketSession() as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -428,7 +429,7 @@ describe('POST /api/stripe/webhook', () => {
     const ticketInserts = mockSupabaseClient.getInsertsFor('tickets')
     expect(ticketInserts).toHaveLength(1)
     expect(ticketInserts[0]).toHaveLength(2)
-    expect(ticketInserts[0][0]).toMatchObject({ order_id: 'order-uuid', status: 'valid' })
+    expect((ticketInserts[0] as Record<string, unknown>[])[0]).toMatchObject({ order_id: 'order-uuid', status: 'valid' })
 
     // Order marked completed
     expect(
@@ -446,7 +447,7 @@ describe('POST /api/stripe/webhook', () => {
       ],
       { ticketCount: 0, rpcResult: true }
     )
-    constructEvent.mockReturnValue(makeTicketSession() as any)
+    constructEvent.mockReturnValue(makeTicketSession() as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -464,7 +465,7 @@ describe('POST /api/stripe/webhook', () => {
       [{ data: baseOrder, error: null }],
       { ticketCount: 2 } // already generated on a previous webhook delivery
     )
-    constructEvent.mockReturnValue(makeTicketSession() as any)
+    constructEvent.mockReturnValue(makeTicketSession() as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -479,7 +480,7 @@ describe('POST /api/stripe/webhook', () => {
       [{ data: baseOrder, error: null }],
       { ticketCount: 0, rpcResult: false } // increment_slot_bookings returns false
     )
-    constructEvent.mockReturnValue(makeTicketSession() as any)
+    constructEvent.mockReturnValue(makeTicketSession() as unknown as Stripe.Event)
 
     await POST(makeRequest({}))
 
@@ -494,7 +495,7 @@ describe('POST /api/stripe/webhook', () => {
       [{ data: baseOrder, error: null }],
       { ticketCount: 0, rpcResult: true, ticketInsertError: { message: 'DB error' } }
     )
-    constructEvent.mockReturnValue(makeTicketSession() as any)
+    constructEvent.mockReturnValue(makeTicketSession() as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 
@@ -522,7 +523,7 @@ describe('POST /api/stripe/webhook', () => {
           payment_intent: 'pi_test',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 
@@ -556,7 +557,7 @@ describe('POST /api/stripe/webhook', () => {
           on_behalf_of: 'acct_foreign',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 
@@ -582,7 +583,7 @@ describe('POST /api/stripe/webhook', () => {
           on_behalf_of: 'acct_ours',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 
@@ -609,7 +610,7 @@ describe('POST /api/stripe/webhook', () => {
           payment_intent: 'pi_test',
         },
       },
-    } as any)
+    } as unknown as Stripe.Event)
 
     const res = await POST(makeRequest({}))
 

@@ -30,6 +30,19 @@ export async function generateMetadata({
   })
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+// Only show "Updated" when the revision landed on a later calendar day.
+function wasUpdated(publishedAt: string, updatedAt: string): boolean {
+  return new Date(updatedAt).toDateString() !== new Date(publishedAt).toDateString()
+}
+
 // Extract FAQ items from MDX content (## Frequently asked questions section)
 function extractFaqs(content: string): { question: string; answer: string }[] {
   const faqSection = content.match(/## Frequently asked questions[\s\S]*$/i)
@@ -60,7 +73,13 @@ export default async function BlogPost({
     description: post.description,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
-    author: { '@type': 'Organization', name: 'Vitrine', url: SITE_URL },
+    author: {
+      '@type': 'Person',
+      name: 'Matthew Bingham',
+      url: `${SITE_URL}/about`,
+      jobTitle: 'Founder',
+      worksFor: { '@type': 'Organization', name: 'Vitrine', url: SITE_URL },
+    },
     publisher: {
       '@type': 'Organization',
       name: 'Vitrine',
@@ -115,11 +134,10 @@ export default async function BlogPost({
         {/* Header */}
         <header className="mb-12">
           <p className="text-xs font-mono text-stone-600 mb-4 uppercase tracking-widest">
-            {new Date(post.publishedAt).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
+            By Matthew Bingham · {formatDate(post.publishedAt)}
+            {wasUpdated(post.publishedAt, post.updatedAt) && (
+              <> · Updated {formatDate(post.updatedAt)}</>
+            )}
           </p>
           <h1 className="font-serif text-4xl md:text-5xl italic font-normal leading-tight mb-6">
             {post.title}

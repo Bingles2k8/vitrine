@@ -16,12 +16,64 @@ const DISPOSAL_METHODS = ['Sale', 'Transfer', 'Destruction', 'Return to Owner', 
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
 const DISPOSAL_DOC_TYPES = ['Authorisation Letter', 'Governing Body Minutes', 'Transfer Agreement', 'Sale Receipt', 'Public Notice', 'Deaccession Form', 'Correspondence', 'Other']
 
+interface MuseumRow {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface DisposalObjectRow {
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+  description: string | null
+  medium: string | null
+  physical_materials: string | null
+  artist: string | null
+  maker_name: string | null
+  object_type: string | null
+  status: string | null
+  created_at: string | null
+  production_date: string | null
+  acquisition_method: string | null
+  accession_register_confirmed: boolean | null
+}
+
+interface DisposalRecordRow {
+  id: string
+  disposal_reference: string | null
+  object_id: string | null
+  disposal_method: string | null
+  disposal_reason: string | null
+  deaccession_date: string | null
+  authorised_by: string | null
+  recipient_name: string | null
+  status: string
+  objects: DisposalObjectRow | null
+}
+
+interface ObjectOption {
+  id: string
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+}
+
+interface DisposalDocRow {
+  id: string
+  disposal_id: string
+  label: string | null
+  document_type: string | null
+  file_url: string
+  file_name: string | null
+}
+
 export default function DisposalPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<MuseumRow | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [records, setRecords] = useState<any[]>([])
-  const [objects, setObjects] = useState<any[]>([])
+  const [records, setRecords] = useState<DisposalRecordRow[]>([])
+  const [objects, setObjects] = useState<ObjectOption[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -29,7 +81,7 @@ export default function DisposalPage() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [sortBy, setSortBy] = useState<SortBy>('')
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null)
-  const [recordDocs, setRecordDocs] = useState<Record<string, any[]>>({})
+  const [recordDocs, setRecordDocs] = useState<Record<string, DisposalDocRow[]>>({})
   const [showDocForm, setShowDocForm] = useState<string | null>(null)
   const [docLabel, setDocLabel] = useState('')
   const [docType, setDocType] = useState('')
@@ -65,7 +117,7 @@ export default function DisposalPage() {
       setStaffAccess(staffAccess)
       setRecords(recs || [])
       setObjects(arts || [])
-      const docsMap: Record<string, any[]> = {}
+      const docsMap: Record<string, DisposalDocRow[]> = {}
       for (const d of (dDocs || [])) {
         if (!docsMap[d.disposal_id]) docsMap[d.disposal_id] = []
         docsMap[d.disposal_id].push(d)
@@ -85,14 +137,14 @@ export default function DisposalPage() {
     if (docFile.size > 20 * 1024 * 1024) return
     setDocUploading(true)
     setPendingDocInfo({ recordId: disposalId, label: docLabel || docFile.name, fileName: docFile.name })
-    const withinQuota = await checkStorageQuota(supabase, museum.id, museum.plan, docFile.size)
+    const withinQuota = await checkStorageQuota(supabase, museum!.id, museum!.plan, docFile.size)
     if (!withinQuota) { setError('Storage limit reached for your plan'); setPendingDocInfo(null); setDocUploading(false); return }
     const ext = docFile.name.split('.').pop()
-    const path = `${museum.id}/disposal/documents/${Date.now()}.${ext}`
+    const path = `${museum!.id}/disposal/documents/${Date.now()}.${ext}`
     let publicUrl: string
     try { publicUrl = await uploadToR2('object-documents', path, docFile) } catch { setPendingDocInfo(null); setDocUploading(false); return }
     const { data: doc } = await supabase.from('disposal_record_documents').insert({
-      disposal_id: disposalId, museum_id: museum.id,
+      disposal_id: disposalId, museum_id: museum!.id,
       label: docLabel || docFile.name, document_type: docType || 'Other',
       notes: docNotes || null, file_url: publicUrl, file_name: docFile.name,
       file_size: docFile.size, mime_type: docFile.type,
@@ -104,10 +156,10 @@ export default function DisposalPage() {
     setShowDocForm(null); setDocUploading(false)
   }
 
-  async function deleteDisposalDoc(doc: any) {
+  async function deleteDisposalDoc(doc: DisposalDocRow) {
     await deleteFromR2('object-documents', doc.file_url)
     await supabase.from('disposal_record_documents').delete().eq('id', doc.id)
-    setRecordDocs(m => ({ ...m, [doc.disposal_id]: (m[doc.disposal_id] || []).filter((d: any) => d.id !== doc.id) }))
+    setRecordDocs(m => ({ ...m, [doc.disposal_id]: (m[doc.disposal_id] || []).filter(d => d.id !== doc.id) }))
   }
 
   async function addRecord() {
@@ -117,7 +169,7 @@ export default function DisposalPage() {
     const count = records.filter(r => r.disposal_reference?.startsWith(`DS-${year}-`)).length
     const ref = `DS-${year}-${String(count + 1).padStart(3, '0')}`
     const { error: err } = await supabase.from('disposal_records').insert({
-      disposal_reference: ref, museum_id: museum.id,
+      disposal_reference: ref, museum_id: museum!.id,
       object_id: form.object_id, disposal_method: form.disposal_method,
       disposal_reason: form.disposal_reason, justification: form.justification || null,
       deaccession_date: form.deaccession_date, authorised_by: form.authorised_by,
@@ -133,7 +185,7 @@ export default function DisposalPage() {
     })
     if (err) { setError(err.message); setSubmitting(false); return }
     setForm({ object_id: '', disposal_method: '', disposal_reason: '', justification: '', deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '', proceeds_amount: '', proceeds_currency: 'GBP', governing_body_approval: false, governing_body_date: '', register_annotated: false, public_notice: '', public_notice_date: '', notes: '' })
-    const { data } = await supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum!.id).order('created_at', { ascending: false })
     setRecords(data || [])
     setSubmitting(false)
   }
@@ -165,7 +217,7 @@ export default function DisposalPage() {
     </div>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/disposal" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -423,7 +475,7 @@ export default function DisposalPage() {
                                   </div>
                                 </div>
                               )}
-                              {(recordDocs[r.id] || []).map((doc: any) => (
+                              {(recordDocs[r.id] || []).map(doc => (
                                 <div key={doc.id} className="flex items-center gap-2">
                                   <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                                     className="flex-1 flex items-center gap-2 text-xs font-mono text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5 hover:bg-white dark:hover:bg-stone-900 transition-colors bg-white dark:bg-stone-900">

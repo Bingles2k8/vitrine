@@ -11,6 +11,25 @@ import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 
+interface Museum {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface PageView {
+  page_type: string
+  object_id: string | null
+  viewed_at: string
+}
+
+interface ValuationRow {
+  object_id: string
+  value: number | null
+  currency: string | null
+  valuation_date: string | null
+}
+
 interface ObjectItem {
   id: string
   title: string
@@ -162,13 +181,13 @@ function ExportModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function AnalyticsPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [objects, setObjects] = useState<ObjectItem[]>([])
   const [trashedCount, setTrashedCount] = useState(0)
-  const [pageViews, setPageViews] = useState<any[]>([])
-  const [valuations, setValuations] = useState<any[]>([])
+  const [pageViews, setPageViews] = useState<PageView[]>([])
+  const [valuations, setValuations] = useState<ValuationRow[]>([])
   const [loading, setLoading] = useState(true)
   const [showExport, setShowExport] = useState(false)
   const router = useRouter()
@@ -222,7 +241,7 @@ export default function AnalyticsPage() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
   }, [objects])
 
-  const collectionValue = useMemo(() => getCollectionValue(objects as any, valuations), [objects, valuations])
+  const collectionValue = useMemo(() => getCollectionValue(objects, valuations), [objects, valuations])
   const totalValue = collectionValue.total
   const valueCurrency = collectionValue.currency
   const totalCost = useMemo(() => objects.reduce((sum, a) => sum + (a.acquisition_value ?? 0), 0), [objects])
@@ -256,7 +275,7 @@ export default function AnalyticsPage() {
 
   const topObjects = useMemo(() => {
     const counts: Record<string, number> = {}
-    pageViews.filter(v => v.object_id).forEach(v => { counts[v.object_id] = (counts[v.object_id] || 0) + 1 })
+    pageViews.filter((v): v is PageView & { object_id: string } => !!v.object_id).forEach(v => { counts[v.object_id] = (counts[v.object_id] || 0) + 1 })
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({
       object: objects.find(a => a.id === id),
       count,
@@ -285,7 +304,7 @@ export default function AnalyticsPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).analytics) {
+  if (!getPlan(museum?.plan ?? '').analytics) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/analytics" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <DashboardTopBar title="Analytics" />
@@ -307,7 +326,7 @@ export default function AnalyticsPage() {
   }
 
   const maxMonth = Math.max(...byMonth.map(([, v]) => v), 1)
-  const plan = getPlan(museum?.plan)
+  const plan = getPlan(museum?.plan ?? '')
   const hasVisitorAnalytics = plan.visitorAnalytics  // Professional+
   const hasExport = plan.analytics                   // Hobbyist+
 

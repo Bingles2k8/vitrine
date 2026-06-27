@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { inputCls, labelCls, sectionTitle, CURRENCIES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import { getPlan } from '@/lib/plans'
@@ -10,26 +11,40 @@ import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 const VALUATION_BASES = ['Fair market value', 'Replacement value', 'Insurance value', 'Salvage value', 'Nominal', 'Other']
 
+interface Valuation {
+  id: string
+  valuation_reference: string | null
+  value: number | string
+  currency: string
+  valuation_date: string
+  method: string | null
+  purpose: string | null
+  valuer: string | null
+  valuation_basis: string | null
+  validity_date: string | null
+  notes: string | null
+}
+
 interface ValuationTabProps {
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; title: string | null }
+  museum: { id: string; plan: string }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
-  setLatestValuation: (v: any) => void
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  setLatestValuation: (v: { value: string; currency: string; valuation_date: string }) => void
+  form: Record<string, string>
+  set: (field: string, value: string) => void
   saving: boolean
 }
 
 export default function ValuationTab({ canEdit, object, museum, supabase, logActivity, setLatestValuation, form, set, saving }: ValuationTabProps) {
-  const [valuations, setValuations] = useState<any[]>([])
+  const [valuations, setValuations] = useState<Valuation[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const today = new Date().toISOString().split('T')[0]
   const emptyForm = { value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' }
   const [valuationForm, setValuationForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [selectedRecord, setSelectedRecord] = useState<Valuation | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [showRecordModal, setShowRecordModal] = useState(false)
   const { toast } = useToast()
@@ -37,7 +52,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
 
   useEffect(() => {
     supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
-      .then(({ data }: any) => { setValuations(data || []); setValuationsLoaded(true) })
+      .then(({ data }: { data: Valuation[] | null }) => { setValuations(data || []); setValuationsLoaded(true) })
   }, [object.id])
 
   async function addValuation() {
@@ -72,8 +87,8 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     setShowRecordModal(false)
   }
 
-  const fmtCurrency = (value: any, currency: string) =>
-    new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(value))
+  const fmtCurrency = (value: number | string, currency: string) =>
+    new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(String(value)))
 
   return (
     <>

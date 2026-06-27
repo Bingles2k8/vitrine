@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     if (!museum) continue
     const email = ownerEmails.get(museum.owner_id)
     if (!email) continue
-    const obj: any = loan.objects
+    const obj: { title: string | null; emoji: string | null; accession_no: string | null } | null = loan.objects
     const title = obj?.title || 'your object'
     const subject = `${obj?.emoji ? `${obj.emoji} ` : ''}${title} is overdue — lent to ${loan.borrower_name}`
     const html = `

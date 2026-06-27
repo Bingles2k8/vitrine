@@ -1,18 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+type Mock = ReturnType<typeof vi.fn>
+
 const mockGetUser = vi.fn()
 const mockFrom = vi.fn()
 vi.mock('@/lib/supabase-server', () => ({
   createServerSideClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
-    from: (...args: any[]) => mockFrom(...args),
+    from: (...args: unknown[]) => mockFrom(...args),
   })),
 }))
 
 const mockServiceFrom = vi.fn()
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
-    from: (...args: any[]) => mockServiceFrom(...args),
+    from: (...args: unknown[]) => mockServiceFrom(...args),
   })),
 }))
 
@@ -25,15 +27,15 @@ import { POST } from '@/app/api/import/objects/route'
 
 const MUSEUM_ID = '11111111-1111-4111-8111-111111111111'
 
-function makeRequest(body: any) {
+function makeRequest(body: unknown) {
   return new Request('http://localhost/api/import/objects', {
     method: 'POST',
     body: JSON.stringify(body),
   })
 }
 
-function chainMaybeSingle(result: any) {
-  const chain: any = {
+function chainMaybeSingle(result: unknown) {
+  const chain: Record<string, Mock> = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     in: vi.fn(() => chain),
@@ -44,7 +46,7 @@ function chainMaybeSingle(result: any) {
 }
 
 function chainCount(count: number) {
-  const chain: any = {
+  const chain: Record<string, Mock | undefined> = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     is: vi.fn(() => chain),
@@ -56,7 +58,7 @@ function chainCount(count: number) {
 }
 
 function chainInsertSuccess(insertedCount: number) {
-  const chain: any = {
+  const chain: Record<string, Mock> = {
     insert: vi.fn(() => chain),
     select: vi.fn(async () => ({
       data: Array.from({ length: insertedCount }, (_, i) => ({ id: `obj-${i}` })),

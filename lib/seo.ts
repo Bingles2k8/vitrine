@@ -18,7 +18,9 @@ export const rootMetadata: Metadata = {
   },
   description:
     "Vitrine gives every museum, gallery, and collector a professional collection CMS and public website. Catalog, organise, and showcase your collection. Free to start.",
-  alternates: { canonical: "/" },
+  // No root-level canonical: it cascades to any page that forgets its own
+  // metadata and silently canonicalizes that page to the homepage (deindexing it).
+  // Every page sets its canonical via buildPageMetadata.
   openGraph: {
     type: "website",
     locale: "en_GB",

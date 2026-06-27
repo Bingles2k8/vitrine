@@ -48,7 +48,14 @@ export default async function CheckoutSuccessPage({
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
   let tickets: { ticket_code: string; status: string }[] = []
-  let order: any = null
+  let order: {
+    id: string
+    buyer_name: string | null
+    buyer_email: string | null
+    quantity: number
+    status: string
+    slot_id: string | null
+  } | null = null
 
   if (session_id) {
     const { data: o } = await serviceSupabase
@@ -87,8 +94,9 @@ export default async function CheckoutSuccessPage({
             })
 
             if (slotSuccess) {
+              const orderId = order.id
               const newTickets = Array.from({ length: order.quantity }, () => ({
-                order_id: order.id,
+                order_id: orderId,
                 ticket_code: generateTicketCode(),
                 status: 'valid',
               }))

@@ -12,11 +12,37 @@ import { useToast } from '@/components/Toast'
 
 const ACQ_METHODS = ['Purchase', 'Gift', 'Bequest', 'Transfer', 'Found', 'Fieldwork', 'Exchange', 'Unknown']
 
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface RegisterObject {
+  id: string
+  title: string | null
+  accession_no: string | null
+  acquisition_date: string | null
+  acquisition_method: string | null
+  acquisition_source: string | null
+  acquisition_authorised_by: string | null
+  accession_register_confirmed: boolean
+  emoji: string | null
+  status: string | null
+  description: string | null
+  medium: string | null
+  physical_materials: string | null
+  artist: string | null
+  maker_name: string | null
+  object_type: string | null
+  created_at: string | null
+  production_date: string | null
+}
+
 export default function AccessionRegisterPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [objects, setObjects] = useState<any[]>([])
+  const [objects, setObjects] = useState<RegisterObject[]>([])
   const [loading, setLoading] = useState(true)
   const [yearFilter, setYearFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState('All')
@@ -55,7 +81,7 @@ export default function AccessionRegisterPage() {
     router.push('/login')
   }
 
-  async function toggleConfirmed(id: string, current: boolean, object: any) {
+  async function toggleConfirmed(id: string, current: boolean, object: RegisterObject) {
     if (!current) {
       const missing = []
       if (!object.acquisition_date) missing.push('Acquisition Date')
@@ -80,7 +106,7 @@ export default function AccessionRegisterPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/register" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -103,9 +129,9 @@ export default function AccessionRegisterPage() {
     )
   }
 
-  const years = Array.from(new Set(
+  const years = (Array.from(new Set(
     objects.map(a => a.acquisition_date?.slice(0, 4)).filter(Boolean)
-  )).sort((a, b) => b.localeCompare(a))
+  )) as string[]).sort((a, b) => b.localeCompare(a))
 
   const mediumOptions = Array.from(new Set(objects.map(a => a.medium).filter(Boolean))).sort() as string[]
   const objectTypeOptions = Array.from(new Set(objects.map(a => a.object_type).filter(Boolean))).sort() as string[]

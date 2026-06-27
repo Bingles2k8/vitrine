@@ -24,8 +24,13 @@ type LoanRow = {
   objects: { title: string; emoji: string | null; accession_no: string | null; image_url: string | null } | null
 }
 
+interface MuseumRow {
+  id: string
+  [key: string]: unknown
+}
+
 export default function OnLoanPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<MuseumRow | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [loans, setLoans] = useState<LoanRow[]>([])
@@ -267,7 +272,7 @@ export default function OnLoanPage() {
 
       {modalOpen && (
         <PersonalLoanModal
-          museumId={museum.id}
+          museumId={museum!.id}
           loan={editingLoan}
           objects={objects}
           onClose={() => { setModalOpen(false); setEditingLoan(null) }}

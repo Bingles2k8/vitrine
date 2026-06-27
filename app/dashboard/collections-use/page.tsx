@@ -12,11 +12,27 @@ const USE_TYPES = ['Research', 'Exhibition', 'Education', 'Photography', 'Conser
 
 const inputCls = "w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
 
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface UseRecord {
+  id: string
+  reference: string | null
+  use_type: string | null
+  requester_name: string | null
+  requester_org: string | null
+  use_date_start: string | null
+  use_date_end: string | null
+  status: string
+}
+
 export default function CollectionsUsePage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [records, setRecords] = useState<any[]>([])
+  const [records, setRecords] = useState<UseRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -73,7 +89,7 @@ export default function CollectionsUsePage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/collections-use" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -107,7 +123,7 @@ export default function CollectionsUsePage() {
     const { count } = await supabase
       .from('collection_use_records')
       .select('*', { count: 'exact', head: true })
-      .eq('museum_id', museum.id)
+      .eq('museum_id', museum!.id)
       .ilike('reference', `CU-${year}-%`)
     const num = (count || 0) + 1
     return `CU-${year}-${String(num).padStart(3, '0')}`
@@ -115,7 +131,7 @@ export default function CollectionsUsePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!canEdit) return
+    if (!canEdit || !museum) return
     setSaving(true)
     const reference = await generateReference()
     const { data, error } = await supabase

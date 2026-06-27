@@ -24,7 +24,7 @@ type LinkRow = {
 }
 
 export default function SharePage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<{ id: string; plan: string; [key: string]: unknown } | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [links, setLinks] = useState<LinkRow[]>([])
@@ -141,7 +141,7 @@ export default function SharePage() {
 
       <div className="p-6 md:p-10 space-y-6">
         <p className="text-sm text-stone-500 dark:text-stone-400 max-w-2xl leading-relaxed">
-          Share a passcode-protected view of part of your collection with an insurance broker, family member, or collaborator. Recipients don't need an account.
+          Share a passcode-protected view of part of your collection with an insurance broker, family member, or collaborator. Recipients don&apos;t need an account.
         </p>
 
         {justCreated && (

@@ -2,16 +2,16 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 // ── Shared props interface ───────────────────────────────────────────────
 export interface TabProps {
-  museum: any
-  object: any
+  museum: { id: string; plan: string; [key: string]: unknown }
+  object: { id: string; [key: string]: unknown }
   canEdit: boolean
   supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
 export interface FormTabProps extends TabProps {
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  form: Record<string, string | number | boolean | null | undefined>
+  set: (field: string, value: string | number | boolean | null) => void
   saving: boolean
   saved: boolean
 }

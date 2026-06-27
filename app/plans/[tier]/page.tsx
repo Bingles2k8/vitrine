@@ -481,7 +481,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${SITE_URL}/#pricing` },
+      { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${SITE_URL}/plans` },
       { '@type': 'ListItem', position: 3, name: `${plan.label} Plan`, item: pageUrl },
     ],
   }
@@ -528,7 +528,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
         </div>
         <div className="max-w-6xl mx-auto relative flex flex-col lg:flex-row lg:items-center lg:gap-16">
           <div className="lg:w-2/5 flex-shrink-0 mb-16 lg:mb-0">
-            <Link href="/#pricing" className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors mb-8">
+            <Link href="/plans" className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors mb-8">
               ← All plans
             </Link>
             <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">{plan.label}</p>

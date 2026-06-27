@@ -17,7 +17,7 @@ export async function POST(
   if (limited) return limited
 
   // Resolve museum — owner or Admin/Editor staff
-  let museum: any = null
+  let museum: { id: string; plan: string } | null = null
 
   const { data: ownedMuseum } = await supabase
     .from('museums')

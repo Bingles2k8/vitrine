@@ -8,8 +8,8 @@ const mockFrom = vi.fn()
 const mockRpc = vi.fn()
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
-    from: (...args: any[]) => mockFrom(...args),
-    rpc: (...args: any[]) => mockRpc(...args),
+    from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   })),
 }))
 
@@ -17,7 +17,7 @@ const mockCreateCheckoutSession = vi.fn()
 vi.mock('@/lib/stripe', () => ({
   stripe: {
     checkout: {
-      sessions: { create: (...args: any[]) => mockCreateCheckoutSession(...args) },
+      sessions: { create: (...args: unknown[]) => mockCreateCheckoutSession(...args) },
     },
   },
 }))
@@ -43,15 +43,24 @@ const EVENT_ID = '11111111-1111-4111-8111-111111111111'
 const SLOT_ID = '22222222-2222-4222-8222-222222222222'
 const MUSEUM_ID = '33333333-3333-4333-8333-333333333333'
 
-function makeRequest(body: any) {
+function makeRequest(body: Record<string, unknown>) {
   return new Request('http://localhost/api/ticket-checkout', {
     method: 'POST',
     body: JSON.stringify(body),
   })
 }
 
-function chain(result: any) {
-  const c: any = {
+interface MockChain {
+  select: ReturnType<typeof vi.fn>
+  insert: ReturnType<typeof vi.fn>
+  update: ReturnType<typeof vi.fn>
+  eq: ReturnType<typeof vi.fn>
+  maybeSingle: ReturnType<typeof vi.fn>
+  single: ReturnType<typeof vi.fn>
+}
+
+function chain(result: { data: unknown; error?: unknown }) {
+  const c: MockChain = {
     select: vi.fn(() => c),
     insert: vi.fn(() => c),
     update: vi.fn(() => c),
@@ -74,7 +83,7 @@ function mockHappyPathFree() {
   const futureStart = new Date(Date.now() + 3600_000).toISOString()
   const futureEnd = new Date(Date.now() + 7200_000).toISOString()
   const orderChain = chain({ data: { id: 'order-1' }, error: null })
-  let called = { tickets: 0, activity: 0, orderUpdate: 0 }
+  const called = { tickets: 0, activity: 0, orderUpdate: 0 }
   mockFrom.mockImplementation((table: string) => {
     if (table === 'events') return chain({ data: {
       id: EVENT_ID, museum_id: MUSEUM_ID, title: 'Tour', price_cents: 0,

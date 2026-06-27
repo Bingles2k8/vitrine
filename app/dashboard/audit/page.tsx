@@ -14,12 +14,68 @@ const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:te
 const AUDIT_METHODS = ['Physical inspection', 'Barcode scan', 'RFID', 'Spot-check', 'Full audit', 'Other']
 const AUDIT_STATUSES = ['In Progress', 'Completed', 'Paused', 'Cancelled']
 
+interface MuseumRow {
+  id: string
+  plan: string
+  [key: string]: unknown
+}
+
+interface AuditObjectRow {
+  id: string
+  title: string | null
+  accession_no: string | null
+  emoji: string | null
+  status: string | null
+  current_location: string | null
+  last_inventoried: string | null
+  inventoried_by: string | null
+  description: string | null
+  medium: string | null
+  physical_materials: string | null
+  artist: string | null
+  maker_name: string | null
+  object_type: string | null
+  created_at: string | null
+  production_date: string | null
+  acquisition_method: string | null
+  accession_register_confirmed: boolean | null
+}
+
+interface AuditExerciseRow {
+  id: string
+  audit_reference: string | null
+  scope: string | null
+  method: string | null
+  auditor: string | null
+  date_started: string | null
+  date_completed: string | null
+  objects_checked: number | null
+  objects_found: number | null
+  objects_not_found: number | null
+  discrepancies: number | null
+  actions_required: string | null
+  actions_completed: string | null
+  overall_audit_report: string | null
+  governance_reported: boolean | null
+  governance_report_date: string | null
+  status: string | null
+  notes: string | null
+}
+
+interface ExerciseRecordRow {
+  id: string
+  inventoried_at: string
+  inventory_outcome: string | null
+  location_confirmed: string | null
+  objects: { id: string; title: string | null; emoji: string | null; accession_no: string | null; current_location: string | null } | null
+}
+
 export default function AuditPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<MuseumRow | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [objects, setObjects] = useState<any[]>([])
-  const [exercises, setExercises] = useState<any[]>([])
+  const [objects, setObjects] = useState<AuditObjectRow[]>([])
+  const [exercises, setExercises] = useState<AuditExerciseRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
@@ -27,8 +83,8 @@ export default function AuditPage() {
   const [showExerciseForm, setShowExerciseForm] = useState(false)
   const [savingExercise, setSavingExercise] = useState(false)
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null)
-  const [selectedExercise, setSelectedExercise] = useState<any>(null)
-  const [exerciseRecords, setExerciseRecords] = useState<any[]>([])
+  const [selectedExercise, setSelectedExercise] = useState<AuditExerciseRow | null>(null)
+  const [exerciseRecords, setExerciseRecords] = useState<ExerciseRecordRow[]>([])
   const [exerciseRecordsLoading, setExerciseRecordsLoading] = useState(false)
   const [exerciseFilter, setExerciseFilter] = useState<'all' | 'found' | 'not_found' | 'discrepancy'>('all')
   const [exerciseCounts, setExerciseCounts] = useState<Record<string, number>>({})
@@ -83,7 +139,7 @@ export default function AuditPage() {
     load()
   }, [])
 
-  async function openExercise(ex: any) {
+  async function openExercise(ex: AuditExerciseRow) {
     setSelectedExercise(ex)
     setExerciseFilter('all')
     setExerciseRecordsLoading(true)
@@ -110,7 +166,7 @@ export default function AuditPage() {
     </DashboardShell>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/audit" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
@@ -163,7 +219,7 @@ export default function AuditPage() {
         setExercises(exercises.map(ex => ex.id === editingExerciseId ? data : ex))
       }
     } else {
-      const { data, error } = await supabase.from('audit_exercises').insert({ ...payload, museum_id: museum.id }).select().single()
+      const { data, error } = await supabase.from('audit_exercises').insert({ ...payload, museum_id: museum!.id }).select().single()
       if (!error && data) {
         setExercises([data, ...exercises])
       }
@@ -228,7 +284,7 @@ export default function AuditPage() {
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Audit & Inventory</span>
           <button
             onClick={() => {
-              const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+              const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
               const rows = [['Accession No', 'Title', 'Status', 'Location', 'Last Inventoried', 'Inventoried By'].join(',')]
               objects.forEach(a => rows.push([esc(a.accession_no), esc(a.title), esc(a.status), esc(a.current_location), esc(a.last_inventoried ? new Date(a.last_inventoried).toLocaleDateString('en-GB') : ''), esc(a.inventoried_by)].join(',')))
               const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
@@ -538,7 +594,7 @@ export default function AuditPage() {
                         return true
                       })
                       .map(r => {
-                        const obj = r.objects as any
+                        const obj = r.objects
                         return (
                           <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer"
                             onClick={() => { setSelectedExercise(null); router.push(`/dashboard/objects/${obj?.id}?tab=location`) }}>

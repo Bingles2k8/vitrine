@@ -53,7 +53,7 @@ export default function CollectionMap({ objects }: CollectionMapProps) {
         popupAnchor: [1, -34],
         shadowSize: [41, 41],
       })
-      ;(L.Marker.prototype as any).options.icon = DefaultIcon
+      L.Marker.prototype.options.icon = DefaultIcon
       setLeafletReady(true)
     })
   }, [])

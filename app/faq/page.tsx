@@ -111,7 +111,8 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
     question: 'Does Vitrine help with insurance documentation?',
     answer: (
       <>
-        Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time.{' '}
+        Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time. To create a one-off inventory without an account, try our{' '}
+        <Link href="/tools/insurance-inventory" className="text-amber-400 hover:text-amber-300 transition-colors">free insurance inventory generator</Link>.{' '}
         <Link href="/compliance" className="text-amber-400 hover:text-amber-300 transition-colors">See all compliance tools →</Link>
       </>
     ),

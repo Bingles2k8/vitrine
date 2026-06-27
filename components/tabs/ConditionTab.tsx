@@ -8,14 +8,24 @@ import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 import AutocompleteInput from '@/components/AutocompleteInput'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+interface ConditionAssessment {
+  id: string
+  assessment_reference: string | null
+  grade: string
+  assessed_at: string
+  assessor: string | null
+  notes: string | null
+}
 
 interface ConditionTabProps {
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  form: Record<string, string | number | boolean | null | undefined>
+  set: (field: string, value: string | number | boolean | null) => void
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; [key: string]: unknown }
+  museum: { id: string; plan: string; [key: string]: unknown }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
@@ -24,7 +34,7 @@ const OTHER_REASON_SUGGESTIONS = ['Pest inspection', 'Environmental check', 'Pre
 const today = new Date().toISOString().split('T')[0]
 
 export default function ConditionTab({ form, set, canEdit, object, museum, supabase, logActivity }: ConditionTabProps) {
-  const [conditionHistory, setConditionHistory] = useState<any[]>([])
+  const [conditionHistory, setConditionHistory] = useState<ConditionAssessment[]>([])
   const [conditionLoaded, setConditionLoaded] = useState(false)
   const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -40,7 +50,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       .select('*')
       .eq('object_id', object.id)
       .order('assessed_at', { ascending: false })
-      .then(({ data }: any) => {
+      .then(({ data }: { data: ConditionAssessment[] | null }) => {
         setConditionHistory(data || [])
         setConditionLoaded(true)
       })
@@ -224,12 +234,12 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
           <div className={sectionTitle}>Current Condition</div>
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
+            <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade as string] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
               {form.condition_grade}
             </span>
             {form.condition_date && (
               <span className="text-xs text-stone-400 dark:text-stone-500">
-                Assessed {new Date(form.condition_date).toLocaleDateString('en-GB')}
+                Assessed {new Date(form.condition_date as string).toLocaleDateString('en-GB')}
               </span>
             )}
             {form.condition_assessor && (
@@ -257,7 +267,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                 </tr>
               </thead>
               <tbody>
-                {conditionHistory.map((h: any) => (
+                {conditionHistory.map(h => (
                   <Fragment key={h.id}>
                     <tr className="border-b border-stone-100 dark:border-stone-800">
                       <td className="py-2 pr-4 text-stone-500 dark:text-stone-400 font-mono text-xs">

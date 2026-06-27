@@ -99,7 +99,7 @@ export default function CompareIndex() {
         <div className="mt-12 grid sm:grid-cols-3 gap-4">
           <Link href="/guide/essentials" className="group border border-white/8 rounded-xl p-5 hover:border-white/20 hover:bg-white/3 transition-all">
             <div className="text-sm font-medium text-white mb-1 group-hover:text-amber-400 transition-colors">Essentials guide →</div>
-            <p className="text-xs text-stone-500">Step-by-step walkthrough of Vitrine's core features</p>
+            <p className="text-xs text-stone-500">Step-by-step walkthrough of Vitrine&apos;s core features</p>
           </Link>
           <Link href="/compliance" className="group border border-white/8 rounded-xl p-5 hover:border-white/20 hover:bg-white/3 transition-all">
             <div className="text-sm font-medium text-white mb-1 group-hover:text-amber-400 transition-colors">Compliance tools →</div>

@@ -2,8 +2,13 @@
 
 import { createContext, useContext, type ReactNode } from 'react'
 
+interface DashboardMuseum {
+  plan?: string | null
+  slug?: string | null
+}
+
 interface DashboardContextValue {
-  museum: any | null
+  museum: DashboardMuseum | null
   pathname: string
   isShallow: boolean
 }

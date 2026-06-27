@@ -135,11 +135,14 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto relative flex flex-col lg:flex-row lg:items-center lg:gap-12">
           <div className="max-w-3xl lg:max-w-xl lg:flex-shrink-0">
 
-            <h1 className="font-serif text-4xl sm:text-6xl lg:text-8xl italic font-normal leading-none tracking-tight mb-6">
+            <h1 className="font-mono text-xs text-amber-500 uppercase tracking-widest mb-5">
+              Collection management software for museums &amp; collectors
+            </h1>
+            <p className="font-serif text-4xl sm:text-6xl lg:text-8xl italic font-normal leading-none tracking-tight mb-6">
               Your collection,<br />
               <span className="text-amber-500">beautifully</span><br />
               managed.
-            </h1>
+            </p>
 
             <p className="text-lg text-stone-400 font-light leading-relaxed max-w-xl mb-10">
               An easy-to-use Collection Management System<br />with a beautiful public website built in.
@@ -432,6 +435,29 @@ export default async function Home() {
                 See all 21 procedures →
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Free tools ──────────────────────────────────────── */}
+      <section className="py-20 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-3">Free tools</p>
+          <h2 className="font-serif text-3xl italic font-normal mb-4">Try before you sign up</h2>
+          <p className="text-stone-400 font-light max-w-2xl mb-10">
+            A couple of free tools that run entirely in your browser — no account needed. Useful on their own, and a quick taste of how Vitrine handles your collection.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-5">
+            <Link href="/tools/insurance-inventory" className="group rounded-xl border border-white/8 bg-white/[0.02] p-6 hover:border-amber-500/30 hover:bg-white/[0.04] transition-colors">
+              <h3 className="font-serif text-lg italic text-white mb-2 group-hover:text-amber-300 transition-colors">Insurance inventory generator</h3>
+              <p className="text-sm text-stone-400 leading-relaxed mb-4">Document any collection for insurance — list items with condition, value and photos, then download an insurer-ready PDF.</p>
+              <span className="font-mono text-sm text-amber-500">Open tool →</span>
+            </Link>
+            <Link href="/tools/condition-report" className="group rounded-xl border border-white/8 bg-white/[0.02] p-6 hover:border-amber-500/30 hover:bg-white/[0.04] transition-colors">
+              <h3 className="font-serif text-lg italic text-white mb-2 group-hover:text-amber-300 transition-colors">Condition report generator</h3>
+              <p className="text-sm text-stone-400 leading-relaxed mb-4">Produce a professional museum condition report with a visual damage map, then download a formatted PDF.</p>
+              <span className="font-mono text-sm text-amber-500">Open tool →</span>
+            </Link>
           </div>
         </div>
       </section>

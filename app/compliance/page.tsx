@@ -566,6 +566,13 @@ export default function CompliancePage() {
           <p className="text-stone-400 leading-relaxed">
             Every procedure is mapped to specific data fields and UI screens inside the app. This page lists each procedure, its fields, and exactly where to find it in your dashboard.
           </p>
+          <p className="text-stone-400 leading-relaxed mt-4">
+            Want to try one of these procedures before signing up? Our{' '}
+            <Link href="/tools/condition-report" className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors">
+              free condition report generator
+            </Link>
+            {' '}lets you produce a Spectrum-style condition report — with a visual damage map — straight from your browser.
+          </p>
         </div>
 
         {/* Tier legend */}

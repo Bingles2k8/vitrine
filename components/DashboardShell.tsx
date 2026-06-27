@@ -9,8 +9,15 @@ import { DashboardProvider } from '@/components/DashboardTopBar'
 import { useGoShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
+interface ShellMuseum {
+  id?: string | null
+  slug?: string | null
+  plan?: string | null
+  payment_past_due?: boolean | null
+}
+
 interface DashboardShellProps {
-  museum: any
+  museum: ShellMuseum | null
   activePath: string
   onSignOut: () => void
   isOwner?: boolean

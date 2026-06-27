@@ -44,8 +44,7 @@ function makeMockClient(opts: MockClientOpts = {}) {
     order = null,
   } = opts
 
-  const updates: Array<{ table: string; data: any }> = []
-  let maybySingleQueue: Array<{ data: any; error: null }>
+  const updates: Array<{ table: string; data: Record<string, unknown> }> = []
 
   function buildQueue() {
     // Queue order: auth.getUser, museums (owner check), staff_members (if no owned museum), ticket_orders
@@ -62,15 +61,23 @@ function makeMockClient(opts: MockClientOpts = {}) {
     ]
   }
 
-  maybySingleQueue = buildQueue()
+  const maybySingleQueue = buildQueue()
   let callIndex = 0
 
+  interface MockChain {
+    select: ReturnType<typeof vi.fn>
+    update: ReturnType<typeof vi.fn>
+    eq: ReturnType<typeof vi.fn>
+    maybeSingle: ReturnType<typeof vi.fn>
+  }
+
   function makeChain(table: string) {
-    const chain: any = {}
-    chain.select = vi.fn(() => chain)
-    chain.update = vi.fn((data: any) => { updates.push({ table, data }); return chain })
-    chain.eq = vi.fn(() => chain)
-    chain.maybeSingle = vi.fn(() => Promise.resolve(maybySingleQueue[callIndex++] ?? { data: null, error: null }))
+    const chain: MockChain = {
+      select: vi.fn(() => chain),
+      update: vi.fn((data: Record<string, unknown>) => { updates.push({ table, data }); return chain }),
+      eq: vi.fn(() => chain),
+      maybeSingle: vi.fn(() => Promise.resolve(maybySingleQueue[callIndex++] ?? { data: null, error: null })),
+    }
     return chain
   }
 

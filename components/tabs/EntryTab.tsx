@@ -6,23 +6,29 @@ import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from 
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import { getPlan } from '@/lib/plans'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const ENTRY_METHODS = ['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer']
 
+interface EntryRecord {
+  id: string
+  entry_number: string | null
+}
+
 interface EntryTabProps {
-  object: any
-  museum: any
+  object: { id: string; accession_no?: string | null }
+  museum: { id: string; plan: string }
   canEdit: boolean
-  supabase: any
+  supabase: SupabaseClient
 }
 
 export default function EntryTab({ object, museum, canEdit, supabase }: EntryTabProps) {
   const { toast } = useToast()
   const router = useRouter()
-  const [entryRecord, setEntryRecord] = useState<any>(null)
+  const [entryRecord, setEntryRecord] = useState<EntryRecord | null>(null)
   const [entryLoaded, setEntryLoaded] = useState(false)
   const [savingEntry, setSavingEntry] = useState(false)
-  const [entryForm, setEntryForm] = useState<Record<string, any>>({
+  const [entryForm, setEntryForm] = useState({
     entry_number: '',
     entry_date: '',
     depositor_name: '',
@@ -54,7 +60,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
 
   const today = new Date().toISOString().slice(0, 10)
 
-  const setE = (field: string, value: any) => {
+  const setE = (field: string, value: string | number | boolean) => {
     setEntryForm(prev => ({ ...prev, [field]: value }))
     // field changed
   }

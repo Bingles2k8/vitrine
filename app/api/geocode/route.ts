@@ -29,11 +29,11 @@ export async function GET(request: Request) {
       next: { revalidate: 0 },
     })
     if (!res.ok) return NextResponse.json({ error: 'Upstream error' }, { status: 502 })
-    const json: any[] = await res.json()
+    const json: Array<{ display_name?: string; lat?: string; lon?: string; address?: { country_code?: string } }> = await res.json()
     const results = (json || []).slice(0, 5).map(r => ({
       display_name: String(r.display_name || ''),
-      lat: parseFloat(r.lat),
-      lng: parseFloat(r.lon),
+      lat: parseFloat(r.lat ?? ''),
+      lng: parseFloat(r.lon ?? ''),
       country_code: (r.address?.country_code || '').toString().toUpperCase() || null,
     })).filter(r => Number.isFinite(r.lat) && Number.isFinite(r.lng))
     return NextResponse.json({ results })

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { checkStorageQuota } from '@/lib/storageUsage'
+import type { Database } from '@/lib/database.types'
 
-function makeSupabaseWithUsage(usedBytes: number): any {
+function makeSupabaseWithUsage(usedBytes: number): SupabaseClient<Database> {
   return {
     from: () => ({
       select: () => ({
@@ -10,7 +12,7 @@ function makeSupabaseWithUsage(usedBytes: number): any {
         }),
       }),
     }),
-  }
+  } as unknown as SupabaseClient<Database>
 }
 
 describe('checkStorageQuota', () => {
@@ -35,7 +37,7 @@ describe('checkStorageQuota', () => {
   })
 
   it('treats missing storage_used_bytes as 0', async () => {
-    const supabase: any = {
+    const supabase = {
       from: () => ({
         select: () => ({
           eq: () => ({
@@ -43,7 +45,7 @@ describe('checkStorageQuota', () => {
           }),
         }),
       }),
-    }
+    } as unknown as SupabaseClient<Database>
     const ok = await checkStorageQuota(supabase, 'm', 'hobbyist', 50 * 1024 * 1024)
     expect(ok).toBe(true)
   })
@@ -68,7 +70,7 @@ const mockRpc = vi.fn()
 vi.mock('@/lib/supabase-server', () => ({
   createServerSideClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
-    from: (...args: any[]) => mockFrom(...args),
+    from: (...args: unknown[]) => mockFrom(...args),
   })),
 }))
 
@@ -77,7 +79,7 @@ vi.mock('@/lib/supabase-server', () => ({
 // revoked from the authenticated role. Mock that client's rpc to the same spy.
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
-    rpc: (...args: any[]) => mockRpc(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   })),
 }))
 
@@ -91,8 +93,15 @@ import { POST } from '@/app/api/objects/[id]/documents/route'
 const MUSEUM_ID = '11111111-1111-4111-8111-111111111111'
 const OBJECT_ID = '33333333-3333-4333-8333-333333333333'
 
-function chainReturning(result: any) {
-  const chain: any = {
+type QueryChain = {
+  select: () => QueryChain
+  eq: () => QueryChain
+  in: () => QueryChain
+  maybeSingle: () => Promise<unknown>
+}
+
+function chainReturning(result: unknown) {
+  const chain: QueryChain = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     in: vi.fn(() => chain),
@@ -101,7 +110,7 @@ function chainReturning(result: any) {
   return chain
 }
 
-function makeRequest(body: any) {
+function makeRequest(body: unknown) {
   return new Request(`http://localhost/api/objects/${OBJECT_ID}/documents`, {
     method: 'POST',
     body: JSON.stringify(body),

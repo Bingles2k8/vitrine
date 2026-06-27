@@ -12,13 +12,14 @@ import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { checkStorageQuota } from '@/lib/storageUsage'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface ConservationTabProps {
-  form: Record<string, any>
+  form: Record<string, unknown>
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; [key: string]: unknown }
+  museum: { id: string; plan: string; [key: string]: unknown }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
@@ -27,6 +28,39 @@ interface TreatmentImage {
   name: string
   date: string
   file_size?: number
+}
+
+interface Treatment {
+  id: string
+  treatment_reference: string | null
+  treatment_name: string | null
+  treatment_type: string | null
+  conservator: string | null
+  start_date: string | null
+  end_date: string | null
+  description: string | null
+  condition_before: string | null
+  materials_used: string | null
+  cost: string | number | null
+  cost_currency: string | null
+  recommendation_future: string | null
+  images: TreatmentImage[] | null
+  status?: string | null
+}
+
+interface EditFormState {
+  treatment_name: string
+  treatment_type: string
+  conservator: string
+  start_date: string
+  end_date: string
+  description: string
+  condition_description: string
+  materials_used: string
+  cost: string
+  cost_currency: string
+  recommendation_future: string
+  images: TreatmentImage[]
 }
 
 const OTHER_TREATMENT_SUGGESTIONS = ['Surface consolidation', 'Structural repair', 'Deacidification', 'Pest treatment', 'Fumigation', 'Freeze treatment', 'Infill', 'Inpainting', 'Varnishing', 'Humidification', 'Mount making']
@@ -52,13 +86,13 @@ function emptyForm() {
 }
 
 export default function ConservationTab({ form, canEdit, object, museum, supabase, logActivity }: ConservationTabProps) {
-  const [conservationHistory, setConservationHistory] = useState<any[]>([])
+  const [conservationHistory, setConservationHistory] = useState<Treatment[]>([])
   const [conservationLoaded, setConservationLoaded] = useState(false)
   const [conservationForm, setConservationForm] = useState(emptyForm())
   const [submitting, setSubmitting] = useState(false)
-  const [selectedTreatment, setSelectedTreatment] = useState<any>(null)
+  const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState<any>(null)
+  const [editForm, setEditForm] = useState<EditFormState | null>(null)
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [pendingImages, setPendingImages] = useState<{ id: string; localUrl: string; name: string }[]>([])
@@ -75,7 +109,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
 
   useEffect(() => {
     supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
-      .then(({ data }: any) => { setConservationHistory(data || []); setConservationLoaded(true) })
+      .then(({ data }: { data: Treatment[] | null }) => { setConservationHistory(data || []); setConservationLoaded(true) })
   }, [object.id])
 
   async function uploadImage(file: File): Promise<{ url: string; size: number } | null> {
@@ -146,7 +180,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       setEditPendingImages(prev => prev.filter(p => p.id !== newPending[i].id))
       if (result) {
         const newImg: TreatmentImage = { url: result.url, name: newPending[i].name, date: today, file_size: result.size }
-        setEditForm((f: any) => ({ ...f, images: [...(f.images ?? []), newImg] }))
+        setEditForm(f => (f ? { ...f, images: [...(f.images ?? []), newImg] } : f))
       }
     }
     setEditImageUploadProgress(null)
@@ -196,17 +230,17 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
 
   async function updateConservationStatus(id: string, status: string) {
     const treatment = conservationHistory.find(t => t.id === id)
-    const updates: any = { status }
+    const updates: { status: string; end_date?: string } = { status }
     if (status === 'Completed' && !treatment?.end_date) {
       updates.end_date = today
     }
     const { error } = await supabase.from('conservation_treatments').update(updates).eq('id', id)
     if (error) { toast(error.message, 'error'); return }
     setConservationHistory(h => h.map(t => t.id === id ? { ...t, ...updates } : t))
-    if (selectedTreatment?.id === id) setSelectedTreatment((t: any) => ({ ...t, ...updates }))
+    if (selectedTreatment?.id === id) setSelectedTreatment(t => (t ? { ...t, ...updates } : t))
   }
 
-  function openEdit(treatment: any) {
+  function openEdit(treatment: Treatment) {
     setEditForm({
       treatment_name: treatment.treatment_name || '',
       treatment_type: treatment.treatment_type || '',
@@ -225,7 +259,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   }
 
   async function saveEdit() {
-    if (!selectedTreatment || editSubmitting) return
+    if (!selectedTreatment || !editForm || editSubmitting) return
     setEditSubmitting(true)
     const updates = {
       treatment_name: editForm.treatment_name || null,
@@ -251,7 +285,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     toast('Treatment updated', 'success')
   }
 
-  const isActive = (t: any) => !t.status || t.status === 'Active'
+  const isActive = (t: Treatment) => !t.status || t.status === 'Active'
 
   return (
     <>
@@ -554,29 +588,29 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
               <div className="p-6 space-y-4">
                 <div>
                   <label className={labelCls}>Report Name</label>
-                  <input value={editForm.treatment_name} onChange={e => setEditForm((f: any) => ({ ...f, treatment_name: e.target.value }))} className={inputCls} />
+                  <input value={editForm.treatment_name} onChange={e => setEditForm(f => (f ? { ...f, treatment_name: e.target.value } : f))} className={inputCls} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Treatment Type</label>
-                    <select value={editForm.treatment_type} onChange={e => setEditForm((f: any) => ({ ...f, treatment_type: e.target.value }))} className={inputCls}>
+                    <select value={editForm.treatment_type} onChange={e => setEditForm(f => (f ? { ...f, treatment_type: e.target.value } : f))} className={inputCls}>
                       <option value="">— Select —</option>
                       {TREATMENT_TYPES.map(t => <option key={t}>{t}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className={labelCls}>Conservator</label>
-                    <input value={editForm.conservator} onChange={e => setEditForm((f: any) => ({ ...f, conservator: e.target.value }))} className={inputCls} />
+                    <input value={editForm.conservator} onChange={e => setEditForm(f => (f ? { ...f, conservator: e.target.value } : f))} className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Start Date</label>
-                    <input type="date" value={editForm.start_date} onChange={e => setEditForm((f: any) => ({ ...f, start_date: e.target.value }))} className={inputCls} />
+                    <input type="date" value={editForm.start_date} onChange={e => setEditForm(f => (f ? { ...f, start_date: e.target.value } : f))} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>End Date</label>
-                    <input type="date" value={editForm.end_date} onChange={e => setEditForm((f: any) => ({ ...f, end_date: e.target.value }))} className={inputCls} />
+                    <input type="date" value={editForm.end_date} onChange={e => setEditForm(f => (f ? { ...f, end_date: e.target.value } : f))} className={inputCls} />
                   </div>
                 </div>
                 <div>
@@ -584,7 +618,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   <textarea
                     ref={editConditionRef}
                     value={editForm.condition_description}
-                    onChange={e => setEditForm((f: any) => ({ ...f, condition_description: e.target.value }))}
+                    onChange={e => setEditForm(f => (f ? { ...f, condition_description: e.target.value } : f))}
                     rows={4}
                     className={`${inputCls} resize-none overflow-hidden`}
                   />
@@ -626,13 +660,13 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                               </button>
                             </td>
                             <td className="px-3 py-2">
-                              <input value={img.name} onChange={e => setEditForm((f: any) => ({ ...f, images: f.images.map((im: TreatmentImage, j: number) => j === i ? { ...im, name: e.target.value } : im) }))} className="w-full bg-transparent outline-none text-stone-800 dark:text-stone-200 text-xs" />
+                              <input value={img.name} onChange={e => setEditForm(f => (f ? { ...f, images: f.images.map((im, j) => j === i ? { ...im, name: e.target.value } : im) } : f))} className="w-full bg-transparent outline-none text-stone-800 dark:text-stone-200 text-xs" />
                             </td>
                             <td className="px-3 py-2">
-                              <input type="date" value={img.date} onChange={e => setEditForm((f: any) => ({ ...f, images: f.images.map((im: TreatmentImage, j: number) => j === i ? { ...im, date: e.target.value } : im) }))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono" />
+                              <input type="date" value={img.date} onChange={e => setEditForm(f => (f ? { ...f, images: f.images.map((im, j) => j === i ? { ...im, date: e.target.value } : im) } : f))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono" />
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setEditForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) })) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
+                              <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setEditForm(f => (f ? { ...f, images: f.images.filter((_, j) => j !== i) } : f)) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                             </td>
                           </tr>
                         ))}
@@ -654,27 +688,27 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                 </div>
                 <div>
                   <label className={labelCls}>Materials Used</label>
-                  <input value={editForm.materials_used} onChange={e => setEditForm((f: any) => ({ ...f, materials_used: e.target.value }))} className={inputCls} />
+                  <input value={editForm.materials_used} onChange={e => setEditForm(f => (f ? { ...f, materials_used: e.target.value } : f))} className={inputCls} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Cost</label>
-                    <input type="number" step="0.01" min="0" value={editForm.cost} onChange={e => setEditForm((f: any) => ({ ...f, cost: e.target.value }))} className={inputCls} />
+                    <input type="number" step="0.01" min="0" value={editForm.cost} onChange={e => setEditForm(f => (f ? { ...f, cost: e.target.value } : f))} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Currency</label>
-                    <select value={editForm.cost_currency} onChange={e => setEditForm((f: any) => ({ ...f, cost_currency: e.target.value }))} className={inputCls}>
+                    <select value={editForm.cost_currency} onChange={e => setEditForm(f => (f ? { ...f, cost_currency: e.target.value } : f))} className={inputCls}>
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
                   <label className={labelCls}>Notes</label>
-                  <textarea value={editForm.description} onChange={e => setEditForm((f: any) => ({ ...f, description: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
+                  <textarea value={editForm.description} onChange={e => setEditForm(f => (f ? { ...f, description: e.target.value } : f))} rows={3} className={`${inputCls} resize-none`} />
                 </div>
                 <div>
                   <label className={labelCls}>Future Recommendations</label>
-                  <textarea value={editForm.recommendation_future} onChange={e => setEditForm((f: any) => ({ ...f, recommendation_future: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+                  <textarea value={editForm.recommendation_future} onChange={e => setEditForm(f => (f ? { ...f, recommendation_future: e.target.value } : f))} rows={2} className={`${inputCls} resize-none`} />
                 </div>
                 <div className="flex gap-3 pt-2 border-t border-stone-100 dark:border-stone-800">
                   <button type="button" onClick={saveEdit} disabled={editSubmitting} className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-1.5 disabled:opacity-50">
@@ -759,7 +793,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                 {selectedTreatment.cost && (
                   <div>
                     <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Cost</div>
-                    <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{selectedTreatment.cost_currency} {parseFloat(selectedTreatment.cost).toFixed(2)}</div>
+                    <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{selectedTreatment.cost_currency} {parseFloat(String(selectedTreatment.cost)).toFixed(2)}</div>
                   </div>
                 )}
                 {selectedTreatment.recommendation_future && (

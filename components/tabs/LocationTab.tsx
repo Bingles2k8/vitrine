@@ -6,18 +6,72 @@ import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadToR2 } from '@/lib/r2-upload'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+interface LocationRow {
+  building: string | null
+  room_gallery: string | null
+  position1: string | null
+  position2: string | null
+  position3: string | null
+  location_code: string | null
+  name: string | null
+}
+
+interface LocationHistoryRow {
+  id: string
+  location: string | null
+  location_code: string | null
+  moved_by: string | null
+  moved_at: string
+}
+
+interface AuditRecordRow {
+  id: string
+  inventoried_at: string
+  inventoried_by: string | null
+  inventory_outcome: string | null
+  location_confirmed: string | null
+  action_required: string | null
+  action_completed: boolean | null
+  action_completed_date: string | null
+  discrepancy: string | null
+  notes: string | null
+}
+
+interface AuditExerciseRow {
+  id: string
+  audit_reference: string | null
+  scope: string | null
+}
+
+interface AuditDocRow {
+  id: string
+  file_url: string
+  file_name: string | null
+  label: string | null
+  document_type: string | null
+}
+
+interface ObjectFormValues {
+  current_location?: string | null
+  location_note?: string | null
+  last_inventoried?: string | null
+  inventoried_by?: string | null
+  [key: string]: unknown
+}
 
 interface LocationTabProps {
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  form: ObjectFormValues
+  set: (field: string, value: string) => void
   canEdit: boolean
   saving: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; title?: string | null }
+  museum: { id: string; plan: string }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
-  locations: any[]
-  setLocations: (fn: (prev: any[]) => any[]) => void
+  locations: LocationRow[]
+  setLocations: (fn: (prev: LocationRow[]) => LocationRow[]) => void
   currentUserName?: string
 }
 
@@ -93,7 +147,7 @@ function CascadeSelect({
 export default function LocationTab({ form, set, canEdit, saving, object, museum, supabase, logActivity, locations, setLocations, currentUserName }: LocationTabProps) {
   const { toast } = useToast()
 
-  const [locationHistory, setLocationHistory] = useState<any[]>([])
+  const [locationHistory, setLocationHistory] = useState<LocationHistoryRow[]>([])
   const [locationLoaded, setLocationLoaded] = useState(false)
   const [locationForm, setLocationForm] = useState({
     building: '',
@@ -114,9 +168,9 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
   }>({ open: false, field: 'building', value: '' })
 
   // Audit state
-  const [auditHistory, setAuditHistory] = useState<any[]>([])
+  const [auditHistory, setAuditHistory] = useState<AuditRecordRow[]>([])
   const [auditLoaded, setAuditLoaded] = useState(false)
-  const [exercises, setExercises] = useState<any[]>([])
+  const [exercises, setExercises] = useState<AuditExerciseRow[]>([])
   const [auditForm, setAuditForm] = useState({
     inventoried_at: new Date().toISOString().slice(0, 10),
     inventoried_by: currentUserName || '',
@@ -132,17 +186,17 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [auditSubmitting, setAuditSubmitting] = useState(false)
   const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
+  const [selectedRecord, setSelectedRecord] = useState<AuditRecordRow | null>(null)
+  const [selectedRecordDocs, setSelectedRecordDocs] = useState<AuditDocRow[]>([])
 
   useEffect(() => {
     if (!object.id) return
     supabase.from('location_history').select('*').eq('object_id', object.id).order('moved_at', { ascending: false })
-      .then(({ data }: any) => { setLocationHistory(data || []); setLocationLoaded(true) })
+      .then(({ data }) => { setLocationHistory(data || []); setLocationLoaded(true) })
     supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
-      .then(({ data }: any) => { setAuditHistory(data || []); setAuditLoaded(true) })
+      .then(({ data }) => { setAuditHistory(data || []); setAuditLoaded(true) })
     supabase.from('audit_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
-      .then(({ data }: any) => { setExercises(data || []) })
+      .then(({ data }) => { setExercises(data || []) })
   }, [object.id])
 
   useEffect(() => {
@@ -152,7 +206,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       .eq('related_to_id', selectedRecord.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .then(({ data }: any) => setSelectedRecordDocs(data || []))
+      .then(({ data }) => setSelectedRecordDocs(data || []))
   }, [selectedRecord?.id])
 
   // Auto-generate location code whenever hierarchy fields change
@@ -163,50 +217,50 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
 
   // --- Cascading option lists ---
   const buildings = useMemo(() =>
-    [...new Set(locations.map((l: any) => l.building).filter(Boolean))].sort() as string[],
+    [...new Set(locations.map(l => l.building).filter(Boolean))].sort() as string[],
     [locations])
 
   const roomGalleries = useMemo(() =>
     [...new Set(
       locations
-        .filter((l: any) => !locationForm.building || l.building === locationForm.building)
-        .map((l: any) => l.room_gallery).filter(Boolean)
+        .filter(l => !locationForm.building || l.building === locationForm.building)
+        .map(l => l.room_gallery).filter(Boolean)
     )].sort() as string[],
     [locations, locationForm.building])
 
   const positions1 = useMemo(() =>
     [...new Set(
       locations
-        .filter((l: any) =>
+        .filter(l =>
           (!locationForm.building || l.building === locationForm.building) &&
           (!locationForm.room_gallery || l.room_gallery === locationForm.room_gallery)
         )
-        .map((l: any) => l.position1).filter(Boolean)
+        .map(l => l.position1).filter(Boolean)
     )].sort() as string[],
     [locations, locationForm.building, locationForm.room_gallery])
 
   const positions2 = useMemo(() =>
     [...new Set(
       locations
-        .filter((l: any) =>
+        .filter(l =>
           (!locationForm.building || l.building === locationForm.building) &&
           (!locationForm.room_gallery || l.room_gallery === locationForm.room_gallery) &&
           (!locationForm.position1 || l.position1 === locationForm.position1)
         )
-        .map((l: any) => l.position2).filter(Boolean)
+        .map(l => l.position2).filter(Boolean)
     )].sort() as string[],
     [locations, locationForm.building, locationForm.room_gallery, locationForm.position1])
 
   const positions3 = useMemo(() =>
     [...new Set(
       locations
-        .filter((l: any) =>
+        .filter(l =>
           (!locationForm.building || l.building === locationForm.building) &&
           (!locationForm.room_gallery || l.room_gallery === locationForm.room_gallery) &&
           (!locationForm.position1 || l.position1 === locationForm.position1) &&
           (!locationForm.position2 || l.position2 === locationForm.position2)
         )
-        .map((l: any) => l.position3).filter(Boolean)
+        .map(l => l.position3).filter(Boolean)
     )].sort() as string[],
     [locations, locationForm.building, locationForm.room_gallery, locationForm.position1, locationForm.position2])
 
@@ -257,7 +311,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     setSubmitting(true)
     try {
       // Find or create location in registry
-      const existing = locations.find((l: any) =>
+      const existing = locations.find(l =>
         l.building === locationForm.building &&
         l.room_gallery === locationForm.room_gallery &&
         l.position1 === locationForm.position1 &&
@@ -275,7 +329,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
           position3: locationForm.position3 || null,
           museum_id: museum.id,
         }).select().single()
-        if (newLoc) setLocations((prev: any[]) => [...prev, newLoc])
+        if (newLoc) setLocations(prev => [...prev, newLoc])
       }
 
       const movedAtIso = locationForm.moved_at === today
@@ -386,7 +440,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
   }
 
   // Lookup current location record
-  const currentLoc = locations.find((l: any) => l.location_code === form.current_location || l.name === form.current_location)
+  const currentLoc = locations.find(l => l.location_code === form.current_location || l.name === form.current_location)
 
   return (
     <>
@@ -625,7 +679,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                   </tr>
                 </thead>
                 <tbody>
-                  {locationHistory.map((h: any) => (
+                  {locationHistory.map(h => (
                     <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0">
                       <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 whitespace-nowrap">{(() => { const d = new Date(h.moved_at); return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(2)}` })()}</td>
                       <td className="px-2 py-4 text-xs font-mono text-stone-700 dark:text-stone-300">{h.location_code || h.location}</td>
@@ -652,7 +706,7 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
                   </tr>
                 </thead>
                 <tbody>
-                  {auditHistory.map((h: any) => (
+                  {auditHistory.map(h => (
                     <tr key={h.id} className="border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(h)}>
                       <td className="px-6 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(h.inventoried_at).toLocaleDateString('en-GB')}</td>
                       <td className="px-4 py-4">

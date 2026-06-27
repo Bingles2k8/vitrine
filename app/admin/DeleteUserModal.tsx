@@ -48,8 +48,8 @@ function DeleteUserModal({ museumId, museumName, slug, ownerEmail, onClose }: Pr
       try {
         await deleteUser(museumId)
         onClose()
-      } catch (err: any) {
-        setError(err?.message ?? 'Something went wrong')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
       }
     })
   }

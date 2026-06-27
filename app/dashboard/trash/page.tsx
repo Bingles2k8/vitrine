@@ -9,11 +9,24 @@ import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import { TableSkeleton } from '@/components/Skeleton'
 
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface TrashObject {
+  id: string
+  title: string
+  emoji: string | null
+  accession_no: string | null
+  deleted_at: string | null
+}
+
 export default function TrashPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [objects, setObjects] = useState<any[]>([])
+  const [objects, setObjects] = useState<TrashObject[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulking, setBulking] = useState(false)
@@ -59,12 +72,12 @@ export default function TrashPage() {
   }
 
   async function handleRestore(id: string) {
-    const planInfo = getPlan(museum?.plan)
+    const planInfo = getPlan(museum?.plan ?? '')
     if (planInfo.objects !== null) {
       const { count } = await supabase
         .from('objects')
         .select('*', { count: 'exact', head: true })
-        .eq('museum_id', museum.id)
+        .eq('museum_id', museum!.id)
         .is('deleted_at', null)
       if ((count ?? 0) >= planInfo.objects) {
         toast(`Your ${planInfo.label} plan allows up to ${planInfo.objects.toLocaleString()} objects. Delete items permanently to free up space.`, 'error')
@@ -136,7 +149,7 @@ export default function TrashPage() {
   }
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
-  const fullMode = getPlan(museum?.plan).fullMode
+  const fullMode = getPlan(museum?.plan ?? '').fullMode
 
   if (loading) {
     return (

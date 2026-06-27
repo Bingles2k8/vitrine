@@ -163,7 +163,7 @@ export default async function AdminMuseumDetailPage({
               {ownerUser?.app_metadata?.providers && Array.isArray(ownerUser.app_metadata.providers) && ownerUser.app_metadata.providers.length > 1 && (
                 <Row k="All providers" v={(ownerUser.app_metadata.providers as string[]).join(', ')} />
               )}
-              <Row k="Banned" v={ownerUser && (ownerUser as any).banned_until ? <span className="text-red-600">Until {fmtDate((ownerUser as any).banned_until)}</span> : 'No'} />
+              <Row k="Banned" v={ownerUser?.banned_until ? <span className="text-red-600">Until {fmtDate(ownerUser.banned_until)}</span> : 'No'} />
             </DL>
           </Section>
 

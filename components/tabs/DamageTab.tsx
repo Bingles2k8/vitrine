@@ -7,30 +7,55 @@ import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface DamageTabProps {
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; title?: string | null; [key: string]: unknown }
+  museum: { id: string; plan: string; [key: string]: unknown }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
+}
+
+interface DamageReport {
+  id: string
+  report_number: string | null
+  damage_type: string | null
+  severity: string
+  status: string
+  incident_date: string | null
+  discovered_date: string | null
+  discovered_by: string | null
+  description: string | null
+  cause: string | null
+  location_at_incident: string | null
+  repair_estimate: string | number | null
+  repair_currency: string | null
+  insurance_claim_ref: string | null
+  insurance_notified: boolean | null
+  insurance_claim_outcome: string | null
+  police_report_ref: string | null
+  object_status_after_event: string | null
+  reported_to_governing_body: boolean | null
+  action_taken: string | null
+  notes: string | null
 }
 
 const OBJECT_STATUSES_AFTER = ['Intact — no treatment needed', 'Awaiting conservation', 'Under conservation', 'Repaired', 'Irreparable — retained', 'Write-off']
 
 export default function DamageTab({ canEdit, object, museum, supabase, logActivity }: DamageTabProps) {
-  const [damageHistory, setDamageHistory] = useState<any[]>([])
+  const [damageHistory, setDamageHistory] = useState<DamageReport[]>([])
   const [damageLoaded, setDamageLoaded] = useState(false)
   const [damageForm, setDamageForm] = useState({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [selectedRecord, setSelectedRecord] = useState<DamageReport | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('damage_reports').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
-      .then(({ data }: any) => { setDamageHistory(data || []); setDamageLoaded(true) })
+      .then(({ data }: { data: DamageReport[] | null }) => { setDamageHistory(data || []); setDamageLoaded(true) })
   }, [object.id])
 
   async function addDamage() {
@@ -65,7 +90,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
     const { error } = await supabase.from('damage_reports').update({ status }).eq('id', id)
     if (error) { toast(error.message, 'error'); return }
     setDamageHistory(h => h.map(r => r.id === id ? { ...r, status } : r))
-    if (selectedRecord?.id === id) setSelectedRecord((r: any) => ({ ...r, status }))
+    if (selectedRecord?.id === id) setSelectedRecord(r => (r ? { ...r, status } : r))
   }
 
   const statusStyle = (status: string) =>
@@ -280,7 +305,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
               {selectedRecord.repair_estimate && (
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Repair Estimate</div>
-                  <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{selectedRecord.repair_currency} {parseFloat(selectedRecord.repair_estimate).toFixed(2)}</div>
+                  <div className="text-sm font-mono text-stone-700 dark:text-stone-300">{selectedRecord.repair_currency} {parseFloat(String(selectedRecord.repair_estimate)).toFixed(2)}</div>
                 </div>
               )}
               {(selectedRecord.insurance_claim_ref || selectedRecord.insurance_notified) && (

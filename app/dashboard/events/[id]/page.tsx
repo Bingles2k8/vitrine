@@ -49,9 +49,13 @@ const TYPE_LABELS: Record<string, string> = {
   exhibition: 'Exhibition', workshop: 'Workshop', talk: 'Talk', tour: 'Tour',
 }
 
+interface Museum {
+  id: string
+}
+
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [event, setEvent] = useState<Event | null>(null)
@@ -157,7 +161,7 @@ export default function EventDetailPage() {
   }
 
   async function handleStatusChange(newStatus: string) {
-    if (!event) return
+    if (!event || !museum) return
     await supabase.from('events').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', event.id)
     setEvent(e => e ? { ...e, status: newStatus } : e)
     await supabase.from('activity_log').insert({

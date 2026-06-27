@@ -22,13 +22,60 @@ const OUTCOME_STYLES: Record<string, string> = {
   'Disposed':                'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
 }
 
+interface MuseumRow {
+  id: string
+  plan: string
+  ui_mode: string | null
+  [key: string]: unknown
+}
+
+interface EntryObjectRow {
+  title: string | null
+  accession_no: string | null
+  deleted_at: string | null
+  description: string | null
+  medium: string | null
+  physical_materials: string | null
+  artist: string | null
+  maker_name: string | null
+  object_type: string | null
+  status: string | null
+  created_at: string | null
+  production_date: string | null
+  acquisition_method: string | null
+  accession_register_confirmed: boolean | null
+  insured_value?: number | null
+}
+
+interface EntryRow {
+  id: string
+  entry_number: string | null
+  entry_date: string
+  depositor_name: string | null
+  depositor_contact: string | null
+  entry_reason: string | null
+  object_description: string | null
+  object_count: number | null
+  received_by: string | null
+  outcome: string
+  receipt_issued?: boolean | null
+  object_id: string | null
+  objects: EntryObjectRow | null
+}
+
+interface ObjectOption {
+  id: string
+  title: string | null
+  accession_no: string | null
+}
+
 export default function EntryRegisterPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<MuseumRow | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [entries, setEntries] = useState<any[]>([])
-  const [objects, setObjects] = useState<any[]>([])
+  const [entries, setEntries] = useState<EntryRow[]>([])
+  const [objects, setObjects] = useState<ObjectOption[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
@@ -77,8 +124,8 @@ export default function EntryRegisterPage() {
       const { museum, isOwner, staffAccess } = result
       try {
         const [{ data: entries }, { data: objects }] = await Promise.all([
-          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)').eq('museum_id', museum.id).order('entry_date', { ascending: false }),
-          supabase.from('objects').select('id, title, accession_no').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
+          supabase.from('entry_records').select('*, objects(title, accession_no, deleted_at, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)').eq('museum_id', museum!.id).order('entry_date', { ascending: false }),
+          supabase.from('objects').select('id, title, accession_no').eq('museum_id', museum!.id).is('deleted_at', null).order('title'),
         ])
         setMuseum(museum)
         setIsOwner(isOwner)
@@ -107,19 +154,19 @@ export default function EntryRegisterPage() {
     const { data: sameDay } = await supabase
       .from('objects')
       .select('accession_no')
-      .eq('museum_id', museum.id)
+      .eq('museum_id', museum!.id)
       .like('accession_no', `${prefix}-%`)
     const next = (sameDay?.length ?? 0) + 1
     return `${prefix}-${String(next).padStart(3, '0')}`
   }
 
-  async function handlePromote(entry: any) {
-        const planInfo = getPlan(museum?.plan)
+  async function handlePromote(entry: EntryRow) {
+        const planInfo = getPlan(museum?.plan ?? '')
     const limit = planInfo.objects
     if (limit !== null) {
       const { count } = await supabase
         .from('objects').select('*', { count: 'exact', head: true })
-        .eq('museum_id', museum.id)
+        .eq('museum_id', museum!.id)
         .is('deleted_at', null)
       if (count !== null && count >= limit) {
         toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
@@ -158,7 +205,7 @@ export default function EntryRegisterPage() {
       const { data: existing } = await supabase
         .from('objects')
         .select('id, title')
-        .eq('museum_id', museum.id)
+        .eq('museum_id', museum!.id)
         .eq('barcode', code)
         .is('deleted_at', null)
         .maybeSingle()
@@ -198,7 +245,7 @@ export default function EntryRegisterPage() {
 
   async function handleCreateEntry(mode: 'stay' | 'continue') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
-    const trackDepositor = getPlan(museum?.plan).depositorTracking
+    const trackDepositor = getPlan(museum?.plan ?? '').depositorTracking
     const requiredMissing = !entry_date || !object_title || (fullMode && !entry_reason) || !object_description || (fullMode && !accession_no) ||
       (trackDepositor && (!depositor_name || !received_by))
     if (requiredMissing) {
@@ -206,10 +253,10 @@ export default function EntryRegisterPage() {
       return
     }
     // Check plan limits
-    const planInfo = getPlan(museum?.plan)
+    const planInfo = getPlan(museum?.plan ?? '')
     const limit = planInfo.objects
     if (limit !== null) {
-      const { count } = await supabase.from('objects').select('*', { count: 'exact', head: true }).eq('museum_id', museum.id).is('deleted_at', null)
+      const { count } = await supabase.from('objects').select('*', { count: 'exact', head: true }).eq('museum_id', museum!.id).is('deleted_at', null)
       if (count !== null && count >= limit) {
         toast(`Your ${planInfo.label} plan allows up to ${limit.toLocaleString()} objects. Upgrade your plan to add more.`, 'error')
         return
@@ -220,7 +267,7 @@ export default function EntryRegisterPage() {
     const yearEntries = entries.filter(e => e.entry_number?.startsWith(`EN-${year}-`))
     const entryNumber = newEntry.entry_number.trim() || `EN-${year}-${String(yearEntries.length + 1).padStart(3, '0')}`
     const { data: created, error } = await supabase.from('entry_records').insert({
-      museum_id: museum.id,
+      museum_id: museum!.id,
       entry_number: entryNumber,
       entry_date: newEntry.entry_date,
       depositor_name: newEntry.depositor_name,
@@ -284,8 +331,8 @@ export default function EntryRegisterPage() {
 
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
-  const fullMode = getPlan(museum?.plan).fullMode
-  const trackDepositor = getPlan(museum?.plan).depositorTracking
+  const fullMode = getPlan(museum?.plan ?? '').fullMode
+  const trackDepositor = getPlan(museum?.plan ?? '').depositorTracking
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
   const mediumOptions = Array.from(new Set(entries.map(e => e.objects?.medium).filter(Boolean))).sort() as string[]
@@ -338,7 +385,7 @@ export default function EntryRegisterPage() {
           title="Object Entry Register"
           actions={canEdit && (
             <>
-              {getPlan(museum?.plan).analytics && (
+              {getPlan(museum?.plan ?? '').analytics && (
                 <TopBarButton variant="primary" onClick={() => setShowImport(true)}>
                   Import CSV
                 </TopBarButton>
@@ -380,7 +427,7 @@ export default function EntryRegisterPage() {
 
           {/* Object usage bar */}
           {(() => {
-            const planInfo = getPlan(museum?.plan)
+            const planInfo = getPlan(museum?.plan ?? '')
             const limit = planInfo.objects
             if (limit === null) return null
             const count = objects.length
@@ -567,7 +614,7 @@ export default function EntryRegisterPage() {
                         <span className="relative group/tip inline-flex items-center">
                           <span className="cursor-help text-stone-400 dark:text-stone-500 text-[10px] border border-stone-300 dark:border-stone-600 rounded-full w-3.5 h-3.5 flex items-center justify-center">?</span>
                           <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-60 max-w-[calc(100vw-2rem)] p-2.5 bg-stone-900 text-white text-[11px] normal-case tracking-normal rounded shadow-xl opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 pointer-events-none leading-relaxed">
-                            Optional — we'll generate one automatically (YYMMDD-001). Set your own if you want to distinguish multiple objects with the same name.
+                            Optional — we&apos;ll generate one automatically (YYMMDD-001). Set your own if you want to distinguish multiple objects with the same name.
                           </span>
                         </span>
                       )}
@@ -591,7 +638,7 @@ export default function EntryRegisterPage() {
                 >
                   {submitting ? 'Recording…' : 'Record Entry'}
                 </button>
-                {!getPlan(museum?.plan).fullMode && (
+                {!getPlan(museum?.plan ?? '').fullMode && (
                   <button
                     onClick={() => handleCreateEntry('continue')}
                     disabled={submitting}
@@ -715,7 +762,7 @@ export default function EntryRegisterPage() {
         <CSVImportModal
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); window.location.reload() }}
-          titleOnly={!getPlan(museum?.plan).fullMode}
+          titleOnly={!getPlan(museum?.plan ?? '').fullMode}
         />
       )}
       {scannerOpen && (

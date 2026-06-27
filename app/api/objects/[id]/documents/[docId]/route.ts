@@ -13,7 +13,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Resolve museum (owner or Admin/Editor staff)
-  let museum: any = null
+  let museum: { id: string } | null = null
   const { data: owned } = await supabase
     .from('museums')
     .select('id')

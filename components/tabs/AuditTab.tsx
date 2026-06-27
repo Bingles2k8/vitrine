@@ -1,39 +1,68 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES, INVENTORY_OUTCOMES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadToR2 } from '@/lib/r2-upload'
 
+interface AuditRecord {
+  id: string
+  inventoried_at: string
+  inventoried_by: string | null
+  inventory_outcome: string | null
+  location_confirmed: string | null
+  condition_confirmed: string | null
+  action_required: string | null
+  action_completed: boolean | null
+  action_completed_date: string | null
+  discrepancy: string | null
+  notes: string | null
+}
+
+interface AuditExercise {
+  id: string
+  audit_reference: string | null
+  scope: string | null
+}
+
+interface AuditDocument {
+  id: string
+  file_url: string
+  file_name: string | null
+  label: string | null
+  document_type: string | null
+}
+
 interface AuditTabProps {
-  form: Record<string, any>
-  set: (field: string, value: any) => void
+  form: Record<string, string | number | boolean | null | undefined>
+  set: (field: string, value: string | number | boolean | null) => void
   canEdit: boolean
-  object: any
-  museum: any
-  supabase: any
+  object: { id: string; title?: string | null; [key: string]: unknown }
+  museum: { id: string; [key: string]: unknown }
+  supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
 }
 
 export default function AuditTab({ form, set, canEdit, object, museum, supabase, logActivity }: AuditTabProps) {
-  const [auditHistory, setAuditHistory] = useState<any[]>([])
+  const [auditHistory, setAuditHistory] = useState<AuditRecord[]>([])
   const [auditLoaded, setAuditLoaded] = useState(false)
-  const [exercises, setExercises] = useState<any[]>([])
+  const [exercises, setExercises] = useState<AuditExercise[]>([])
   const [exercisesLoaded, setExercisesLoaded] = useState(false)
   const [auditForm, setAuditForm] = useState({ inventoried_at: new Date().toISOString().slice(0,10), inventoried_by: '', exercise_id: '', location_confirmed: '', condition_confirmed: '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
+  const [selectedRecord, setSelectedRecord] = useState<AuditRecord | null>(null)
+  const [selectedRecordDocs, setSelectedRecordDocs] = useState<AuditDocument[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
     supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
-      .then(({ data }: any) => { setAuditHistory(data || []); setAuditLoaded(true) })
+      .then(({ data }: { data: AuditRecord[] | null }) => { setAuditHistory(data || []); setAuditLoaded(true) })
     supabase.from('audit_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
-      .then(({ data }: any) => { setExercises(data || []); setExercisesLoaded(true) })
+      .then(({ data }: { data: AuditExercise[] | null }) => { setExercises(data || []); setExercisesLoaded(true) })
   }, [object.id])
 
   useEffect(() => {
@@ -43,7 +72,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
       .eq('related_to_id', selectedRecord.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .then(({ data }: any) => setSelectedRecordDocs(data || []))
+      .then(({ data }: { data: AuditDocument[] | null }) => setSelectedRecordDocs(data || []))
   }, [selectedRecord?.id])
 
   async function addAudit() {
@@ -190,7 +219,7 @@ export default function AuditTab({ form, set, canEdit, object, museum, supabase,
       {form.last_inventoried && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
           <div className={sectionTitle}>Last Inventoried</div>
-          <p className="text-sm text-stone-900 dark:text-stone-100">{new Date(form.last_inventoried).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}{form.inventoried_by && ` by ${form.inventoried_by}`}</p>
+          <p className="text-sm text-stone-900 dark:text-stone-100">{new Date(form.last_inventoried as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}{form.inventoried_by && ` by ${form.inventoried_by}`}</p>
         </div>
       )}
 

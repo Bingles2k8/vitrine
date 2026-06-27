@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
@@ -151,12 +152,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         {/* Quick links */}
         <div className="mb-6">
-          <a
+          <Link
             href="/admin/blog"
             className="inline-block text-sm text-gray-600 border border-gray-200 rounded px-4 py-2 hover:bg-gray-50 transition-colors"
           >
             Manage Blog Posts →
-          </a>
+          </Link>
         </div>
 
         {/* Table */}

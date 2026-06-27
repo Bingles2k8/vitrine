@@ -31,7 +31,7 @@ export default function PublicObjectMap({ lat, lng, label, borderColor }: Public
         popupAnchor: [1, -34],
         shadowSize: [41, 41],
       })
-      ;(L.Marker.prototype as any).options.icon = DefaultIcon
+      ;L.Marker.prototype.options.icon = DefaultIcon
       setReady(true)
     })
   }, [])

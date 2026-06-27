@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const limited = await rateLimit(apiLimiter, user.id)
   if (limited) return limited
 
-  let body: any
+  let body: Record<string, unknown>
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const { museum_id, phash, exclude_object_id, threshold, limit } = body ?? {}

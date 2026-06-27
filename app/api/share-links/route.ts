@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient, type SupabaseClient } from '@supabase/supabase-js'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { parseBody, shareLinkCreateSchema } from '@/lib/validations'
 import { getPlan } from '@/lib/plans'
 import { hashPasscode } from '@/lib/share-link-crypto'
 
-async function resolveMuseum(supabase: any, userId: string) {
+async function resolveMuseum(supabase: SupabaseClient, userId: string) {
   const { data: owned } = await supabase.from('museums').select('id, plan').eq('owner_id', userId).maybeSingle()
   if (owned) return { museumId: owned.id as string, plan: owned.plan as string, canEdit: true }
   const { data: staff } = await supabase
@@ -15,7 +15,7 @@ async function resolveMuseum(supabase: any, userId: string) {
     .eq('user_id', userId)
     .maybeSingle()
   if (!staff) return null
-  const plan = (staff.museums as any)?.plan ?? 'community'
+  const plan = (staff.museums as { plan?: string } | null)?.plan ?? 'community'
   return { museumId: staff.museum_id as string, plan, canEdit: staff.access === 'Admin' || staff.access === 'Editor' }
 }
 

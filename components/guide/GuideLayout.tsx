@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type React from 'react'
 
 const ICONS: Record<string, string> = {
@@ -57,7 +58,7 @@ export default function GuideLayout({ sections, title, subtitle, tierBadges }: P
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="/" className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></a>
+          <Link href="/" className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></Link>
           <div className="flex items-center gap-3">
             <a href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono hidden sm:block">Sign in</a>
             <a href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
@@ -70,9 +71,9 @@ export default function GuideLayout({ sections, title, subtitle, tierBadges }: P
       {/* ── Page header ──────────────────────────────────────────────────────── */}
       <header className="pt-28 pb-10 px-6 border-b border-white/5">
         <div className="max-w-7xl mx-auto">
-          <a href="/#pricing" className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors mb-6">
+          <Link href="/#pricing" className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors mb-6">
             ← All plans
-          </a>
+          </Link>
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {tierBadges.map(t => (
               <span key={t} className="text-xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full">

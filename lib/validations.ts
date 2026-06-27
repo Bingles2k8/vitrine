@@ -163,7 +163,7 @@ export const personalLoanUpdateSchema = z.object({
 
 export const documentUploadSchema = z.object({
   related_to_type: z.string().min(1).max(100).refine(
-    v => VALID_DOC_RELATED_TYPES.includes(v as any) || /^[a-z_]+$/.test(v),
+    v => (VALID_DOC_RELATED_TYPES as readonly string[]).includes(v) || /^[a-z_]+$/.test(v),
     'Invalid related_to_type'
   ),
   related_to_id: z.string().uuid().nullable().optional(),

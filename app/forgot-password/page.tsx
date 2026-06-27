@@ -37,13 +37,13 @@ export default function ForgotPasswordPage() {
               <div className="text-2xl">✉</div>
               <p className="text-sm text-stone-700 dark:text-stone-300 font-medium">Check your email</p>
               <p className="text-xs text-stone-400 dark:text-stone-500">
-                If an account exists for <span className="font-mono">{email}</span>, you'll receive a password reset link shortly.
+                If an account exists for <span className="font-mono">{email}</span>, you&apos;ll receive a password reset link shortly.
               </p>
             </div>
           ) : (
             <>
               <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">
-                Enter your email address and we'll send you a link to reset your password.
+                Enter your email address and we&apos;ll send you a link to reset your password.
               </p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

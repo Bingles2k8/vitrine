@@ -10,11 +10,27 @@ import { getPlan } from '@/lib/plans'
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface CollectionReview {
+  id: string
+  review_reference: string | null
+  review_title: string
+  reviewer: string | null
+  review_date_start: string | null
+  review_date_end: string | null
+  objects_reviewed: number | null
+  status: string
+}
+
 export default function CollectionsReviewPage() {
-  const [museum, setMuseum] = useState<any>(null)
+  const [museum, setMuseum] = useState<Museum | null>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [reviews, setReviews] = useState<any[]>([])
+  const [reviews, setReviews] = useState<CollectionReview[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -57,7 +73,7 @@ export default function CollectionsReviewPage() {
     const count = reviews.filter(r => r.review_reference?.startsWith(`CR-${year}-`)).length
     const ref = `CR-${year}-${String(count + 1).padStart(3, '0')}`
     const { error: err } = await supabase.from('collection_reviews').insert({
-      review_reference: ref, museum_id: museum.id,
+      review_reference: ref, museum_id: museum!.id,
       review_title: form.review_title, scope: form.scope || null,
       reviewer: form.reviewer || null, criteria: form.criteria || null,
       review_date_start: form.review_date_start,
@@ -70,7 +86,7 @@ export default function CollectionsReviewPage() {
     })
     if (err) { setError(err.message); setSubmitting(false); return }
     setForm({ review_title: '', scope: '', reviewer: '', criteria: '', review_date_start: '', review_date_end: '', objects_reviewed: '', objects_recommended_disposal: '', recommendations: '', notes: '', governing_body_reported: false, report_date: '' })
-    const { data } = await supabase.from('collection_reviews').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('collection_reviews').select('*').eq('museum_id', museum!.id).order('created_at', { ascending: false })
     setReviews(data || [])
     setSubmitting(false)
   }
@@ -87,7 +103,7 @@ export default function CollectionsReviewPage() {
     </div>
   )
 
-  if (!getPlan(museum?.plan).compliance) {
+  if (!getPlan(museum?.plan ?? '').compliance) {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/collections-review" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">

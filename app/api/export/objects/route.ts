@@ -108,7 +108,7 @@ export async function GET(request: Request) {
   const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
   const rows = (objects || []).map(a =>
-    FIELDS.map(f => escape((a as any)[f])).join(',')
+    FIELDS.map(f => escape((a as Record<string, unknown>)[f])).join(',')
   )
 
   const csv = [HEADERS.map(h => `"${h}"`).join(','), ...rows].join('\n')
