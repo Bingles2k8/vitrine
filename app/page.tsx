@@ -434,6 +434,9 @@ export default async function Home() {
               <Link href="/compliance" className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
                 See all 21 procedures →
               </Link>
+              <Link href="/guide/professional" className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
+                Read the guide →
+              </Link>
             </div>
           </div>
         </div>
@@ -481,6 +484,12 @@ export default async function Home() {
             </Link>
           </div>
           <p className="text-xs text-stone-600 font-mono mt-5">No credit card required for free plan · Cancel paid plans anytime</p>
+          <p className="text-xs text-stone-600 font-mono mt-3">
+            Want a tour first?{' '}
+            <Link href="/guide/essentials" className="text-stone-400 hover:text-amber-400 underline underline-offset-2 transition-colors">
+              See how it works →
+            </Link>
+          </p>
         </div>
       </section>
 

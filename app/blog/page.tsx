@@ -51,6 +51,11 @@ export default async function BlogIndex() {
           <p className="text-lg text-stone-400 leading-relaxed max-w-2xl">
             Guides, comparisons, and tips for collectors. How to catalog, organize, and value any collection.
           </p>
+          <p className="mt-5 text-sm font-mono">
+            <Link href="/guide/essentials" className="text-amber-500 hover:text-amber-400 transition-colors">
+              Looking for the product guide? Read it here →
+            </Link>
+          </p>
         </section>
 
         {/* Post list */}

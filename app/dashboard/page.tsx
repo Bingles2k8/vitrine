@@ -470,6 +470,14 @@ export default function Dashboard() {
               >
                 {fullMode ? '+ New Entry Record' : '+ Add an object'}
               </button>
+              <a
+                href="/guide/essentials"
+                target="_blank"
+                rel="noopener"
+                className="mt-4 text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 underline underline-offset-2 transition-colors"
+              >
+                New here? Read the getting-started guide →
+              </a>
             </div>
           ) : (
             <>

@@ -18,6 +18,7 @@ export default async function ProfessionalGuidePage() {
       title="How Vitrine works"
       subtitle="A full walkthrough of every feature available on the Professional, Institution, and Enterprise plans."
       tierBadges={['Professional', 'Institution', 'Enterprise']}
+      pdfHref="/vitrine-onboarding-guide.pdf"
     />
   )
 }

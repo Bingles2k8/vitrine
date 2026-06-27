@@ -476,6 +476,27 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
               )}
 
               {/* Account */}
+              {/* Help & guides */}
+              <div>
+                <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Help</div>
+                <a
+                  href="/guide/essentials"
+                  target="_blank"
+                  rel="noopener"
+                  className="block w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors mb-1.5"
+                >
+                  Guides &amp; how-tos →
+                </a>
+                <a
+                  href="/vitrine-onboarding-guide.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  className="block w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                >
+                  Download PDF guide →
+                </a>
+              </div>
+
               <div>
                 <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Account</div>
                 {userEmail && (

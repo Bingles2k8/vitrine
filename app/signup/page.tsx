@@ -103,6 +103,12 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
+        <p className="text-center text-xs text-stone-400 dark:text-stone-500 mt-2">
+          New to Vitrine?{' '}
+          <Link href="/guide/essentials" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-mono">
+            Read the guide
+          </Link>
+        </p>
       </div>
     </main>
   )
