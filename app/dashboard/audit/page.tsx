@@ -461,9 +461,9 @@ export default function AuditPage() {
                         {isNever ? (
                           <span className="text-amber-600">Never</span>
                         ) : isOld ? (
-                          <span className="text-amber-600">{new Date(a.last_inventoried).toLocaleDateString('en-GB')} ⚠</span>
+                          <span className="text-amber-600">{new Date(a.last_inventoried as string).toLocaleDateString('en-GB')} ⚠</span>
                         ) : (
-                          <span className="text-stone-500 dark:text-stone-400">{new Date(a.last_inventoried).toLocaleDateString('en-GB')}</span>
+                          <span className="text-stone-500 dark:text-stone-400">{new Date(a.last_inventoried as string).toLocaleDateString('en-GB')}</span>
                         )}
                       </td>
                       <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{a.inventoried_by || '—'}</td>

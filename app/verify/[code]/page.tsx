@@ -20,7 +20,7 @@ export default async function VerifyTicketPage({ params }: { params: Promise<{ c
 
   if (!ticket) notFound()
 
-  const order = ticket.ticket_orders as {
+  const order = ticket.ticket_orders as unknown as {
     buyer_name: string | null
     quantity: number
     events: { title: string; start_date: string; end_date: string; location: string | null } | null
