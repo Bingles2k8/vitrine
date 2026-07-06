@@ -1,12 +1,18 @@
 # Vitrine — Spectrum 5.1 Compliance Mapping
 
-> Last updated: April 2026
+> Last updated: July 2026 (reconciled against the 2026-07-06 code audit)
 > Spectrum version: 5.1 (Collections Trust)
 > App version: current `main` branch
 
 This document maps each Spectrum 5.1 procedure to its implementation in Vitrine, covering database schema, UI surfaces, and subscription tier requirements.
 
-**Coverage summary:** All 21 Spectrum 5.1 procedures are implemented. Primary data entry procedures (1–8) are available on Professional and above; secondary procedures (9–21) are available on Institution and above unless noted.
+**Coverage summary:** All 21 Spectrum 5.1 procedures are implemented and available on **Professional and above** (the `compliance` plan gate covers Professional, Institution and Enterprise). There is no procedure that requires Institution to use — the 🏛️ markers below refer only to higher numeric limits, not to procedure availability.
+
+> **Reconciliation note (July 2026).** The July code audit (`spectrum-audit-2026-07-06.md`) found that several fields marked "✅ Full / Gaps: None" here had database columns but no capture UI, and that three procedures were broken in normal use. These were remediated in the July 2026 branch:
+> - **Fixed and now genuinely captured:** valuation `basis`/`method`/`purpose`; conservation `outcome`/`condition_after` and before/during/after image stages; audit `method`; acquisition `legal_transfer_date`/`location_after_accessioning`; cataloguing maker/production/attribution fields; emergency `plan_last_tested`/`salvage_equipment_location` and the ranked `emergency_salvage_priorities` register; collection-wide risks.
+> - **Now operational:** Use of Collections (was failing silently on a column-name bug), Object Entry (the entry tab was never rendered), and the Location & Movement register (an embedded join returned nothing).
+> - **New:** all compliance records are now editable/deletable after creation; cross-collection Rights and Reproduction registers exist; the printable object record and CSV export include the previously-missing procedures.
+> - **Known remaining limitations:** condition `specific_issues` / `location_on_object` / `priority` are stored but still have no dedicated input; reference numbers are still generated client-side (collisions possible on historical rows); large-collection registers still load client-side. See the audit doc for the full list.
 
 ---
 
@@ -434,11 +440,12 @@ Object-level: `condition_grade` (current grade snapshot), `hazard_note`
 
 ### UI
 
-- **Per-object:** `ConditionTab.tsx` — condition assessment form and history
+- **Per-object:** `ConditionTab.tsx` — condition assessment form and history (records are editable/deletable; logging errors are surfaced)
 
 ### Gaps
 
-No dedicated central condition assessments dashboard page.
+- No dedicated central condition assessments dashboard page (recurrence is surfaced only as a badge on the main dashboard).
+- `specific_issues`, `location_on_object` and `priority` columns exist but have no capture UI yet.
 
 ---
 
