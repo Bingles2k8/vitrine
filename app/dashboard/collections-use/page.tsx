@@ -12,35 +12,8 @@ const USE_TYPES = ['Research', 'Exhibition', 'Education', 'Photography', 'Conser
 
 const inputCls = "w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
 
-interface Museum {
-  id: string
-  plan: string
-}
-
-interface UseRecord {
-  id: string
-  use_reference: string | null
-  use_type: string | null
-  requester_name: string | null
-  requester_org: string | null
-  use_date_start: string | null
-  use_date_end: string | null
-  status: string
-}
-
-export default function CollectionsUsePage() {
-  const [museum, setMuseum] = useState<Museum | null>(null)
-  const [isOwner, setIsOwner] = useState(true)
-  const [staffAccess, setStaffAccess] = useState<string | null>(null)
-  const [records, setRecords] = useState<UseRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
-  const supabase = createClient()
-
-  const [form, setForm] = useState({
+function emptyUseForm() {
+  return {
     use_type: 'Research',
     requester_name: '',
     requester_org: '',
@@ -53,7 +26,47 @@ export default function CollectionsUsePage() {
     conditions: '',
     approved_by: '',
     notes: '',
-  })
+  }
+}
+
+interface Museum {
+  id: string
+  plan: string
+}
+
+interface UseRecord {
+  id: string
+  use_reference: string | null
+  use_type: string | null
+  requester_name: string | null
+  requester_org: string | null
+  request_date: string | null
+  use_date_start: string | null
+  use_date_end: string | null
+  location_of_use: string | null
+  purpose: string | null
+  information_generated: string | null
+  conditions: string | null
+  approved_by: string | null
+  outcome: string | null
+  notes: string | null
+  status: string
+}
+
+export default function CollectionsUsePage() {
+  const [museum, setMuseum] = useState<Museum | null>(null)
+  const [isOwner, setIsOwner] = useState(true)
+  const [staffAccess, setStaffAccess] = useState<string | null>(null)
+  const [records, setRecords] = useState<UseRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [form, setForm] = useState(emptyUseForm())
 
   useEffect(() => {
     async function load() {
@@ -130,57 +143,76 @@ export default function CollectionsUsePage() {
     return `CU-${year}-${String(num).padStart(3, '0')}`
   }
 
+  function resetForm() {
+    setForm(emptyUseForm())
+    setEditingId(null)
+    setShowForm(false)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canEdit || !museum) return
     setSaving(true)
     setError('')
-    const reference = await generateReference()
-    const { data, error } = await supabase
-      .from('collection_use_records')
-      .insert({
-        museum_id: museum.id,
-        use_reference: reference,
-        use_type: form.use_type,
-        requester_name: form.requester_name,
-        requester_org: form.requester_org,
-        request_date: form.request_date,
-        use_date_start: form.use_date_start || null,
-        use_date_end: form.use_date_end || null,
-        purpose: form.purpose || null,
-        location_of_use: form.location_of_use || null,
-        information_generated: form.information_generated || null,
-        conditions: form.conditions || null,
-        approved_by: form.approved_by || null,
-        notes: form.notes || null,
-        status: 'Pending',
-      })
-      .select()
-      .single()
-    if (error) {
-      setError(error.message)
-      setSaving(false)
-      return
+    const payload = {
+      use_type: form.use_type,
+      requester_name: form.requester_name,
+      requester_org: form.requester_org,
+      request_date: form.request_date,
+      use_date_start: form.use_date_start || null,
+      use_date_end: form.use_date_end || null,
+      purpose: form.purpose || null,
+      location_of_use: form.location_of_use || null,
+      information_generated: form.information_generated || null,
+      conditions: form.conditions || null,
+      approved_by: form.approved_by || null,
+      notes: form.notes || null,
     }
-    if (data) {
-      setRecords([data, ...records])
-      setForm({
-        use_type: 'Research',
-        requester_name: '',
-        requester_org: '',
-        request_date: new Date().toISOString().slice(0, 10),
-        use_date_start: '',
-        use_date_end: '',
-        location_of_use: '',
-        purpose: '',
-        information_generated: '',
-        conditions: '',
-        approved_by: '',
-        notes: '',
-      })
-      setShowForm(false)
+    if (editingId) {
+      const { data, error } = await supabase
+        .from('collection_use_records')
+        .update(payload)
+        .eq('id', editingId)
+        .select()
+        .single()
+      if (error) { setError(error.message); setSaving(false); return }
+      if (data) {
+        setRecords(records.map(r => r.id === editingId ? data : r))
+        resetForm()
+      }
+    } else {
+      const reference = await generateReference()
+      const { data, error } = await supabase
+        .from('collection_use_records')
+        .insert({ ...payload, museum_id: museum.id, use_reference: reference, status: 'Pending' })
+        .select()
+        .single()
+      if (error) { setError(error.message); setSaving(false); return }
+      if (data) {
+        setRecords([data, ...records])
+        resetForm()
+      }
     }
     setSaving(false)
+  }
+
+  function startEdit(r: UseRecord) {
+    setEditingId(r.id)
+    setForm({
+      use_type: r.use_type || 'Research',
+      requester_name: r.requester_name || '',
+      requester_org: r.requester_org || '',
+      request_date: r.request_date || new Date().toISOString().slice(0, 10),
+      use_date_start: r.use_date_start || '',
+      use_date_end: r.use_date_end || '',
+      location_of_use: r.location_of_use || '',
+      purpose: r.purpose || '',
+      information_generated: r.information_generated || '',
+      conditions: r.conditions || '',
+      approved_by: r.approved_by || '',
+      notes: r.notes || '',
+    })
+    setShowForm(true)
   }
 
   async function updateStatus(id: string, status: string) {
@@ -188,9 +220,34 @@ export default function CollectionsUsePage() {
       .from('collection_use_records')
       .update({ status })
       .eq('id', id)
-    if (!error) {
-      setRecords(records.map(r => r.id === id ? { ...r, status } : r))
-    }
+    if (error) { setError(error.message); return }
+    setRecords(records.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  async function completeRecord(r: UseRecord) {
+    const outcome = window.prompt('Outcome of this use of collections:', r.outcome || '')
+    if (outcome === null) return
+    const information_generated = window.prompt('Information generated (publications, research outputs, etc.):', r.information_generated || '')
+    if (information_generated === null) return
+    const { data, error } = await supabase
+      .from('collection_use_records')
+      .update({ status: 'Completed', outcome: outcome || null, information_generated: information_generated || null })
+      .eq('id', r.id)
+      .select()
+      .single()
+    if (error) { setError(error.message); return }
+    if (data) setRecords(records.map(rec => rec.id === r.id ? data : rec))
+  }
+
+  async function deleteRecord(id: string) {
+    if (!confirm('Delete this record? This cannot be undone.')) return
+    const { error } = await supabase
+      .from('collection_use_records')
+      .delete()
+      .eq('id', id)
+    if (error) { setError(error.message); return }
+    setRecords(records.filter(r => r.id !== id))
+    if (editingId === id) resetForm()
   }
 
   function statusBadge(status: string) {
@@ -199,6 +256,8 @@ export default function CollectionsUsePage() {
       case 'Approved': return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
       case 'In Use': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
       case 'Completed': return 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
+      case 'Declined': return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
+      case 'Cancelled': return 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
       default: return 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
     }
   }
@@ -231,7 +290,7 @@ export default function CollectionsUsePage() {
           {canEdit && (
             <div className="flex justify-end">
               <button
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => { if (showForm) { resetForm() } else { setForm(emptyUseForm()); setEditingId(null); setShowForm(true) } }}
                 className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
               >
                 {showForm ? 'Cancel' : '+ New record'}
@@ -247,7 +306,7 @@ export default function CollectionsUsePage() {
           {/* Form */}
           {showForm && canEdit && (
             <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-2">New Use of Collections Record</h3>
+              <h3 className="font-serif text-lg italic text-stone-900 dark:text-stone-100 mb-2">{editingId ? 'Edit Use of Collections Record' : 'New Use of Collections Record'}</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -380,7 +439,7 @@ export default function CollectionsUsePage() {
                   disabled={saving}
                   className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Saving…' : 'Create record'}
+                  {saving ? 'Saving…' : editingId ? 'Save changes' : 'Create record'}
                 </button>
               </div>
             </form>
@@ -429,13 +488,21 @@ export default function CollectionsUsePage() {
                       </td>
                       <td className="px-4 py-4">
                         {canEdit && (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             {r.status === 'Pending' && (
                               <button
                                 onClick={() => updateStatus(r.id, 'Approved')}
                                 className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
                               >
                                 Approve
+                              </button>
+                            )}
+                            {r.status === 'Pending' && (
+                              <button
+                                onClick={() => updateStatus(r.id, 'Declined')}
+                                className="text-xs font-mono text-red-600 dark:text-red-400 hover:underline"
+                              >
+                                Decline
                               </button>
                             )}
                             {r.status === 'Approved' && (
@@ -448,12 +515,32 @@ export default function CollectionsUsePage() {
                             )}
                             {r.status === 'In Use' && (
                               <button
-                                onClick={() => updateStatus(r.id, 'Completed')}
+                                onClick={() => completeRecord(r)}
                                 className="text-xs font-mono text-stone-600 dark:text-stone-400 hover:underline"
                               >
                                 Complete
                               </button>
                             )}
+                            {r.status !== 'Completed' && r.status !== 'Cancelled' && r.status !== 'Declined' && (
+                              <button
+                                onClick={() => updateStatus(r.id, 'Cancelled')}
+                                className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:underline"
+                              >
+                                Cancel
+                              </button>
+                            )}
+                            <button
+                              onClick={() => startEdit(r)}
+                              className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteRecord(r.id)}
+                              className="text-xs font-mono text-red-600 dark:text-red-400 hover:underline"
+                            >
+                              Delete
+                            </button>
                           </div>
                         )}
                       </td>

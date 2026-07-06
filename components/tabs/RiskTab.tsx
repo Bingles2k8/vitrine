@@ -20,6 +20,7 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
   const [riskForm, setRiskForm] = useState({ risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' })
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [selectedRecordDocs, setSelectedRecordDocs] = useState<any[]>([])
@@ -87,11 +88,74 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
     if (selectedRecord?.id === id) setSelectedRecord((r: any) => ({ ...r, status }))
   }
 
+  const blankRiskForm = { risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' }
+
+  function startEditRisk(r: any) {
+    setRiskForm({
+      risk_type: r.risk_type || '',
+      description: r.description || '',
+      severity: r.severity || 'Medium',
+      likelihood: r.likelihood || 'Medium',
+      mitigation: r.mitigation || '',
+      review_date: (r.review_date || '').slice(0, 10),
+      responsible_person: r.responsible_person || '',
+      notes: r.notes || '',
+    })
+    setEditingId(r.id)
+    setSelectedRecord(null)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEditRisk() {
+    setEditingId(null)
+    setRiskForm(blankRiskForm)
+  }
+
+  async function saveRiskEdit() {
+    if (!editingId || !riskForm.risk_type || !riskForm.description || submitting) return
+    setSubmitting(true)
+    const payload = {
+      risk_type: riskForm.risk_type,
+      description: riskForm.description,
+      severity: riskForm.severity,
+      likelihood: riskForm.likelihood,
+      mitigation: riskForm.mitigation || null,
+      review_date: riskForm.review_date || null,
+      responsible_person: riskForm.responsible_person || null,
+      notes: riskForm.notes || null,
+    }
+    const { error } = await supabase.from('risk_register').update(payload).eq('id', editingId)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    setRiskHistory(h => h.map(r => r.id === editingId ? { ...r, ...payload } : r))
+    logActivity('risk_updated', `Updated ${riskForm.risk_type} risk for "${object.title}"`)
+    setEditingId(null)
+    setRiskForm(blankRiskForm)
+    setSubmitting(false)
+  }
+
+  async function deleteRisk(r: any) {
+    if (typeof window !== 'undefined' && !window.confirm(`Delete this ${r.risk_type || ''} risk? This cannot be undone.`)) return
+    const { error } = await supabase.from('risk_register').delete().eq('id', r.id)
+    if (error) { toast(error.message, 'error'); return }
+    setRiskHistory(h => h.filter(x => x.id !== r.id))
+    if (editingId === r.id) cancelEditRisk()
+    setSelectedRecord(null)
+  }
+
+  async function markReviewed(r: any) {
+    const next = typeof window !== 'undefined' ? window.prompt('Set new review date (YYYY-MM-DD)', new Date().toISOString().slice(0, 10)) : null
+    if (!next) return
+    const { error } = await supabase.from('risk_register').update({ review_date: next }).eq('id', r.id)
+    if (error) { toast(error.message, 'error'); return }
+    setRiskHistory(h => h.map(x => x.id === r.id ? { ...x, review_date: next } : x))
+    if (selectedRecord?.id === r.id) setSelectedRecord((s: any) => ({ ...s, review_date: next }))
+  }
+
   return (
     <>
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Add Risk</div>
+          <div className={sectionTitle}>{editingId ? 'Edit Risk' : 'Add Risk'}</div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls} data-learn="risk.type">Risk Type <span className="text-red-400">*</span></label>
@@ -135,10 +199,12 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
             <label className={labelCls}>Notes</label>
             <textarea value={riskForm.notes} onChange={e => setRiskForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
           </div>
-          <div>
-            <label className={labelCls}>Supporting Documents</label>
-            <StagedDocumentPicker relatedToType="risk" value={stagedDocs} onChange={setStagedDocs} />
-          </div>
+          {!editingId && (
+            <div>
+              <label className={labelCls}>Supporting Documents</label>
+              <StagedDocumentPicker relatedToType="risk" value={stagedDocs} onChange={setStagedDocs} />
+            </div>
+          )}
           {stagedUploadProgress && (
             <div>
               <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
@@ -151,10 +217,15 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
               </div>
             </div>
           )}
-          <button type="button" onClick={addRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
-            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {submitting ? 'Saving\u2026' : 'Add risk \u2192'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={editingId ? saveRiskEdit : addRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+              {submitting ? 'Saving\u2026' : editingId ? 'Save changes \u2192' : 'Add risk \u2192'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={cancelEditRisk} className="text-sm font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 px-3 py-2.5 transition-colors">Cancel</button>
+            )}
+          </div>
         </div>
       )}
 
@@ -211,7 +282,15 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.risk_type}</div>
                 <span className={`text-xs font-mono px-2 py-0.5 rounded-full mt-1 inline-block ${selectedRecord.status === 'Closed' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' : selectedRecord.status === 'Mitigated' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'}`}>{selectedRecord.status}</span>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
+                {canEdit && (
+                  <button type="button" onClick={() => startEditRisk(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Edit</button>
+                )}
+                {canEdit && (
+                  <button type="button" onClick={() => deleteRisk(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Delete</button>
+                )}
+                <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none">×</button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -268,10 +347,11 @@ export default function RiskTab({ canEdit, object, museum, supabase, logActivity
                 </div>
               )}
               {canEdit && selectedRecord.status !== 'Closed' && (
-                <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex gap-3">
+                <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex gap-3 flex-wrap">
                   {selectedRecord.status === 'Open' && (
                     <button type="button" onClick={() => updateRiskStatus(selectedRecord.id, 'Mitigated')} className="text-xs font-mono text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-3 py-1.5 hover:bg-sky-50 dark:hover:bg-sky-950 transition-colors">Mark mitigated</button>
                   )}
+                  <button type="button" onClick={() => markReviewed(selectedRecord)} className="text-xs font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded px-3 py-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors">Mark reviewed</button>
                   <button type="button" onClick={() => updateRiskStatus(selectedRecord.id, 'Closed')} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">Close risk</button>
                 </div>
               )}

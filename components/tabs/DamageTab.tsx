@@ -48,6 +48,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
   const [damageLoaded, setDamageLoaded] = useState(false)
   const [damageForm, setDamageForm] = useState({ incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<DamageReport | null>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
@@ -57,6 +58,72 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
     supabase.from('damage_reports').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: { data: DamageReport[] | null }) => { setDamageHistory(data || []); setDamageLoaded(true) })
   }, [object.id])
+
+  const blankDamageForm = { incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' }
+
+  function startEditDamage(r: DamageReport) {
+    setDamageForm({
+      incident_date: (r.incident_date || '').slice(0, 10),
+      discovered_date: (r.discovered_date || '').slice(0, 10),
+      discovered_by: r.discovered_by || '',
+      damage_type: r.damage_type || 'Accidental',
+      severity: r.severity || 'Minor',
+      description: r.description || '',
+      cause: r.cause || '',
+      location_at_incident: r.location_at_incident || '',
+      repair_estimate: r.repair_estimate != null ? String(r.repair_estimate) : '',
+      repair_currency: r.repair_currency || 'GBP',
+      insurance_claim_ref: r.insurance_claim_ref || '',
+      insurance_notified: !!r.insurance_notified,
+      police_report_ref: r.police_report_ref || '',
+      insurance_claim_outcome: r.insurance_claim_outcome || '',
+      object_status_after_event: r.object_status_after_event || '',
+      reported_to_governing_body: !!r.reported_to_governing_body,
+      action_taken: r.action_taken || '',
+      notes: r.notes || '',
+    })
+    setEditingId(r.id)
+    setSelectedRecord(null)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEditDamage() {
+    setEditingId(null)
+    setDamageForm(blankDamageForm)
+  }
+
+  async function deleteDamage(r: DamageReport) {
+    if (typeof window !== 'undefined' && !window.confirm(`Delete damage report ${r.report_number || ''}? This cannot be undone.`)) return
+    const { error } = await supabase.from('damage_reports').delete().eq('id', r.id)
+    if (error) { toast(error.message, 'error'); return }
+    setDamageHistory(h => h.filter(x => x.id !== r.id))
+    if (editingId === r.id) cancelEditDamage()
+    setSelectedRecord(null)
+  }
+
+  async function saveDamageEdit() {
+    if (!editingId || !damageForm.incident_date || !damageForm.discovered_date || !damageForm.discovered_by || !damageForm.description || submitting) return
+    setSubmitting(true)
+    const payload = {
+      ...damageForm,
+      repair_estimate: damageForm.repair_estimate ? Number(damageForm.repair_estimate) : null,
+      cause: damageForm.cause || null,
+      location_at_incident: damageForm.location_at_incident || null,
+      insurance_claim_ref: damageForm.insurance_claim_ref || null,
+      police_report_ref: damageForm.police_report_ref || null,
+      insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
+      object_status_after_event: damageForm.object_status_after_event || null,
+      action_taken: damageForm.action_taken || null,
+      notes: damageForm.notes || null,
+    }
+    const { error } = await supabase.from('damage_reports').update(payload).eq('id', editingId)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    setDamageHistory(h => h.map(r => r.id === editingId ? { ...r, ...payload } : r))
+    logActivity('damage_updated', `Updated damage report for "${object.title}"`)
+    setEditingId(null)
+    setDamageForm(blankDamageForm)
+    setSubmitting(false)
+  }
 
   async function addDamage() {
     if (!damageForm.incident_date || !damageForm.discovered_date || !damageForm.discovered_by || !damageForm.description || submitting) return
@@ -95,6 +162,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
   const statusStyle = (status: string) =>
     status === 'Closed' || status === 'Write-off' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
     : status === 'Repaired' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+    : status === 'Claimed' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
     : status === 'Under Investigation' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400'
     : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
 
@@ -102,7 +170,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
     <>
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Report Damage</div>
+          <div className={sectionTitle}>{editingId ? 'Edit Damage Report' : 'Report Damage'}</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls} data-learn="damage.incident_date">Incident Date <span className="text-red-400">*</span></label>
@@ -196,16 +264,21 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
             <label className={labelCls}>Notes</label>
             <textarea value={damageForm.notes} onChange={e => setDamageForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
           </div>
-          {canAttach && (
+          {canAttach && !editingId && (
             <div>
               <label className={labelCls}>Supporting Documents</label>
               <StagedDocumentPicker relatedToType="damage" value={stagedDocs} onChange={setStagedDocs} />
             </div>
           )}
-          <button type="button" onClick={addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting}
-            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {submitting ? 'Saving\u2026' : 'Save report \u2192'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={editingId ? saveDamageEdit : addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting}
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+              {submitting ? 'Saving\u2026' : editingId ? 'Save changes \u2192' : 'Save report \u2192'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={cancelEditDamage} className="text-sm font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 px-3 py-2.5 transition-colors">Cancel</button>
+            )}
+          </div>
         </div>
       )}
 
@@ -237,6 +310,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
                       <div className="flex items-center justify-end gap-2">
                         {r.status === 'Open' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Under Investigation')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Investigate</button>}
                         {(r.status === 'Open' || r.status === 'Under Investigation') && <button type="button" onClick={() => updateDamageStatus(r.id, 'Repaired')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Repaired</button>}
+                        {r.status !== 'Claimed' && r.status !== 'Closed' && r.status !== 'Write-off' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Claimed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Claimed</button>}
                         {r.status !== 'Closed' && r.status !== 'Write-off' && <button type="button" onClick={() => updateDamageStatus(r.id, 'Closed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Close</button>}
                       </div>
                     </td>
@@ -266,7 +340,15 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
                   <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${statusStyle(selectedRecord.status)}`}>{selectedRecord.status}</span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
+                {canEdit && (
+                  <button type="button" onClick={() => startEditDamage(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Edit</button>
+                )}
+                {canEdit && (
+                  <button type="button" onClick={() => deleteDamage(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Delete</button>
+                )}
+                <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none">×</button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -339,6 +421,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
                 <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex gap-3 flex-wrap">
                   {selectedRecord.status === 'Open' && <button type="button" onClick={() => updateDamageStatus(selectedRecord.id, 'Under Investigation')} className="text-xs font-mono text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-3 py-1.5 hover:bg-sky-50 dark:hover:bg-sky-950 transition-colors">Under investigation</button>}
                   {(selectedRecord.status === 'Open' || selectedRecord.status === 'Under Investigation') && <button type="button" onClick={() => updateDamageStatus(selectedRecord.id, 'Repaired')} className="text-xs font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded px-3 py-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors">Mark repaired</button>}
+                  {selectedRecord.status !== 'Claimed' && <button type="button" onClick={() => updateDamageStatus(selectedRecord.id, 'Claimed')} className="text-xs font-mono text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors">Mark claimed</button>}
                   <button type="button" onClick={() => updateDamageStatus(selectedRecord.id, 'Closed')} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">Close report</button>
                 </div>
               )}
