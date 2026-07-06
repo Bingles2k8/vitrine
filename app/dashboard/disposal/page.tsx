@@ -15,6 +15,14 @@ const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:te
 const DISPOSAL_METHODS = ['Sale', 'Transfer', 'Destruction', 'Return to Owner', 'Exchange', 'Gift to another museum']
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
 const DISPOSAL_DOC_TYPES = ['Authorisation Letter', 'Governing Body Minutes', 'Transfer Agreement', 'Sale Receipt', 'Public Notice', 'Deaccession Form', 'Correspondence', 'Other']
+const DISPOSAL_SELECT = '*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)'
+const EMPTY_DISPOSAL_FORM = {
+  object_id: '', disposal_method: '', disposal_reason: '', justification: '',
+  deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '',
+  proceeds_amount: '', proceeds_currency: 'GBP',
+  governing_body_approval: false, governing_body_date: '',
+  register_annotated: false, public_notice: '', public_notice_date: '', notes: '',
+}
 
 interface MuseumRow {
   id: string
@@ -45,9 +53,19 @@ interface DisposalRecordRow {
   object_id: string | null
   disposal_method: string | null
   disposal_reason: string | null
+  justification: string | null
   deaccession_date: string | null
   authorised_by: string | null
   recipient_name: string | null
+  recipient_contact: string | null
+  proceeds_amount: number | null
+  proceeds_currency: string | null
+  governing_body_approval: boolean | null
+  governing_body_date: string | null
+  register_annotated: boolean | null
+  public_notice: string | null
+  public_notice_date: string | null
+  notes: string | null
   status: string
   objects: DisposalObjectRow | null
 }
@@ -81,6 +99,7 @@ export default function DisposalPage() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [sortBy, setSortBy] = useState<SortBy>('')
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [recordDocs, setRecordDocs] = useState<Record<string, DisposalDocRow[]>>({})
   const [showDocForm, setShowDocForm] = useState<string | null>(null)
   const [docLabel, setDocLabel] = useState('')
@@ -92,13 +111,7 @@ export default function DisposalPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [form, setForm] = useState({
-    object_id: '', disposal_method: '', disposal_reason: '', justification: '',
-    deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '',
-    proceeds_amount: '', proceeds_currency: 'GBP',
-    governing_body_approval: false, governing_body_date: '',
-    register_annotated: false, public_notice: '', public_notice_date: '', notes: '',
-  })
+  const [form, setForm] = useState({ ...EMPTY_DISPOSAL_FORM })
 
   useEffect(() => {
     async function load() {
@@ -108,7 +121,7 @@ export default function DisposalPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
       const [{ data: recs }, { data: arts }, { data: dDocs }] = await Promise.all([
-        supabase.from('disposal_records').select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)').eq('museum_id', museum.id).order('created_at', { ascending: false }),
+        supabase.from('disposal_records').select(DISPOSAL_SELECT).eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('disposal_record_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
@@ -184,10 +197,71 @@ export default function DisposalPage() {
       notes: form.notes || null,
     })
     if (err) { setError(err.message); setSubmitting(false); return }
-    setForm({ object_id: '', disposal_method: '', disposal_reason: '', justification: '', deaccession_date: '', authorised_by: '', recipient_name: '', recipient_contact: '', proceeds_amount: '', proceeds_currency: 'GBP', governing_body_approval: false, governing_body_date: '', register_annotated: false, public_notice: '', public_notice_date: '', notes: '' })
-    const { data } = await supabase.from('disposal_records').select('*, objects(title, accession_no, emoji)').eq('museum_id', museum!.id).order('created_at', { ascending: false })
+    setForm({ ...EMPTY_DISPOSAL_FORM })
+    const { data } = await supabase.from('disposal_records').select(DISPOSAL_SELECT).eq('museum_id', museum!.id).order('created_at', { ascending: false })
     setRecords(data || [])
     setSubmitting(false)
+  }
+
+  function startEdit(r: DisposalRecordRow) {
+    setEditingId(r.id)
+    setForm({
+      object_id: r.object_id || '',
+      disposal_method: r.disposal_method || '',
+      disposal_reason: r.disposal_reason || '',
+      justification: r.justification || '',
+      deaccession_date: r.deaccession_date || '',
+      authorised_by: r.authorised_by || '',
+      recipient_name: r.recipient_name || '',
+      recipient_contact: r.recipient_contact || '',
+      proceeds_amount: r.proceeds_amount != null ? String(r.proceeds_amount) : '',
+      proceeds_currency: r.proceeds_currency || 'GBP',
+      governing_body_approval: r.governing_body_approval || false,
+      governing_body_date: r.governing_body_date || '',
+      register_annotated: r.register_annotated || false,
+      public_notice: r.public_notice || '',
+      public_notice_date: r.public_notice_date || '',
+      notes: r.notes || '',
+    })
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setForm({ ...EMPTY_DISPOSAL_FORM })
+  }
+
+  async function saveEdit() {
+    if (!editingId || !form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting) return
+    setSubmitting(true)
+    const { error: err } = await supabase.from('disposal_records').update({
+      object_id: form.object_id, disposal_method: form.disposal_method,
+      disposal_reason: form.disposal_reason, justification: form.justification || null,
+      deaccession_date: form.deaccession_date, authorised_by: form.authorised_by,
+      recipient_name: form.recipient_name || null, recipient_contact: form.recipient_contact || null,
+      proceeds_amount: form.proceeds_amount ? parseFloat(form.proceeds_amount) : null,
+      proceeds_currency: form.proceeds_currency,
+      governing_body_approval: form.governing_body_approval,
+      governing_body_date: form.governing_body_approval && form.governing_body_date ? form.governing_body_date : null,
+      register_annotated: form.register_annotated,
+      public_notice: form.public_notice || null,
+      public_notice_date: form.public_notice_date || null,
+      notes: form.notes || null,
+    }).eq('id', editingId)
+    if (err) { setError(err.message); setSubmitting(false); return }
+    const { data } = await supabase.from('disposal_records').select(DISPOSAL_SELECT).eq('museum_id', museum!.id).order('created_at', { ascending: false })
+    setRecords(data || [])
+    cancelEdit()
+    setSubmitting(false)
+  }
+
+  async function deleteRecord(id: string) {
+    if (!confirm('Delete this disposal record? This cannot be undone.')) return
+    const { error: err } = await supabase.from('disposal_records').delete().eq('id', id)
+    if (err) { setError(err.message); return }
+    setRecords(r => r.filter(rec => rec.id !== id))
+    if (editingId === id) cancelEdit()
+    if (expandedRecordId === id) setExpandedRecordId(null)
   }
 
   async function updateStatus(id: string, status: string) {
@@ -228,7 +302,7 @@ export default function DisposalPage() {
               <div className="text-5xl mb-5">&oslash;</div>
               <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Disposal management is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Document and track the formal disposal of objects from your collection with full governance compliance.</p>
-              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
+              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors">View plans &rarr;</button>
             </div>
           </div>
       </DashboardShell>
@@ -300,7 +374,7 @@ export default function DisposalPage() {
 
           {canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Propose Disposal</div>
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{editingId ? 'Edit Disposal' : 'Propose Disposal'}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Object *</label>
@@ -387,10 +461,15 @@ export default function DisposalPage() {
                 <label className={labelCls}>Notes</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
-              <button type="button" onClick={addRecord} disabled={!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
-                {submitting ? 'Saving...' : 'Propose disposal \u2192'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={editingId ? saveEdit : addRecord} disabled={!form.object_id || !form.disposal_method || !form.disposal_reason || !form.deaccession_date || !form.authorised_by || submitting}
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                  {submitting ? 'Saving...' : editingId ? 'Save changes \u2192' : 'Propose disposal \u2192'}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={cancelEdit} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Cancel</button>
+                )}
+              </div>
             </div>
           )}
 
@@ -444,6 +523,8 @@ export default function DisposalPage() {
                       <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${
                           r.status === 'Completed' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
+                          : r.status === 'Rejected' ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
+                          : r.status === 'Cancelled' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                           : r.status === 'In Progress' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400'
                           : r.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
                           : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
@@ -451,10 +532,14 @@ export default function DisposalPage() {
                       </td>
                       {canEdit && (
                         <td className="px-4 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
                             {r.status === 'Proposed' && <button type="button" onClick={() => updateStatus(r.id, 'Approved')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Approve</button>}
                             {r.status === 'Approved' && <button type="button" onClick={() => updateStatus(r.id, 'In Progress')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Begin</button>}
                             {r.status === 'In Progress' && <button type="button" onClick={() => updateStatus(r.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Complete</button>}
+                            {(r.status === 'Proposed' || r.status === 'Approved') && <button type="button" onClick={() => updateStatus(r.id, 'Rejected')} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Reject</button>}
+                            {r.status !== 'Completed' && r.status !== 'Cancelled' && r.status !== 'Rejected' && <button type="button" onClick={() => updateStatus(r.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Cancel</button>}
+                            {r.status !== 'Completed' && <button type="button" onClick={() => startEdit(r)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Edit</button>}
+                            <button type="button" onClick={() => deleteRecord(r.id)} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
                             <button type="button" onClick={() => setExpandedRecordId(isExpanded ? null : r.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">{isExpanded ? '▲' : '▼'}</button>
                           </div>
                         </td>
@@ -514,7 +599,7 @@ export default function DisposalPage() {
                                     <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                   </label>
                                   <button type="button" onClick={() => uploadDisposalDoc(r.id)} disabled={!docFile || docUploading}
-                                    className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                    className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors shrink-0">
                                     {docUploading ? 'Uploading…' : 'Upload'}
                                   </button>
                                   <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}

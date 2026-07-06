@@ -10,6 +10,14 @@ import { getPlan } from '@/lib/plans'
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 
+const EMPTY_REVIEW_FORM = {
+  review_title: '', scope: '', reviewer: '', criteria: '',
+  review_date_start: '', review_date_end: '',
+  objects_reviewed: '', objects_recommended_disposal: '',
+  recommendations: '', notes: '',
+  governing_body_reported: false, report_date: '',
+}
+
 interface Museum {
   id: string
   plan: string
@@ -19,10 +27,17 @@ interface CollectionReview {
   id: string
   review_reference: string | null
   review_title: string
+  scope: string | null
   reviewer: string | null
+  criteria: string | null
   review_date_start: string | null
   review_date_end: string | null
   objects_reviewed: number | null
+  objects_recommended_disposal: number | null
+  recommendations: string | null
+  notes: string | null
+  governing_body_reported: boolean | null
+  report_date: string | null
   status: string
 }
 
@@ -34,16 +49,11 @@ export default function CollectionsReviewPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  const [form, setForm] = useState({
-    review_title: '', scope: '', reviewer: '', criteria: '',
-    review_date_start: '', review_date_end: '',
-    objects_reviewed: '', objects_recommended_disposal: '',
-    recommendations: '', notes: '',
-    governing_body_reported: false, report_date: '',
-  })
+  const [form, setForm] = useState({ ...EMPTY_REVIEW_FORM })
 
   useEffect(() => {
     async function load() {
@@ -85,10 +95,63 @@ export default function CollectionsReviewPage() {
       report_date: form.governing_body_reported && form.report_date ? form.report_date : null,
     })
     if (err) { setError(err.message); setSubmitting(false); return }
-    setForm({ review_title: '', scope: '', reviewer: '', criteria: '', review_date_start: '', review_date_end: '', objects_reviewed: '', objects_recommended_disposal: '', recommendations: '', notes: '', governing_body_reported: false, report_date: '' })
+    setForm({ ...EMPTY_REVIEW_FORM })
     const { data } = await supabase.from('collection_reviews').select('*').eq('museum_id', museum!.id).order('created_at', { ascending: false })
     setReviews(data || [])
     setSubmitting(false)
+  }
+
+  function startEdit(r: CollectionReview) {
+    setEditingId(r.id)
+    setForm({
+      review_title: r.review_title || '',
+      scope: r.scope || '',
+      reviewer: r.reviewer || '',
+      criteria: r.criteria || '',
+      review_date_start: r.review_date_start || '',
+      review_date_end: r.review_date_end || '',
+      objects_reviewed: r.objects_reviewed != null ? String(r.objects_reviewed) : '',
+      objects_recommended_disposal: r.objects_recommended_disposal != null ? String(r.objects_recommended_disposal) : '',
+      recommendations: r.recommendations || '',
+      notes: r.notes || '',
+      governing_body_reported: r.governing_body_reported || false,
+      report_date: r.report_date || '',
+    })
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setForm({ ...EMPTY_REVIEW_FORM })
+  }
+
+  async function saveEdit() {
+    if (!editingId || !form.review_title || !form.review_date_start || submitting) return
+    setSubmitting(true)
+    const { error: err } = await supabase.from('collection_reviews').update({
+      review_title: form.review_title, scope: form.scope || null,
+      reviewer: form.reviewer || null, criteria: form.criteria || null,
+      review_date_start: form.review_date_start,
+      review_date_end: form.review_date_end || null,
+      objects_reviewed: form.objects_reviewed ? parseInt(form.objects_reviewed) : 0,
+      objects_recommended_disposal: form.objects_recommended_disposal ? parseInt(form.objects_recommended_disposal) : 0,
+      recommendations: form.recommendations || null, notes: form.notes || null,
+      governing_body_reported: form.governing_body_reported,
+      report_date: form.governing_body_reported && form.report_date ? form.report_date : null,
+    }).eq('id', editingId)
+    if (err) { setError(err.message); setSubmitting(false); return }
+    const { data } = await supabase.from('collection_reviews').select('*').eq('museum_id', museum!.id).order('created_at', { ascending: false })
+    setReviews(data || [])
+    cancelEdit()
+    setSubmitting(false)
+  }
+
+  async function deleteReview(id: string) {
+    if (!confirm('Delete this review? This cannot be undone.')) return
+    const { error: err } = await supabase.from('collection_reviews').delete().eq('id', id)
+    if (err) { setError(err.message); return }
+    setReviews(r => r.filter(rec => rec.id !== id))
+    if (editingId === id) cancelEdit()
   }
 
   async function updateStatus(id: string, status: string) {
@@ -114,7 +177,7 @@ export default function CollectionsReviewPage() {
               <div className="text-5xl mb-5">&square;</div>
               <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Collections Review is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Conduct formal reviews of your collection to ensure alignment with your museum&apos;s mission and policies.</p>
-              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
+              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors">View plans &rarr;</button>
             </div>
           </div>
       </DashboardShell>
@@ -153,7 +216,7 @@ export default function CollectionsReviewPage() {
 
           {canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Review</div>
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{editingId ? 'Edit Review' : 'New Review'}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Review Title *</label>
@@ -212,10 +275,15 @@ export default function CollectionsReviewPage() {
                 <label className={labelCls}>Notes</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
-              <button type="button" onClick={addReview} disabled={!form.review_title || !form.review_date_start || submitting}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
-                {submitting ? 'Saving...' : 'Start review \u2192'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={editingId ? saveEdit : addReview} disabled={!form.review_title || !form.review_date_start || submitting}
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded disabled:opacity-40">
+                  {submitting ? 'Saving...' : editingId ? 'Save changes \u2192' : 'Start review \u2192'}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={cancelEdit} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Cancel</button>
+                )}
+              </div>
             </div>
           )}
 
@@ -253,14 +321,22 @@ export default function CollectionsReviewPage() {
                       <td className="px-4 py-4">
                         <span className={`text-xs font-mono px-2 py-1 rounded-full ${
                           r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                          : r.status === 'Cancelled' ? 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                           : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
                         }`}>{r.status}</span>
                       </td>
                       {canEdit && (
                         <td className="px-4 py-4 text-right">
-                          {r.status === 'In Progress' && (
-                            <button type="button" onClick={() => updateStatus(r.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Complete</button>
-                          )}
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
+                            {r.status === 'In Progress' && (
+                              <button type="button" onClick={() => updateStatus(r.id, 'Completed')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Complete</button>
+                            )}
+                            {r.status !== 'Completed' && r.status !== 'Cancelled' && (
+                              <button type="button" onClick={() => updateStatus(r.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Cancel</button>
+                            )}
+                            <button type="button" onClick={() => startEdit(r)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Edit</button>
+                            <button type="button" onClick={() => deleteReview(r.id)} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
+                          </div>
                         </td>
                       )}
                     </tr>

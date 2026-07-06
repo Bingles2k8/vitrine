@@ -8,6 +8,10 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
+import { inputCls, labelCls, sectionTitle, RISK_TYPES, RISK_SEVERITIES, RISK_LIKELIHOODS } from '@/components/tabs/shared'
+
+const OBJECTS_SELECT = '*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)'
+const BLANK_RISK_FORM = { risk_type: '', description: '', severity: 'Medium', likelihood: 'Medium', mitigation: '', review_date: '', responsible_person: '', notes: '' }
 
 const SEVERITY_STYLES: Record<string, string> = {
   Critical: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400',
@@ -32,6 +36,10 @@ export default function RiskPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [sortBy, setSortBy] = useState<SortBy>('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [riskForm, setRiskForm] = useState({ ...BLANK_RISK_FORM })
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -44,7 +52,7 @@ export default function RiskPage() {
       const { museum, isOwner, staffAccess } = result
       const { data: risks } = await supabase
         .from('risk_register')
-        .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)')
+        .select(OBJECTS_SELECT)
         .eq('museum_id', museum.id)
         .order('created_at', { ascending: false })
       setMuseum(museum)
@@ -59,6 +67,27 @@ export default function RiskPage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function addCollectionRisk() {
+    if (!riskForm.risk_type || !riskForm.description || submitting || !museum) return
+    setSubmitting(true)
+    setFormError(null)
+    const { data, error } = await supabase
+      .from('risk_register')
+      .insert({
+        ...riskForm,
+        review_date: riskForm.review_date || null,
+        object_id: null,
+        museum_id: museum.id,
+      })
+      .select(OBJECTS_SELECT)
+      .single()
+    if (error) { setFormError(error.message); setSubmitting(false); return }
+    setRisks(prev => [data, ...prev])
+    setRiskForm({ ...BLANK_RISK_FORM })
+    setShowAddForm(false)
+    setSubmitting(false)
   }
 
   if (loading) return (
@@ -83,7 +112,7 @@ export default function RiskPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Identify and manage risks to your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -137,6 +166,13 @@ export default function RiskPage() {
     <DashboardShell museum={museum} activePath="/dashboard/risk" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center justify-between px-4 md:px-8 sticky top-0">
           <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Risk Register</span>
+          <button
+            type="button"
+            onClick={() => { setShowAddForm(v => !v); setFormError(null) }}
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded transition-colors"
+          >
+            {showAddForm ? 'Cancel' : '+ Add collection-wide risk'}
+          </button>
         </div>
 
         <div className="p-6 md:p-10 space-y-6">
@@ -156,8 +192,71 @@ export default function RiskPage() {
 
           {/* Info banner */}
           <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">
-            <p className="text-xs text-stone-500 dark:text-stone-400">Risks are added and managed on each object&apos;s page under the Risk tab. Click an object-linked risk below to view it.</p>
+            <p className="text-xs text-stone-500 dark:text-stone-400">Object-level risks are added and managed on each object&apos;s page under the Risk tab. Use &ldquo;Add collection-wide risk&rdquo; above to record risks affecting the whole collection (e.g. fire, flood, theft). Click an object-linked risk below to view it.</p>
           </div>
+
+          {/* Add collection-wide risk form */}
+          {showAddForm && (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+              <div className={sectionTitle}>Add Collection-wide Risk</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Risk Type <span className="text-red-400">*</span></label>
+                  <select value={riskForm.risk_type} onChange={e => setRiskForm(f => ({ ...f, risk_type: e.target.value }))} className={inputCls}>
+                    <option value="">Select type…</option>
+                    {RISK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Responsible Person</label>
+                  <input value={riskForm.responsible_person} onChange={e => setRiskForm(f => ({ ...f, responsible_person: e.target.value }))} placeholder="Name" className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Description <span className="text-red-400">*</span></label>
+                <textarea value={riskForm.description} onChange={e => setRiskForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Describe the risk…" className={`${inputCls} resize-none`} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Severity</label>
+                  <select value={riskForm.severity} onChange={e => setRiskForm(f => ({ ...f, severity: e.target.value }))} className={inputCls}>
+                    {RISK_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Likelihood</label>
+                  <select value={riskForm.likelihood} onChange={e => setRiskForm(f => ({ ...f, likelihood: e.target.value }))} className={inputCls}>
+                    {RISK_LIKELIHOODS.map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Review Date</label>
+                  <input type="date" value={riskForm.review_date} onChange={e => setRiskForm(f => ({ ...f, review_date: e.target.value }))} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Mitigation</label>
+                <textarea value={riskForm.mitigation} onChange={e => setRiskForm(f => ({ ...f, mitigation: e.target.value }))} rows={2} placeholder="Steps taken or planned to mitigate…" className={`${inputCls} resize-none`} />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={riskForm.notes} onChange={e => setRiskForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+              </div>
+              {formError && (
+                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded px-4 py-2.5">
+                  <p className="text-xs text-red-700 dark:text-red-400">{formError}</p>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={addCollectionRisk} disabled={!riskForm.risk_type || !riskForm.description || submitting}
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+                  {submitting ? 'Saving…' : 'Add risk →'}
+                </button>
+                <button type="button" onClick={() => { setShowAddForm(false); setRiskForm({ ...BLANK_RISK_FORM }); setFormError(null) }}
+                  className="text-sm font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 px-3 py-2.5 transition-colors">Cancel</button>
+              </div>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="flex gap-2 flex-wrap">

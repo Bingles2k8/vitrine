@@ -120,10 +120,22 @@ export default function AcquisitionTab({ form, set, canEdit, saving, objectId, m
         </div>
 
         {/* Accession Date moved to governance */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} data-learn="acquisition.accession_date">Accession Date</label>
+            <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
+          </div>
+          <div>
+            <label className={labelCls} data-learn="acquisition.legal_transfer_date">Legal Transfer of Title</label>
+            <input type="date" value={form.legal_transfer_date || ''} onChange={e => set('legal_transfer_date', e.target.value)} className={inputCls} />
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date legal title passed to the museum</p>
+          </div>
+        </div>
+
         <div>
-          <label className={labelCls} data-learn="acquisition.accession_date">Accession Date</label>
-          <input type="date" value={form.accession_date || ''} onChange={e => set('accession_date', e.target.value)} className={inputCls} />
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date the object was formally accessioned</p>
+          <label className={labelCls} data-learn="acquisition.location_after_accessioning">Location After Accessioning</label>
+          <input value={form.location_after_accessioning || ''} onChange={e => set('location_after_accessioning', e.target.value)} placeholder="Where the object was placed once accessioned" className={inputCls} />
         </div>
 
         {/* Associated Documentation moved to governance */}

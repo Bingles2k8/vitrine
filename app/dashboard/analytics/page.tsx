@@ -171,7 +171,7 @@ function ExportModal({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <a href={buildUrl()} download onClick={onClose}
-            className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2.5 rounded text-center hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors">
+            className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2.5 rounded text-center transition-colors">
             Download CSV ↓
           </a>
         </div>
@@ -315,7 +315,7 @@ export default function AnalyticsPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Understand your collection with value tracking, status breakdowns, acquisition trends, and more. Available from £5/mo on the Hobbyist plan.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>

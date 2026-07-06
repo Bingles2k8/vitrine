@@ -8,12 +8,14 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
+import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 
 export default function ValuationPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [valuations, setValuations] = useState<any[]>([])
+  const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [objectCount, setObjectCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -29,7 +31,7 @@ export default function ValuationPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: vals }, { count }] = await Promise.all([
+      const [{ data: vals }, { count }, fxRates] = await Promise.all([
         supabase
           .from('valuations')
           .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)')
@@ -39,11 +41,13 @@ export default function ValuationPage() {
           .from('objects')
           .select('*', { count: 'exact', head: true })
           .eq('museum_id', museum.id),
+        loadFxRates(supabase),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setValuations(vals || [])
+      setRates(fxRates)
       setObjectCount(count ?? 0)
       setLoading(false)
     }
@@ -77,7 +81,7 @@ export default function ValuationPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track valuations and insurance values for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -94,7 +98,23 @@ export default function ValuationPage() {
   }
   const objectsValued = latestByObject.size
   const objectsWithoutValuation = Math.max(0, objectCount - objectsValued)
-  const totalValue = Array.from(latestByObject.values()).reduce((sum, v) => sum + parseFloat(v.value || 0), 0)
+
+  const baseCurrency = getBaseCurrency(museum)
+  // Convert an amount from -> to using the rates Map; falls back to raw amount when no rate is available.
+  const convert = (amount: number, from: string, to: string) => {
+    if (!amount) return 0
+    const f = (from || 'GBP').toUpperCase()
+    const t = (to || 'GBP').toUpperCase()
+    if (f === t || rates.size === 0) return amount
+    const direct = rates.get(`${f}:${t}`)
+    if (direct) return amount * direct
+    const inverse = rates.get(`${t}:${f}`)
+    if (inverse) return amount / inverse
+    return amount
+  }
+  const totalValue = Array.from(latestByObject.values()).reduce(
+    (sum, v) => sum + convert(parseFloat(v.value || 0), v.currency || 'GBP', baseCurrency), 0
+  )
 
   const formatCurrency = (value: number, currency: string) =>
     new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency || 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
@@ -143,7 +163,7 @@ export default function ValuationPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
               { label: 'Objects Valued', value: objectsValued },
-              { label: 'Total Collection Value', value: totalValue > 0 ? formatCurrency(totalValue, 'GBP') : '—' },
+              { label: 'Total Collection Value', value: totalValue > 0 ? formatCurrency(totalValue, baseCurrency) : '—' },
               { label: 'Objects Without Valuation', value: objectsWithoutValuation, warn: objectsWithoutValuation > 0 },
             ].map(s => (
               <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">

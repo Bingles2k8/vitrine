@@ -98,6 +98,7 @@ export const PLANS: Record<PlanId, {
         'Up to 1,000 objects, 5 photos each',
         'Collection analytics',
         'CSV bulk import & export',
+        'Unlimited private share links',
         '100 MB document storage',
         'All site templates',
       ]},
@@ -134,7 +135,8 @@ export const PLANS: Record<PlanId, {
       { items: [
         'Up to 5,000 objects, 10 staff accounts',
         '21 Spectrum-aligned procedures (entry, loans, conservation & more)',
-        'Event ticketing — free & paid',
+        'Event ticketing — free & paid, with QR door check-in',
+        'CSV bulk import & export',
         'Plan your visit page',
         'Visitor & collection analytics',
         'Donor & depositor tracking',
@@ -183,7 +185,7 @@ export const PLANS: Record<PlanId, {
       ]},
     ],
     featured: false,
-    comingSoon: true,
+    comingSoon: false,
   },
   enterprise: {
     label: 'Enterprise',

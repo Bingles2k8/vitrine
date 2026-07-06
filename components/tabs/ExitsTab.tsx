@@ -25,6 +25,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
   const today = new Date().toISOString().slice(0, 10)
   const [exitForm, setExitForm] = useState({ exit_date: today, exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const { toast } = useToast()
@@ -37,13 +38,90 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       .then(({ data }: any) => setActiveLoans(data || []))
   }, [object.id])
 
+  const blankExitForm = { exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' }
+
+  function startEditExit(r: any) {
+    setExitForm({
+      exit_date: (r.exit_date || today).slice(0, 10),
+      exit_reason: r.exit_reason || 'Return to depositor',
+      recipient_name: r.recipient_name || '',
+      recipient_contact: r.recipient_contact || '',
+      destination_address: r.destination_address || '',
+      transport_method: r.transport_method || '',
+      insurance_indemnity_confirmed: !!r.insurance_indemnity_confirmed,
+      packing_notes: r.packing_notes || '',
+      exit_condition: r.exit_condition || '',
+      signed_receipt: !!r.signed_receipt,
+      signed_receipt_date: (r.signed_receipt_date || '').slice(0, 10),
+      expected_return_date: (r.expected_return_date || '').slice(0, 10),
+      exit_authorised_by: r.exit_authorised_by || '',
+      notes: r.notes || '',
+      related_loan_id: r.related_loan_id || '',
+    })
+    setEditingId(r.id)
+    setSelectedRecord(null)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEditExit() {
+    setEditingId(null)
+    setExitForm(blankExitForm)
+  }
+
+  async function saveExitEdit() {
+    if (!editingId || !exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
+    setSubmitting(true)
+    const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
+    const payload = {
+      exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
+      recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
+      destination_address: exitForm.destination_address || null,
+      transport_method: exitForm.transport_method || null,
+      insurance_indemnity_confirmed: exitForm.insurance_indemnity_confirmed,
+      packing_notes: exitForm.packing_notes || null,
+      exit_condition: exitForm.exit_condition || null,
+      signed_receipt: exitForm.signed_receipt,
+      signed_receipt_date: exitForm.signed_receipt ? (exitForm.signed_receipt_date || today) : null,
+      expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
+      exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
+      related_loan_id: exitForm.related_loan_id || null,
+    }
+    const { error } = await supabase.from('object_exits').update(payload).eq('id', editingId)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    setEditingId(null)
+    setExitForm(blankExitForm)
+    const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
+    setExitHistory(data || [])
+    logActivity('exit_updated', `Updated exit record for "${object.title}" (${exitForm.exit_reason})`)
+    setSubmitting(false)
+  }
+
+  async function deleteExit(r: any) {
+    if (typeof window !== 'undefined' && !window.confirm(`Delete exit record ${r.exit_number || ''}? This cannot be undone.`)) return
+    const { error } = await supabase.from('object_exits').delete().eq('id', r.id)
+    if (error) { toast(error.message, 'error'); return }
+    setExitHistory(h => h.filter(x => x.id !== r.id))
+    if (editingId === r.id) cancelEditExit()
+    setSelectedRecord(null)
+  }
+
+  async function markReturned(r: any) {
+    const when = typeof window !== 'undefined' ? window.prompt('Return date (YYYY-MM-DD)', today) : null
+    if (!when) return
+    const { error } = await supabase.from('object_exits').update({ returned_date: when }).eq('id', r.id)
+    if (error) { toast(error.message, 'error'); return }
+    setExitHistory(h => h.map(x => x.id === r.id ? { ...x, returned_date: when } : x))
+    if (selectedRecord?.id === r.id) setSelectedRecord((s: any) => ({ ...s, returned_date: when }))
+    logActivity('exit_returned', `Recorded return of exit ${r.exit_number || ''} for "${object.title}"`)
+  }
+
   async function addExit() {
     if (!exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
     const exitNumber = `OE-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
     const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
-    const { error } = await supabase.from('object_exits').insert({
+    const { data: inserted, error } = await supabase.from('object_exits').insert({
       museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
       exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
       recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
@@ -57,12 +135,17 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
       exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
       related_loan_id: exitForm.related_loan_id || null,
-    })
+    }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
 
-    // Spectrum 3 & 6: update object's current location and log movement on exit
+    // Spectrum 3 & 6: update object's current location and log movement on exit.
+    // A permanent disposal-type exit also sets the object status to
+    // Deaccessioned so it no longer shows as On Display/Storage (finding 6.1).
     const newLocation = exitForm.destination_address?.trim() || 'Off-site'
-    await supabase.from('objects').update({ current_location: newLocation }).eq('id', object.id)
+    const DEACCESSION_EXIT_REASONS = new Set(['Disposal', 'Sale', 'Transfer'])
+    const objectUpdate: Record<string, string> = { current_location: newLocation }
+    if (DEACCESSION_EXIT_REASONS.has(exitForm.exit_reason)) objectUpdate.status = 'Deaccessioned'
+    await supabase.from('objects').update(objectUpdate).eq('id', object.id)
     await supabase.from('location_history').insert({
       museum_id: museum.id, object_id: object.id,
       location: newLocation, moved_by: exitForm.exit_authorised_by,
@@ -70,13 +153,10 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
     })
 
-    if (stagedDocs.length > 0) {
-      const newRecord = await supabase.from('object_exits').select('id').eq('exit_number', exitNumber).single()
-      if (newRecord.data) {
-        const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'exit_record', newRecord.data.id)
-        if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
-        setStagedDocs([])
-      }
+    if (stagedDocs.length > 0 && inserted) {
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'exit_record', inserted.id)
+      if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
+      setStagedDocs([])
     }
     setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' })
     const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
@@ -90,7 +170,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
 
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Record Exit</div>
+          <div className={sectionTitle}>{editingId ? 'Edit Exit Record' : 'Record Exit'}</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls} data-learn="exits.exit_date">Exit Date *</label>
@@ -179,16 +259,21 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
               </select>
             </div>
           )}
-          {canAttach && (
+          {canAttach && !editingId && (
             <div>
               <label className={labelCls}>Supporting Documents</label>
               <StagedDocumentPicker relatedToType="exit_record" value={stagedDocs} onChange={setStagedDocs} />
             </div>
           )}
-          <button type="button" onClick={addExit} disabled={!exitForm.recipient_name || !exitForm.exit_authorised_by || submitting}
-            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {submitting ? 'Saving…' : 'Save exit record →'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={editingId ? saveExitEdit : addExit} disabled={!exitForm.recipient_name || !exitForm.exit_authorised_by || submitting}
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
+              {submitting ? 'Saving…' : editingId ? 'Save changes →' : 'Save exit record →'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={cancelEditExit} className="text-sm font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 px-3 py-2.5 transition-colors">Cancel</button>
+            )}
+          </div>
         </div>
       )}
 
@@ -212,7 +297,15 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
                   <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{e.exit_reason}</td>
                   <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{e.recipient_name}</td>
                   <td className="px-4 py-4">{e.signed_receipt ? <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">✓ Signed</span> : <span className="text-xs font-mono text-amber-600 dark:text-amber-400">Pending</span>}</td>
-                  <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{e.expected_return_date ? new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB') : '—'}</td>
+                  <td className="px-4 py-4 text-xs font-mono">
+                    {e.returned_date
+                      ? <span className="text-emerald-600 dark:text-emerald-400">Returned {new Date(e.returned_date + 'T00:00:00').toLocaleDateString('en-GB')}</span>
+                      : e.expected_return_date
+                        ? (e.expected_return_date < today
+                            ? <span className="text-amber-600 dark:text-amber-400">{new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB')} ⚠</span>
+                            : <span className="text-stone-500 dark:text-stone-400">{new Date(e.expected_return_date + 'T00:00:00').toLocaleDateString('en-GB')}</span>)
+                        : <span className="text-stone-500 dark:text-stone-400">—</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -235,9 +328,24 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.exit_reason}</div>
                 <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5">{selectedRecord.exit_number}</div>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
+                {canEdit && (
+                  <button type="button" onClick={() => startEditExit(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Edit</button>
+                )}
+                {canEdit && (
+                  <button type="button" onClick={() => deleteExit(selectedRecord)} className="text-xs font-mono text-stone-400 hover:text-red-600 dark:hover:text-red-400 border border-stone-200 dark:border-stone-700 px-3 py-1.5 rounded transition-colors">Delete</button>
+                )}
+                <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none">×</button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
+              {canEdit && (TEMP_REASONS.has(selectedRecord.exit_reason) || selectedRecord.expected_return_date) && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {selectedRecord.returned_date
+                    ? <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded px-3 py-1.5">Returned {new Date(selectedRecord.returned_date + 'T00:00:00').toLocaleDateString('en-GB')}</span>
+                    : <button type="button" onClick={() => markReturned(selectedRecord)} className="text-xs font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded px-3 py-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors">Mark returned</button>}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Exit Date</div>

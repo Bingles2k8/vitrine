@@ -148,7 +148,7 @@ export default function WantedItemModal({ museumId, item, onClose, onSaved }: Wa
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors"
+              className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving…' : item ? 'Save changes' : 'Add to list'}
             </button>

@@ -273,7 +273,7 @@ export default function EventDetailPage() {
           </span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+          <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded transition-colors">
             Scan tickets →
           </button>
           {event.status === 'draft' && (
@@ -391,7 +391,7 @@ export default function EventDetailPage() {
             </div>
             <div className="flex gap-3">
               <button onClick={handleSaveOverview} disabled={saving}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
               <button onClick={() => router.push(`/dashboard/events/${event.id}/scan`)}
@@ -431,7 +431,7 @@ export default function EventDetailPage() {
                     <input type="number" value={slotCapacity} onChange={e => setSlotCapacity(e.target.value)} min="1" required
                       className="flex-1 border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-stone-400" />
                     <button type="submit"
-                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded transition-colors">
                       Add
                     </button>
                   </div>

@@ -25,10 +25,10 @@ interface MovementRow {
   move_type: string | null
   expected_return_date: string | null
   moved_by: string | null
-  notes: string | null
-  location_name: string | null
+  reason: string | null
+  location: string | null
+  location_code: string | null
   objects: { id: string; title: string | null; accession_no: string | null; emoji: string | null } | null
-  locations: { name: string | null; location_code: string | null } | null
 }
 
 interface ObjectRow {
@@ -46,18 +46,19 @@ function fmt(d: string | null) {
 }
 
 function exportCsv(rows: MovementRow[]) {
-  const headers = ['Date', 'Object', 'Accession No.', 'Location', 'Move Type', 'Expected Return', 'Moved By', 'Notes']
+  const headers = ['Date', 'Object', 'Accession No.', 'Location', 'Location Code', 'Move Type', 'Expected Return', 'Moved By', 'Reason']
   const lines = [
     headers.join(','),
     ...rows.map(r => [
       r.moved_at ? new Date(r.moved_at).toLocaleDateString('en-GB') : '',
       `"${(r.objects?.title || '').replace(/"/g, '""')}"`,
       r.objects?.accession_no || '',
-      `"${(r.locations?.name || r.location_name || '').replace(/"/g, '""')}"`,
+      `"${(r.location || '').replace(/"/g, '""')}"`,
+      r.location_code || '',
       r.move_type || '',
       r.expected_return_date ? fmt(r.expected_return_date) : '',
       `"${(r.moved_by || '').replace(/"/g, '""')}"`,
-      `"${(r.notes || '').replace(/"/g, '""')}"`,
+      `"${(r.reason || '').replace(/"/g, '""')}"`,
     ].join(',')),
   ]
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
@@ -93,7 +94,7 @@ export default function LocationsPage() {
       const [{ data: movs }, { data: objs }] = await Promise.all([
         supabase
           .from('location_history')
-          .select('*, objects(id, title, accession_no, emoji), locations(name, location_code)')
+          .select('*, objects(id, title, accession_no, emoji)')
           .eq('museum_id', museum.id)
           .order('moved_at', { ascending: false }),
         supabase
@@ -132,7 +133,7 @@ export default function LocationsPage() {
       const matchSearch = !q ||
         m.objects?.title?.toLowerCase().includes(q) ||
         m.objects?.accession_no?.toLowerCase().includes(q) ||
-        m.locations?.name?.toLowerCase().includes(q) ||
+        m.location?.toLowerCase().includes(q) ||
         m.moved_by?.toLowerCase().includes(q)
       const matchType = moveTypeFilter === 'All' || m.move_type === moveTypeFilter
       return matchSearch && matchType
@@ -286,8 +287,8 @@ export default function LocationsPage() {
                             </button>
                           </td>
                           <td className="px-4 py-4 text-stone-700 dark:text-stone-300">
-                            {m.locations?.name || '—'}
-                            {m.locations?.location_code && <span className="ml-1 text-xs font-mono text-stone-400 dark:text-stone-500">({m.locations.location_code})</span>}
+                            {m.location || '—'}
+                            {m.location_code && <span className="ml-1 text-xs font-mono text-stone-400 dark:text-stone-500">({m.location_code})</span>}
                           </td>
                           <td className="px-4 py-4">
                             <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPlan } from '@/lib/plans'
 import PrintButtons from '@/app/print/object/[id]/PrintButtons'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
+import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 
 export default async function InsurancePackPage() {
   const supabase = await createReadOnlyServerClient()
@@ -17,7 +18,7 @@ export default async function InsurancePackPage() {
 
   const { data: museum } = await serviceClient
     .from('museums')
-    .select('id, name, slug, owner_id, plan')
+    .select('id, name, slug, owner_id, plan, display_currencies')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -31,7 +32,7 @@ export default async function InsurancePackPage() {
     if (!staffRow) redirect('/dashboard')
     const { data: staffMuseum } = await serviceClient
       .from('museums')
-      .select('id, name, slug, owner_id, plan')
+      .select('id, name, slug, owner_id, plan, display_currencies')
       .eq('id', staffRow.museum_id)
       .single()
     if (!staffMuseum) redirect('/dashboard')
@@ -63,7 +64,37 @@ export default async function InsurancePackPage() {
     imageByObject[img.object_id] = img.url
   }
 
-  const collectionValue = getCollectionValue(allObjects)
+  // Official valuations reflect the true schedule value (not the stale objects.estimated_value).
+  const { data: valuations } = objectIds.length > 0
+    ? await serviceClient
+        .from('valuations')
+        .select('object_id, value, currency, valuation_date')
+        .eq('museum_id', resolvedMuseum.id)
+        .in('object_id', objectIds)
+    : { data: [] }
+
+  const allValuations = valuations || []
+
+  // Latest valuation per object (most recent valuation_date wins).
+  const latestValuationByObject = new Map<string, { value: number | null; currency: string | null }>()
+  const latestDateByObject = new Map<string, string>()
+  for (const v of allValuations) {
+    if (!v.object_id) continue
+    const d = v.valuation_date || ''
+    const prev = latestDateByObject.get(v.object_id)
+    if (prev === undefined || d > prev) {
+      latestDateByObject.set(v.object_id, d)
+      latestValuationByObject.set(v.object_id, {
+        value: v.value != null ? Number(v.value) : null,
+        currency: v.currency ?? null,
+      })
+    }
+  }
+
+  const rates = await loadFxRates(serviceClient)
+  const targetCurrency = getBaseCurrency(resolvedMuseum)
+
+  const collectionValue = getCollectionValue(allObjects, allValuations, { rates, targetCurrency })
   const formattedValue = formatCollectionValue(collectionValue.total, collectionValue.currency)
 
   const fmt = (d: string | null | undefined) =>
@@ -173,7 +204,11 @@ export default async function InsurancePackPage() {
                     {fmt(o.acquisition_date)}
                     {o.acquisition_value && <div style={{ marginTop: '2pt' }}>{fmtMoney(o.acquisition_value, o.acquisition_currency)}</div>}
                   </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '9pt' }}>{fmtMoney(o.estimated_value, o.estimated_value_currency)}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '9pt' }}>{(() => {
+                    const latest = latestValuationByObject.get(o.id)
+                    if (latest && latest.value != null && latest.value > 0) return fmtMoney(latest.value, latest.currency)
+                    return fmtMoney(o.estimated_value, o.estimated_value_currency)
+                  })()}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: '9pt' }}>{fmtMoney(o.insured_value, o.insured_value_currency)}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: '8pt', color: '#555' }}>{o.current_location || '—'}</td>
                 </tr>

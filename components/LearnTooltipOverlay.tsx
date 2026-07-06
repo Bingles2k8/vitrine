@@ -125,7 +125,7 @@ export default function LearnTooltipOverlay() {
         width: 288,
       }}
     >
-      <div className="relative bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded-lg shadow-xl px-4 py-3 text-xs font-mono leading-relaxed max-h-64 overflow-y-auto">
+      <div className="relative bg-stone-900 text-white dark:bg-white dark:text-stone-900 rounded-lg shadow-xl px-4 py-3 text-xs font-mono leading-relaxed max-h-64 overflow-y-auto">
         {/* Arrow */}
         {pos.placement === 'right' ? (
           <div

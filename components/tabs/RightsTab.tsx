@@ -43,6 +43,11 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     licence_terms: '', restrictions: '', rights_in: '', rights_out: '', notes: '',
   })
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [editingRights, setEditingRights] = useState(false)
+  const [rightsEditForm, setRightsEditForm] = useState({
+    rights_type: 'Copyright', rights_status: 'Active', rights_holder: '', expiry_date: '',
+    licence_terms: '', restrictions: '', rights_in: '', rights_out: '', notes: '',
+  })
   const [stagedRightsDocs, setStagedRightsDocs] = useState<StagedDoc[]>([])
 
   // Reproduction requests state
@@ -56,6 +61,13 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     credit_line: '', fee: '', fee_currency: 'GBP',
   })
   const [selectedRepro, setSelectedRepro] = useState<any>(null)
+  const [editingRepro, setEditingRepro] = useState(false)
+  const [reproEditForm, setReproEditForm] = useState({
+    requester_name: '', requester_org: '', request_date: '', purpose: '', status: 'Pending',
+    reproduction_type: '', reproduced_by: '', reproduction_date: '',
+    rights_clearance_confirmed: false, licence_terms: '', image_file_reference: '',
+    credit_line: '', fee: '', fee_currency: 'GBP', notes: '',
+  })
   const [stagedReproDocs, setStagedReproDocs] = useState<StagedDoc[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [showRightsForm, setShowRightsForm] = useState(false)
@@ -101,6 +113,57 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     setSubmitting(false)
   }
 
+  function openEditRights() {
+    if (!selectedRecord) return
+    setRightsEditForm({
+      rights_type: selectedRecord.rights_type || 'Copyright',
+      rights_status: selectedRecord.rights_status || 'Active',
+      rights_holder: selectedRecord.rights_holder || '',
+      expiry_date: selectedRecord.expiry_date || '',
+      licence_terms: selectedRecord.licence_terms || '',
+      restrictions: selectedRecord.restrictions || '',
+      rights_in: selectedRecord.rights_in || '',
+      rights_out: selectedRecord.rights_out || '',
+      notes: selectedRecord.notes || '',
+    })
+    setEditingRights(true)
+  }
+
+  async function saveRightsEdit() {
+    if (!selectedRecord || !rightsEditForm.rights_type || submitting) return
+    setSubmitting(true)
+    const payload = {
+      rights_type: rightsEditForm.rights_type,
+      rights_status: rightsEditForm.rights_status,
+      rights_holder: rightsEditForm.rights_holder || null,
+      expiry_date: rightsEditForm.expiry_date || null,
+      licence_terms: rightsEditForm.licence_terms || null,
+      restrictions: rightsEditForm.restrictions || null,
+      rights_in: rightsEditForm.rights_in || null,
+      rights_out: rightsEditForm.rights_out || null,
+      notes: rightsEditForm.notes || null,
+    }
+    const { error } = await supabase.from('rights_records').update(payload).eq('id', selectedRecord.id)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    const updated = { ...selectedRecord, ...payload }
+    setRightsRecords((rs: any[]) => rs.map(r => (r.id === selectedRecord.id ? updated : r)))
+    setSelectedRecord(updated)
+    setEditingRights(false)
+    setSubmitting(false)
+  }
+
+  async function deleteRightsRecord() {
+    if (!selectedRecord || submitting) return
+    if (!confirm('Delete this rights record? This cannot be undone.')) return
+    setSubmitting(true)
+    const { error } = await supabase.from('rights_records').delete().eq('id', selectedRecord.id)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    setRightsRecords((rs: any[]) => rs.filter(r => r.id !== selectedRecord.id))
+    setSelectedRecord(null)
+    setEditingRights(false)
+    setSubmitting(false)
+  }
+
   // ── Reproduction requests CRUD ───────────────────────────────────────
   async function addReproductionRequest() {
     if (!reproductionForm.requester_name || !reproductionForm.request_date || submitting) return
@@ -140,12 +203,84 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
     setSubmitting(false)
   }
 
+  async function actingUserName(): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return ''
+    const { data: sm } = await supabase.from('staff_members').select('name').eq('user_id', user.id).maybeSingle()
+    return sm?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email || ''
+  }
+
   async function updateRequestStatus(id: string, status: string) {
-    const { error } = await supabase.from('reproduction_requests').update({ status, decision_date: new Date().toISOString().slice(0, 10) }).eq('id', id)
+    const decision_date = new Date().toISOString().slice(0, 10)
+    const decision_by = await actingUserName()
+    const { error } = await supabase.from('reproduction_requests').update({ status, decision_date, decision_by }).eq('id', id)
     if (error) { toast(error.message, 'error'); return }
     const { data } = await supabase.from('reproduction_requests').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
     setReproductionRequests(data || [])
-    if (selectedRepro?.id === id) setSelectedRepro((r: any) => ({ ...r, status, decision_date: new Date().toISOString().slice(0, 10) }))
+    if (selectedRepro?.id === id) setSelectedRepro((r: any) => ({ ...r, status, decision_date, decision_by }))
+  }
+
+  function openEditRepro() {
+    if (!selectedRepro) return
+    setReproEditForm({
+      requester_name: selectedRepro.requester_name || '',
+      requester_org: selectedRepro.requester_org || '',
+      request_date: selectedRepro.request_date || '',
+      purpose: selectedRepro.purpose || '',
+      status: selectedRepro.status || 'Pending',
+      reproduction_type: selectedRepro.reproduction_type || '',
+      reproduced_by: selectedRepro.reproduced_by || '',
+      reproduction_date: selectedRepro.reproduction_date || '',
+      rights_clearance_confirmed: !!selectedRepro.rights_clearance_confirmed,
+      licence_terms: selectedRepro.licence_terms || '',
+      image_file_reference: selectedRepro.image_file_reference || '',
+      credit_line: selectedRepro.credit_line || '',
+      fee: selectedRepro.fee != null ? String(selectedRepro.fee) : '',
+      fee_currency: selectedRepro.fee_currency || 'GBP',
+      notes: selectedRepro.notes || '',
+    })
+    setEditingRepro(true)
+  }
+
+  async function saveReproEdit() {
+    if (!selectedRepro || !reproEditForm.requester_name || !reproEditForm.request_date || submitting) return
+    setSubmitting(true)
+    const payload = {
+      requester_name: reproEditForm.requester_name,
+      requester_org: reproEditForm.requester_org || null,
+      request_date: reproEditForm.request_date,
+      purpose: reproEditForm.purpose || null,
+      status: reproEditForm.status,
+      reproduction_type: reproEditForm.reproduction_type || null,
+      reproduced_by: reproEditForm.reproduced_by || null,
+      reproduction_date: reproEditForm.reproduction_date || null,
+      rights_clearance_confirmed: reproEditForm.rights_clearance_confirmed,
+      licence_terms: reproEditForm.licence_terms || null,
+      image_file_reference: reproEditForm.image_file_reference || null,
+      credit_line: reproEditForm.credit_line || null,
+      fee: reproEditForm.fee ? parseFloat(reproEditForm.fee) : null,
+      fee_currency: reproEditForm.fee_currency,
+      notes: reproEditForm.notes || null,
+    }
+    const { error } = await supabase.from('reproduction_requests').update(payload).eq('id', selectedRepro.id)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    const updated = { ...selectedRepro, ...payload }
+    setReproductionRequests((rs: any[]) => rs.map(r => (r.id === selectedRepro.id ? updated : r)))
+    setSelectedRepro(updated)
+    setEditingRepro(false)
+    setSubmitting(false)
+  }
+
+  async function deleteReproRequest() {
+    if (!selectedRepro || submitting) return
+    if (!confirm('Delete this reproduction request? This cannot be undone.')) return
+    setSubmitting(true)
+    const { error } = await supabase.from('reproduction_requests').delete().eq('id', selectedRepro.id)
+    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    setReproductionRequests((rs: any[]) => rs.filter(r => r.id !== selectedRepro.id))
+    setSelectedRepro(null)
+    setEditingRepro(false)
+    setSubmitting(false)
   }
 
   return (
@@ -312,7 +447,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
               </tr></thead>
               <tbody>
                 {rightsRecords.map(r => (
-                  <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(r)}>
+                  <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => { setEditingRights(false); setSelectedRecord(r) }}>
                     <td className="px-4 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.rights_reference}</td>
                     <td className="px-4 py-4 text-sm text-stone-700 dark:text-stone-300">{r.rights_type}</td>
                     <td className="px-4 py-4">
@@ -424,7 +559,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
         {reproductionRequestsLoaded && reproductionRequests.length > 0 && (
           <div className="mt-4 space-y-2">
             {reproductionRequests.map(req => (
-              <div key={req.id} className="border border-stone-100 dark:border-stone-800 rounded-lg px-4 py-3 flex items-center justify-between gap-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRepro(req)}>
+              <div key={req.id} className="border border-stone-100 dark:border-stone-800 rounded-lg px-4 py-3 flex items-center justify-between gap-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => { setEditingRepro(false); setSelectedRepro(req) }}>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{req.requester_name}{req.requester_org && <span className="font-normal text-stone-400 dark:text-stone-500"> — {req.requester_org}</span>}</div>
                   <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
@@ -501,15 +636,75 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
 
       {/* Rights Record Detail Modal */}
       {selectedRecord && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedRecord(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submitting) { setEditingRights(false); setSelectedRecord(null) } }}>
           <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
               <div>
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRecord.rights_type}</div>
                 <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5">{selectedRecord.rights_reference}</div>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <button type="button" onClick={() => { if (!submitting) { setEditingRights(false); setSelectedRecord(null) } }} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
             </div>
+            {editingRights ? (
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Rights Type *</label>
+                  <select value={rightsEditForm.rights_type} onChange={e => setRightsEditForm(f => ({ ...f, rights_type: e.target.value }))} className={inputCls}>
+                    {RIGHTS_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Status *</label>
+                  <select value={rightsEditForm.rights_status} onChange={e => setRightsEditForm(f => ({ ...f, rights_status: e.target.value }))} className={inputCls}>
+                    {RIGHTS_STATUSES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Rights Holder</label>
+                  <input value={rightsEditForm.rights_holder} onChange={e => setRightsEditForm(f => ({ ...f, rights_holder: e.target.value }))} placeholder="Person or organisation" className={inputCls} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Expiry Date</label>
+                  <input type="date" value={rightsEditForm.expiry_date} onChange={e => setRightsEditForm(f => ({ ...f, expiry_date: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Licence Terms</label>
+                  <input value={rightsEditForm.licence_terms} onChange={e => setRightsEditForm(f => ({ ...f, licence_terms: e.target.value }))} placeholder="e.g. CC BY-NC 4.0" className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Restrictions</label>
+                <textarea rows={2} value={rightsEditForm.restrictions} onChange={e => setRightsEditForm(f => ({ ...f, restrictions: e.target.value }))} placeholder="Any restrictions on use…" className={`${inputCls} resize-none`} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Rights In (Held by Museum)</label>
+                  <input value={rightsEditForm.rights_in} onChange={e => setRightsEditForm(f => ({ ...f, rights_in: e.target.value }))} placeholder="Rights the museum holds" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Rights Out (Granted to Others)</label>
+                  <input value={rightsEditForm.rights_out} onChange={e => setRightsEditForm(f => ({ ...f, rights_out: e.target.value }))} placeholder="Rights granted to third parties" className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea rows={2} value={rightsEditForm.notes} onChange={e => setRightsEditForm(f => ({ ...f, notes: e.target.value }))} className={`${inputCls} resize-none`} />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={saveRightsEdit} disabled={!rightsEditForm.rights_type || submitting}
+                  className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50">
+                  {submitting ? 'Saving…' : 'Save →'}
+                </button>
+                <button type="button" onClick={() => setEditingRights(false)} disabled={submitting}
+                  className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+            </div>
+            ) : (
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -573,22 +768,99 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
                   <DocumentAttachments objectId={object.id} museumId={museum.id} relatedToType="rights" relatedToId={selectedRecord.id} canEdit={canEdit} canAttach={canAttach} />
                 </div>
               )}
+              {canEdit && (
+                <div className="flex gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+                  <button type="button" onClick={openEditRights}
+                    className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded">
+                    Edit
+                  </button>
+                  <button type="button" onClick={deleteRightsRecord}
+                    className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:border-red-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Reproduction Request Detail Modal */}
       {selectedRepro && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedRepro(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submitting) { setEditingRepro(false); setSelectedRepro(null) } }}>
           <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
               <div>
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{selectedRepro.requester_name}</div>
                 {selectedRepro.requester_org && <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{selectedRepro.requester_org}</div>}
               </div>
-              <button type="button" onClick={() => setSelectedRepro(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <button type="button" onClick={() => { if (!submitting) { setEditingRepro(false); setSelectedRepro(null) } }} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
             </div>
+            {editingRepro ? (
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Requester Name *</label><input value={reproEditForm.requester_name} onChange={e => setReproEditForm(f => ({ ...f, requester_name: e.target.value }))} placeholder="Name of person or organisation" className={inputCls} /></div>
+                <div><label className={labelCls}>Organisation</label><input value={reproEditForm.requester_org} onChange={e => setReproEditForm(f => ({ ...f, requester_org: e.target.value }))} placeholder="Publisher, university, etc." className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Purpose</label>
+                  <select value={reproEditForm.purpose} onChange={e => setReproEditForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {['Editorial', 'Academic', 'Commercial', 'Personal', 'Exhibition', 'Other'].map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div><label className={labelCls}>Request Date *</label><input type="date" value={reproEditForm.request_date} onChange={e => setReproEditForm(f => ({ ...f, request_date: e.target.value }))} className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Status</label>
+                  <select value={reproEditForm.status} onChange={e => setReproEditForm(f => ({ ...f, status: e.target.value }))} className={inputCls}>
+                    {['Pending', 'Approved', 'Declined'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Reproduction Type</label>
+                  <select value={reproEditForm.reproduction_type} onChange={e => setReproEditForm(f => ({ ...f, reproduction_type: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {REPRODUCTION_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div><label className={labelCls}>Reproduced By</label><input value={reproEditForm.reproduced_by} onChange={e => setReproEditForm(f => ({ ...f, reproduced_by: e.target.value }))} placeholder="Photographer, studio, etc." className={inputCls} /></div>
+                <div><label className={labelCls}>Reproduction Date</label><input type="date" value={reproEditForm.reproduction_date} onChange={e => setReproEditForm(f => ({ ...f, reproduction_date: e.target.value }))} className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Image / File Reference</label><input value={reproEditForm.image_file_reference} onChange={e => setReproEditForm(f => ({ ...f, image_file_reference: e.target.value }))} placeholder="e.g. IMG-2025-001.tiff" className={inputCls} /></div>
+                <div><label className={labelCls}>Credit Line</label><input value={reproEditForm.credit_line} onChange={e => setReproEditForm(f => ({ ...f, credit_line: e.target.value }))} placeholder="Required attribution text" className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div><label className={labelCls}>Licence Terms</label><input value={reproEditForm.licence_terms} onChange={e => setReproEditForm(f => ({ ...f, licence_terms: e.target.value }))} placeholder="e.g. One-time use, CC BY" className={inputCls} /></div>
+                <div><label className={labelCls}>Fee</label><input type="number" step="0.01" value={reproEditForm.fee} onChange={e => setReproEditForm(f => ({ ...f, fee: e.target.value }))} placeholder="0.00" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Currency</label>
+                  <select value={reproEditForm.fee_currency} onChange={e => setReproEditForm(f => ({ ...f, fee_currency: e.target.value }))} className={inputCls}>
+                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+                <input type="checkbox" checked={reproEditForm.rights_clearance_confirmed} onChange={e => setReproEditForm(f => ({ ...f, rights_clearance_confirmed: e.target.checked }))} className="rounded border-stone-300" />
+                Rights clearance confirmed
+              </label>
+              <div><label className={labelCls}>Notes</label><input value={reproEditForm.notes} onChange={e => setReproEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Usage terms, conditions…" className={inputCls} /></div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={saveReproEdit} disabled={!reproEditForm.requester_name || !reproEditForm.request_date || submitting}
+                  className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50">
+                  {submitting ? 'Saving…' : 'Save →'}
+                </button>
+                <button type="button" onClick={() => setEditingRepro(false)} disabled={submitting}
+                  className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+            </div>
+            ) : (
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -703,7 +975,20 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
                   <DocumentAttachments objectId={object.id} museumId={museum.id} relatedToType="reproduction" relatedToId={selectedRepro.id} canEdit={canEdit} canAttach={canAttach} />
                 </div>
               )}
+              {canEdit && (
+                <div className="flex gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+                  <button type="button" onClick={openEditRepro}
+                    className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded">
+                    Edit
+                  </button>
+                  <button type="button" onClick={deleteReproRequest}
+                    className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:border-red-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
+            )}
           </div>
         </div>
       )}

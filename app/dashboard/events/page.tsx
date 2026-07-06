@@ -167,7 +167,7 @@ export default function EventsPage() {
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Create events, manage time slots, and sell tickets directly through your museum website. Available on Professional, Institution, and Enterprise plans.</p>
             <button
               onClick={() => router.push('/dashboard/plan')}
-              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
             >
               View plans →
             </button>
@@ -205,7 +205,7 @@ export default function EventsPage() {
                     <button
                       onClick={startConnectOnboarding}
                       disabled={connectLoading}
-                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                      className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors disabled:opacity-50"
                     >
                       {connectLoading ? 'Redirecting...' : 'Connect Stripe account →'}
                     </button>
@@ -224,7 +224,7 @@ export default function EventsPage() {
                       <button
                         onClick={startConnectOnboarding}
                         disabled={connectLoading}
-                        className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                        className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors disabled:opacity-50"
                       >
                         {connectLoading ? 'Redirecting...' : 'Complete verification in Stripe →'}
                       </button>

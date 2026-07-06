@@ -1176,7 +1176,7 @@ export default function SiteBuilder() {
                       })
                     }}
                     id="copy-embed-btn"
-                    className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                    className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-4 py-2 rounded transition-colors"
                   >
                     Copy embed code
                   </button>

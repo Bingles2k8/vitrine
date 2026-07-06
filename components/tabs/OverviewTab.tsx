@@ -727,6 +727,57 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         </div>
       </div>
 
+      {/* Production & Attribution */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+        <div className={sectionTitle}>Production &amp; Attribution</div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} data-learn="objects.maker_name">Maker / Attributed name {publicLabel}</label>
+            <input value={form.maker_name || ''} onChange={e => set('maker_name', e.target.value)} disabled={!canEdit || saving}
+              placeholder="Name of the maker or attributed artist" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls} data-learn="objects.maker_role">Maker role {publicLabel}</label>
+            <input value={form.maker_role || ''} onChange={e => set('maker_role', e.target.value)} disabled={!canEdit || saving}
+              placeholder="e.g. Artist, Maker, Manufacturer, Workshop" className={inputCls} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} data-learn="objects.production_place">Production place {publicLabel}</label>
+            <input value={form.production_place || ''} onChange={e => set('production_place', e.target.value)} disabled={!canEdit || saving}
+              placeholder="Where the object was made" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls} data-learn="objects.technique">Technique {publicLabel}</label>
+            <input value={form.technique || ''} onChange={e => set('technique', e.target.value)} disabled={!canEdit || saving}
+              placeholder="e.g. hand-thrown, cast, engraved" className={inputCls} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} data-learn="objects.school_style_period">School / style / period {publicLabel}</label>
+            <input value={form.school_style_period || ''} onChange={e => set('school_style_period', e.target.value)} disabled={!canEdit || saving}
+              placeholder="e.g. Impressionist, Art Deco, Ming" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls} data-learn="objects.subject_depicted">Subject depicted {publicLabel}</label>
+            <input value={form.subject_depicted || ''} onChange={e => set('subject_depicted', e.target.value)} disabled={!canEdit || saving}
+              placeholder="e.g. portrait, landscape, still life" className={inputCls} />
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls} data-learn="objects.distinguishing_features">Distinguishing features {publicLabel}</label>
+          <textarea value={form.distinguishing_features || ''} onChange={e => set('distinguishing_features', e.target.value)} disabled={!canEdit || saving} rows={3}
+            placeholder="Notable features that distinguish this object — damage, repairs, unique markings…"
+            className={textareaCls} />
+        </div>
+      </div>
+
       {/* Supporting Documents — Hobbyist+ only, shown in simple mode */}
       {!fullMode && (
         (getPlan(museum.plan).documentStorageMb ?? 0) > 0 ? (

@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast'
 import { Skeleton, FormSkeleton } from '@/components/Skeleton'
 
 import QRLabelModal from '@/components/QRLabelModal'
+import EntryTab from '@/components/tabs/EntryTab'
 import OverviewTab from '@/components/tabs/OverviewTab'
 import AcquisitionTab from '@/components/tabs/AcquisitionTab'
 import DocumentsTab from '@/components/tabs/DocumentsTab'
@@ -23,10 +24,12 @@ import RiskTab from '@/components/tabs/RiskTab'
 import DuplicateSearchModal from '@/components/DuplicateSearchModal'
 import DamageTab from '@/components/tabs/DamageTab'
 import ExitsTab from '@/components/tabs/ExitsTab'
+import AuditTab from '@/components/tabs/AuditTab'
 import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
+  { id: 'entry',        label: 'Entry' },
   { id: 'acquisition',  label: 'Acquisition' },
   { id: 'location',     label: 'Location' },
   { id: 'condition',    label: 'Condition' },
@@ -38,9 +41,11 @@ const TABS = [
   { id: 'risk',         label: 'Risk' },
   { id: 'damage',       label: 'Damage' },
   { id: 'exits',        label: 'Exits' },
+  { id: 'audit',        label: 'Audit' },
 ]
 
 const SIMPLE_TABS = ['overview', 'location', 'condition', 'valuation']
+const TAB_IDS = TABS.map(t => t.id)
 
 export default function ObjectDetail() {
   const [object, setObject] = useState<any>(null)
@@ -61,7 +66,19 @@ export default function ObjectDetail() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(initialTab && TAB_IDS.includes(initialTab) ? initialTab : 'overview')
+
+  // Keep the URL's ?tab= in sync with the active tab so refresh, browser
+  // back, and copy-link all restore the same tab (N10).
+  useEffect(() => {
+    const current = new URLSearchParams(window.location.search).get('tab')
+    if (current !== activeTab) {
+      const u = new URLSearchParams(window.location.search)
+      u.set('tab', activeTab)
+      router.replace(`?${u.toString()}`, { scroll: false })
+    }
+  }, [activeTab])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUserName, setCurrentUserName] = useState<string>('')
   const [latestValuation, setLatestValuation] = useState<any>(null)
@@ -595,6 +612,10 @@ export default function ObjectDetail() {
             <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
           )}
 
+          {activeTab === 'entry' && (
+            <EntryTab object={object} museum={museum} canEdit={canEdit} supabase={supabase} />
+          )}
+
           {activeTab === 'acquisition' && (
             <AcquisitionTab form={form} set={set} canEdit={canEdit} saving={saving} objectId={object?.id} museumId={museum?.id} canAttach={getPlan(museum?.plan).compliance} />
           )}
@@ -633,6 +654,10 @@ export default function ObjectDetail() {
 
           {activeTab === 'exits' && (
             <ExitsTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
+          )}
+
+          {activeTab === 'audit' && (
+            <AuditTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'documents' && (

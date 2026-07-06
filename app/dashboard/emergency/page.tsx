@@ -26,11 +26,20 @@ const STATUS_STYLES: Record<string, string> = {
   Archived:         'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400',
 }
 
+function isTestOverdue(dateStr: string | null): boolean {
+  if (!dateStr) return true
+  const tested = new Date(dateStr)
+  const cutoff = new Date()
+  cutoff.setFullYear(cutoff.getFullYear() - 1)
+  return tested < cutoff
+}
+
 const EMPTY_FORM = {
   plan_title: '', plan_type: 'General', responsible_person: '',
   emergency_contacts: '', evacuation_procedures: '', salvage_priorities: '',
   alternative_storage: '', recovery_procedures: '',
-  last_review_date: '', next_review_date: '', notes: '',
+  last_review_date: '', next_review_date: '',
+  plan_last_tested: '', salvage_equipment_location: '', notes: '',
 }
 
 interface Museum {
@@ -44,9 +53,26 @@ interface EmergencyPlan {
   plan_title: string
   plan_type: string | null
   responsible_person: string | null
+  emergency_contacts: string | null
+  evacuation_procedures: string | null
+  salvage_priorities: string | null
+  alternative_storage: string | null
+  recovery_procedures: string | null
+  last_review_date: string | null
   next_review_date: string | null
+  plan_last_tested: string | null
+  salvage_equipment_location: string | null
   status: string
   notes: string | null
+}
+
+interface SalvagePriority {
+  id: string
+  plan_id: string
+  object_id: string
+  priority_rank: number
+  salvage_notes: string | null
+  objects?: MuseumObject | null
 }
 
 interface EmergencyEvent {
@@ -54,8 +80,13 @@ interface EmergencyEvent {
   event_reference: string
   event_type: string | null
   event_date: string | null
+  plan_id: string | null
   description: string | null
+  response_taken: string | null
+  damage_summary: string | null
+  lessons_learned: string | null
   status: string
+  notes: string | null
 }
 
 interface MuseumObject {
@@ -92,10 +123,15 @@ export default function EmergencyPage() {
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [objectPickerEventId, setObjectPickerEventId] = useState<string | null>(null)
   const [objectSearchQ, setObjectSearchQ] = useState('')
+  const [salvagePriorities, setSalvagePriorities] = useState<Record<string, SalvagePriority[]>>({})
+  const [priorityPickerPlanId, setPriorityPickerPlanId] = useState<string | null>(null)
+  const [prioritySearchQ, setPrioritySearchQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Draft' | 'Active' | 'Under Review' | 'Archived'>('All')
   const [showForm, setShowForm] = useState(false)
   const [showEventForm, setShowEventForm] = useState(false)
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [eventForm, setEventForm] = useState(EMPTY_EVENT)
   const [saving, setSaving] = useState(false)
@@ -119,12 +155,13 @@ export default function EmergencyPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }] = await Promise.all([
+      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }, { data: salvagePris }] = await Promise.all([
         supabase.from('emergency_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('emergency_event_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
         supabase.from('emergency_plan_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
+        supabase.from('emergency_salvage_priorities').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id).order('priority_rank', { ascending: true }),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
@@ -145,6 +182,12 @@ export default function EmergencyPage() {
         docsMap[d.plan_id].push(d)
       }
       setPlanDocs(docsMap)
+      const salvageMap: Record<string, SalvagePriority[]> = {}
+      for (const sp of (salvagePris || [])) {
+        if (!salvageMap[sp.plan_id]) salvageMap[sp.plan_id] = []
+        salvageMap[sp.plan_id].push(sp)
+      }
+      setSalvagePriorities(salvageMap)
       setLoading(false)
     }
     load()
@@ -186,15 +229,21 @@ export default function EmergencyPage() {
     setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter(d => d.id !== doc.id) }))
   }
 
-  async function addPlan() {
+  async function savePlan() {
     if (!form.plan_title || !museum) return
     setSaving(true)
-    await supabase.from('emergency_plans').insert({
+    const payload = {
       ...form,
       last_review_date: form.last_review_date || null,
       next_review_date: form.next_review_date || null,
-      museum_id: museum.id,
-    })
+      plan_last_tested: form.plan_last_tested || null,
+      salvage_equipment_location: form.salvage_equipment_location || null,
+    }
+    if (editingPlanId) {
+      await supabase.from('emergency_plans').update(payload).eq('id', editingPlanId)
+    } else {
+      await supabase.from('emergency_plans').insert({ ...payload, museum_id: museum.id })
+    }
     const { data } = await supabase
       .from('emergency_plans')
       .select('*')
@@ -202,8 +251,36 @@ export default function EmergencyPage() {
       .order('created_at', { ascending: false })
     setPlans(data || [])
     setForm(EMPTY_FORM)
+    setEditingPlanId(null)
     setShowForm(false)
     setSaving(false)
+  }
+
+  function openPlanEdit(p: EmergencyPlan) {
+    setForm({
+      plan_title: p.plan_title || '',
+      plan_type: p.plan_type || 'General',
+      responsible_person: p.responsible_person || '',
+      emergency_contacts: p.emergency_contacts || '',
+      evacuation_procedures: p.evacuation_procedures || '',
+      salvage_priorities: p.salvage_priorities || '',
+      alternative_storage: p.alternative_storage || '',
+      recovery_procedures: p.recovery_procedures || '',
+      last_review_date: p.last_review_date || '',
+      next_review_date: p.next_review_date || '',
+      plan_last_tested: p.plan_last_tested || '',
+      salvage_equipment_location: p.salvage_equipment_location || '',
+      notes: p.notes || '',
+    })
+    setEditingPlanId(p.id)
+    setShowForm(true)
+  }
+
+  async function deletePlan(id: string) {
+    if (!confirm('Delete this emergency plan? This cannot be undone.')) return
+    await supabase.from('emergency_plans').delete().eq('id', id)
+    setPlans(p => p.filter(x => x.id !== id))
+    if (editingPlanId === id) { setEditingPlanId(null); setShowForm(false); setForm(EMPTY_FORM) }
   }
 
   async function updateStatus(id: string, status: string) {
@@ -211,23 +288,57 @@ export default function EmergencyPage() {
     setPlans(p => p.map(x => x.id === id ? { ...x, status } : x))
   }
 
-  async function addEvent() {
+  async function saveEvent() {
     if (!eventForm.event_reference || !eventForm.event_date || !eventForm.description || !museum) return
     setSavingEvent(true)
-    await supabase.from('emergency_events').insert({
+    const payload = {
       ...eventForm,
       plan_id: eventForm.plan_id || null,
       response_taken: eventForm.response_taken || null,
       damage_summary: eventForm.damage_summary || null,
       lessons_learned: eventForm.lessons_learned || null,
       notes: eventForm.notes || null,
-      museum_id: museum.id,
-    })
+    }
+    if (editingEventId) {
+      await supabase.from('emergency_events').update(payload).eq('id', editingEventId)
+    } else {
+      await supabase.from('emergency_events').insert({ ...payload, museum_id: museum.id })
+    }
     const { data } = await supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false })
     setEvents(data || [])
     setEventForm(EMPTY_EVENT)
+    setEditingEventId(null)
     setShowEventForm(false)
     setSavingEvent(false)
+  }
+
+  function openEventEdit(ev: EmergencyEvent) {
+    setEventForm({
+      event_reference: ev.event_reference || '',
+      event_type: ev.event_type || 'Fire',
+      event_date: ev.event_date || '',
+      plan_id: ev.plan_id || '',
+      description: ev.description || '',
+      response_taken: ev.response_taken || '',
+      damage_summary: ev.damage_summary || '',
+      lessons_learned: ev.lessons_learned || '',
+      status: ev.status || 'Open',
+      notes: ev.notes || '',
+    })
+    setEditingEventId(ev.id)
+    setShowEventForm(true)
+  }
+
+  async function updateEventStatus(id: string, status: string) {
+    await supabase.from('emergency_events').update({ status }).eq('id', id)
+    setEvents(e => e.map(x => x.id === id ? { ...x, status } : x))
+  }
+
+  async function deleteEvent(id: string) {
+    if (!confirm('Delete this emergency event? This cannot be undone.')) return
+    await supabase.from('emergency_events').delete().eq('id', id)
+    setEvents(e => e.filter(x => x.id !== id))
+    if (editingEventId === id) { setEditingEventId(null); setShowEventForm(false); setEventForm(EMPTY_EVENT) }
   }
 
   async function addObjectToEvent(eventId: string, objectId: string) {
@@ -240,6 +351,35 @@ export default function EmergencyPage() {
   async function removeObjectFromEvent(eventId: string, objectId: string) {
     await supabase.from('emergency_event_objects').delete().eq('event_id', eventId).eq('object_id', objectId)
     setEventObjects(m => ({ ...m, [eventId]: (m[eventId] || []).filter(l => l.object_id !== objectId) }))
+  }
+
+  async function addSalvagePriority(planId: string, objectId: string) {
+    if (!museum) return
+    const existing = salvagePriorities[planId] || []
+    const nextRank = existing.length ? Math.max(...existing.map(p => p.priority_rank)) + 1 : 1
+    const { data } = await supabase.from('emergency_salvage_priorities').insert({
+      museum_id: museum.id, plan_id: planId, object_id: objectId, priority_rank: nextRank, salvage_notes: null,
+    }).select('*, objects(id, title, accession_no, emoji)').single()
+    if (data) setSalvagePriorities(m => ({ ...m, [planId]: [...(m[planId] || []), data] }))
+  }
+
+  async function updateSalvagePriorityRank(planId: string, id: string, rank: number) {
+    if (!Number.isFinite(rank)) return
+    await supabase.from('emergency_salvage_priorities').update({ priority_rank: rank }).eq('id', id)
+    setSalvagePriorities(m => ({ ...m, [planId]: (m[planId] || []).map(p => p.id === id ? { ...p, priority_rank: rank } : p) }))
+  }
+
+  function setSalvagePriorityNotesLocal(planId: string, id: string, notes: string) {
+    setSalvagePriorities(m => ({ ...m, [planId]: (m[planId] || []).map(p => p.id === id ? { ...p, salvage_notes: notes } : p) }))
+  }
+
+  async function saveSalvagePriorityNotes(id: string, notes: string) {
+    await supabase.from('emergency_salvage_priorities').update({ salvage_notes: notes || null }).eq('id', id)
+  }
+
+  async function removeSalvagePriority(planId: string, id: string) {
+    await supabase.from('emergency_salvage_priorities').delete().eq('id', id)
+    setSalvagePriorities(m => ({ ...m, [planId]: (m[planId] || []).filter(p => p.id !== id) }))
   }
 
   if (loading) return (
@@ -264,7 +404,7 @@ export default function EmergencyPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Create and manage emergency response plans for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -294,8 +434,8 @@ export default function EmergencyPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Emergency Events</h2>
               {canEdit && (
-                <button onClick={() => setShowEventForm(s => !s)}
-                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                <button onClick={() => { setShowEventForm(s => !s); setEditingEventId(null); setEventForm(EMPTY_EVENT) }}
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded transition-colors">
                   {showEventForm ? 'Cancel' : '+ Log event'}
                 </button>
               )}
@@ -303,7 +443,7 @@ export default function EmergencyPage() {
 
             {showEventForm && canEdit && (
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-sm font-mono text-stone-500 dark:text-stone-400">Log emergency event</div>
+                <div className="text-sm font-mono text-stone-500 dark:text-stone-400">{editingEventId ? 'Edit emergency event' : 'Log emergency event'}</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Reference *</label>
@@ -354,9 +494,9 @@ export default function EmergencyPage() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <button onClick={addEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
-                    className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
-                    {savingEvent ? 'Saving…' : 'Log event'}
+                  <button onClick={saveEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
+                    className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors">
+                    {savingEvent ? 'Saving…' : editingEventId ? 'Save changes' : 'Log event'}
                   </button>
                 </div>
               </div>
@@ -404,6 +544,26 @@ export default function EmergencyPage() {
                           {isExpanded && (
                             <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                               <td colSpan={6} className="px-6 py-4 space-y-3">
+                                {canEdit && (
+                                  <div className="flex items-center gap-2 flex-wrap pb-3 mb-1 border-b border-stone-200 dark:border-stone-700">
+                                    <button type="button" onClick={() => openEventEdit(ev)}
+                                      className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Edit</button>
+                                    {ev.status === 'Open' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Under Investigation')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Mark under investigation</button>
+                                    )}
+                                    {ev.status === 'Under Investigation' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Resolved')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Mark resolved</button>
+                                    )}
+                                    {ev.status === 'Resolved' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Closed')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Close</button>
+                                    )}
+                                    <button type="button" onClick={() => deleteEvent(ev.id)}
+                                      className="text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded px-3 py-1.5 transition-colors ml-auto">Delete</button>
+                                  </div>
+                                )}
                                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Affected Objects</div>
                                 {affectedObjects.length > 0 && (
                                   <div className="flex flex-wrap gap-2 mb-2">
@@ -467,8 +627,8 @@ export default function EmergencyPage() {
 
           {canEdit && (
             <div className="flex justify-end">
-              <button onClick={() => setShowForm(s => !s)}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+              <button onClick={() => { setShowForm(s => !s); setEditingPlanId(null); setForm(EMPTY_FORM) }}
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded transition-colors">
                 {showForm ? 'Cancel' : '+ Add plan'}
               </button>
             </div>
@@ -477,7 +637,7 @@ export default function EmergencyPage() {
           {/* Add form */}
           {showForm && canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">New emergency plan</div>
+              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">{editingPlanId ? 'Edit emergency plan' : 'New emergency plan'}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Plan Title *</label>
@@ -545,6 +705,19 @@ export default function EmergencyPage() {
                     className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Plan Last Tested</label>
+                  <input type="date" value={form.plan_last_tested} onChange={e => setForm(f => ({ ...f, plan_last_tested: e.target.value }))}
+                    className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Salvage Equipment Location</label>
+                  <input value={form.salvage_equipment_location} onChange={e => setForm(f => ({ ...f, salvage_equipment_location: e.target.value }))}
+                    placeholder="Where salvage kit / equipment is stored"
+                    className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Notes</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
@@ -552,9 +725,9 @@ export default function EmergencyPage() {
                   className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
               </div>
               <div className="flex justify-end">
-                <button onClick={addPlan} disabled={saving || !form.plan_title}
-                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
-                  {saving ? 'Saving…' : 'Add plan'}
+                <button onClick={savePlan} disabled={saving || !form.plan_title}
+                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors">
+                  {saving ? 'Saving…' : editingPlanId ? 'Save changes' : 'Add plan'}
                 </button>
               </div>
             </div>
@@ -594,6 +767,15 @@ export default function EmergencyPage() {
                   {filtered.map(p => {
                     const overdue = p.next_review_date && p.next_review_date <= today && p.status !== 'Archived'
                     const isPlanExpanded = expandedPlanId === p.id
+                    const planPriorities = (salvagePriorities[p.id] || []).slice().sort((a, b) => a.priority_rank - b.priority_rank)
+                    const showPriorityPicker = priorityPickerPlanId === p.id
+                    const filteredPriorityObjs = allObjects.filter(o => {
+                      const already = planPriorities.some(a => a.object_id === o.id)
+                      if (already) return false
+                      if (!prioritySearchQ) return true
+                      return o.title?.toLowerCase().includes(prioritySearchQ.toLowerCase()) || o.accession_no?.toLowerCase().includes(prioritySearchQ.toLowerCase())
+                    })
+                    const testOverdue = isTestOverdue(p.plan_last_tested)
                     return (
                       <Fragment key={p.id}>
                       <tr className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 ${overdue ? 'bg-amber-50/20' : ''}`}>
@@ -643,6 +825,14 @@ export default function EmergencyPage() {
                                   Archive
                                 </button>
                               )}
+                              <button onClick={() => openPlanEdit(p)}
+                                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                                Edit
+                              </button>
+                              <button onClick={() => deletePlan(p.id)}
+                                className="text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+                                Delete
+                              </button>
                               <button type="button" onClick={() => setExpandedPlanId(isPlanExpanded ? null : p.id)}
                                 className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                                 {isPlanExpanded ? '▲' : '▼'}
@@ -654,6 +844,61 @@ export default function EmergencyPage() {
                       {isPlanExpanded && (
                         <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                           <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 space-y-3">
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 pb-3 mb-1 border-b border-stone-200 dark:border-stone-700">
+                              <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
+                                <span className="text-stone-400 dark:text-stone-500">Last tested:</span>{' '}
+                                {p.plan_last_tested ? new Date(p.plan_last_tested).toLocaleDateString('en-GB') : '—'}
+                                {testOverdue && <span className="ml-2 text-amber-600">test overdue</span>}
+                              </div>
+                              {p.salvage_equipment_location && (
+                                <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
+                                  <span className="text-stone-400 dark:text-stone-500">Salvage equipment:</span> {p.salvage_equipment_location}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Salvage Priorities</div>
+                            {planPriorities.length > 0 && (
+                              <div className="space-y-1.5 mb-3">
+                                {planPriorities.map(sp => (
+                                  <div key={sp.id} className="flex items-center gap-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded px-2.5 py-1.5">
+                                    <input type="number" min={1} value={sp.priority_rank}
+                                      disabled={!canEdit}
+                                      onChange={e => updateSalvagePriorityRank(p.id, sp.id, parseInt(e.target.value, 10))}
+                                      className="w-14 text-xs font-mono border border-stone-200 dark:border-stone-700 rounded px-2 py-1 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 disabled:opacity-60" />
+                                    <span className="text-xs text-stone-700 dark:text-stone-300 shrink-0">{sp.objects?.emoji} {sp.objects?.title}</span>
+                                    {sp.objects?.accession_no && <span className="text-stone-400 font-mono text-xs shrink-0">{sp.objects.accession_no}</span>}
+                                    {canEdit ? (
+                                      <input value={sp.salvage_notes || ''}
+                                        onChange={e => setSalvagePriorityNotesLocal(p.id, sp.id, e.target.value)}
+                                        onBlur={e => saveSalvagePriorityNotes(sp.id, e.target.value)}
+                                        placeholder="Salvage notes (optional)"
+                                        className="flex-1 min-w-0 text-xs border border-stone-200 dark:border-stone-700 rounded px-2 py-1 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400" />
+                                    ) : (
+                                      sp.salvage_notes && <span className="flex-1 min-w-0 truncate text-xs text-stone-500 dark:text-stone-400">{sp.salvage_notes}</span>
+                                    )}
+                                    {canEdit && <button type="button" onClick={() => removeSalvagePriority(p.id, sp.id)} className="text-stone-400 hover:text-red-500 text-xs shrink-0 ml-auto">×</button>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {canEdit && (
+                              showPriorityPicker ? (
+                                <div className="space-y-2 mb-3">
+                                  <input value={prioritySearchQ} onChange={e => setPrioritySearchQ(e.target.value)} placeholder="Search objects…" className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none" />
+                                  <div className="max-h-40 overflow-y-auto space-y-1">
+                                    {filteredPriorityObjs.slice(0, 20).map(o => (
+                                      <button key={o.id} type="button" onClick={() => { addSalvagePriority(p.id, o.id); setPriorityPickerPlanId(null); setPrioritySearchQ('') }} className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300">
+                                        {o.emoji} {o.title} {o.accession_no && <span className="text-stone-400 font-mono text-xs ml-1">{o.accession_no}</span>}
+                                      </button>
+                                    ))}
+                                    {filteredPriorityObjs.length === 0 && <div className="text-xs text-stone-400 px-3 py-2">No matching objects</div>}
+                                  </div>
+                                  <button type="button" onClick={() => { setPriorityPickerPlanId(null); setPrioritySearchQ('') }} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">Cancel</button>
+                                </div>
+                              ) : (
+                                <button type="button" onClick={() => { setPriorityPickerPlanId(p.id); setPrioritySearchQ('') }} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 mb-3">+ Add salvage priority</button>
+                              )
+                            )}
                             <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Supporting Documents</div>
                             {((planDocs[p.id] || []).length > 0 || (pendingDocInfo && pendingDocInfo.planId === p.id)) && (
                               <div className="space-y-1.5 mb-3">
@@ -705,7 +950,7 @@ export default function EmergencyPage() {
                                       <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                     </label>
                                     <button type="button" onClick={() => uploadEmergencyDoc(p.id)} disabled={!docFile || docUploading}
-                                      className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                      className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors shrink-0">
                                       {docUploading ? 'Uploading…' : 'Upload'}
                                     </button>
                                     <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}
