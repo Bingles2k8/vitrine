@@ -138,9 +138,14 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
 
-    // Spectrum 3 & 6: update object's current location and log movement on exit
+    // Spectrum 3 & 6: update object's current location and log movement on exit.
+    // A permanent disposal-type exit also sets the object status to
+    // Deaccessioned so it no longer shows as On Display/Storage (finding 6.1).
     const newLocation = exitForm.destination_address?.trim() || 'Off-site'
-    await supabase.from('objects').update({ current_location: newLocation }).eq('id', object.id)
+    const DEACCESSION_EXIT_REASONS = new Set(['Disposal', 'Sale', 'Transfer'])
+    const objectUpdate: Record<string, string> = { current_location: newLocation }
+    if (DEACCESSION_EXIT_REASONS.has(exitForm.exit_reason)) objectUpdate.status = 'Deaccessioned'
+    await supabase.from('objects').update(objectUpdate).eq('id', object.id)
     await supabase.from('location_history').insert({
       museum_id: museum.id, object_id: object.id,
       location: newLocation, moved_by: exitForm.exit_authorised_by,

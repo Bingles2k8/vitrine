@@ -10,6 +10,7 @@ import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumen
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 
 const VALUATION_BASES = ['Fair market value', 'Replacement value', 'Insurance value', 'Salvage value', 'Nominal', 'Other']
+const VALUATION_PURPOSES = ['Insurance', 'Sale', 'Estate', 'Grant', 'Probate', 'Internal', 'Other']
 
 interface Valuation {
   id: string
@@ -41,7 +42,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   const [valuations, setValuations] = useState<Valuation[]>([])
   const [valuationsLoaded, setValuationsLoaded] = useState(false)
   const today = new Date().toISOString().split('T')[0]
-  const emptyForm = { value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '' }
+  const emptyForm = { value: '', currency: 'GBP', valuation_date: today, valuer: '', notes: '', validity_date: '', valuation_basis: '', method: '', purpose: '' }
   const [valuationForm, setValuationForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<Valuation | null>(null)
@@ -69,7 +70,9 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       object_id: object.id,
       museum_id: museum.id,
       valuation_reference: valRef,
-      valuation_basis: null,
+      valuation_basis: valuationForm.valuation_basis || null,
+      method: valuationForm.method || null,
+      purpose: valuationForm.purpose || null,
       validity_date: valuationForm.validity_date || null,
     }).select('id').single()
     if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
@@ -97,6 +100,9 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       valuer: selectedRecord.valuer || '',
       notes: selectedRecord.notes || '',
       validity_date: selectedRecord.validity_date || '',
+      valuation_basis: selectedRecord.valuation_basis || '',
+      method: selectedRecord.method || '',
+      purpose: selectedRecord.purpose || '',
     })
     setEditing(true)
   }
@@ -111,6 +117,9 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       valuer: editForm.valuer || null,
       notes: editForm.notes || null,
       validity_date: editForm.validity_date || null,
+      valuation_basis: editForm.valuation_basis || null,
+      method: editForm.method || null,
+      purpose: editForm.purpose || null,
     }
     const { error: updErr } = await supabase.from('valuations').update(changedFields).eq('id', selectedRecord.id)
     if (updErr) { toast(updErr.message, 'error'); setSubmitting(false); return }
@@ -243,6 +252,26 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
                 <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
                 <input value={valuationForm.valuer} onChange={e => setValuationForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls} data-learn="valuation.valuation_basis">Basis</label>
+                  <select value={valuationForm.valuation_basis} onChange={e => setValuationForm(f => ({ ...f, valuation_basis: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {VALUATION_BASES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.method">Method</label>
+                  <input value={valuationForm.method} onChange={e => setValuationForm(f => ({ ...f, method: e.target.value }))} placeholder="e.g. Auction estimate" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.purpose">Purpose</label>
+                  <select value={valuationForm.purpose} onChange={e => setValuationForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {VALUATION_PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
               <div>
                 <label className={labelCls}>Notes</label>
                 <textarea value={valuationForm.notes} onChange={e => setValuationForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
@@ -339,6 +368,26 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
               <div>
                 <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
                 <input value={editForm.valuer} onChange={e => setEditForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls} data-learn="valuation.valuation_basis">Basis</label>
+                  <select value={editForm.valuation_basis} onChange={e => setEditForm(f => ({ ...f, valuation_basis: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {VALUATION_BASES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.method">Method</label>
+                  <input value={editForm.method} onChange={e => setEditForm(f => ({ ...f, method: e.target.value }))} placeholder="e.g. Auction estimate" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.purpose">Purpose</label>
+                  <select value={editForm.purpose} onChange={e => setEditForm(f => ({ ...f, purpose: e.target.value }))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {VALUATION_PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className={labelCls}>Notes</label>
