@@ -53,6 +53,7 @@ export default function DashboardShell({
     e: () => router.push('/dashboard/entry'),
     l: () => router.push('/dashboard/loans'),
     s: () => router.push('/dashboard/staff'),
+    i: () => router.push('/dashboard/inbox'),
     b: () => router.push('/dashboard/site'),
     p: () => router.push('/dashboard/plan'),
     v: () => router.push('/dashboard/events'),

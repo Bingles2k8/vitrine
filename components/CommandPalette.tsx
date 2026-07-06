@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: '⬡', label: 'Objects' },
+  { path: '/dashboard/inbox', icon: '✉️', label: 'Inbox' },
   { path: '/dashboard/entry', icon: '🗂', label: 'Add Object' },
   { path: '/dashboard/register', icon: '📋', label: 'Accession Register' },
   { path: '/dashboard/loans', icon: '⇄', label: 'Loans Register' },
