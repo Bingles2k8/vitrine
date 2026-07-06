@@ -11,7 +11,9 @@
 -- =============================================================
 
 CREATE OR REPLACE FUNCTION enforce_deaccession_protection()
-RETURNS trigger AS $$
+RETURNS trigger
+SET search_path = ''
+AS $$
 BEGIN
   IF OLD.deaccession_protected IS TRUE THEN
     -- Block reverting the deaccession (status change away from Deaccessioned)
