@@ -102,7 +102,7 @@ export default function RightsRegisterPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track copyright, licences, rights holders, and expiry dates across your whole collection in one register. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>

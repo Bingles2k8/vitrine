@@ -610,7 +610,7 @@ export default function DocumentationPlanPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track documentation compliance and standards across your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -728,7 +728,7 @@ export default function DocumentationPlanPage() {
                   </div>
                   {canEdit && (
                     <div className="flex items-center gap-3 shrink-0">
-                      <button onClick={() => startEditPlan(plan)} className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                      <button onClick={() => startEditPlan(plan)} className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 px-4 py-2 rounded transition-colors">
                         Edit plan →
                       </button>
                       <button onClick={startCreatePlan} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 px-4 py-2 rounded transition-colors">
@@ -740,7 +740,7 @@ export default function DocumentationPlanPage() {
               ) : canEdit ? (
                 <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8 text-center">
                   <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">No documentation plan has been created yet. Create one to formally document your collection standards, systems, and improvement commitments.</p>
-                  <button onClick={startCreatePlan} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                  <button onClick={startCreatePlan} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors">
                     Create Documentation Plan →
                   </button>
                 </div>

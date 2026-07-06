@@ -213,7 +213,7 @@ export default function NewEventPage() {
             <button
               type="submit"
               disabled={saving || !title.trim() || !startDate || !endDate}
-              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+              className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors disabled:opacity-50"
             >
               {saving ? 'Creating...' : 'Create Event'}
             </button>

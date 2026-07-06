@@ -68,6 +68,17 @@ export default function ObjectDetail() {
 
   const initialTab = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(initialTab && TAB_IDS.includes(initialTab) ? initialTab : 'overview')
+
+  // Keep the URL's ?tab= in sync with the active tab so refresh, browser
+  // back, and copy-link all restore the same tab (N10).
+  useEffect(() => {
+    const current = new URLSearchParams(window.location.search).get('tab')
+    if (current !== activeTab) {
+      const u = new URLSearchParams(window.location.search)
+      u.set('tab', activeTab)
+      router.replace(`?${u.toString()}`, { scroll: false })
+    }
+  }, [activeTab])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUserName, setCurrentUserName] = useState<string>('')
   const [latestValuation, setLatestValuation] = useState<any>(null)

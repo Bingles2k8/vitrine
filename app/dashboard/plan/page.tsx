@@ -374,7 +374,7 @@ export default function PlanPage() {
                           <button
                             onClick={handleManageSubscription}
                             disabled={actionLoading !== null}
-                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 transition-colors disabled:opacity-50"
                           >
                             {actionLoading === 'manage' ? 'Redirecting…' : isDowngrade ? 'Downgrade' : 'Upgrade →'}
                           </button>
@@ -389,7 +389,7 @@ export default function PlanPage() {
                           <button
                             onClick={() => handleUpgrade(id, true)}
                             disabled={actionLoading !== null}
-                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 transition-colors disabled:opacity-50"
                           >
                             {actionLoading === `${id}-trial` ? 'Redirecting…' : 'Start 30-day free trial'}
                           </button>
@@ -409,7 +409,7 @@ export default function PlanPage() {
                           <button
                             onClick={() => handleUpgrade(id)}
                             disabled={actionLoading !== null}
-                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors disabled:opacity-50"
+                            className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 transition-colors disabled:opacity-50"
                           >
                             {actionLoading === id ? 'Redirecting…' : isDowngrade ? 'Downgrade' : 'Upgrade →'}
                           </button>

@@ -210,7 +210,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
           <button
             type="button"
             onClick={() => { setValuationForm(emptyForm); setStagedDocs([]); setShowRecordModal(true) }}
-            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors flex-shrink-0"
+            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded transition-colors flex-shrink-0"
           >
             Record Official Valuation
           </button>

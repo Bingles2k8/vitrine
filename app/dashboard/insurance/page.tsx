@@ -283,7 +283,7 @@ export default function InsurancePage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Manage insurance policies and coverage for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -351,7 +351,7 @@ export default function InsurancePage() {
           {canEdit && (
             <div className="flex justify-end">
               <button onClick={() => { setShowForm(s => !s); setEditingPolicyId(null); setForm(EMPTY_FORM) }}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded transition-colors">
                 {showForm ? 'Cancel' : '+ Add policy'}
               </button>
             </div>
@@ -477,7 +477,7 @@ export default function InsurancePage() {
               </div>
               <div className="flex justify-end">
                 <button onClick={savePolicy} disabled={saving || !form.policy_number || !form.provider || !form.start_date}
-                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors">
                   {saving ? 'Saving…' : editingPolicyId ? 'Save changes' : 'Add policy'}
                 </button>
               </div>
@@ -681,7 +681,7 @@ export default function InsurancePage() {
                                         <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                       </label>
                                       <button type="button" onClick={() => uploadInsuranceDoc(p.id)} disabled={!docFile || docUploading}
-                                        className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                        className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors shrink-0">
                                         {docUploading ? 'Uploading…' : 'Upload'}
                                       </button>
                                       <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}

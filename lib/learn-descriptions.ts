@@ -154,6 +154,21 @@ export const learnDescriptions: Record<string, LearnEntry> = {
     description: 'Objects formally removed from your collection through the deaccession process. These remain in the database for audit purposes.',
     technical: { table: 'objects', column: "objects.status = 'Deaccessioned'", type: 'Filtered count', spectrum: 'Procedure 17 — Deaccession & Disposal' },
   },
+  'dashboard.on_public_site': {
+    label: 'On Public Site',
+    description: 'Objects marked visible on your public collection website. Toggle an object\'s visibility from its Overview tab or via bulk actions.',
+    technical: { table: 'objects', column: 'objects.show_on_site = true', type: 'Filtered count' },
+  },
+  'dashboard.collection_value': {
+    label: 'Collection Value',
+    description: 'The total value of your collection, using the latest valuation per object where available and falling back to the recorded estimated value. Mixed currencies are converted to your base currency when FX rates are available.',
+    technical: { table: 'valuations', column: 'SUM(latest value per object)', type: 'Aggregated numeric', spectrum: 'Procedure 12 — Valuation' },
+  },
+  'dashboard.col.public': {
+    label: 'Public',
+    description: 'Whether this object appears on your public collection website. Only objects you publish are visible to visitors.',
+    technical: { table: 'objects', column: 'objects.show_on_site', type: 'Boolean flag' },
+  },
   'dashboard.total_paid': {
     label: 'Total Paid',
     description: 'The sum of all acquisition values across your collection — what you paid (or the declared gift value) for each object.',

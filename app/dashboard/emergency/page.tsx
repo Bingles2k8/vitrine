@@ -404,7 +404,7 @@ export default function EmergencyPage() {
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Create and manage emergency response plans for your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors"
               >
                 View plans →
               </button>
@@ -435,7 +435,7 @@ export default function EmergencyPage() {
               <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Emergency Events</h2>
               {canEdit && (
                 <button onClick={() => { setShowEventForm(s => !s); setEditingEventId(null); setEventForm(EMPTY_EVENT) }}
-                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                  className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded transition-colors">
                   {showEventForm ? 'Cancel' : '+ Log event'}
                 </button>
               )}
@@ -495,7 +495,7 @@ export default function EmergencyPage() {
                 </div>
                 <div className="flex justify-end">
                   <button onClick={saveEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
-                    className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                    className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors">
                     {savingEvent ? 'Saving…' : editingEventId ? 'Save changes' : 'Log event'}
                   </button>
                 </div>
@@ -628,7 +628,7 @@ export default function EmergencyPage() {
           {canEdit && (
             <div className="flex justify-end">
               <button onClick={() => { setShowForm(s => !s); setEditingPlanId(null); setForm(EMPTY_FORM) }}
-                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
+                className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded transition-colors">
                 {showForm ? 'Cancel' : '+ Add plan'}
               </button>
             </div>
@@ -726,7 +726,7 @@ export default function EmergencyPage() {
               </div>
               <div className="flex justify-end">
                 <button onClick={savePlan} disabled={saving || !form.plan_title}
-                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                  className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors">
                   {saving ? 'Saving…' : editingPlanId ? 'Save changes' : 'Add plan'}
                 </button>
               </div>
@@ -950,7 +950,7 @@ export default function EmergencyPage() {
                                       <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                     </label>
                                     <button type="button" onClick={() => uploadEmergencyDoc(p.id)} disabled={!docFile || docUploading}
-                                      className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                      className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors shrink-0">
                                       {docUploading ? 'Uploading…' : 'Upload'}
                                     </button>
                                     <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null); setDocError(null) }}

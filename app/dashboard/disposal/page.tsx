@@ -302,7 +302,7 @@ export default function DisposalPage() {
               <div className="text-5xl mb-5">&oslash;</div>
               <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Disposal management is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Document and track the formal disposal of objects from your collection with full governance compliance.</p>
-              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">View plans &rarr;</button>
+              <button onClick={() => router.push('/dashboard/plan')} className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-5 py-2.5 rounded transition-colors">View plans &rarr;</button>
             </div>
           </div>
       </DashboardShell>
@@ -599,7 +599,7 @@ export default function DisposalPage() {
                                     <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls,.csv" className="hidden" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
                                   </label>
                                   <button type="button" onClick={() => uploadDisposalDoc(r.id)} disabled={!docFile || docUploading}
-                                    className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 hover:bg-stone-700 dark:hover:bg-stone-100 transition-colors shrink-0">
+                                    className="text-xs font-mono px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded disabled:opacity-40 transition-colors shrink-0">
                                     {docUploading ? 'Uploading…' : 'Upload'}
                                   </button>
                                   <button type="button" onClick={() => { setShowDocForm(null); setDocLabel(''); setDocType(''); setDocNotes(''); setDocFile(null) }}

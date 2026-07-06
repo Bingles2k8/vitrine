@@ -63,7 +63,7 @@ export default function SimilarImagesWarning({ matches, onContinue, onCancel }: 
           </button>
           <button
             onClick={onContinue}
-            className="text-sm font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors"
+            className="text-sm font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-2 transition-colors"
           >
             Add anyway
           </button>
