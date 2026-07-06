@@ -45,6 +45,8 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   const [valuationForm, setValuationForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<Valuation | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState(emptyForm)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const [showRecordModal, setShowRecordModal] = useState(false)
   const { toast } = useToast()
@@ -84,6 +86,51 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     logActivity('valuation_added', `Recorded valuation of ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: valuationForm.currency || 'GBP', minimumFractionDigits: 0 }).format(parseFloat(valuationForm.value))} for "${object.title}"`)
     setSubmitting(false)
     setShowRecordModal(false)
+  }
+
+  function openEdit() {
+    if (!selectedRecord) return
+    setEditForm({
+      value: String(selectedRecord.value),
+      currency: selectedRecord.currency,
+      valuation_date: selectedRecord.valuation_date,
+      valuer: selectedRecord.valuer || '',
+      notes: selectedRecord.notes || '',
+      validity_date: selectedRecord.validity_date || '',
+    })
+    setEditing(true)
+  }
+
+  async function saveEdit() {
+    if (!selectedRecord || !editForm.value || submitting) return
+    setSubmitting(true)
+    const changedFields = {
+      value: parseFloat(editForm.value),
+      currency: editForm.currency,
+      valuation_date: editForm.valuation_date,
+      valuer: editForm.valuer || null,
+      notes: editForm.notes || null,
+      validity_date: editForm.validity_date || null,
+    }
+    const { error: updErr } = await supabase.from('valuations').update(changedFields).eq('id', selectedRecord.id)
+    if (updErr) { toast(updErr.message, 'error'); setSubmitting(false); return }
+    const updated = { ...selectedRecord, ...changedFields }
+    setValuations(vs => vs.map(v => (v.id === selectedRecord.id ? updated : v)))
+    setSelectedRecord(updated)
+    setEditing(false)
+    setSubmitting(false)
+  }
+
+  async function deleteValuation() {
+    if (!selectedRecord || submitting) return
+    if (!confirm('Delete this valuation? This cannot be undone.')) return
+    setSubmitting(true)
+    const { error: delErr } = await supabase.from('valuations').delete().eq('id', selectedRecord.id)
+    if (delErr) { toast(delErr.message, 'error'); setSubmitting(false); return }
+    setValuations(vs => vs.filter(v => v.id !== selectedRecord.id))
+    setSelectedRecord(null)
+    setEditing(false)
+    setSubmitting(false)
   }
 
   const fmtCurrency = (value: number | string, currency: string) =>
@@ -234,7 +281,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
             </tr></thead>
             <tbody>
               {valuations.map(v => (
-                <tr key={v.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => setSelectedRecord(v)}>
+                <tr key={v.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer" onClick={() => { setEditing(false); setSelectedRecord(v) }}>
                   <td className="px-6 py-4 text-xs font-mono text-stone-500 dark:text-stone-400">{new Date(v.valuation_date).toLocaleDateString('en-GB')}</td>
                   <td className="px-4 py-4 text-sm font-mono text-stone-900 dark:text-stone-100">{fmtCurrency(v.value, v.currency)}</td>
                   <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400">{v.method || '—'}</td>
@@ -255,15 +302,60 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       )}
 
       {selectedRecord && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedRecord(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submitting) { setEditing(false); setSelectedRecord(null) } }}>
           <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">
               <div>
                 <div className="font-serif text-lg italic text-stone-900 dark:text-stone-100">{fmtCurrency(selectedRecord.value, selectedRecord.currency)}</div>
                 <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5">{selectedRecord.valuation_reference}</div>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
+              <button type="button" onClick={() => { if (!submitting) { setEditing(false); setSelectedRecord(null) } }} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xl leading-none ml-4">×</button>
             </div>
+            {editing ? (
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className={labelCls} data-learn="valuation.value">Value <span className="text-red-400">*</span></label>
+                  <input type="number" step="0.01" min="0" value={editForm.value} onChange={e => setEditForm(f => ({ ...f, value: e.target.value }))} placeholder="0.00" className={inputCls} autoFocus />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.currency">Currency</label>
+                  <select value={editForm.currency} onChange={e => setEditForm(f => ({ ...f, currency: e.target.value }))} className={inputCls}>
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls} data-learn="valuation.valuation_date">Valuation Date</label>
+                  <input type="date" value={editForm.valuation_date} onChange={e => setEditForm(f => ({ ...f, valuation_date: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} data-learn="valuation.validity_date">Validity Date</label>
+                  <input type="date" value={editForm.validity_date} onChange={e => setEditForm(f => ({ ...f, validity_date: e.target.value }))} className={inputCls} />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Date until valid</p>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls} data-learn="valuation.valuer">Valuer</label>
+                <input value={editForm.valuer} onChange={e => setEditForm(f => ({ ...f, valuer: e.target.value }))} placeholder="Name or organisation" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={saveEdit} disabled={!editForm.value || submitting}
+                  className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded disabled:opacity-50">
+                  {submitting ? 'Saving…' : 'Save →'}
+                </button>
+                <button type="button" onClick={() => setEditing(false)} disabled={submitting}
+                  className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50">
+                  Cancel
+                </button>
+              </div>
+            </div>
+            ) : (
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -317,7 +409,20 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
                   <DocumentAttachments objectId={object.id} museumId={museum.id} relatedToType="valuation" relatedToId={selectedRecord.id} canEdit={canEdit} canAttach={canAttach} />
                 </div>
               )}
+              {canEdit && (
+                <div className="flex gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+                  <button type="button" onClick={openEdit}
+                    className="flex-1 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono py-2.5 rounded">
+                    Edit
+                  </button>
+                  <button type="button" onClick={deleteValuation}
+                    className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-mono py-2.5 rounded hover:border-red-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
+            )}
           </div>
         </div>
       )}
