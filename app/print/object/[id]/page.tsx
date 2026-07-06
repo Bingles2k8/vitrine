@@ -2,6 +2,7 @@ import { createReadOnlyServerClient } from '@/lib/supabase-server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { getPlan } from '@/lib/plans'
+import { formatDimensions } from '@/lib/formatDimensions'
 import PrintButtons from './PrintButtons'
 
 export default async function PrintObjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,12 +44,16 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
     { data: locationHistory },
     { data: loans },
     { data: conservation },
+    { data: exits },
+    { data: damage },
   ] = await Promise.all([
     serviceClient.from('valuations').select('*').eq('object_id', id).order('valuation_date', { ascending: false }),
     serviceClient.from('condition_assessments').select('*').eq('object_id', id).order('assessed_at', { ascending: false }),
     serviceClient.from('location_history').select('*').eq('object_id', id).order('moved_at', { ascending: false }),
     serviceClient.from('loans').select('*').eq('object_id', id).order('loan_start_date', { ascending: false }),
     serviceClient.from('conservation_treatments').select('*').eq('object_id', id).order('start_date', { ascending: false }),
+    serviceClient.from('object_exits').select('*').eq('object_id', id).order('exit_date', { ascending: false }),
+    serviceClient.from('damage_reports').select('*').eq('object_id', id).order('incident_date', { ascending: false }),
   ])
 
   const fmt = (d: string | null | undefined) => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB') : '—'
@@ -97,7 +102,7 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
         <div><span className="pr-label">Object Type</span><span className="pr-value">{val(object.object_type)}</span></div>
         <div><span className="pr-label">Culture / Origin</span><span className="pr-value">{val(object.culture)}</span></div>
         <div><span className="pr-label">Status</span><span className="pr-value"><span className="pr-tag">{object.status}</span></span></div>
-        <div><span className="pr-label">Dimensions</span><span className="pr-value">{val(object.dimensions)}</span></div>
+        <div><span className="pr-label">Dimensions</span><span className="pr-value">{val(formatDimensions(object))}</span></div>
         <div><span className="pr-label">Current Location</span><span className="pr-value">{val(object.current_location)}</span></div>
       </div>
       {object.description && <div style={{ marginTop: '6pt' }}><span className="pr-label">Description</span><p className="pr-value">{object.description}</p></div>}
@@ -185,6 +190,50 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
               ))}
             </tbody>
           </table>
+        </>
+      )}
+
+      {/* Exit history */}
+      {exits && exits.length > 0 && (
+        <>
+          <div className="pr-h2">Exit History</div>
+          <table className="pr-table">
+            <thead><tr><th>Date</th><th>Reason</th><th>Recipient</th><th>Authorised By</th><th>Returned</th></tr></thead>
+            <tbody>
+              {exits.map((e: any) => (
+                <tr key={e.id}><td>{fmt(e.exit_date)}</td><td>{val(e.exit_reason)}</td><td>{val(e.recipient_name)}</td><td>{val(e.exit_authorised_by)}</td><td>{e.returned_date ? fmt(e.returned_date) : '—'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Damage & loss */}
+      {damage && damage.length > 0 && (
+        <>
+          <div className="pr-h2">Damage & Loss</div>
+          <table className="pr-table">
+            <thead><tr><th>Incident</th><th>Type</th><th>Severity</th><th>Status</th><th>Description</th></tr></thead>
+            <tbody>
+              {damage.map((d: any) => (
+                <tr key={d.id}><td>{fmt(d.incident_date)}</td><td>{val(d.damage_type)}</td><td>{val(d.severity)}</td><td>{val(d.status)}</td><td>{val(d.description)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Deaccession — shown when the object has been disposed */}
+      {(object.status === 'Deaccessioned' || object.disposal_method || object.disposal_date) && (
+        <>
+          <div className="pr-h2">Deaccession & Disposal</div>
+          <div className="pr-grid">
+            <div><span className="pr-label">Method</span><span className="pr-value">{val(object.disposal_method)}</span></div>
+            <div><span className="pr-label">Date</span><span className="pr-value">{fmt(object.disposal_date)}</span></div>
+            <div><span className="pr-label">Recipient</span><span className="pr-value">{val(object.disposal_recipient)}</span></div>
+            <div><span className="pr-label">Authorised By</span><span className="pr-value">{val(object.disposal_authorization)}</span></div>
+          </div>
+          {object.disposal_note && <div style={{ marginTop: '6pt' }}><span className="pr-label">Note</span><p className="pr-value">{object.disposal_note}</p></div>}
         </>
       )}
 

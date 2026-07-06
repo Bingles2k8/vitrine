@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { getPlan } from '@/lib/plans'
+import { formatDimensions } from '@/lib/formatDimensions'
 
 export async function GET(request: Request) {
   const supabase = await createServerSideClient()
@@ -57,7 +58,9 @@ export async function GET(request: Request) {
       'condition_grade', 'condition_date', 'condition_assessor',
       'last_inventoried', 'inventoried_by',
       'copyright_status', 'rights_holder',
-      'provenance', 'inscription', 'marks', 'dimensions', 'description',
+      'provenance', 'inscription', 'description',
+      'dimension_height', 'dimension_width', 'dimension_depth', 'dimension_unit',
+      'dimension_weight', 'dimension_weight_unit', 'dimension_notes', 'dimensions',
     ].join(', '))
     .eq('museum_id', museumId)
     .order('accession_no')
@@ -92,9 +95,12 @@ export async function GET(request: Request) {
     'Condition Grade', 'Condition Date', 'Condition Assessor',
     'Last Inventoried', 'Inventoried By',
     'Copyright Status', 'Rights Holder',
-    'Provenance', 'Inscription', 'Marks', 'Dimensions', 'Description',
+    'Provenance', 'Inscription', 'Dimensions', 'Description',
   ]
 
+  // 'dimensions' is computed from the structured dimension_* columns (the
+  // editor no longer writes the legacy free-text column). The old 'Marks'
+  // column was dropped — marks are merged into inscription on save.
   const FIELDS: string[] = [
     'accession_no', 'title', 'artist', 'year', 'medium', 'culture', 'object_type',
     'status', 'current_location', 'acquisition_date', 'acquisition_method',
@@ -102,14 +108,17 @@ export async function GET(request: Request) {
     'condition_grade', 'condition_date', 'condition_assessor',
     'last_inventoried', 'inventoried_by',
     'copyright_status', 'rights_holder',
-    'provenance', 'inscription', 'marks', 'dimensions', 'description',
+    'provenance', 'inscription', 'dimensions', 'description',
   ]
 
   const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
-  const rows = (objects || []).map(a =>
-    FIELDS.map(f => escape((a as unknown as Record<string, unknown>)[f])).join(',')
-  )
+  const rows = (objects || []).map(a => {
+    const rec = a as unknown as Record<string, unknown>
+    return FIELDS.map(f =>
+      escape(f === 'dimensions' ? formatDimensions(rec) : rec[f])
+    ).join(',')
+  })
 
   const csv = [HEADERS.map(h => `"${h}"`).join(','), ...rows].join('\n')
 

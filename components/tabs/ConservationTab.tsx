@@ -28,6 +28,7 @@ interface TreatmentImage {
   name: string
   date: string
   file_size?: number
+  stage?: string
 }
 
 interface Treatment {
@@ -40,6 +41,8 @@ interface Treatment {
   end_date: string | null
   description: string | null
   condition_before: string | null
+  condition_after: string | null
+  outcome: string | null
   materials_used: string | null
   cost: string | number | null
   cost_currency: string | null
@@ -56,6 +59,8 @@ interface EditFormState {
   end_date: string
   description: string
   condition_description: string
+  condition_after: string
+  outcome: string
   materials_used: string
   cost: string
   cost_currency: string
@@ -64,6 +69,8 @@ interface EditFormState {
 }
 
 const OTHER_TREATMENT_SUGGESTIONS = ['Surface consolidation', 'Structural repair', 'Deacidification', 'Pest treatment', 'Fumigation', 'Freeze treatment', 'Infill', 'Inpainting', 'Varnishing', 'Humidification', 'Mount making']
+const OUTCOME_OPTIONS = ['Successful', 'Partially successful', 'Stabilised', 'No change', 'Further work required', 'Other']
+const IMAGE_STAGES = ['Before', 'During', 'After']
 const today = new Date().toISOString().split('T')[0]
 
 function useAutoExpand(value: string) {
@@ -80,6 +87,7 @@ function emptyForm() {
   return {
     treatment_name: '', treatment_type: '', other_treatment_type: '', conservator: '',
     start_date: '', end_date: '', description: '', condition_description: '',
+    condition_after: '', outcome: '',
     materials_used: '', cost: '', cost_currency: 'GBP', recommendation_future: '',
     images: [] as TreatmentImage[],
   }
@@ -107,6 +115,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
 
   const conditionRef = useAutoExpand(conservationForm.condition_description)
   const editConditionRef = useAutoExpand(editForm?.condition_description ?? '')
+  const editOutcomeRef = useRef<HTMLSelectElement>(null)
 
   useEffect(() => {
     supabase.from('conservation_treatments').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
@@ -205,6 +214,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       end_date: conservationForm.end_date || null,
       description: conservationForm.description,
       condition_before: conservationForm.condition_description || null,
+      condition_after: conservationForm.condition_after || null,
+      outcome: conservationForm.outcome || null,
       materials_used: conservationForm.materials_used || null,
       cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null,
       cost_currency: conservationForm.cost_currency || null,
@@ -237,11 +248,19 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     }
     const { error } = await supabase.from('conservation_treatments').update(updates).eq('id', id)
     if (error) { toast(error.message, 'error'); return }
+    const updated = treatment ? { ...treatment, ...updates } : null
     setConservationHistory(h => h.map(t => t.id === id ? { ...t, ...updates } : t))
     if (selectedTreatment?.id === id) setSelectedTreatment(t => (t ? { ...t, ...updates } : t))
+    // SPECTRUM: document the result of treatment at completion. If the outcome /
+    // condition-after fields are still empty, open the edit form focused on Outcome
+    // so the conservator records the result now.
+    if (status === 'Completed' && updated && !updated.outcome && !updated.condition_after) {
+      setSelectedTreatment(updated)
+      openEdit(updated, true)
+    }
   }
 
-  function openEdit(treatment: Treatment) {
+  function openEdit(treatment: Treatment, focusOutcome = false) {
     setEditForm({
       treatment_name: treatment.treatment_name || '',
       treatment_type: treatment.treatment_type || '',
@@ -250,6 +269,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       end_date: treatment.end_date || '',
       description: treatment.description || '',
       condition_description: treatment.condition_before || '',
+      condition_after: treatment.condition_after || '',
+      outcome: treatment.outcome || '',
       materials_used: treatment.materials_used || '',
       cost: treatment.cost ? String(treatment.cost) : '',
       cost_currency: treatment.cost_currency || 'GBP',
@@ -258,6 +279,9 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     })
     setEditRemovedImageUrls([])
     setIsEditing(true)
+    if (focusOutcome) {
+      setTimeout(() => editOutcomeRef.current?.focus(), 0)
+    }
   }
 
   async function saveEdit() {
@@ -271,6 +295,8 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       end_date: editForm.end_date || null,
       description: editForm.description || null,
       condition_before: editForm.condition_description || null,
+      condition_after: editForm.condition_after || null,
+      outcome: editForm.outcome || null,
       materials_used: editForm.materials_used || null,
       cost: editForm.cost ? parseFloat(editForm.cost) : null,
       cost_currency: editForm.cost_currency || null,
@@ -366,6 +392,25 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
           />
         </div>
 
+        <div>
+          <label className={labelCls} data-learn="conservation.outcome">Outcome</label>
+          <select value={conservationForm.outcome} onChange={e => setConservationForm(f => ({ ...f, outcome: e.target.value }))} className={inputCls}>
+            <option value="">— Select —</option>
+            {OUTCOME_OPTIONS.map(o => <option key={o}>{o}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className={labelCls} data-learn="conservation.condition_after">Condition After Treatment</label>
+          <textarea
+            value={conservationForm.condition_after}
+            onChange={e => setConservationForm(f => ({ ...f, condition_after: e.target.value }))}
+            rows={4}
+            placeholder="Condition of object following treatment..."
+            className={`${inputCls} resize-none`}
+          />
+        </div>
+
         {/* Image upload */}
         <div>
           <label className={labelCls}>Images</label>
@@ -394,6 +439,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   <th className="px-3 py-2 w-14"></th>
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-3 py-2">Name</th>
                   <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-3 py-2">Date</th>
+                  <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-3 py-2">Stage</th>
                   <th className="px-3 py-2 w-8"></th>
                 </tr>
               </thead>
@@ -420,6 +466,16 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                         className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono"
                       />
                     </td>
+                    <td className="px-3 py-2">
+                      <select
+                        value={img.stage ?? ''}
+                        onChange={e => setConservationForm(f => ({ ...f, images: f.images.map((im, j) => j === i ? { ...im, stage: e.target.value } : im) }))}
+                        className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs"
+                      >
+                        <option value="">—</option>
+                        {IMAGE_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setConservationForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i) })) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                     </td>
@@ -434,6 +490,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                     </td>
                     <td className="px-3 py-2 text-stone-400 dark:text-stone-500">{p.name}</td>
                     <td className="px-3 py-2 text-stone-400 dark:text-stone-500 font-mono">Uploading…</td>
+                    <td />
                     <td />
                   </tr>
                 ))}
@@ -632,6 +689,22 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   />
                 </div>
                 <div>
+                  <label className={labelCls}>Outcome</label>
+                  <select ref={editOutcomeRef} value={editForm.outcome} onChange={e => setEditForm(f => (f ? { ...f, outcome: e.target.value } : f))} className={inputCls}>
+                    <option value="">— Select —</option>
+                    {OUTCOME_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Condition After Treatment</label>
+                  <textarea
+                    value={editForm.condition_after}
+                    onChange={e => setEditForm(f => (f ? { ...f, condition_after: e.target.value } : f))}
+                    rows={4}
+                    className={`${inputCls} resize-none`}
+                  />
+                </div>
+                <div>
                   <label className={labelCls}>Images</label>
                   <label className="inline-flex items-center gap-2 px-3 py-1.5 border border-dashed border-stone-300 dark:border-stone-600 rounded cursor-pointer hover:border-stone-500 transition-colors text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/50">
                     <span>{editImageUploadProgress ? 'Uploading…' : '+ Upload image'}</span>
@@ -656,6 +729,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                           <th className="px-3 py-2 w-14"></th>
                           <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Name</th>
                           <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Date</th>
+                          <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Stage</th>
                           <th className="px-3 py-2 w-8"></th>
                         </tr>
                       </thead>
@@ -673,6 +747,12 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                             <td className="px-3 py-2">
                               <input type="date" value={img.date} onChange={e => setEditForm(f => (f ? { ...f, images: f.images.map((im, j) => j === i ? { ...im, date: e.target.value } : im) } : f))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono" />
                             </td>
+                            <td className="px-3 py-2">
+                              <select value={img.stage ?? ''} onChange={e => setEditForm(f => (f ? { ...f, images: f.images.map((im, j) => j === i ? { ...im, stage: e.target.value } : im) } : f))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs">
+                                <option value="">—</option>
+                                {IMAGE_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </td>
                             <td className="px-3 py-2 text-center">
                               <button type="button" onClick={() => { setEditRemovedImageUrls(prev => [...prev, img.url]); setEditForm(f => (f ? { ...f, images: f.images.filter((_, j) => j !== i) } : f)) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                             </td>
@@ -687,6 +767,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                             </td>
                             <td className="px-3 py-2 text-stone-400 dark:text-stone-500">{p.name}</td>
                             <td className="px-3 py-2 text-stone-400 dark:text-stone-500 font-mono">Uploading…</td>
+                            <td />
                             <td />
                           </tr>
                         ))}
@@ -757,6 +838,18 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                     <div className="text-sm text-stone-700 dark:text-stone-300">{selectedTreatment.condition_before}</div>
                   </div>
                 )}
+                {selectedTreatment.outcome && (
+                  <div>
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Outcome</div>
+                    <div className="text-sm text-stone-700 dark:text-stone-300">{selectedTreatment.outcome}</div>
+                  </div>
+                )}
+                {selectedTreatment.condition_after && (
+                  <div>
+                    <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Condition After Treatment</div>
+                    <div className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{selectedTreatment.condition_after}</div>
+                  </div>
+                )}
                 {(selectedTreatment.images ?? []).length > 0 && (
                   <div>
                     <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Images</div>
@@ -766,6 +859,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                           <th className="px-3 py-2 w-14"></th>
                           <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Name</th>
                           <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Date</th>
+                          <th className="text-left text-xs uppercase tracking-widest text-stone-400 font-normal px-3 py-2">Stage</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -779,6 +873,11 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                             <td className="px-3 py-2 text-stone-700 dark:text-stone-300">{img.name}</td>
                             <td className="px-3 py-2 font-mono text-stone-400 dark:text-stone-500">
                               {img.date ? new Date(img.date).toLocaleDateString('en-GB') : '—'}
+                            </td>
+                            <td className="px-3 py-2">
+                              {img.stage
+                                ? <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">{img.stage}</span>
+                                : <span className="text-stone-300 dark:text-stone-600">—</span>}
                             </td>
                           </tr>
                         ))}
