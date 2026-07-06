@@ -293,7 +293,7 @@ export default function PlanPage() {
             {PLAN_ORDER.map(id => {
               const p = PLANS[id]
               const isCurrent = currentPlan === id
-              const isComingSoon = id === 'institution' || id === 'enterprise'
+              const isComingSoon = p.comingSoon
               const isPendingTarget = museum?.pending_downgrade_plan === id
               const isDowngrade = PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan as PlanId)
 
@@ -346,6 +346,13 @@ export default function PlanPage() {
                       <span className="block w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 cursor-default">
                         Coming soon
                       </span>
+                    ) : id === 'enterprise' ? (
+                      <a
+                        href="/contact/enterprise"
+                        className="block w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                      >
+                        Contact us →
+                      </a>
                     ) : id === 'community' ? (
                       currentPlan !== 'community' && isOwner ? (
                         <>

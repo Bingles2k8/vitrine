@@ -108,7 +108,7 @@ export default function InsurancePage() {
       const { museum, isOwner, staffAccess } = result
       const [{ data: policies }, { data: objs }, { data: poLinks }, { data: pDocs }] = await Promise.all([
         supabase.from('insurance_policies').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
-        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).eq('deleted', false).order('title'),
+        supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('insurance_policy_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
         supabase.from('insurance_policy_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
       ])
