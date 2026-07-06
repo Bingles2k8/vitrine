@@ -43,7 +43,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     const year = new Date().getFullYear()
     const exitNumber = `OE-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
     const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
-    const { error } = await supabase.from('object_exits').insert({
+    const { data: inserted, error } = await supabase.from('object_exits').insert({
       museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
       exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
       recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
@@ -57,7 +57,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
       exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
       related_loan_id: exitForm.related_loan_id || null,
-    })
+    }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
 
     // Spectrum 3 & 6: update object's current location and log movement on exit
@@ -70,13 +70,10 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
       expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
     })
 
-    if (stagedDocs.length > 0) {
-      const newRecord = await supabase.from('object_exits').select('id').eq('exit_number', exitNumber).single()
-      if (newRecord.data) {
-        const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'exit_record', newRecord.data.id)
-        if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
-        setStagedDocs([])
-      }
+    if (stagedDocs.length > 0 && inserted) {
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'exit_record', inserted.id)
+      if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
+      setStagedDocs([])
     }
     setExitForm({ exit_date: new Date().toISOString().slice(0, 10), exit_reason: 'Return to depositor', recipient_name: '', recipient_contact: '', destination_address: '', transport_method: '', insurance_indemnity_confirmed: false, packing_notes: '', exit_condition: '', signed_receipt: false, signed_receipt_date: '', expected_return_date: '', exit_authorised_by: '', notes: '', related_loan_id: '' })
     const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })

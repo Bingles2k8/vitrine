@@ -59,23 +59,22 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
   }, [object.id])
 
   async function addDamage() {
-    if (!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting) return
+    if (!damageForm.incident_date || !damageForm.discovered_date || !damageForm.discovered_by || !damageForm.description || submitting) return
     setSubmitting(true)
     const year = new Date().getFullYear()
     const existingCount = damageHistory.filter(r => r.report_number?.startsWith(`DR-${year}-`)).length
     const reportNumber = `DR-${year}-${String(existingCount + 1).padStart(3, '0')}`
-    const { error } = await supabase.from('damage_reports').insert({
+    const { data: inserted, error } = await supabase.from('damage_reports').insert({
       ...damageForm, report_number: reportNumber,
       repair_estimate: damageForm.repair_estimate ? Number(damageForm.repair_estimate) : null,
       police_report_ref: damageForm.police_report_ref || null,
       insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
       object_status_after_event: damageForm.object_status_after_event || null,
       object_id: object.id, museum_id: museum.id,
-    })
+    }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
-    const newRecord = await supabase.from('damage_reports').select('id').eq('report_number', reportNumber).single()
-    if (stagedDocs.length > 0 && newRecord.data) {
-      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'damage', newRecord.data.id)
+    if (stagedDocs.length > 0 && inserted) {
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'damage', inserted.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }
@@ -110,7 +109,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
               <input type="date" value={damageForm.incident_date} onChange={e => setDamageForm(f => ({ ...f, incident_date: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls} data-learn="damage.discovered_date">Discovered Date</label>
+              <label className={labelCls} data-learn="damage.discovered_date">Discovered Date <span className="text-red-400">*</span></label>
               <input type="date" value={damageForm.discovered_date} onChange={e => setDamageForm(f => ({ ...f, discovered_date: e.target.value }))} className={inputCls} />
             </div>
             <div>

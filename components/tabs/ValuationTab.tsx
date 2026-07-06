@@ -61,7 +61,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
     const year = new Date().getFullYear()
     const count = valuations.filter(v => v.valuation_reference?.startsWith(`VL-${year}-`)).length
     const valRef = `VL-${year}-${String(count + 1).padStart(3, '0')}`
-    const { error: valErr } = await supabase.from('valuations').insert({
+    const { data: inserted, error: valErr } = await supabase.from('valuations').insert({
       ...valuationForm,
       value: parseFloat(valuationForm.value),
       object_id: object.id,
@@ -69,11 +69,10 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
       valuation_reference: valRef,
       valuation_basis: null,
       validity_date: valuationForm.validity_date || null,
-    })
+    }).select('id').single()
     if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
-    const newValuation = await supabase.from('valuations').select('id').eq('valuation_reference', valRef).single()
-    if (stagedDocs.length > 0 && newValuation.data) {
-      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'valuation', newValuation.data.id)
+    if (stagedDocs.length > 0 && inserted) {
+      const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'valuation', inserted.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
     }

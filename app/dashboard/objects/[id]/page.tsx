@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast'
 import { Skeleton, FormSkeleton } from '@/components/Skeleton'
 
 import QRLabelModal from '@/components/QRLabelModal'
+import EntryTab from '@/components/tabs/EntryTab'
 import OverviewTab from '@/components/tabs/OverviewTab'
 import AcquisitionTab from '@/components/tabs/AcquisitionTab'
 import DocumentsTab from '@/components/tabs/DocumentsTab'
@@ -27,6 +28,7 @@ import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
+  { id: 'entry',        label: 'Entry' },
   { id: 'acquisition',  label: 'Acquisition' },
   { id: 'location',     label: 'Location' },
   { id: 'condition',    label: 'Condition' },
@@ -41,6 +43,7 @@ const TABS = [
 ]
 
 const SIMPLE_TABS = ['overview', 'location', 'condition', 'valuation']
+const TAB_IDS = TABS.map(t => t.id)
 
 export default function ObjectDetail() {
   const [object, setObject] = useState<any>(null)
@@ -61,7 +64,8 @@ export default function ObjectDetail() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview')
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(initialTab && TAB_IDS.includes(initialTab) ? initialTab : 'overview')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUserName, setCurrentUserName] = useState<string>('')
   const [latestValuation, setLatestValuation] = useState<any>(null)
@@ -593,6 +597,10 @@ export default function ObjectDetail() {
 
           {activeTab === 'overview' && (
             <OverviewTab form={form} set={set} canEdit={canEdit} saving={saving} object={object} museum={museum} latestValuation={latestValuation} setActiveTab={setActiveTab} />
+          )}
+
+          {activeTab === 'entry' && (
+            <EntryTab object={object} museum={museum} canEdit={canEdit} supabase={supabase} />
           )}
 
           {activeTab === 'acquisition' && (

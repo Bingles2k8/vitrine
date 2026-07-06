@@ -19,7 +19,7 @@ interface Museum {
 
 interface UseRecord {
   id: string
-  reference: string | null
+  use_reference: string | null
   use_type: string | null
   requester_name: string | null
   requester_org: string | null
@@ -36,6 +36,7 @@ export default function CollectionsUsePage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -124,7 +125,7 @@ export default function CollectionsUsePage() {
       .from('collection_use_records')
       .select('*', { count: 'exact', head: true })
       .eq('museum_id', museum!.id)
-      .ilike('reference', `CU-${year}-%`)
+      .ilike('use_reference', `CU-${year}-%`)
     const num = (count || 0) + 1
     return `CU-${year}-${String(num).padStart(3, '0')}`
   }
@@ -133,12 +134,13 @@ export default function CollectionsUsePage() {
     e.preventDefault()
     if (!canEdit || !museum) return
     setSaving(true)
+    setError('')
     const reference = await generateReference()
     const { data, error } = await supabase
       .from('collection_use_records')
       .insert({
         museum_id: museum.id,
-        reference,
+        use_reference: reference,
         use_type: form.use_type,
         requester_name: form.requester_name,
         requester_org: form.requester_org,
@@ -155,7 +157,12 @@ export default function CollectionsUsePage() {
       })
       .select()
       .single()
-    if (!error && data) {
+    if (error) {
+      setError(error.message)
+      setSaving(false)
+      return
+    }
+    if (data) {
       setRecords([data, ...records])
       setForm({
         use_type: 'Research',
@@ -203,6 +210,9 @@ export default function CollectionsUsePage() {
         </div>
 
         <div className="p-6 md:p-10 space-y-6">
+          {error && (
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-xs font-mono text-red-600 dark:text-red-400">{error}</div>
+          )}
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -399,7 +409,7 @@ export default function CollectionsUsePage() {
                 <tbody>
                   {records.map(r => (
                     <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800">
-                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.reference}</td>
+                      <td className="px-6 py-4 text-xs font-mono text-stone-600 dark:text-stone-400">{r.use_reference}</td>
                       <td className="px-4 py-4 text-xs text-stone-600 dark:text-stone-400">{r.use_type}</td>
                       <td className="px-4 py-4">
                         <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{r.requester_name}</div>
