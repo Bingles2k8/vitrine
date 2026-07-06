@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -8,7 +8,14 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [linkError, setLinkError] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'link') {
+      setLinkError(true)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,6 +49,11 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <>
+              {linkError && (
+                <p className="text-xs text-red-500 font-mono mb-4">
+                  That reset link is invalid or has expired. Enter your email to get a new one.
+                </p>
+              )}
               <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">
                 Enter your email address and we&apos;ll send you a link to reset your password.
               </p>

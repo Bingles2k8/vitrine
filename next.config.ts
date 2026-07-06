@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root — without this, dev-server root inference can pick a
+  // parent directory and CSS/module resolution breaks (Can't resolve 'tailwindcss')
+  outputFileTracingRoot: process.cwd(),
+  turbopack: { root: process.cwd() },
   reactCompiler: true,
   images: {
     remotePatterns: [

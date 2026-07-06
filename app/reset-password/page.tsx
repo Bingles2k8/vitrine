@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -27,6 +27,14 @@ export default function ResetPasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const [session, setSession] = useState<'checking' | 'ok' | 'missing'>('checking')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setSession(user ? 'ok' : 'missing')
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -62,6 +70,19 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-8">
+          {session === 'missing' ? (
+            <div className="text-center space-y-3 py-2">
+              <p className="text-sm text-stone-700 dark:text-stone-300 font-medium">Link expired</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500">
+                Your reset link is invalid or has expired.{' '}
+                <Link href="/forgot-password" className="underline hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                  Request a new one
+                </Link>
+                .
+              </p>
+            </div>
+          ) : (
+          <>
           <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">
             Choose a new password for your account.
           </p>
@@ -126,6 +147,8 @@ export default function ResetPasswordPage() {
               {loading ? 'Updating…' : 'Set new password'}
             </button>
           </form>
+          </>
+          )}
         </div>
 
         <p className="text-center mt-6">

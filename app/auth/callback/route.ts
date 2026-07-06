@@ -15,6 +15,14 @@ function getSafeRedirectPath(next: string | null): string {
   }
 }
 
+// Where to send the user when verification fails: back to the page that can
+// issue a fresh link, so they aren't stranded on a password form with no session
+function getFailureRedirect(origin: string, safePath: string): string {
+  if (safePath.startsWith('/reset-password')) return `${origin}/forgot-password?error=link`
+  if (safePath.startsWith('/set-password')) return `${origin}/signup?error=link`
+  return `${origin}/login?error=auth`
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
@@ -23,6 +31,7 @@ export async function GET(request: NextRequest) {
   const nextParam = searchParams.get('next')
   const safePath = getSafeRedirectPath(nextParam)
   const redirectUrl = `${origin}${safePath}`
+  const failureUrl = getFailureRedirect(origin, safePath)
 
   if (code || (tokenHash && type)) {
     // Create the redirect response first so we can write cookies directly onto it
@@ -50,13 +59,13 @@ export async function GET(request: NextRequest) {
         type: type as 'email' | 'signup' | 'recovery' | 'invite' | 'magiclink',
       })
       if (error) {
-        return NextResponse.redirect(`${origin}/login?error=auth`)
+        return NextResponse.redirect(failureUrl)
       }
     } else {
       // PKCE code exchange — standard magic link flow
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code!)
       if (exchangeError) {
-        return NextResponse.redirect(`${origin}/login?error=auth`)
+        return NextResponse.redirect(failureUrl)
       }
     }
 
@@ -84,5 +93,8 @@ export async function GET(request: NextRequest) {
     return response
   }
 
-  return NextResponse.redirect(redirectUrl)
+  // No code or token_hash — the link was already consumed, expired, or the
+  // error arrived in the URL fragment (invisible to the server). Never forward
+  // to the destination page: without a session it would fail there anyway.
+  return NextResponse.redirect(failureUrl)
 }
