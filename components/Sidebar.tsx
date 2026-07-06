@@ -293,24 +293,31 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           </>
         ) : (
           <>
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Collection Management</div>
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Object Lifecycle</div>
             {navItem('/dashboard/entry', '🗂', 'Object Entry', 'nav.entry')}
             {navItem('/dashboard/register', '📋', 'Accession Register', 'nav.register')}
             {navItem('/dashboard/loans', '⇄', 'Loans Register', 'nav.loans')}
-            {navItem('/dashboard/conservation', '⚗', 'Conservation', 'nav.conservation')}
-            {navItem('/dashboard/audit', '◎', 'Audit & Inventory', 'nav.audit')}
             {navItem('/dashboard/exits', '↗', 'Object Exit', 'nav.exits')}
-            {navItem('/dashboard/locations', '◎', 'Location Register', 'nav.locations')}
-            {navItem('/dashboard/valuation', '◈', 'Valuation Register', 'nav.valuation')}
+            {navItem('/dashboard/disposal', '⊘', 'Disposal', 'nav.disposal')}
+
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Location & Care</div>
+            {navItem('/dashboard/locations', '⌖', 'Location Register', 'nav.locations')}
+            {navItem('/dashboard/conservation', '⚗', 'Conservation', 'nav.conservation')}
+            {navItem('/dashboard/damage', '⚠', 'Damage Reports', 'nav.damage')}
             {navItem('/dashboard/risk', '⚑', 'Risk Register', 'nav.risk')}
             {navItem('/dashboard/emergency', '⚡', 'Emergency Plans', 'nav.emergency')}
+
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Value & Rights</div>
+            {navItem('/dashboard/valuation', '◈', 'Valuation Register', 'nav.valuation')}
             {navItem('/dashboard/insurance', '🛡', 'Insurance', 'nav.insurance')}
-            {navItem('/dashboard/damage', '⚠', 'Damage Reports', 'nav.damage')}
+            {navItem('/dashboard/rights', '§', 'Rights Register', 'nav.rights')}
+            {navItem('/dashboard/reproductions', '❐', 'Reproductions', 'nav.reproductions')}
+
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Accountability</div>
+            {navItem('/dashboard/audit', '◎', 'Audit & Inventory', 'nav.audit')}
             {navItem('/dashboard/collections-use', '⊞', 'Use of Collections', 'nav.collections-use')}
-            {navItem('/dashboard/disposal', '⊘', 'Disposal', 'nav.disposal')}
             {navItem('/dashboard/collections-review', '⊡', 'Collections Review', 'nav.collections-review')}
-            {navItem('/dashboard/docs', '✓', 'Documentation Plan', 'nav.docs')}
-            {navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
+            {navItem('/dashboard/docs', '✓', 'Compliance & Documentation', 'nav.docs')}
           </>
         )}
 
@@ -328,6 +335,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
         <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
+        {!nav.simple && navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
         </>)}
       </nav>
 

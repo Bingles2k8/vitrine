@@ -459,7 +459,7 @@ export default function AuditPage() {
                   const isOld = a.last_inventoried && a.last_inventoried < oneYearAgoStr
 
                   return (
-                    <tr key={a.id} onClick={() => router.push(`/dashboard/objects/${a.id}?tab=location`)}
+                    <tr key={a.id} onClick={() => router.push(`/dashboard/objects/${a.id}?tab=audit`)}
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer ${isNever || isOld ? 'bg-amber-50/20' : ''}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -614,7 +614,7 @@ export default function AuditPage() {
                         const obj = r.objects
                         return (
                           <tr key={r.id} className="border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800/50 cursor-pointer"
-                            onClick={() => { setSelectedExercise(null); router.push(`/dashboard/objects/${obj?.id}?tab=location`) }}>
+                            onClick={() => { setSelectedExercise(null); router.push(`/dashboard/objects/${obj?.id}?tab=audit`) }}>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <span>{obj?.emoji}</span>

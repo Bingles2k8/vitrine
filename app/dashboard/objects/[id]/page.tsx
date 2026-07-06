@@ -24,6 +24,7 @@ import RiskTab from '@/components/tabs/RiskTab'
 import DuplicateSearchModal from '@/components/DuplicateSearchModal'
 import DamageTab from '@/components/tabs/DamageTab'
 import ExitsTab from '@/components/tabs/ExitsTab'
+import AuditTab from '@/components/tabs/AuditTab'
 import ObjectProgressSidebar from '@/components/ObjectProgressSidebar'
 
 const TABS = [
@@ -40,6 +41,7 @@ const TABS = [
   { id: 'risk',         label: 'Risk' },
   { id: 'damage',       label: 'Damage' },
   { id: 'exits',        label: 'Exits' },
+  { id: 'audit',        label: 'Audit' },
 ]
 
 const SIMPLE_TABS = ['overview', 'location', 'condition', 'valuation']
@@ -641,6 +643,10 @@ export default function ObjectDetail() {
 
           {activeTab === 'exits' && (
             <ExitsTab canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
+          )}
+
+          {activeTab === 'audit' && (
+            <AuditTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
           )}
 
           {activeTab === 'documents' && (
