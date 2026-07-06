@@ -9,6 +9,7 @@ import { getPlan } from '@/lib/plans'
 import { checkStorageQuota } from '@/lib/storageUsage'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import { TableSkeleton } from '@/components/Skeleton'
+import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 
 const COVERAGE_TYPES = ['All Risks', 'Named Perils', 'Government Indemnity', 'Transit', 'Exhibition']
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
@@ -87,6 +88,7 @@ export default function InsurancePage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [policies, setPolicies] = useState<InsurancePolicy[]>([])
+  const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [allObjects, setAllObjects] = useState<MuseumObject[]>([])
   const [policyObjects, setPolicyObjects] = useState<Record<string, PolicyObjectLink[]>>({})
   const [expandedPolicyId, setExpandedPolicyId] = useState<string | null>(null)
@@ -117,16 +119,18 @@ export default function InsurancePage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: policies }, { data: objs }, { data: poLinks }, { data: pDocs }] = await Promise.all([
+      const [{ data: policies }, { data: objs }, { data: poLinks }, { data: pDocs }, fxRates] = await Promise.all([
         supabase.from('insurance_policies').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('insurance_policy_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
         supabase.from('insurance_policy_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
+        loadFxRates(supabase),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setPolicies(policies || [])
+      setRates(fxRates)
       setAllObjects(objs || [])
       const map: Record<string, PolicyObjectLink[]> = {}
       for (const link of (poLinks || [])) {
@@ -292,8 +296,22 @@ export default function InsurancePage() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const today = new Date().toISOString().slice(0, 10)
 
+  const baseCurrency = getBaseCurrency(museum)
+  // Convert an amount from -> to using the rates Map; falls back to raw amount when no rate is available.
+  const convert = (amount: number, from: string, to: string) => {
+    if (!amount) return 0
+    const f = (from || 'GBP').toUpperCase()
+    const t = (to || 'GBP').toUpperCase()
+    if (f === t || rates.size === 0) return amount
+    const direct = rates.get(`${f}:${t}`)
+    if (direct) return amount * direct
+    const inverse = rates.get(`${t}:${f}`)
+    if (inverse) return amount / inverse
+    return amount
+  }
+
   const activePolicies = policies.filter(p => p.status === 'Active')
-  const totalCoverage = activePolicies.reduce((sum, p) => sum + (p.coverage_amount || 0), 0)
+  const totalCoverage = activePolicies.reduce((sum, p) => sum + convert(p.coverage_amount || 0, p.currency || 'GBP', baseCurrency), 0)
   const soonExpiring = policies.filter(p => {
     if (p.status !== 'Active' || !p.renewal_date) return false
     const daysUntil = (new Date(p.renewal_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -319,7 +337,7 @@ export default function InsurancePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Active Policies', value: String(activePolicies.length), warn: activePolicies.length === 0 },
-              { label: 'Total Coverage', value: activePolicies.length > 0 ? formatCurrency(totalCoverage, activePolicies[0]?.currency || 'GBP') : '—', warn: false },
+              { label: 'Total Coverage', value: activePolicies.length > 0 ? formatCurrency(totalCoverage, baseCurrency) : '—', warn: false },
               { label: 'Expiring Soon', value: String(soonExpiring.length), warn: soonExpiring.length > 0 },
               { label: 'Expired', value: String(expiredPolicies.length), warn: expiredPolicies.length > 0 },
             ].map(s => (
