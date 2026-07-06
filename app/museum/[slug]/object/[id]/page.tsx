@@ -6,6 +6,7 @@ import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
 import PublicImageGallery from '@/components/PublicImageGallery'
 import PublicObjectMap from '@/components/PublicObjectMap'
+import ContactMuseumButton from '@/components/ContactMuseumButton'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
@@ -229,6 +230,18 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
           <p className={`text-xl ${object.rarity ? 'mb-1' : 'mb-8'}`} style={{ ...headingStyle, color: content.muted }}>{object.artist}</p>
           {object.rarity && (
             <p className="text-sm font-mono mb-8" style={{ color: accent }}>{object.rarity}</p>
+          )}
+
+          {museum.accept_messages && (
+            <div className="mb-8">
+              <ContactMuseumButton
+                recipientMuseumId={museum.id}
+                recipientMuseumName={museum.name}
+                objectId={object.id}
+                objectTitle={object.title}
+                accent={accent}
+              />
+            </div>
           )}
 
           {metaRows.length > 0 && (

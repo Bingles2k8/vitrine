@@ -24,8 +24,11 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      // Honour a ?next= redirect (e.g. returning to a museum page after being
+      // prompted to sign in to send a message). Only same-origin paths.
+      const next = new URLSearchParams(window.location.search).get('next')
       router.refresh()
-      router.push('/dashboard')
+      router.push(next && next.startsWith('/') ? next : '/dashboard')
     }
   }
 

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import CollectionSearch from '@/components/CollectionSearch'
+import ContactMuseumButton from '@/components/ContactMuseumButton'
 import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
@@ -101,9 +102,22 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     </div>
   )
 
-  const collectionGrid = allObjects.length === 0
-    ? emptyState
-    : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />
+  // General "Message this museum" entry point — folded into the shared grid
+  // element so it appears once across every layout variant.
+  const contactBlock = museum.accept_messages ? (
+    <div className="max-w-6xl mx-auto px-6 pt-8">
+      <ContactMuseumButton recipientMuseumId={museum.id} recipientMuseumName={museum.name} accent={accent} />
+    </div>
+  ) : null
+
+  const collectionGrid = (
+    <>
+      {contactBlock}
+      {allObjects.length === 0
+        ? emptyState
+        : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />}
+    </>
+  )
 
   // ─── MINIMAL layout ─────────────────────────────────────────────────────────
   // White-cube gallery: no hero box. Giant floating italic title on white, thin

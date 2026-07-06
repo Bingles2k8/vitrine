@@ -61,6 +61,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [discoverable, setDiscoverable] = useState(false)
   const [collectionCategory, setCollectionCategory] = useState<string>('')
   const [hideMoneyValues, setHideMoneyValues] = useState(false)
+  const [acceptMessages, setAcceptMessages] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
   const settingsRef = useRef<HTMLDivElement>(null)
   const { learnMode, setLearnMode } = useLearnMode()
 
@@ -69,7 +71,25 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     setDiscoverable(museum?.discoverable ?? false)
     setCollectionCategory(museum?.collection_category ?? '')
     setHideMoneyValues(museum?.hide_money_values ?? false)
-  }, [museum?.discoverable, museum?.collection_category, museum?.hide_money_values])
+    setAcceptMessages(museum?.accept_messages ?? true)
+  }, [museum?.discoverable, museum?.collection_category, museum?.hide_money_values, museum?.accept_messages])
+
+  // Poll unread message count for the inbox badge
+  useEffect(() => {
+    if (!museum) return
+    let active = true
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/messages/unread')
+        if (!res.ok || !active) return
+        const { count } = await res.json()
+        setUnreadCount(count ?? 0)
+      } catch { /* ignore */ }
+    }
+    fetchUnread()
+    const timer = setInterval(fetchUnread, 60000)
+    return () => { active = false; clearInterval(timer) }
+  }, [museum?.id])
 
   // Fetch user email
   useEffect(() => {
@@ -132,6 +152,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     if (!museum) return
     setCollectionCategory(value)
     await supabase.from('museums').update({ collection_category: value || null }).eq('id', museum.id)
+  }
+
+  async function toggleAcceptMessages() {
+    if (!museum) return
+    const next = !acceptMessages
+    setAcceptMessages(next)
+    await supabase.from('museums').update({ accept_messages: next }).eq('id', museum.id)
   }
 
   async function toggleHideMoneyValues() {
@@ -284,6 +311,24 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2">Collections</div>
         {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
         {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
+
+        {/* Inbox — all tiers, all staff can read */}
+        <div
+          onClick={() => { router.push('/dashboard/inbox'); onNavigate?.() }}
+          className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm mb-0.5 cursor-pointer transition-colors ${
+            activePath.startsWith('/dashboard/inbox')
+              ? 'bg-amber-50 text-amber-900 font-medium dark:bg-amber-950/40 dark:text-amber-100'
+              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/60 dark:hover:text-stone-200'
+          }`}
+        >
+          <span className="text-base leading-none">✉️</span>
+          <span>Inbox</span>
+          {unreadCount > 0 && (
+            <span className="ml-auto min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-bold leading-none">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
 
         {nav.simple ? (
           <>
@@ -458,6 +503,27 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                       ))}
                     </select>
                   )}
+                </div>
+              )}
+
+              {/* Messaging (Professional and above, owners and admins) */}
+              {museum && !communityLocked && (isOwner || staffAccess === 'Admin') && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">Messaging</div>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Let people start a conversation about your collection. You can always start and reply to conversations either way.</p>
+                  <button
+                    onClick={toggleAcceptMessages}
+                    className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
+                      acceptMessages
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${acceptMessages ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                      <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${acceptMessages ? 'left-3.5' : 'left-0.5'}`} />
+                    </span>
+                    {acceptMessages ? 'Accepting new messages' : 'Not accepting new messages'}
+                  </button>
                 </div>
               )}
 
