@@ -194,6 +194,16 @@ export default function AuditPage() {
   async function saveExercise() {
     if (!exerciseForm.audit_reference.trim() || savingExercise) return
     setSavingExercise(true)
+    // On completion, roll up the live per-object outcomes into the stored
+    // summary counters so the exported audit report reflects the real
+    // results instead of zeros.
+    const completing = exerciseForm.status === 'Completed' && editingExerciseId
+    const rollup = completing ? {
+      objects_checked: exerciseRecords.length,
+      objects_found: exerciseRecords.filter(r => r.inventory_outcome === 'Present and correct').length,
+      objects_not_found: exerciseRecords.filter(r => r.inventory_outcome === 'Not found').length,
+      discrepancies: exerciseRecords.filter(r => r.inventory_outcome === 'Present — location differs').length,
+    } : null
     const payload = {
       audit_reference: exerciseForm.audit_reference,
       scope: exerciseForm.scope || null,
@@ -201,10 +211,10 @@ export default function AuditPage() {
       auditor: exerciseForm.auditor || null,
       date_started: exerciseForm.date_started,
       date_completed: exerciseForm.date_completed || null,
-      objects_checked: exerciseForm.objects_checked ? parseInt(exerciseForm.objects_checked) : 0,
-      objects_found: exerciseForm.objects_found ? parseInt(exerciseForm.objects_found) : 0,
-      objects_not_found: exerciseForm.objects_not_found ? parseInt(exerciseForm.objects_not_found) : 0,
-      discrepancies: exerciseForm.discrepancies ? parseInt(exerciseForm.discrepancies) : 0,
+      objects_checked: rollup ? rollup.objects_checked : (exerciseForm.objects_checked ? parseInt(exerciseForm.objects_checked) : 0),
+      objects_found: rollup ? rollup.objects_found : (exerciseForm.objects_found ? parseInt(exerciseForm.objects_found) : 0),
+      objects_not_found: rollup ? rollup.objects_not_found : (exerciseForm.objects_not_found ? parseInt(exerciseForm.objects_not_found) : 0),
+      discrepancies: rollup ? rollup.discrepancies : (exerciseForm.discrepancies ? parseInt(exerciseForm.discrepancies) : 0),
       actions_required: exerciseForm.actions_required || null,
       actions_completed: exerciseForm.actions_completed || null,
       overall_audit_report: exerciseForm.overall_audit_report || null,
@@ -329,9 +339,16 @@ export default function AuditPage() {
 
             {showExerciseForm && canEdit && (
               <div className="p-6 border-b border-stone-100 dark:border-stone-800 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div><label className={labelCls}>Audit Reference *</label><input value={exerciseForm.audit_reference} onChange={e => setExerciseForm(f => ({ ...f, audit_reference: e.target.value }))} placeholder="e.g. AUD-2026-001" className={inputCls} /></div>
                   <div><label className={labelCls}>Auditor</label><input value={exerciseForm.auditor} onChange={e => setExerciseForm(f => ({ ...f, auditor: e.target.value }))} placeholder="Name or team" className={inputCls} /></div>
+                  <div>
+                    <label className={labelCls}>Method</label>
+                    <select value={exerciseForm.method} onChange={e => setExerciseForm(f => ({ ...f, method: e.target.value }))} className={inputCls}>
+                      <option value="">— Select —</option>
+                      {AUDIT_METHODS.map(m => <option key={m}>{m}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div><label className={labelCls}>Scope</label><textarea rows={2} value={exerciseForm.scope} onChange={e => setExerciseForm(f => ({ ...f, scope: e.target.value }))} placeholder="Which part of the collection will be audited…" className={`${inputCls} resize-none`} /></div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
