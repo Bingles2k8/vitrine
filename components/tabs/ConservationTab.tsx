@@ -99,6 +99,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   const [imageUploadProgress, setImageUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [editPendingImages, setEditPendingImages] = useState<{ id: string; localUrl: string; name: string }[]>([])
   const [editImageUploadProgress, setEditImageUploadProgress] = useState<{ done: number; total: number } | null>(null)
+  const [editRemovedImageUrls, setEditRemovedImageUrls] = useState<string[]>([])
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const canAttach = canEdit && getPlan(museum.plan).compliance
   const { toast } = useToast()
@@ -255,6 +256,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
       recommendation_future: treatment.recommendation_future || '',
       images: treatment.images ?? [],
     })
+    setEditRemovedImageUrls([])
     setIsEditing(true)
   }
 
@@ -277,6 +279,12 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     }
     const { error } = await supabase.from('conservation_treatments').update(updates).eq('id', selectedTreatment.id)
     if (error) { toast(error.message, 'error'); setEditSubmitting(false); return }
+    // Only now that the save succeeded do we delete removed images from storage,
+    // so cancelling an edit never orphans a still-referenced file.
+    for (const url of editRemovedImageUrls) {
+      deleteFromR2('object-images', url)
+    }
+    setEditRemovedImageUrls([])
     const updated = { ...selectedTreatment, ...updates, condition_before: updates.condition_before }
     setConservationHistory(h => h.map(t => t.id === selectedTreatment.id ? updated : t))
     setSelectedTreatment(updated)
@@ -565,7 +573,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                 <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-0.5">{selectedTreatment.treatment_reference}</div>
               </div>
               <div className="flex items-center gap-3 ml-4">
-                {isActive(selectedTreatment) && canEdit && !isEditing && (
+                {canEdit && !isEditing && (isActive(selectedTreatment) || selectedTreatment.status === 'Completed') && (
                   <button
                     type="button"
                     onClick={() => openEdit(selectedTreatment)}
@@ -666,7 +674,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                               <input type="date" value={img.date} onChange={e => setEditForm(f => (f ? { ...f, images: f.images.map((im, j) => j === i ? { ...im, date: e.target.value } : im) } : f))} className="bg-transparent outline-none text-stone-500 dark:text-stone-400 text-xs font-mono" />
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <button type="button" onClick={() => { deleteFromR2('object-images', img.url); setEditForm(f => (f ? { ...f, images: f.images.filter((_, j) => j !== i) } : f)) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
+                              <button type="button" onClick={() => { setEditRemovedImageUrls(prev => [...prev, img.url]); setEditForm(f => (f ? { ...f, images: f.images.filter((_, j) => j !== i) } : f)) }} className="text-stone-300 hover:text-red-400 transition-colors">×</button>
                             </td>
                           </tr>
                         ))}
@@ -714,7 +722,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
                   <button type="button" onClick={saveEdit} disabled={editSubmitting} className="text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded px-4 py-1.5 disabled:opacity-50">
                     {editSubmitting ? 'Saving…' : 'Save changes'}
                   </button>
-                  <button type="button" onClick={() => setIsEditing(false)} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-4 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                  <button type="button" onClick={() => { setEditRemovedImageUrls([]); setIsEditing(false) }} className="text-xs font-mono text-stone-500 border border-stone-200 dark:border-stone-700 rounded px-4 py-1.5 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                     Cancel
                   </button>
                 </div>

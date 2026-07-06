@@ -44,6 +44,12 @@ interface EmergencyPlan {
   plan_title: string
   plan_type: string | null
   responsible_person: string | null
+  emergency_contacts: string | null
+  evacuation_procedures: string | null
+  salvage_priorities: string | null
+  alternative_storage: string | null
+  recovery_procedures: string | null
+  last_review_date: string | null
   next_review_date: string | null
   status: string
   notes: string | null
@@ -54,8 +60,13 @@ interface EmergencyEvent {
   event_reference: string
   event_type: string | null
   event_date: string | null
+  plan_id: string | null
   description: string | null
+  response_taken: string | null
+  damage_summary: string | null
+  lessons_learned: string | null
   status: string
+  notes: string | null
 }
 
 interface MuseumObject {
@@ -96,6 +107,8 @@ export default function EmergencyPage() {
   const [filter, setFilter] = useState<'All' | 'Draft' | 'Active' | 'Under Review' | 'Archived'>('All')
   const [showForm, setShowForm] = useState(false)
   const [showEventForm, setShowEventForm] = useState(false)
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [eventForm, setEventForm] = useState(EMPTY_EVENT)
   const [saving, setSaving] = useState(false)
@@ -186,15 +199,19 @@ export default function EmergencyPage() {
     setPlanDocs(m => ({ ...m, [doc.plan_id]: (m[doc.plan_id] || []).filter(d => d.id !== doc.id) }))
   }
 
-  async function addPlan() {
+  async function savePlan() {
     if (!form.plan_title || !museum) return
     setSaving(true)
-    await supabase.from('emergency_plans').insert({
+    const payload = {
       ...form,
       last_review_date: form.last_review_date || null,
       next_review_date: form.next_review_date || null,
-      museum_id: museum.id,
-    })
+    }
+    if (editingPlanId) {
+      await supabase.from('emergency_plans').update(payload).eq('id', editingPlanId)
+    } else {
+      await supabase.from('emergency_plans').insert({ ...payload, museum_id: museum.id })
+    }
     const { data } = await supabase
       .from('emergency_plans')
       .select('*')
@@ -202,8 +219,34 @@ export default function EmergencyPage() {
       .order('created_at', { ascending: false })
     setPlans(data || [])
     setForm(EMPTY_FORM)
+    setEditingPlanId(null)
     setShowForm(false)
     setSaving(false)
+  }
+
+  function openPlanEdit(p: EmergencyPlan) {
+    setForm({
+      plan_title: p.plan_title || '',
+      plan_type: p.plan_type || 'General',
+      responsible_person: p.responsible_person || '',
+      emergency_contacts: p.emergency_contacts || '',
+      evacuation_procedures: p.evacuation_procedures || '',
+      salvage_priorities: p.salvage_priorities || '',
+      alternative_storage: p.alternative_storage || '',
+      recovery_procedures: p.recovery_procedures || '',
+      last_review_date: p.last_review_date || '',
+      next_review_date: p.next_review_date || '',
+      notes: p.notes || '',
+    })
+    setEditingPlanId(p.id)
+    setShowForm(true)
+  }
+
+  async function deletePlan(id: string) {
+    if (!confirm('Delete this emergency plan? This cannot be undone.')) return
+    await supabase.from('emergency_plans').delete().eq('id', id)
+    setPlans(p => p.filter(x => x.id !== id))
+    if (editingPlanId === id) { setEditingPlanId(null); setShowForm(false); setForm(EMPTY_FORM) }
   }
 
   async function updateStatus(id: string, status: string) {
@@ -211,23 +254,57 @@ export default function EmergencyPage() {
     setPlans(p => p.map(x => x.id === id ? { ...x, status } : x))
   }
 
-  async function addEvent() {
+  async function saveEvent() {
     if (!eventForm.event_reference || !eventForm.event_date || !eventForm.description || !museum) return
     setSavingEvent(true)
-    await supabase.from('emergency_events').insert({
+    const payload = {
       ...eventForm,
       plan_id: eventForm.plan_id || null,
       response_taken: eventForm.response_taken || null,
       damage_summary: eventForm.damage_summary || null,
       lessons_learned: eventForm.lessons_learned || null,
       notes: eventForm.notes || null,
-      museum_id: museum.id,
-    })
+    }
+    if (editingEventId) {
+      await supabase.from('emergency_events').update(payload).eq('id', editingEventId)
+    } else {
+      await supabase.from('emergency_events').insert({ ...payload, museum_id: museum.id })
+    }
     const { data } = await supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false })
     setEvents(data || [])
     setEventForm(EMPTY_EVENT)
+    setEditingEventId(null)
     setShowEventForm(false)
     setSavingEvent(false)
+  }
+
+  function openEventEdit(ev: EmergencyEvent) {
+    setEventForm({
+      event_reference: ev.event_reference || '',
+      event_type: ev.event_type || 'Fire',
+      event_date: ev.event_date || '',
+      plan_id: ev.plan_id || '',
+      description: ev.description || '',
+      response_taken: ev.response_taken || '',
+      damage_summary: ev.damage_summary || '',
+      lessons_learned: ev.lessons_learned || '',
+      status: ev.status || 'Open',
+      notes: ev.notes || '',
+    })
+    setEditingEventId(ev.id)
+    setShowEventForm(true)
+  }
+
+  async function updateEventStatus(id: string, status: string) {
+    await supabase.from('emergency_events').update({ status }).eq('id', id)
+    setEvents(e => e.map(x => x.id === id ? { ...x, status } : x))
+  }
+
+  async function deleteEvent(id: string) {
+    if (!confirm('Delete this emergency event? This cannot be undone.')) return
+    await supabase.from('emergency_events').delete().eq('id', id)
+    setEvents(e => e.filter(x => x.id !== id))
+    if (editingEventId === id) { setEditingEventId(null); setShowEventForm(false); setEventForm(EMPTY_EVENT) }
   }
 
   async function addObjectToEvent(eventId: string, objectId: string) {
@@ -294,7 +371,7 @@ export default function EmergencyPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Emergency Events</h2>
               {canEdit && (
-                <button onClick={() => setShowEventForm(s => !s)}
+                <button onClick={() => { setShowEventForm(s => !s); setEditingEventId(null); setEventForm(EMPTY_EVENT) }}
                   className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-xs font-mono px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                   {showEventForm ? 'Cancel' : '+ Log event'}
                 </button>
@@ -303,7 +380,7 @@ export default function EmergencyPage() {
 
             {showEventForm && canEdit && (
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-                <div className="text-sm font-mono text-stone-500 dark:text-stone-400">Log emergency event</div>
+                <div className="text-sm font-mono text-stone-500 dark:text-stone-400">{editingEventId ? 'Edit emergency event' : 'Log emergency event'}</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Reference *</label>
@@ -354,9 +431,9 @@ export default function EmergencyPage() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <button onClick={addEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
+                  <button onClick={saveEvent} disabled={savingEvent || !eventForm.event_reference || !eventForm.event_date || !eventForm.description}
                     className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
-                    {savingEvent ? 'Saving…' : 'Log event'}
+                    {savingEvent ? 'Saving…' : editingEventId ? 'Save changes' : 'Log event'}
                   </button>
                 </div>
               </div>
@@ -404,6 +481,26 @@ export default function EmergencyPage() {
                           {isExpanded && (
                             <tr className="border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50">
                               <td colSpan={6} className="px-6 py-4 space-y-3">
+                                {canEdit && (
+                                  <div className="flex items-center gap-2 flex-wrap pb-3 mb-1 border-b border-stone-200 dark:border-stone-700">
+                                    <button type="button" onClick={() => openEventEdit(ev)}
+                                      className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Edit</button>
+                                    {ev.status === 'Open' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Under Investigation')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Mark under investigation</button>
+                                    )}
+                                    {ev.status === 'Under Investigation' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Resolved')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Mark resolved</button>
+                                    )}
+                                    {ev.status === 'Resolved' && (
+                                      <button type="button" onClick={() => updateEventStatus(ev.id, 'Closed')}
+                                        className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 transition-colors">Close</button>
+                                    )}
+                                    <button type="button" onClick={() => deleteEvent(ev.id)}
+                                      className="text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded px-3 py-1.5 transition-colors ml-auto">Delete</button>
+                                  </div>
+                                )}
                                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Affected Objects</div>
                                 {affectedObjects.length > 0 && (
                                   <div className="flex flex-wrap gap-2 mb-2">
@@ -467,7 +564,7 @@ export default function EmergencyPage() {
 
           {canEdit && (
             <div className="flex justify-end">
-              <button onClick={() => setShowForm(s => !s)}
+              <button onClick={() => { setShowForm(s => !s); setEditingPlanId(null); setForm(EMPTY_FORM) }}
                 className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                 {showForm ? 'Cancel' : '+ Add plan'}
               </button>
@@ -477,7 +574,7 @@ export default function EmergencyPage() {
           {/* Add form */}
           {showForm && canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">New emergency plan</div>
+              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">{editingPlanId ? 'Edit emergency plan' : 'New emergency plan'}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Plan Title *</label>
@@ -552,9 +649,9 @@ export default function EmergencyPage() {
                   className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
               </div>
               <div className="flex justify-end">
-                <button onClick={addPlan} disabled={saving || !form.plan_title}
+                <button onClick={savePlan} disabled={saving || !form.plan_title}
                   className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
-                  {saving ? 'Saving…' : 'Add plan'}
+                  {saving ? 'Saving…' : editingPlanId ? 'Save changes' : 'Add plan'}
                 </button>
               </div>
             </div>
@@ -643,6 +740,14 @@ export default function EmergencyPage() {
                                   Archive
                                 </button>
                               )}
+                              <button onClick={() => openPlanEdit(p)}
+                                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                                Edit
+                              </button>
+                              <button onClick={() => deletePlan(p.id)}
+                                className="text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+                                Delete
+                              </button>
                               <button type="button" onClick={() => setExpandedPlanId(isPlanExpanded ? null : p.id)}
                                 className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                                 {isPlanExpanded ? '▲' : '▼'}

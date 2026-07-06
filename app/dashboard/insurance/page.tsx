@@ -44,9 +44,19 @@ interface InsurancePolicy {
   coverage_type: string | null
   coverage_amount: number | null
   currency: string
+  deductible: number | null
   start_date: string
   end_date: string | null
   renewal_date: string | null
+  covers_loans: boolean | null
+  covers_transit: boolean | null
+  covers_exhibition: boolean | null
+  exclusions: string | null
+  claims_procedure: string | null
+  contact_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  notes: string | null
   status: string
 }
 
@@ -85,6 +95,7 @@ export default function InsurancePage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'All' | 'Active' | 'Expired' | 'Pending Renewal' | 'Cancelled'>('All')
   const [showForm, setShowForm] = useState(false)
+  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [policyDocs, setPolicyDocs] = useState<Record<string, PolicyDocument[]>>({})
@@ -170,17 +181,21 @@ export default function InsurancePage() {
     setPolicyDocs(m => ({ ...m, [doc.policy_id]: (m[doc.policy_id] || []).filter(d => d.id !== doc.id) }))
   }
 
-  async function addPolicy() {
+  async function savePolicy() {
     if (!form.policy_number || !form.provider || !form.start_date || !museum) return
     setSaving(true)
-    await supabase.from('insurance_policies').insert({
+    const payload = {
       ...form,
       coverage_amount: form.coverage_amount ? Number(form.coverage_amount) : null,
       deductible: form.deductible ? Number(form.deductible) : null,
       end_date: form.end_date || null,
       renewal_date: form.renewal_date || null,
-      museum_id: museum.id,
-    })
+    }
+    if (editingPolicyId) {
+      await supabase.from('insurance_policies').update(payload).eq('id', editingPolicyId)
+    } else {
+      await supabase.from('insurance_policies').insert({ ...payload, museum_id: museum.id })
+    }
     const { data } = await supabase
       .from('insurance_policies')
       .select('*')
@@ -188,8 +203,41 @@ export default function InsurancePage() {
       .order('created_at', { ascending: false })
     setPolicies(data || [])
     setForm(EMPTY_FORM)
+    setEditingPolicyId(null)
     setShowForm(false)
     setSaving(false)
+  }
+
+  function openPolicyEdit(p: InsurancePolicy) {
+    setForm({
+      policy_number: p.policy_number || '',
+      provider: p.provider || '',
+      coverage_type: p.coverage_type || 'All Risks',
+      coverage_amount: p.coverage_amount != null ? String(p.coverage_amount) : '',
+      currency: p.currency || 'GBP',
+      deductible: p.deductible != null ? String(p.deductible) : '',
+      start_date: p.start_date || '',
+      end_date: p.end_date || '',
+      renewal_date: p.renewal_date || '',
+      covers_loans: !!p.covers_loans,
+      covers_transit: !!p.covers_transit,
+      covers_exhibition: !!p.covers_exhibition,
+      exclusions: p.exclusions || '',
+      claims_procedure: p.claims_procedure || '',
+      contact_name: p.contact_name || '',
+      contact_email: p.contact_email || '',
+      contact_phone: p.contact_phone || '',
+      notes: p.notes || '',
+    })
+    setEditingPolicyId(p.id)
+    setShowForm(true)
+  }
+
+  async function deletePolicy(id: string) {
+    if (!confirm('Delete this insurance policy? This cannot be undone.')) return
+    await supabase.from('insurance_policies').delete().eq('id', id)
+    setPolicies(p => p.filter(x => x.id !== id))
+    if (editingPolicyId === id) { setEditingPolicyId(null); setShowForm(false); setForm(EMPTY_FORM) }
   }
 
   async function updateStatus(id: string, status: string) {
@@ -284,7 +332,7 @@ export default function InsurancePage() {
 
           {canEdit && (
             <div className="flex justify-end">
-              <button onClick={() => setShowForm(s => !s)}
+              <button onClick={() => { setShowForm(s => !s); setEditingPolicyId(null); setForm(EMPTY_FORM) }}
                 className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-5 py-2.5 rounded hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors">
                 {showForm ? 'Cancel' : '+ Add policy'}
               </button>
@@ -294,7 +342,7 @@ export default function InsurancePage() {
           {/* Add form */}
           {showForm && canEdit && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">New insurance policy</div>
+              <div className="text-sm font-mono text-stone-500 dark:text-stone-400 mb-2">{editingPolicyId ? 'Edit insurance policy' : 'New insurance policy'}</div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Policy Number *</label>
@@ -410,9 +458,9 @@ export default function InsurancePage() {
                   className="w-full text-sm border border-stone-200 dark:border-stone-700 rounded px-3 py-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-stone-400 resize-none" />
               </div>
               <div className="flex justify-end">
-                <button onClick={addPolicy} disabled={saving || !form.policy_number || !form.provider || !form.start_date}
+                <button onClick={savePolicy} disabled={saving || !form.policy_number || !form.provider || !form.start_date}
                   className="px-4 py-2 text-xs font-mono bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 rounded hover:bg-stone-700 dark:hover:bg-stone-100 disabled:opacity-40 transition-colors">
-                  {saving ? 'Saving…' : 'Add policy'}
+                  {saving ? 'Saving…' : editingPolicyId ? 'Save changes' : 'Add policy'}
                 </button>
               </div>
             </div>
@@ -519,6 +567,14 @@ export default function InsurancePage() {
                                   Expire
                                 </button>
                               )}
+                              <button onClick={() => openPolicyEdit(p)}
+                                className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                                Edit
+                              </button>
+                              <button onClick={() => deletePolicy(p.id)}
+                                className="text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+                                Delete
+                              </button>
                             </div>
                           </td>
                         )}
