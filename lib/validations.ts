@@ -23,6 +23,10 @@ export const createStaffMemberSchema = z.object({
   access: z.enum(STAFF_ACCESS_LEVELS),
 })
 
+// Same shape as create; used by the PATCH edit route. Email is only applied
+// server-side for members who haven't linked an account yet.
+export const updateStaffMemberSchema = createStaffMemberSchema
+
 export const stripeCheckoutSchema = z.object({
   planId: z.enum(['hobbyist', 'professional', 'institution']),
   trial: z.boolean().optional(),

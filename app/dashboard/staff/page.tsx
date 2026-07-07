@@ -47,6 +47,7 @@ export default function StaffPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [editingLinked, setEditingLinked] = useState(false)
   const { toast } = useToast()
   const [filterDept, setFilterDept] = useState('All')
   const [inviting, setInviting] = useState<string | null>(null)
@@ -89,12 +90,14 @@ export default function StaffPage() {
 
   function openAdd() {
     setEditingId(null)
+    setEditingLinked(false)
     setForm({ name: '', email: '', role: '', department: 'Curatorial', access: 'Editor' })
         setModalOpen(true)
   }
 
   function openEdit(member: StaffMember) {
     setEditingId(member.id)
+    setEditingLinked(!!member.user_id)
     setForm({
       name: member.name,
       email: member.email,
@@ -121,11 +124,13 @@ export default function StaffPage() {
     setSaving(true)
 
     if (editingId) {
-      const { error } = await supabase
-        .from('staff_members')
-        .update(form)
-        .eq('id', editingId)
-      if (error) { toast(error.message, 'error'); setSaving(false); return }
+      const res = await fetch(`/api/staff-members/${editingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) { toast(payload.error || 'Failed to update staff member', 'error'); setSaving(false); return }
     } else {
       const res = await fetch('/api/staff-members', {
         method: 'POST',
@@ -143,8 +148,12 @@ export default function StaffPage() {
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Remove ${name} from your team? They will lose access immediately.`)) return
-    const { error } = await supabase.from('staff_members').delete().eq('id', id)
-    if (error) { alert(`Failed to remove staff member: ${error.message}`); return }
+    const res = await fetch(`/api/staff-members/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}))
+      alert(error || 'Failed to remove staff member')
+      return
+    }
     load()
   }
 
@@ -452,9 +461,13 @@ export default function StaffPage() {
                   type="email"
                   value={form.email}
                   onChange={e => set('email', e.target.value)}
+                  disabled={editingLinked}
                   placeholder="jane@yourmuseum.org"
-                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+                  className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm font-mono outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
+                {editingLinked && (
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">This member has joined — their sign-in email can't be changed here.</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
