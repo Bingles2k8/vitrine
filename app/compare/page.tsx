@@ -25,6 +25,7 @@ const competitorMeta: Record<string, { tagline: string }> = {
   'spreadsheet-alternative': { tagline: 'Excel and Google Sheets for collection tracking' },
   'icollect-everything-alternative': { tagline: 'iOS app for cataloguing physical collections' },
   'collectify-alternative': { tagline: 'Mobile app for collectible tracking' },
+  'discogs-alternative': { tagline: 'Music marketplace and database for vinyl and CDs' },
 }
 
 export default function CompareIndex() {

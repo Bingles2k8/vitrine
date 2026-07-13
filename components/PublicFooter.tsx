@@ -20,6 +20,20 @@ export default function PublicFooter() {
         </div>
         <div className="flex items-center gap-4">
           <a
+            href="https://play.google.com/store/apps/details?id=com.bingles.vitrinecapture"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Vitrine Capture on Google Play"
+            className="text-stone-500 hover:text-stone-300 transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3.6 2.3a1 1 0 0 0-.6.92v17.56a1 1 0 0 0 .6.92l10.02-9.7L3.6 2.3z" />
+              <path d="M16.9 8.9 5.6 2.4l9.06 8.77L16.9 8.9z" />
+              <path d="m14.66 12.83-9.06 8.77 11.3-6.5-2.24-2.27z" />
+              <path d="m20.4 10.85-2.86-1.64-2.45 2.79 2.45 2.48 2.86-1.64a1 1 0 0 0 0-1.99z" />
+            </svg>
+          </a>
+          <a
             href="https://www.instagram.com/vitrinecms/"
             target="_blank"
             rel="noopener noreferrer"

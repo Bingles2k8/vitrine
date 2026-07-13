@@ -18,7 +18,11 @@ export const metadata = buildPageMetadata({
   ],
 })
 
-const faqs: { question: string; answer: React.ReactNode }[] = [
+// `answer` is a plain string used for both the FAQPage JSON-LD (`text`) and the
+// default visible render. `display` is an optional rich (JSX) version shown in the
+// UI only — never serialized into schema, since JSON.stringify of a React element
+// produces malformed `acceptedAnswer.text`.
+const faqs: { question: string; answer: string; display?: React.ReactNode }[] = [
   {
     question: 'What is Vitrine?',
     answer:
@@ -26,7 +30,9 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: 'What types of collections can I manage with Vitrine?',
-    answer: (
+    answer:
+      'Vitrine supports any type of physical or digital collection. Popular use cases include coins, trading cards, vinyl records, books, wine, watches, art, photography, antiques, and museum objects. If you can describe it, you can catalogue it in Vitrine.',
+    display: (
       <>
         Vitrine supports any type of physical or digital collection. Popular use cases include{' '}
         <Link href="/for/coin-collection-app" className="text-amber-400 hover:text-amber-300 transition-colors">coins</Link>,{' '}
@@ -75,7 +81,9 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: 'Is Vitrine suitable for professional museums and galleries?',
-    answer: (
+    answer:
+      'Yes. The Professional and Institution plans are designed for organisations that need staff role management, analytics dashboards, event ticketing, compliance and risk tools, conservation records, loans management, and more. The Institution plan mirrors the feature set of much more expensive museum CMS tools, at a fraction of the cost.',
+    display: (
       <>
         Yes. The Professional and Institution plans are designed for organisations that need staff role management, analytics dashboards, event ticketing,{' '}
         <Link href="/compliance" className="text-amber-400 hover:text-amber-300 transition-colors">compliance and risk tools</Link>,
@@ -85,7 +93,9 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: 'How is Vitrine different from using a spreadsheet?',
-    answer: (
+    answer:
+      'Spreadsheets are flexible but lack images, structured fields, access control, a public website, valuation tracking, and audit trails. Vitrine gives you all of these, with a purpose-built interface for collections. It also scales as your collection grows — thousands of items remain just as easy to search and filter as ten.',
+    display: (
       <>
         Spreadsheets are flexible but lack images, structured fields, access control, a public website, valuation tracking, and audit trails. Vitrine gives you all of these, with a purpose-built interface for collections. It also scales as your collection grows — thousands of items remain just as easy to search and filter as ten.{' '}
         <Link href="/compare/spreadsheet-alternative" className="text-amber-400 hover:text-amber-300 transition-colors">See a detailed comparison →</Link>
@@ -105,11 +115,13 @@ const faqs: { question: string; answer: React.ReactNode }[] = [
   {
     question: 'Can I use Vitrine on my phone or tablet?',
     answer:
-      'Yes. Vitrine is a web application that works on any modern browser, including mobile browsers on iPhone and Android. The cataloguing interface and public collection website are both fully responsive.',
+      'Yes. Vitrine is a web application that works on any modern browser, including mobile browsers on iPhone and Android. The cataloguing interface and public collection website are both fully responsive. There is also a native Android app, Vitrine Capture, available on Google Play, with an iOS version on the way.',
   },
   {
     question: 'Does Vitrine help with insurance documentation?',
-    answer: (
+    answer:
+      'Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time. To create a one-off inventory without an account, try our free insurance inventory generator.',
+    display: (
       <>
         Yes. You can record acquisition value, current estimated value, condition reports, and provenance for each item. This creates a structured inventory that insurers typically require. You can export your full collection as a CSV at any time. To create a one-off inventory without an account, try our{' '}
         <Link href="/tools/insurance-inventory" className="text-amber-400 hover:text-amber-300 transition-colors">free insurance inventory generator</Link>.{' '}
@@ -205,7 +217,7 @@ export default function FAQPage() {
                 {faq.question}
               </h2>
               <p className="text-stone-400 leading-relaxed">
-                {faq.answer}
+                {faq.display ?? faq.answer}
               </p>
             </div>
           ))}

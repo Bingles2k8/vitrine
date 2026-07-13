@@ -43,6 +43,34 @@ function wasUpdated(publishedAt: string, updatedAt: string): boolean {
   return new Date(updatedAt).toDateString() !== new Date(publishedAt).toDateString()
 }
 
+// Turn a chunk of MDX into a plain-text string suitable for JSON-LD.
+function mdxToPlainText(md: string): string {
+  return md
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links -> text
+    .replace(/[*_`>#]/g, '') // markdown markers
+    .replace(/^\s*[-+]\s+/gm, '') // bullet markers
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Extract the body sections of a how-to guide as ordered steps for HowTo schema.
+// Each `## Heading` (excluding the FAQ section, handled separately) becomes a
+// step; an optional "Step N:" prefix is stripped. Gated at the call site to
+// posts whose title begins with "How to", so listicles/comparisons don't match.
+function extractHowToSteps(content: string): { name: string; text: string }[] {
+  // Normalise CRLF → LF so heading detection is reliable regardless of how the
+  // post was stored.
+  const normalised = content.replace(/\r\n/g, '\n')
+  const body = '\n' + normalised.split(/\n##\s+Frequently asked questions/i)[0]
+  const matches = body.matchAll(/\n##\s+(.+?)\n([\s\S]*?)(?=\n##\s|$)/g)
+  return Array.from(matches)
+    .map((m) => ({
+      name: m[1].replace(/^Step\s*\d+:\s*/i, '').trim(),
+      text: mdxToPlainText(m[2]).slice(0, 500),
+    }))
+    .filter((s) => s.name && s.text)
+}
+
 // Extract FAQ items from MDX content (## Frequently asked questions section)
 function extractFaqs(content: string): { question: string; answer: string }[] {
   const faqSection = content.match(/## Frequently asked questions[\s\S]*$/i)
@@ -65,6 +93,7 @@ export default async function BlogPost({
 
   const pageUrl = `${SITE_URL}/blog/${post.slug}`
   const faqs = extractFaqs(post.content)
+  const howToSteps = /^how to\b/i.test(post.title) ? extractHowToSteps(post.content) : []
 
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -98,6 +127,23 @@ export default async function BlogPost({
     ],
   }
 
+  // Step-by-step guides emit HowTo alongside Article — a primary citation
+  // format for "how do I…" answers in AI search and a valid rich-result type.
+  const howToSchema = howToSteps.length >= 2
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: post.title,
+        description: post.description,
+        step: howToSteps.map((s, i) => ({
+          '@type': 'HowToStep',
+          position: i + 1,
+          name: s.name,
+          text: s.text,
+        })),
+      }
+    : null
+
   const faqSchema = faqs.length > 0
     ? {
         '@context': 'https://schema.org',
@@ -114,6 +160,7 @@ export default async function BlogPost({
     <div className="min-h-screen bg-stone-950 text-stone-100">
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
+      {howToSchema && <JsonLd data={howToSchema} />}
       {faqSchema && <JsonLd data={faqSchema} />}
 
       <PublicNav activePath="/blog" />

@@ -35,7 +35,23 @@ const organizationSchema = {
       sameAs: ['https://www.instagram.com/vitrinecms/'],
     },
     {
-      '@type': 'WebApplication',
+      '@type': 'WebSite',
+      name: 'Vitrine',
+      url: SITE_URL,
+      publisher: { '@type': 'Organization', name: 'Vitrine', url: SITE_URL },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/discover?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      // Declares both SoftwareApplication (the common query target) and its
+      // WebApplication subtype so the entity matches "software" and "app" queries.
+      '@type': ['SoftwareApplication', 'WebApplication'],
       name: 'Vitrine',
       url: SITE_URL,
       applicationCategory: 'LifestyleApplication',

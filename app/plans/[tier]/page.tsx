@@ -531,13 +531,16 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
             <Link href="/plans" className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 hover:text-stone-300 transition-colors mb-8">
               ← All plans
             </Link>
-            <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">{plan.label}</p>
-            <h1 className="font-serif text-6xl italic font-normal mb-3 leading-none">
+            <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-4">Vitrine pricing</p>
+            <h1 className="font-serif text-4xl sm:text-5xl italic font-normal mb-4 leading-tight">
+              {plan.label} plan
+            </h1>
+            <div className="font-serif text-6xl italic font-normal mb-3 leading-none">
               {details.priceDisplay}
               {details.priceNote && (
                 <span className="text-stone-500 text-2xl not-italic font-light ml-2">{details.priceNote}</span>
               )}
-            </h1>
+            </div>
             {planId === 'professional' && (
               <p className="text-sm font-mono text-amber-500 mb-4">30 days free, then £79/mo · Cancel anytime</p>
             )}

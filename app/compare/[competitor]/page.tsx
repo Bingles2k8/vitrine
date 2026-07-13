@@ -6,6 +6,11 @@ import { competitors, getCompetitor, type FeatureIcon } from '@/lib/competitors'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
+// Stable authored date for Article schema. Using new Date() claimed every
+// comparison page was "modified today" on every request — a churny, misleading
+// freshness signal. Bump when the comparison content is materially revised.
+const COMPARE_LASTMOD = '2026-06-11'
+
 export function generateStaticParams() {
   return competitors.map((c) => ({ competitor: c.slug }))
 }
@@ -98,15 +103,14 @@ export default async function CompetitorPage({
   if (!data) notFound()
 
   const pageUrl = `${SITE_URL}/compare/${data.slug}`
-  const today = new Date().toISOString().split('T')[0]
 
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: data.metaTitle,
     description: data.metaDescription,
-    datePublished: today,
-    dateModified: today,
+    datePublished: COMPARE_LASTMOD,
+    dateModified: COMPARE_LASTMOD,
     author: { '@type': 'Organization', name: 'Vitrine', url: SITE_URL },
     publisher: {
       '@type': 'Organization',

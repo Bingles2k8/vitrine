@@ -595,7 +595,7 @@ export const competitors: Competitor[] = [
       {
         question: 'Does Vitrine have a mobile app?',
         answer:
-          'Vitrine is a web app optimised for mobile browsers. It works well on iPhone and Android with no app install, and barcode scanning runs directly in the browser. A native mobile app is on the roadmap.',
+          'Vitrine is a web app optimised for mobile browsers. It works well on iPhone and Android with no app install, and barcode scanning runs directly in the browser. There is also a native Android app, Vitrine Capture, on Google Play, with an iOS version on the way.',
       },
       {
         question: 'How does Vitrine pricing compare to iCollect Everything?',
