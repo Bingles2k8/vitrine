@@ -408,7 +408,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       <div className="relative border-t border-stone-200 dark:border-stone-800" ref={settingsRef}>
         {/* Settings panel */}
         {settingsOpen && (
-          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute bottom-full left-2 mb-1 w-[30rem] max-w-[calc(100vw-1rem)] z-30 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 dark:border-stone-800">
               <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Settings</span>
               <button
