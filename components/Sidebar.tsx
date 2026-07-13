@@ -6,7 +6,8 @@ import { useState, useEffect, useRef } from 'react'
 import { getPlan } from '@/lib/plans'
 import { useLearnMode } from '@/components/LearnModeProvider'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
-import WhatsNewButton from '@/components/WhatsNewButton'
+import WhatsNewModal from '@/components/WhatsNewModal'
+import { latestWhatsNewId } from '@/lib/whatsNew'
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -57,6 +58,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     : navCache
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
+  const [whatsNewUnseen, setWhatsNewUnseen] = useState(false)
   const [theme, setTheme] = useState<Theme>('system')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [discoverable, setDiscoverable] = useState(false)
@@ -105,6 +108,15 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     setTheme(stored)
   }, [])
 
+  // Highlight What's New until the latest entry has been seen
+  useEffect(() => {
+    try {
+      setWhatsNewUnseen(localStorage.getItem('vitrine_whatsnew_seen') !== latestWhatsNewId)
+    } catch {
+      setWhatsNewUnseen(true)
+    }
+  }, [])
+
   // Apply/remove dark class and listen to system preference
   useEffect(() => {
     function applyTheme(t: Theme) {
@@ -140,6 +152,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   function changeTheme(t: Theme) {
     setTheme(t)
     localStorage.setItem('theme', t)
+  }
+
+  function openWhatsNew() {
+    setSettingsOpen(false)
+    setWhatsNewOpen(true)
+    setWhatsNewUnseen(false)
+    try { localStorage.setItem('vitrine_whatsnew_seen', latestWhatsNewId) } catch { /* ignore */ }
   }
 
   async function toggleDiscoverable() {
@@ -385,9 +404,6 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         </>)}
       </nav>
 
-      {/* What's new */}
-      <WhatsNewButton />
-
       {/* Settings footer */}
       <div className="relative border-t border-stone-200 dark:border-stone-800" ref={settingsRef}>
         {/* Settings panel */}
@@ -553,6 +569,24 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </div>
               )}
 
+              {/* What's new */}
+              <div>
+                <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-2">Product</div>
+                <button
+                  onClick={openWhatsNew}
+                  className="flex items-center gap-2 w-full text-left text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                >
+                  <span>✦</span>
+                  <span>What&apos;s new</span>
+                  {whatsNewUnseen && (
+                    <span className="ml-auto flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      New
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Account */}
               {/* Help & guides */}
               <div>
@@ -614,8 +648,13 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
           className="w-full px-5 py-4 text-left text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors flex items-center gap-2"
         >
           <span>⚙</span> Settings
+          {whatsNewUnseen && !settingsOpen && (
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="What's new" />
+          )}
         </button>
       </div>
+
+      <WhatsNewModal open={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
     </aside>
   )
 }

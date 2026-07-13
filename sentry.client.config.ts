@@ -5,5 +5,8 @@ Sentry.init({
   tracesSampleRate: 0.1,
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
-  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  // Only report from deployed builds — avoids noise from local dev (e.g. transient
+  // compile/HMR errors while editing).
+  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN && process.env.NODE_ENV === 'production',
 })
