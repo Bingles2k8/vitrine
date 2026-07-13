@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getPlan } from '@/lib/plans'
 import { useLearnMode } from '@/components/LearnModeProvider'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
+import WhatsNewButton from '@/components/WhatsNewButton'
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -383,6 +384,9 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         {!nav.simple && navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
         </>)}
       </nav>
+
+      {/* What's new */}
+      <WhatsNewButton />
 
       {/* Settings footer */}
       <div className="relative border-t border-stone-200 dark:border-stone-800" ref={settingsRef}>

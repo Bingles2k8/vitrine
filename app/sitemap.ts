@@ -119,18 +119,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     },
-    {
-      url: `${BASE}/privacy`,
-      lastModified: STATIC_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/terms`,
-      lastModified: STATIC_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    // /privacy and /terms are intentionally omitted: both are noindex, and
+    // submitting a noindex URL in the sitemap is a contradictory signal.
     {
       url: `${BASE}/for`,
       lastModified: STATIC_LASTMOD,
