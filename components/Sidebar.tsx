@@ -292,7 +292,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   }
 
   return (
-    <aside data-sidebar className="w-64 bg-stone-50 dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0">
+    <aside data-sidebar className="w-64 bg-stone-50 dark:bg-stone-950 border-r border-stone-200 dark:border-stone-800 flex flex-col fixed top-0 left-0 bottom-0 z-40">
       <div className="p-5 border-b border-stone-200 dark:border-stone-800">
         <span className="font-serif text-xl italic text-stone-900 dark:text-stone-100">Vitrine<span className="text-amber-600">.</span></span>
       </div>
