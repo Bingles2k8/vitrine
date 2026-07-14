@@ -25,7 +25,7 @@ export function TestFilterToggle({ hideTest }: { hideTest: boolean }) {
           : 'border-gray-200 text-gray-500 hover:bg-gray-50'
       }`}
     >
-      {hideTest ? 'Showing real accounts only' : 'Show all accounts'}
+      {hideTest ? 'Show demo accounts' : 'Hide demo accounts'}
     </button>
   )
 }
