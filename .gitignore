@@ -46,3 +46,6 @@ next-env.d.ts
 
 # supabase cli scratch state
 supabase/.temp/
+
+# instagram engagement scratch log
+vitrine-instagram-engagement/recent-engagements.md
