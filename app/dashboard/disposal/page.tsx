@@ -269,7 +269,7 @@ export default function DisposalPage() {
     const { error: err } = await supabase.from('disposal_records').update({ status }).eq('id', id)
     if (err) { setError(err.message); return }
     // On completion, sync disposal outcome onto the object so the object page,
-    // RightsTab, and print record all reflect Spectrum Procedure 20.
+    // RightsTab, and print record all reflect the disposal register.
     if (status === 'Completed' && record?.object_id) {
       const { error: objErr } = await supabase.from('objects').update({
         status: 'Deaccessioned',

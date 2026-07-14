@@ -129,12 +129,12 @@ export const PLANS: Record<PlanId, {
     changeSlug: true,
     hideVitrineBranding: true,
     shareLinks: null,
-    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', '1 GB document storage'],
+    features: ['Up to 5,000 collection items', 'Full public website', '10 staff accounts', 'Full documentation registers', 'Analytics', 'Event ticketing', '1 GB document storage'],
     missingFeatures: ['Over 5,000 collection items', 'Unlimited staff accounts'],
     featureGroups: [
       { items: [
         'Up to 5,000 objects, 10 staff accounts',
-        '21 Spectrum-aligned procedures (entry, loans, conservation & more)',
+        'Entry, loans, conservation & disposal registers',
         'Event ticketing — free & paid, with QR door check-in',
         'CSV bulk import & export',
         'Plan your visit page',
@@ -169,13 +169,13 @@ export const PLANS: Record<PlanId, {
     changeSlug: true,
     hideVitrineBranding: true,
     shareLinks: null,
-    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', '10 GB document storage'],
+    features: ['Up to 100,000 collection items', 'Full public website', 'Unlimited staff accounts', 'Full documentation registers', 'Analytics', 'Event ticketing', '10 GB document storage'],
     missingFeatures: [],
     featureGroups: [
       { items: [
         'Up to 100,000 objects',
         'Unlimited staff accounts',
-        '21 Spectrum-aligned procedures',
+        'Full documentation registers',
         '10 GB document storage',
         'All Professional features included',
       ]},
@@ -206,12 +206,12 @@ export const PLANS: Record<PlanId, {
     changeSlug: true,
     hideVitrineBranding: true,
     shareLinks: null,
-    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', '21 collection management procedures', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
+    features: ['Unlimited collection items', 'Full public website', 'Unlimited staff accounts', 'Full documentation registers', 'Analytics', 'Event ticketing', 'Unlimited document storage'],
     missingFeatures: [],
     featureGroups: [
       { items: [
         'Unlimited objects, staff & storage',
-        '21 Spectrum-aligned procedures',
+        'Full documentation registers',
         'SSO & enterprise authentication',
         'Dedicated support & SLA',
         'Custom contract & PO invoicing',

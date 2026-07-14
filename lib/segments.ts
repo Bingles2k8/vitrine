@@ -3224,9 +3224,9 @@ export const segments: Segment[] = [
           'Yes. The Community plan is free for up to 100 objects. The Professional plan at £79/month gives a small museum full cataloguing, compliance tools, staff accounts, and a public website — without the cost of enterprise software.',
       },
       {
-        question: 'Does Vitrine meet Spectrum or UKAD compliance requirements?',
+        question: 'What collections documentation does the Professional plan cover?',
         answer:
-          'Vitrine\'s Professional plan includes the core records required for Spectrum compliance — acquisition, loans, disposal, condition checking, and collections review. We recommend reviewing these against your specific accreditation requirements.',
+          'Professional includes the documentation registers a working museum relies on — object entry, acquisition and accessioning, location and movement, inventory, cataloguing, loans in and out, condition checking, conservation, valuation, insurance, deaccession and disposal, rights, and collections review. We recommend reviewing these against your own governing body\'s documentation requirements.',
       },
       {
         question: 'Can I migrate from our existing system?',

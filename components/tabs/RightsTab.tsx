@@ -288,7 +288,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
       {/* Copyright & Rights Overview */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Rights Management</div>
-        <p className="text-xs text-stone-400 dark:text-stone-500">Record the copyright status and any known rights holders for this object. This information is Spectrum-compliant and helps ensure proper attribution when the object is reproduced or displayed publicly.</p>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Record the copyright status and any known rights holders for this object. This helps ensure proper attribution when the object is reproduced or displayed publicly.</p>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -350,7 +350,7 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
       {/* Rights Records */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Rights Records</div>
-        <p className="text-xs text-stone-400 dark:text-stone-500">Use this section to log formal rights agreements, licences, and restrictions. Each record tracks who holds the rights and any expiry dates — Spectrum compliant.</p>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Use this section to log formal rights agreements, licences, and restrictions. Each record tracks who holds the rights and any expiry dates.</p>
 
         {canEdit && (
           <div>

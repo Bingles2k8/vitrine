@@ -160,7 +160,7 @@ export default function LearnTooltipOverlay() {
                 {tech.type && <div><span className="text-stone-500 dark:text-stone-400">Type:</span> {tech.type}</div>}
                 {tech.table && <div><span className="text-stone-500 dark:text-stone-400">Table:</span> {tech.table}</div>}
                 {tech.relationships && <div><span className="text-stone-500 dark:text-stone-400">Links:</span> {tech.relationships}</div>}
-                {tech.spectrum && <div><span className="text-stone-500 dark:text-stone-400">Spectrum:</span> {tech.spectrum}</div>}
+                {tech.practice && <div><span className="text-stone-500 dark:text-stone-400">Practice:</span> {tech.practice}</div>}
               </div>
             )}
           </div>

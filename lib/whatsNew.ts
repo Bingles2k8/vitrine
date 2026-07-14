@@ -47,7 +47,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     date: '2026-07-06',
     emoji: '§',
     title: 'Rights & Reproduction registers',
-    body: 'Two new SPECTRUM registers for Professional collections: track copyright and licensing on the Rights Register, and manage image and reproduction requests end to end. Automated reminders keep overdue items on your radar.',
+    body: 'Two new registers for Professional collections: track copyright and licensing on the Rights Register, and manage image and reproduction requests end to end. Automated reminders keep overdue items on your radar.',
   },
   {
     id: 'free-tools',
@@ -61,7 +61,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     date: '2026-06-21',
     emoji: '📖',
     title: 'Onboarding & user guide',
-    body: 'A comprehensive guide covering all 21 SPECTRUM procedures, plus power tips — available in-app and as a downloadable PDF.',
+    body: 'A comprehensive guide covering every documentation register, plus power tips — available in-app and as a downloadable PDF.',
   },
   {
     id: 'dark-mode-templates',

@@ -809,7 +809,7 @@ export default function DocumentationPlanPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className={labelCls}>Documentation Standards</label>
-                        <input type="text" value={planForm.documentation_standards} onChange={e => setPlanForm(f => ({ ...f, documentation_standards: e.target.value }))} className={inputCls} placeholder="e.g. Spectrum 5.1, MA Code of Ethics" />
+                        <input type="text" value={planForm.documentation_standards} onChange={e => setPlanForm(f => ({ ...f, documentation_standards: e.target.value }))} className={inputCls} placeholder="e.g. MA Code of Ethics, your documentation policy" />
                       </div>
                       <div>
                         <label className={labelCls}>Accreditation Scheme</label>

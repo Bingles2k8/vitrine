@@ -35,9 +35,9 @@ const FAQS = [
       'Upload a photo of the object and click on it to drop numbered markers wherever there is damage. Each marker links to a row describing the location, the issue and its severity. The numbered photo and the key are included in the PDF.',
   },
   {
-    question: 'Is it aligned with museum standards?',
+    question: 'Is it aligned with museum practice?',
     answer:
-      'The fields follow standard museum condition-checking practice (object/tombstone details, overall grade, reason for check, hazards, recommendations, next check date) consistent with the Spectrum collections standard. It produces documentation; it does not replace a trained conservator’s judgement.',
+      'The fields follow standard museum condition-checking practice — object/tombstone details, overall grade, reason for check, hazards, recommendations, and next check date. It produces documentation; it does not replace a trained conservator’s judgement.',
   },
   {
     question: 'Can I do this for a whole collection?',

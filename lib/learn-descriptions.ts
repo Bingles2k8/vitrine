@@ -6,7 +6,7 @@ export interface LearnEntry {
     type?: string
     table?: string
     relationships?: string
-    spectrum?: string
+    practice?: string
   }
 }
 
@@ -21,87 +21,87 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'nav.wanted': {
     label: 'Wanted',
     description: 'Your acquisition wishlist. Track objects you hope to acquire, with notes on priority and target price.',
-    technical: { table: 'wanted_items', spectrum: 'Supports Procedure 2 — Acquisition planning' },
+    technical: { table: 'wanted_items', practice: 'Acquisition planning' },
   },
   'nav.entry': {
     label: 'Object Entry',
     description: 'Record objects arriving at your museum — whether for potential acquisition, loan, or enquiry. Every incoming object should have an entry record before anything else happens.',
-    technical: { table: 'entry_records', spectrum: 'Procedure 1 — Object Entry' },
+    technical: { table: 'entry_records', practice: 'Object Entry' },
   },
   'nav.register': {
     label: 'Accession Register',
     description: 'The formal register of objects accessioned into your permanent collection. Required for museum accreditation.',
-    technical: { table: 'objects', column: 'objects.accession_no', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { table: 'objects', column: 'objects.accession_no', practice: 'Accessioning' },
   },
   'nav.loans': {
     label: 'Loans Register',
     description: 'Manage loans in (borrowed from others) and loans out (lent to others). Track dates, insurance, conditions, and overdue returns.',
-    technical: { table: 'loans', spectrum: 'Procedures 7 & 8 — Loans In / Loans Out' },
+    technical: { table: 'loans', practice: 'Loans In / Loans Out' },
   },
   'nav.conservation': {
     label: 'Conservation',
     description: 'Log conservation treatments — cleaning, stabilisation, restoration. Attach before/after images and track costs.',
-    technical: { table: 'conservation_treatments', spectrum: 'Procedure 12 — Conservation & Collections Care' },
+    technical: { table: 'conservation_treatments', practice: 'Conservation & Collections Care' },
   },
   'nav.audit': {
     label: 'Audit & Inventory',
     description: 'Run inventory checks to confirm objects are where they should be and in expected condition. Manage formal audit exercises.',
-    technical: { table: 'audit_records, inventory_exercises', spectrum: 'Procedure 6 — Inventory Control' },
+    technical: { table: 'audit_records, inventory_exercises', practice: 'Inventory Control' },
   },
   'nav.exits': {
     label: 'Object Exit',
     description: 'Record objects leaving your premises — for loans, returns, transfers, or disposal. Captures authorisation, transport, and receipt confirmation.',
-    technical: { table: 'object_exits', spectrum: 'Procedure 16 — Object Exit' },
+    technical: { table: 'object_exits', practice: 'Object Exit' },
   },
   'nav.locations': {
     label: 'Location Register',
     description: 'Your master list of storage and display locations. Each location can have a code, building, floor, room, and unit for precise tracking.',
-    technical: { table: 'locations', spectrum: 'Procedure 3 — Location & Movement Control' },
+    technical: { table: 'locations', practice: 'Location & Movement Control' },
   },
   'nav.valuation': {
     label: 'Valuation Register',
     description: 'Log formal valuations with method, purpose, and valuer details. Track how your collection value changes over time.',
-    technical: { table: 'valuations', spectrum: 'Procedure 13 — Valuation Control' },
+    technical: { table: 'valuations', practice: 'Valuation Control' },
   },
   'nav.risk': {
     label: 'Risk Register',
     description: 'Identify and assess risks to your collection — theft, fire, flood, pests, handling damage. Rate severity and likelihood, plan mitigations.',
-    technical: { table: 'risk_register', spectrum: 'Procedure 15 — Risk Management' },
+    technical: { table: 'risk_register', practice: 'Risk Management' },
   },
   'nav.emergency': {
     label: 'Emergency Plans',
     description: 'Prepare for the worst. Create emergency plans for fire, flood, theft, and more. Set salvage priorities so your most important objects are saved first.',
-    technical: { table: 'emergency_plans, emergency_salvage_priorities', spectrum: 'Procedure 15 — Emergency Planning' },
+    technical: { table: 'emergency_plans, emergency_salvage_priorities', practice: 'Emergency Planning' },
   },
   'nav.insurance': {
     label: 'Insurance',
     description: 'Manage insurance policies covering your collection. Link specific objects to policies and track renewal dates.',
-    technical: { table: 'insurance_policies, insurance_policy_objects', spectrum: 'Procedure 14 — Insurance & Indemnity' },
+    technical: { table: 'insurance_policies, insurance_policy_objects', practice: 'Insurance & Indemnity' },
   },
   'nav.damage': {
     label: 'Damage Reports',
     description: 'Document any damage or loss — accidental, environmental, theft, or vandalism. Track investigation, repair, and insurance claims.',
-    technical: { table: 'damage_reports', spectrum: 'Procedure 16 — Damage & Loss' },
+    technical: { table: 'damage_reports', practice: 'Damage & Loss' },
   },
   'nav.collections-use': {
     label: 'Use of Collections',
     description: 'Record authorised uses of your objects — research access, photography, exhibition loans, educational programmes.',
-    technical: { table: 'collection_use_records', spectrum: 'Procedure 10 — Use of Collections' },
+    technical: { table: 'collection_use_records', practice: 'Use of Collections' },
   },
   'nav.disposal': {
     label: 'Disposal',
     description: 'Manage the formal process of removing objects from your collection — sale, transfer, destruction, or return. Requires governing body approval.',
-    technical: { table: 'disposal_records', spectrum: 'Procedure 17 — Deaccession & Disposal' },
+    technical: { table: 'disposal_records', practice: 'Deaccession & Disposal' },
   },
   'nav.collections-review': {
     label: 'Collections Review',
     description: 'Periodic review of your collection against your collecting policy. Identify objects for potential disposal or enhanced care.',
-    technical: { table: 'collection_reviews', spectrum: 'Procedure 20 — Collections Review' },
+    technical: { table: 'collection_reviews', practice: 'Collections Review' },
   },
   'nav.docs': {
     label: 'Documentation Plan',
     description: 'Plan and track improvements to your collection documentation. Identify backlogs and set priorities for cataloguing work.',
-    technical: { table: 'documentation_plans, documentation_plan_backlogs', spectrum: 'Procedure 21 — Documentation Planning' },
+    technical: { table: 'documentation_plans, documentation_plan_backlogs', practice: 'Documentation Planning' },
   },
   'nav.trash': {
     label: 'Deleted Objects',
@@ -152,7 +152,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'dashboard.deaccessioned': {
     label: 'Deaccessioned',
     description: 'Objects formally removed from your collection through the deaccession process. These remain in the database for audit purposes.',
-    technical: { table: 'objects', column: "objects.status = 'Deaccessioned'", type: 'Filtered count', spectrum: 'Procedure 17 — Deaccession & Disposal' },
+    technical: { table: 'objects', column: "objects.status = 'Deaccessioned'", type: 'Filtered count', practice: 'Deaccession & Disposal' },
   },
   'dashboard.on_public_site': {
     label: 'On Public Site',
@@ -162,7 +162,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'dashboard.collection_value': {
     label: 'Collection Value',
     description: 'The total value of your collection, using the latest valuation per object where available and falling back to the recorded estimated value. Mixed currencies are converted to your base currency when FX rates are available.',
-    technical: { table: 'valuations', column: 'SUM(latest value per object)', type: 'Aggregated numeric', spectrum: 'Procedure 12 — Valuation' },
+    technical: { table: 'valuations', column: 'SUM(latest value per object)', type: 'Aggregated numeric', practice: 'Valuation' },
   },
   'dashboard.col.public': {
     label: 'Public',
@@ -209,7 +209,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'action.new_entry': {
     label: 'New Entry Record',
     description: 'Create a new object entry record. This is the starting point for any object arriving at your museum.',
-    technical: { table: 'entry_records', spectrum: 'Procedure 1 — Object Entry' },
+    technical: { table: 'entry_records', practice: 'Object Entry' },
   },
   'action.save': {
     label: 'Save Changes',
@@ -246,17 +246,17 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.title': {
     label: 'Object Title',
     description: 'The main name or title of this object. This is the primary identifier shown in search results, your collection list, and on your public website.',
-    technical: { column: 'objects.title', type: 'text, not null', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.title', type: 'text, not null', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.artist': {
     label: 'Artist / Maker',
     description: 'The person or workshop who created the object. For attributed works, use the Maker Role field in Full mode for qualifiers like "Workshop of" or "After".',
-    technical: { column: 'objects.artist', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.artist', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.production_date': {
     label: 'Date (Cataloguing)',
     description: 'When the object was made. Can be exact (1850), approximate (c.1920), or a range (1920–1930). Use the Date Qualifier to indicate precision.',
-    technical: { column: 'objects.production_date', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.production_date', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.production_date_qualifier': {
     label: 'Date Qualifier',
@@ -266,22 +266,22 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.medium': {
     label: 'Medium',
     description: 'The primary material or technique — "Oil on canvas", "Bronze", "Silver gelatin print". This is one of the most important fields for filtering and searching.',
-    technical: { column: 'objects.medium', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.medium', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.object_type': {
     label: 'Object Type',
     description: 'The broad category: Painting, Sculpture, Ceramic, Photograph, etc. Used for collection statistics and filtering.',
-    technical: { column: 'objects.object_type', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.object_type', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.culture': {
     label: 'Culture / Origin',
     description: 'The cultural, geographical, or ethnic origin — "British", "Japanese", "Pre-Columbian". Helps contextualise the object historically.',
-    technical: { column: 'objects.culture', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.culture', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.accession_no': {
     label: 'Accession Number',
     description: 'A unique identifier assigned when the object formally enters your collection. Format is typically YYYY.NNN (year.sequence). Auto-generated if left blank.',
-    technical: { column: 'objects.accession_no', type: 'text, unique per museum', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.accession_no', type: 'text, unique per museum', table: 'objects', practice: 'Accessioning' },
   },
   'objects.rarity': {
     label: 'Edition / Rarity',
@@ -296,7 +296,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.formally_accessioned': {
     label: 'Accession Status',
     description: 'Whether this object has been formally accessioned into the permanent collection. Some objects (found in collection, pre-existing) may not have gone through a formal process.',
-    technical: { column: 'objects.formally_accessioned', type: 'boolean, default true', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.formally_accessioned', type: 'boolean, default true', table: 'objects', practice: 'Accessioning' },
   },
   'objects.status': {
     label: 'Status',
@@ -306,17 +306,17 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.condition_grade': {
     label: 'Condition',
     description: 'The most recent condition assessment grade. Updated automatically when you log a new assessment in the Condition tab.',
-    technical: { column: 'objects.condition_grade', type: "text: Excellent | Good | Fair | Poor | Critical", table: 'objects', relationships: 'Snapshot from condition_assessments', spectrum: 'Procedure 11 — Condition Checking' },
+    technical: { column: 'objects.condition_grade', type: "text: Excellent | Good | Fair | Poor | Critical", table: 'objects', relationships: 'Snapshot from condition_assessments', practice: 'Condition Checking' },
   },
   'objects.current_location': {
     label: 'Current Location',
     description: 'Where this object physically is right now. Updated automatically when you record a movement in the Location tab.',
-    technical: { column: 'objects.current_location', type: 'text', table: 'objects', relationships: 'Snapshot from location_history; references locations registry', spectrum: 'Procedure 3 — Location & Movement Control' },
+    technical: { column: 'objects.current_location', type: 'text', table: 'objects', relationships: 'Snapshot from location_history; references locations registry', practice: 'Location & Movement Control' },
   },
   'objects.dimensions': {
     label: 'Dimensions',
     description: 'Height, width, depth, and weight of the object. Choose your unit (cm, mm, in, m) and weight unit (kg, g, lb, oz). Add notes for framed dimensions, with base, etc.',
-    technical: { column: 'objects.dimension_height, _width, _depth, _weight, _unit, _weight_unit, _notes', type: 'numeric + text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.dimension_height, _width, _depth, _weight, _unit, _weight_unit, _notes', type: 'numeric + text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.description': {
     label: 'Description',
@@ -331,32 +331,32 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.inscription': {
     label: 'Marks and Inscriptions',
     description: 'Any text, symbols, or marks on the object — inscriptions, hallmarks, maker\'s marks, stamps, signatures, labels. Important for authentication and provenance.',
-    technical: { column: 'objects.inscription', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.inscription', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.other_names': {
     label: 'Other Names / Also Known As',
     description: 'Alternative titles, former names, or popular names the object is known by. Helps with searchability.',
-    technical: { column: 'objects.other_names', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.other_names', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.colour': {
     label: 'Colour',
     description: 'The dominant colour(s) of the object — Polychrome, Monochrome, or a specific colour. Part of the physical description.',
-    technical: { column: 'objects.colour', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.colour', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.shape': {
     label: 'Shape',
     description: 'The basic form — Rectangular, Circular, Cylindrical, Figurative, etc. Useful for 3D objects and archaeological finds.',
-    technical: { column: 'objects.shape', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.shape', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.surface_treatment': {
     label: 'Surface Treatment',
     description: 'How the surface has been treated — Glazed, Gilded, Varnished, Patinated, Polished, etc.',
-    technical: { column: 'objects.surface_treatment', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.surface_treatment', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.provenance': {
     label: 'Provenance',
     description: 'The ownership history of the object before your acquisition. Critical for establishing legitimacy and historical significance. Document every known owner.',
-    technical: { column: 'objects.provenance', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.provenance', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.provenance_date_range': {
     label: 'Provenance Date Range',
@@ -366,7 +366,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.field_collection_info': {
     label: 'Field Collection Information',
     description: 'For archaeological or natural history objects: the site, field collector, collection date, and archaeological context.',
-    technical: { column: 'objects.field_collection_info', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.field_collection_info', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.credit_line': {
     label: 'Credit Line',
@@ -376,12 +376,12 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.physical_materials': {
     label: 'Materials & Techniques',
     description: 'Detailed materials and making techniques — "oil on canvas, gilt wood frame" or "hand-thrown stoneware, salt glaze". More specific than Medium.',
-    technical: { column: 'objects.physical_materials', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.physical_materials', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.production_place': {
     label: 'Production Place',
     description: 'Where the object was made — city, region, or country. Distinct from Culture/Origin which is about cultural context.',
-    technical: { column: 'objects.production_place', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.production_place', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.is_gift': {
     label: 'Purchase or Gift',
@@ -391,7 +391,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.insured_value': {
     label: 'Insured Value',
     description: 'The value this object is insured for. Internal only — not shown on your public site. Keep this up to date for insurance claims.',
-    technical: { column: 'objects.insured_value', type: 'numeric', table: 'objects', spectrum: 'Procedure 14 — Insurance & Indemnity' },
+    technical: { column: 'objects.insured_value', type: 'numeric', table: 'objects', practice: 'Insurance & Indemnity' },
   },
   'objects.show_on_site': {
     label: 'Public Site',
@@ -411,34 +411,34 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'objects.full_description': {
     label: 'Full Description',
     description: 'A detailed internal catalogue description — more thorough than the public description. For staff and researchers only.',
-    technical: { column: 'objects.full_description', type: 'text', table: 'objects', spectrum: 'Procedure 5 — Cataloguing' },
+    technical: { column: 'objects.full_description', type: 'text', table: 'objects', practice: 'Cataloguing' },
   },
   'objects.hazard_note': {
     label: 'Hazard Note',
     description: 'Warning about hazardous materials or handling risks — asbestos, lead paint, fragile glass, sharp edges, radioactive materials. Shown prominently with a warning icon.',
-    technical: { column: 'objects.hazard_note', type: 'text', table: 'objects', spectrum: 'Procedure 11 — Condition Checking' },
+    technical: { column: 'objects.hazard_note', type: 'text', table: 'objects', practice: 'Condition Checking' },
   },
 
   // ── Acquisition tab ───────────────────────────────────────────────────
   'acquisition.method': {
     label: 'Acquisition Method',
     description: 'How the object was acquired: Purchase, Gift, Bequest, Transfer, Found, Fieldwork, or Exchange.',
-    technical: { column: 'objects.acquisition_method', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_method', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.date': {
     label: 'Acquisition Date',
     description: 'The date the object was acquired — when ownership transferred to your museum.',
-    technical: { column: 'objects.acquisition_date', type: 'date', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_date', type: 'date', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.source': {
     label: 'Acquisition Source',
     description: 'Who you got it from — donor name, auction house, gallery, estate, or previous owner.',
-    technical: { column: 'objects.acquisition_source', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_source', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.justification': {
     label: 'Acquisition Justification',
     description: 'Why this object was acquired — how it fits your collecting policy and what it adds to the collection. Required for museum accreditation.',
-    technical: { column: 'objects.acquisition_justification', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_justification', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.notes': {
     label: 'Acquisition Notes',
@@ -448,17 +448,17 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'acquisition.documentation_ref': {
     label: 'Associated Documentation',
     description: 'Reference to legal transfer documents — deeds of gift, bills of sale, purchase receipts. Required for accreditation. Upload supporting files below.',
-    technical: { column: 'objects.acquisition_documentation_ref', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_documentation_ref', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.accession_date': {
     label: 'Accession Date',
     description: 'The date the object was formally accessioned (entered into the permanent collection). May differ from acquisition date if there was a delay.',
-    technical: { column: 'objects.accession_date', type: 'date', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.accession_date', type: 'date', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.conditions': {
     label: 'Conditions Attached to Acquisition',
     description: 'Any restrictions or conditions from the donor or seller — display requirements, loan restrictions, naming conditions, or repatriation clauses.',
-    technical: { column: 'objects.conditions_attached_to_acquisition', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.conditions_attached_to_acquisition', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.acknowledgement': {
     label: 'Acknowledgement Sent to Donor',
@@ -473,7 +473,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'acquisition.authorised_by': {
     label: 'Authorised By',
     description: 'The person or governing body who authorised the acquisition. Required for governance and audit trail.',
-    technical: { column: 'objects.acquisition_authorised_by', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_authorised_by', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.authority_date': {
     label: 'Authority Date',
@@ -483,7 +483,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'acquisition.title_guarantee': {
     label: 'Title / Legal Basis',
     description: 'The document that proves legal ownership transferred — Deed of Gift, Bill of Sale, Transfer Document, or Found in Collection.',
-    technical: { column: 'objects.acquisition_title_guarantee', type: 'text', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.acquisition_title_guarantee', type: 'text', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.object_count': {
     label: 'Number of Objects',
@@ -493,7 +493,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'acquisition.register_confirmed': {
     label: 'Formally Entered in Accession Register',
     description: 'Confirms the object has been recorded in the formal accession register. A key compliance checkpoint.',
-    technical: { column: 'objects.accession_register_confirmed', type: 'boolean', table: 'objects', spectrum: 'Procedure 2 — Accessioning' },
+    technical: { column: 'objects.accession_register_confirmed', type: 'boolean', table: 'objects', practice: 'Accessioning' },
   },
   'acquisition.ethics_art_loss': {
     label: 'Art Loss Register Check',
@@ -520,7 +520,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'condition.grade': {
     label: 'Condition Grade',
     description: 'Rate the physical state: Excellent (near perfect), Good (minor wear), Fair (noticeable issues), Poor (significant damage), Critical (at risk of loss).',
-    technical: { column: 'condition_assessments.grade', type: "text: Excellent | Good | Fair | Poor | Critical", table: 'condition_assessments', spectrum: 'Procedure 11 — Condition Checking' },
+    technical: { column: 'condition_assessments.grade', type: "text: Excellent | Good | Fair | Poor | Critical", table: 'condition_assessments', practice: 'Condition Checking' },
   },
   'condition.assessed_at': {
     label: 'Assessment Date',
@@ -535,7 +535,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'condition.reason_for_check': {
     label: 'Reason for Check',
     description: 'Why this assessment was done — Acquisition, Loan out, Loan return, Display change, Routine check, Damage suspected, Conservation, or Insurance.',
-    technical: { column: 'condition_assessments.reason_for_check', type: 'text', table: 'condition_assessments', spectrum: 'Procedure 11 — Condition Checking' },
+    technical: { column: 'condition_assessments.reason_for_check', type: 'text', table: 'condition_assessments', practice: 'Condition Checking' },
   },
   'condition.long_description': {
     label: 'Detailed Description',
@@ -567,12 +567,12 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'location.new_location': {
     label: 'New Location',
     description: 'Where you are moving this object to. Select from your location register or type a new name — new locations are automatically added to your register.',
-    technical: { column: 'location_history.location', type: 'text', table: 'location_history', relationships: 'Auto-creates in locations table', spectrum: 'Procedure 3 — Location & Movement Control' },
+    technical: { column: 'location_history.location', type: 'text', table: 'location_history', relationships: 'Auto-creates in locations table', practice: 'Location & Movement Control' },
   },
   'location.code': {
     label: 'Location Code',
     description: 'A structured location code like STORE-A-BAY3-SHELF2. Required for museum accreditation — every storage location needs a unique, systematic code.',
-    technical: { column: 'locations.location_code', type: 'text, unique', table: 'locations', spectrum: 'Procedure 3 — Location & Movement Control' },
+    technical: { column: 'locations.location_code', type: 'text, unique', table: 'locations', practice: 'Location & Movement Control' },
   },
   'location.building': {
     label: 'Building',
@@ -614,7 +614,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'conservation.treatment_type': {
     label: 'Treatment Type',
     description: 'The category of conservation work: Cleaning, Restoration, Examination, Condition Check, or Other (with suggestions like Surface consolidation, Structural repair, etc.).',
-    technical: { column: 'conservation_treatments.treatment_type', type: 'text', table: 'conservation_treatments', spectrum: 'Procedure 12 — Conservation & Collections Care' },
+    technical: { column: 'conservation_treatments.treatment_type', type: 'text', table: 'conservation_treatments', practice: 'Conservation & Collections Care' },
   },
   'conservation.conservator': {
     label: 'Conservator',
@@ -661,7 +661,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'loans.direction': {
     label: 'Loan Direction',
     description: '"Out" means you are lending to another institution. "In" means you are borrowing from someone else. Each has different paperwork requirements.',
-    technical: { column: 'loans.direction', type: "text: Out | In", table: 'loans', spectrum: 'Procedures 7 & 8 — Loans In / Loans Out' },
+    technical: { column: 'loans.direction', type: "text: Out | In", table: 'loans', practice: 'Loans In / Loans Out' },
   },
   'loans.borrowing_institution': {
     label: 'Borrowing Institution',
@@ -696,7 +696,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'loans.insurance_value': {
     label: 'Insurance Value',
     description: 'The agreed insurance value for this loan. The borrower typically needs to insure the object for at least this amount.',
-    technical: { column: 'loans.insurance_value', type: 'numeric', table: 'loans', spectrum: 'Procedure 14 — Insurance & Indemnity' },
+    technical: { column: 'loans.insurance_value', type: 'numeric', table: 'loans', practice: 'Insurance & Indemnity' },
   },
   'loans.purpose': {
     label: 'Purpose',
@@ -713,7 +713,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'valuation.value': {
     label: 'Value',
     description: 'The assessed monetary value of the object. Enter the amount without currency symbols — select currency separately.',
-    technical: { column: 'valuations.value', type: 'numeric', table: 'valuations', spectrum: 'Procedure 13 — Valuation Control' },
+    technical: { column: 'valuations.value', type: 'numeric', table: 'valuations', practice: 'Valuation Control' },
   },
   'valuation.currency': {
     label: 'Currency',
@@ -733,7 +733,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'valuation.method': {
     label: 'Valuation Method',
     description: 'How the value was determined: Market value, Insurance value, Replacement cost, Expert opinion, or Auction estimate.',
-    technical: { column: 'valuations.method', type: 'text', table: 'valuations', spectrum: 'Procedure 13 — Valuation Control' },
+    technical: { column: 'valuations.method', type: 'text', table: 'valuations', practice: 'Valuation Control' },
   },
   'valuation.purpose': {
     label: 'Purpose',
@@ -755,7 +755,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'entry.number': {
     label: 'Entry Number',
     description: 'Auto-generated unique reference for this entry record — format ER-YYYY-NNN. Cannot be edited.',
-    technical: { column: 'entry_records.entry_number', type: 'text, auto-generated', table: 'entry_records', spectrum: 'Procedure 1 — Object Entry' },
+    technical: { column: 'entry_records.entry_number', type: 'text, auto-generated', table: 'entry_records', practice: 'Object Entry' },
   },
   'entry.date': {
     label: 'Entry Date',
@@ -765,7 +765,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'entry.reason': {
     label: 'Entry Reason',
     description: 'Why the object is arriving: Potential acquisition, Loan in, Enquiry, Return from loan, or Found in collection.',
-    technical: { column: 'entry_records.entry_reason', type: 'text', table: 'entry_records', spectrum: 'Procedure 1 — Object Entry' },
+    technical: { column: 'entry_records.entry_reason', type: 'text', table: 'entry_records', practice: 'Object Entry' },
   },
   'entry.outcome': {
     label: 'Outcome',
@@ -775,7 +775,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'entry.condition_on_entry': {
     label: 'Condition on Entry',
     description: 'The condition of the object when it arrived. Document any pre-existing damage to protect yourself from liability.',
-    technical: { column: 'entry_records.condition_on_entry', type: 'text', table: 'entry_records', spectrum: 'Procedure 1 — Object Entry' },
+    technical: { column: 'entry_records.condition_on_entry', type: 'text', table: 'entry_records', practice: 'Object Entry' },
   },
   'entry.donor_name': {
     label: 'Donor Name',
@@ -797,7 +797,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'audit.date': {
     label: 'Audit Date',
     description: 'When the inventory check was carried out.',
-    technical: { column: 'audit_records.inventoried_at', type: 'date', table: 'audit_records', spectrum: 'Procedure 6 — Inventory Control' },
+    technical: { column: 'audit_records.inventoried_at', type: 'date', table: 'audit_records', practice: 'Inventory Control' },
   },
   'audit.inventoried_by': {
     label: 'Inventoried By',
@@ -817,7 +817,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'audit.outcome': {
     label: 'Inventory Outcome',
     description: 'The result: Present and correct, Present but location differs, Not found, Found in collection (unexpected find), or No prior record.',
-    technical: { column: 'audit_records.discrepancy', type: 'text', table: 'audit_records', spectrum: 'Procedure 6 — Inventory Control' },
+    technical: { column: 'audit_records.discrepancy', type: 'text', table: 'audit_records', practice: 'Inventory Control' },
   },
   'audit.notes': {
     label: 'Notes',
@@ -829,7 +829,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'damage.incident_date': {
     label: 'Incident Date',
     description: 'When the damage occurred (or is believed to have occurred). May differ from the discovery date.',
-    technical: { column: 'damage_reports.incident_date', type: 'date', table: 'damage_reports', spectrum: 'Procedure 16 — Damage & Loss' },
+    technical: { column: 'damage_reports.incident_date', type: 'date', table: 'damage_reports', practice: 'Damage & Loss' },
   },
   'damage.discovered_date': {
     label: 'Discovered Date',
@@ -876,7 +876,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'risk.type': {
     label: 'Risk Type',
     description: 'The category of risk: Theft, Fire, Flood, Pest, Light damage, Handling damage, Environmental, Provenance, Legal, or Other.',
-    technical: { column: 'risk_register.risk_type', type: 'text', table: 'risk_register', spectrum: 'Procedure 15 — Risk Management' },
+    technical: { column: 'risk_register.risk_type', type: 'text', table: 'risk_register', practice: 'Risk Management' },
   },
   'risk.severity': {
     label: 'Severity',
@@ -908,7 +908,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'exits.exit_date': {
     label: 'Exit Date',
     description: 'When the object physically left your premises.',
-    technical: { column: 'object_exits.exit_date', type: 'date', table: 'object_exits', spectrum: 'Procedure 16 — Object Exit' },
+    technical: { column: 'object_exits.exit_date', type: 'date', table: 'object_exits', practice: 'Object Exit' },
   },
   'exits.exit_reason': {
     label: 'Exit Reason',
@@ -923,19 +923,19 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   'exits.exit_authorised_by': {
     label: 'Authorised By',
     description: 'Who authorised this object to leave your premises. Required — no object should leave without formal authorisation.',
-    technical: { column: 'object_exits.exit_authorised_by', type: 'text, not null', table: 'object_exits', spectrum: 'Procedure 16 — Object Exit' },
+    technical: { column: 'object_exits.exit_authorised_by', type: 'text, not null', table: 'object_exits', practice: 'Object Exit' },
   },
 
   // ── Rights tab ────────────────────────────────────────────────────────
   'rights.copyright_status': {
     label: 'Copyright Status',
     description: 'The current copyright position: In Copyright, Out of Copyright, Public Domain, Unknown, or a Creative Commons licence.',
-    technical: { column: 'objects.copyright_status', type: 'text', table: 'objects', spectrum: 'Procedure 9 — Rights Management' },
+    technical: { column: 'objects.copyright_status', type: 'text', table: 'objects', practice: 'Rights Management' },
   },
   'rights.holder': {
     label: 'Rights Holder',
     description: 'Who owns the intellectual property rights — the artist, their estate, a collecting society, or your museum.',
-    technical: { column: 'objects.rights_holder', type: 'text', table: 'objects', spectrum: 'Procedure 9 — Rights Management' },
+    technical: { column: 'objects.rights_holder', type: 'text', table: 'objects', practice: 'Rights Management' },
   },
   'rights.notes': {
     label: 'Rights Notes',
@@ -951,7 +951,7 @@ export const learnDescriptions: Record<string, LearnEntry> = {
   },
   'settings.ui_mode': {
     label: 'Interface Mode',
-    description: 'Simple mode shows just the basics — good for hobbyists. Full mode unlocks all Spectrum 5.1 compliance features. Professional plan and above.',
+    description: 'Simple mode shows just the basics — good for hobbyists. Full mode unlocks the complete documentation registers. Professional plan and above.',
     technical: { column: 'museums.ui_mode', type: "text: simple | full", table: 'museums' },
   },
   'settings.discoverable': {

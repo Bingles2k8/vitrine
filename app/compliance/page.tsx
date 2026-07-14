@@ -5,15 +5,15 @@ import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
 export const metadata = buildPageMetadata({
-  title: 'Spectrum 5.1 Collection Compliance Tools – Vitrine Professional',
+  title: 'Collections Documentation Registers – Vitrine Professional',
   description:
-    'Vitrine Professional and Institution plans include built-in tools for all 21 Spectrum 5.1 procedures. Browse every procedure, its data fields, and where to find them in the app.',
+    'Vitrine Professional and Institution plans include the documentation registers a working museum relies on — entry, acquisition, loans, condition, conservation, valuation, disposal and audit. See every register, its fields, and where to find it in the app.',
   path: '/compliance',
   keywords: [
-    'museum collection management compliance',
-    'collection management standards',
+    'museum collection documentation',
     'museum cataloguing software',
-    'collection compliance tools',
+    'collections documentation registers',
+    'museum accession register software',
     'professional collection management',
   ],
 })
@@ -28,10 +28,20 @@ const breadcrumbSchema = {
 }
 
 type Tier = 'professional'
+type Group = 'Everyday records' | 'Loans & access' | 'Care & risk' | 'Governance & review'
 
-interface Procedure {
-  id: number
+const GROUP_ORDER: Group[] = ['Everyday records', 'Loans & access', 'Care & risk', 'Governance & review']
+
+const GROUP_BLURB: Record<Group, string> = {
+  'Everyday records': 'The day-to-day backbone — what arrived, what it is, where it lives, and when it left.',
+  'Loans & access': 'Objects moving in and out on loan, plus who may use, copy, or reproduce them.',
+  'Care & risk': 'The physical wellbeing of the collection, and what it would cost to put right.',
+  'Governance & review': 'The oversight layer — planning, review, audit, and responsible disposal.',
+}
+
+interface Register {
   name: string
+  group: Group
   description: string
   fields: string[]
   location: string
@@ -40,10 +50,10 @@ interface Procedure {
   tier: Tier
 }
 
-const PRIMARY: Procedure[] = [
+const REGISTERS: Register[] = [
   {
-    id: 1,
     name: 'Object Entry',
+    group: 'Everyday records',
     description: 'Record every object arriving at your institution, capturing depositor details, condition at arrival, and receipts.',
     fields: [
       'Entry number (auto-generated)',
@@ -69,8 +79,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 2,
     name: 'Acquisition & Accessioning',
+    group: 'Everyday records',
     description: 'Formally accession objects into the permanent collection with full acquisition provenance and legal documentation.',
     fields: [
       'Accession number & date',
@@ -90,8 +100,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 3,
     name: 'Location & Movement Control',
+    group: 'Everyday records',
     description: 'Maintain a full audit trail of where every object is and has been, with hierarchical location codes.',
     fields: [
       'Location code (unique, required)',
@@ -109,8 +119,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 4,
     name: 'Inventory',
+    group: 'Everyday records',
     description: 'Plan and record inventory exercises, tracking which objects have been physically verified and when.',
     fields: [
       'Inventory exercise management',
@@ -129,8 +139,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 5,
     name: 'Cataloguing',
+    group: 'Everyday records',
     description: 'Capture the full catalogue record for each object, from basic identification through to attribution and record completeness.',
     fields: [
       'Title, maker name & role',
@@ -160,8 +170,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 6,
     name: 'Object Exit',
+    group: 'Everyday records',
     description: 'Log every object leaving the institution, with transport details, authorisation, and return expectations.',
     fields: [
       'Exit number (auto-generated)',
@@ -181,8 +191,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 7,
     name: 'Loans In',
+    group: 'Loans & access',
     description: 'Manage incoming loans from other institutions, from initial request through to return.',
     fields: [
       'Loan number (auto-generated)',
@@ -206,8 +216,8 @@ const PRIMARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 8,
     name: 'Loans Out',
+    group: 'Loans & access',
     description: 'Manage outgoing loans to other institutions, tracking the full lifecycle including return condition.',
     fields: [
       'All Loans In fields (shared record format)',
@@ -221,12 +231,9 @@ const PRIMARY: Procedure[] = [
     dashboardLabel: 'Loans',
     tier: 'professional',
   },
-]
-
-const SECONDARY: Procedure[] = [
   {
-    id: 9,
     name: 'Documentation Planning',
+    group: 'Governance & review',
     description: 'Plan and manage documentation programmes, tracking backlogs of uncatalogued objects.',
     fields: [
       'Plan title & scope',
@@ -240,8 +247,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 10,
     name: 'Use of Collections',
+    group: 'Loans & access',
     description: 'Track requests to access or use collection objects, from research visits to photography.',
     fields: [
       'Use reference (auto-generated)',
@@ -261,8 +268,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 11,
     name: 'Condition Checking',
+    group: 'Care & risk',
     description: 'Record formal condition assessments for objects, including hazard notes and next-check scheduling.',
     fields: [
       'Assessment reference',
@@ -281,8 +288,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 12,
     name: 'Conservation & Collections Care',
+    group: 'Care & risk',
     description: 'Log conservation treatments with before/after documentation, costs, and future care recommendations.',
     fields: [
       'Treatment reference (auto-generated)',
@@ -303,8 +310,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 13,
     name: 'Valuation',
+    group: 'Care & risk',
     description: 'Maintain a dated valuation history for each object with multiple bases (insurance, market, replacement).',
     fields: [
       'Valuation reference',
@@ -322,8 +329,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 14,
     name: 'Insurance & Indemnity',
+    group: 'Care & risk',
     description: 'Manage insurance policies and link them to specific collection objects, with renewal alerts.',
     fields: [
       'Policy number',
@@ -346,8 +353,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 15,
     name: 'Emergency Planning',
+    group: 'Care & risk',
     description: 'Maintain emergency response plans, ranked salvage priorities, and a log of incidents with affected objects.',
     fields: [
       'Plan title & type (Fire / Flood / Theft / etc.)',
@@ -366,8 +373,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 16,
     name: 'Loss & Damage Reporting',
+    group: 'Care & risk',
     description: 'Record damage and loss incidents with severity, repair estimates, and governance notifications.',
     fields: [
       'Report date',
@@ -386,8 +393,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 17,
     name: 'Disposal & Deaccession',
+    group: 'Governance & review',
     description: 'Manage the full deaccession workflow from proposal through governance approval to completion.',
     fields: [
       'Disposal method (Sale / Donation / Destruction / Transfer / etc.)',
@@ -406,8 +413,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 18,
     name: 'Rights Management',
+    group: 'Loans & access',
     description: 'Track copyright, licences, and rights status for each object, with per-object rights summaries.',
     fields: [
       'Rights reference (auto-generated)',
@@ -427,8 +434,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 19,
     name: 'Reproduction Rights',
+    group: 'Loans & access',
     description: 'Handle requests to reproduce collection objects, with decision tracking and fee management.',
     fields: [
       'Requester name & contact',
@@ -446,8 +453,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 20,
     name: 'Collections Review',
+    group: 'Governance & review',
     description: 'Plan and record formal collections review programmes, with governance reporting and disposal recommendations.',
     fields: [
       'Review reference (auto-generated)',
@@ -466,8 +473,8 @@ const SECONDARY: Procedure[] = [
     tier: 'professional',
   },
   {
-    id: 21,
     name: 'Audit Exercises',
+    group: 'Governance & review',
     description: 'Conduct and document formal audit exercises with full governance reporting and actions tracking.',
     fields: [
       'Audit reference (auto-generated)',
@@ -497,23 +504,20 @@ function TierBadge({ tier: _ }: { tier: Tier }) {
   )
 }
 
-function ProcedureCard({ proc }: { proc: Procedure }) {
+function RegisterCard({ reg }: { reg: Register }) {
   return (
     <div className="bg-white/3 border border-white/5 rounded-xl p-6 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <span className="font-mono text-xs text-stone-500 block mb-1">{String(proc.id).padStart(2, '0')}</span>
-          <h3 className="text-lg font-medium text-white leading-snug">{proc.name}</h3>
-        </div>
-        <TierBadge tier={proc.tier} />
+        <h3 className="text-lg font-medium text-white leading-snug">{reg.name}</h3>
+        <TierBadge tier={reg.tier} />
       </div>
 
-      <p className="text-stone-400 text-sm leading-relaxed">{proc.description}</p>
+      <p className="text-stone-400 text-sm leading-relaxed">{reg.description}</p>
 
       <div>
         <p className="font-mono text-xs text-stone-500 uppercase tracking-wider mb-2">Data fields</p>
         <ul className="space-y-1">
-          {proc.fields.map((field) => (
+          {reg.fields.map((field) => (
             <li key={field} className="flex items-start gap-2 text-stone-300 text-sm">
               <span className="text-amber-500/50 mt-0.5 shrink-0">—</span>
               <span>{field}</span>
@@ -525,13 +529,13 @@ function ProcedureCard({ proc }: { proc: Procedure }) {
       <div className="pt-2 border-t border-white/5 mt-auto">
         <p className="text-xs text-stone-500 mb-3">
           <span className="font-mono uppercase tracking-wider">Located in: </span>
-          {proc.location}
+          {reg.location}
         </p>
         <Link
-          href={proc.dashboardLink}
+          href={reg.dashboardLink}
           className="inline-flex items-center gap-1.5 font-mono text-xs text-amber-500 hover:text-amber-400 transition-colors"
         >
-          Open {proc.dashboardLabel} →
+          Open {reg.dashboardLabel} →
         </Link>
       </div>
     </div>
@@ -557,21 +561,21 @@ export default function CompliancePage() {
         {/* Hero */}
         <div className="mb-12 max-w-3xl">
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl italic font-normal leading-tight mb-6">
-            Spectrum 5.1 compliance,{' '}
+            Every register a museum needs,{' '}
             <span className="text-amber-500">built in.</span>
           </h1>
           <p className="text-xl text-stone-300 leading-relaxed border-l-2 border-amber-500/40 pl-5 mb-6">
-            Vitrine Professional and Institution plans include purpose-built tools for all 21 procedures in recognised collection management standards — from object entry through to audit exercises.
+            Vitrine Professional and Institution plans include purpose-built records for the full documentation lifecycle — from an object arriving at your door through to audit and disposal.
           </p>
           <p className="text-stone-400 leading-relaxed">
-            Every procedure is mapped to specific data fields and UI screens inside the app. This page lists each procedure, its fields, and exactly where to find it in your dashboard.
+            Each register has its own fields and its own screen inside the app. This page lists what Vitrine records, and exactly where to find it in your dashboard.
           </p>
           <p className="text-stone-400 leading-relaxed mt-4">
-            Want to try one of these procedures before signing up? Our{' '}
+            Want to try one before signing up? Our{' '}
             <Link href="/tools/condition-report" className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors">
               free condition report generator
             </Link>
-            {' '}lets you produce a Spectrum-style condition report — with a visual damage map — straight from your browser.
+            {' '}produces a full condition report — with a visual damage map — straight from your browser.
           </p>
         </div>
 
@@ -587,31 +591,20 @@ export default function CompliancePage() {
           </Link>
         </div>
 
-        {/* Primary procedures */}
-        <section className="mb-20">
-          <div className="mb-8">
-            <h2 className="text-2xl font-medium text-white mb-2">Primary procedures</h2>
-            <p className="text-stone-400">The eight core collection management workflows — available on all Professional and Institution plans.</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {PRIMARY.map((proc) => (
-              <ProcedureCard key={proc.id} proc={proc} />
-            ))}
-          </div>
-        </section>
-
-        {/* Secondary procedures */}
-        <section className="mb-20">
-          <div className="mb-8">
-            <h2 className="text-2xl font-medium text-white mb-2">Secondary procedures</h2>
-            <p className="text-stone-400">Specialist workflows for compliance, rights, risk, and governance. Available on all Professional plans and above.</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {SECONDARY.map((proc) => (
-              <ProcedureCard key={proc.id} proc={proc} />
-            ))}
-          </div>
-        </section>
+        {/* Registers, by area */}
+        {GROUP_ORDER.map((group) => (
+          <section key={group} className="mb-20">
+            <div className="mb-8">
+              <h2 className="text-2xl font-medium text-white mb-2">{group}</h2>
+              <p className="text-stone-400">{GROUP_BLURB[group]}</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {REGISTERS.filter((reg) => reg.group === group).map((reg) => (
+                <RegisterCard key={reg.name} reg={reg} />
+              ))}
+            </div>
+          </section>
+        ))}
 
         {/* Supporting infrastructure */}
         <section className="mb-20">
@@ -620,7 +613,7 @@ export default function CompliancePage() {
             {[
               {
                 title: 'Document attachments',
-                description: 'Every procedure supports document uploads — agreements, reports, photographs, certificates. Gated to Professional+.',
+                description: 'Every register supports document uploads — agreements, reports, photographs, certificates. Gated to Professional+.',
               },
               {
                 title: 'Activity log',
@@ -632,7 +625,7 @@ export default function CompliancePage() {
               },
               {
                 title: 'Risk register',
-                description: 'A dedicated risk register tracks risks by severity, status, and due date — linked to the relevant objects and procedures.',
+                description: 'A dedicated risk register tracks risks by severity, status, and due date — linked to the relevant objects and records.',
               },
             ].map((item) => (
               <div key={item.title} className="bg-white/3 border border-white/5 rounded-xl p-5">
@@ -647,7 +640,7 @@ export default function CompliancePage() {
         <section className="p-8 border border-white/10 rounded-lg">
           <h2 className="text-xl font-medium text-white mb-2">Ready to get started?</h2>
           <p className="text-stone-400 mb-6 max-w-xl">
-            Try Vitrine free — no credit card required. Professional plan starts at £79/month and includes all 21 primary and secondary procedures.
+            Try Vitrine free — no credit card required. Professional plan starts at £79/month and includes every register on this page.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link

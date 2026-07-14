@@ -309,13 +309,13 @@ export default async function Home() {
                   <span className="text-3xl">📋</span>
                   <span className="text-xs font-mono bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Professional+</span>
                 </div>
-                <div className="font-serif text-xl italic text-white mb-3">Spectrum-aligned compliance tools</div>
+                <div className="font-serif text-xl italic text-white mb-3">Collections documentation, done properly</div>
                 <p className="text-sm text-stone-500 leading-relaxed font-light max-w-2xl">
-                  All 21 procedures of the recognised UK collection management standard, built in — object entry, loans, condition checks, conservation, valuation, insurance, deaccession, audits and more.
+                  The registers a working museum actually needs, built in — object entry, acquisition, loans, condition checks, conservation, valuation, insurance, deaccession, audits and more.
                 </p>
               </div>
               <span className="text-amber-500 font-mono text-sm group-hover:text-amber-400 transition-colors shrink-0 self-start md:self-center">
-                See all 21 procedures →
+                See what&apos;s included →
               </span>
             </Link>
           </div>
@@ -405,7 +405,7 @@ export default async function Home() {
                 {[
                   'Up to 5,000 objects, 10 staff',
                   'Event ticketing',
-                  '21 Spectrum compliance procedures',
+                  'Entry, loans & conservation registers',
                   'Visitor & collection analytics',
                   'Plan your visit page',
                   '1 GB document storage',
@@ -440,7 +440,7 @@ export default async function Home() {
               <p className="text-xs font-mono text-amber-500 uppercase tracking-widest mb-3">For museums & institutions</p>
               <h2 className="font-serif text-3xl italic font-normal mb-3">Running a gallery or museum?</h2>
               <p className="text-stone-400 font-light max-w-lg">
-                Professional and Institution plans include event ticketing, 21 Spectrum-aligned compliance procedures, visitor analytics, staff roles, and a full public-facing website — everything a public institution needs from one platform.
+                Professional and Institution plans include event ticketing, full collections documentation registers, visitor analytics, staff roles, and a full public-facing website — everything a public institution needs from one platform.
               </p>
             </div>
             <div className="flex flex-col gap-3 shrink-0">
@@ -448,7 +448,7 @@ export default async function Home() {
                 Start professional trial →
               </Link>
               <Link href="/compliance" className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
-                See all 21 procedures →
+                See what&apos;s included →
               </Link>
               <Link href="/guide/professional" className="block text-center font-mono text-xs py-2 text-stone-600 hover:text-stone-400 transition-colors">
                 Read the guide →
