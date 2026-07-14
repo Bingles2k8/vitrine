@@ -107,6 +107,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return latest
   }
 
+  // Signed up but never completed onboarding: an auth user who owns no museum
+  // and isn't staff on one. Onboarding is what inserts the museum row, so these
+  // are people who made an account and dropped out before finishing.
+  const ownerIds = new Set((museums ?? []).map(m => m.owner_id))
+  const staffUserIds = new Set((staff ?? []).map(s => s.user_id).filter(Boolean))
+  const orphanUsers = (authUsers ?? [])
+    .filter(u => !ownerIds.has(u.id) && !staffUserIds.has(u.id))
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+
   const allRows = museums ?? []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
 
@@ -281,6 +290,55 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           {rows.length} row{rows.length !== 1 ? 's' : ''}
           {hideTest && testCount > 0 ? ` (${testCount} test account${testCount !== 1 ? 's' : ''} hidden)` : ''}
         </p>
+
+        {/* Signed up but never created a museum */}
+        {orphanUsers.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">
+              Signed up, no museum
+              <span className="ml-2 font-normal text-gray-400">{orphanUsers.length}</span>
+            </h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Accounts that never completed onboarding, so no museum was created. Not shown in the stats above.
+            </p>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Signed up</th>
+                    <th className="px-4 py-3">Last login</th>
+                    <th className="px-4 py-3 text-center">Email confirmed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {orphanUsers.map(u => {
+                    const confirmed = !!u.email_confirmed_at
+                    return (
+                      <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-600 text-xs">{u.email ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                          {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                          {u.last_sign_in_at
+                            ? new Date(u.last_sign_in_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : <span className="text-gray-300">never signed in</span>}
+                        </td>
+                        <td className="px-4 py-3 text-center text-xs">
+                          {confirmed
+                            ? <span className="text-gray-500">✓</span>
+                            : <span className="text-amber-600">unconfirmed</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
