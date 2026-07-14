@@ -58,6 +58,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: { users: authUsers } },
     { data: objects },
     { data: activities },
+    { data: staff },
   ] = await Promise.all([
     admin
       .from('museums')
@@ -66,10 +67,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('objects').select('museum_id'),
     admin.from('activity_log').select('museum_id, created_at').order('created_at', { ascending: false }),
+    admin.from('staff_members').select('museum_id, user_id'),
   ])
 
   // ── Build lookup maps ──────────────────────────────────────────────
   const emailByOwnerId = new Map(authUsers?.map(u => [u.id, u.email ?? '—']))
+  const lastSignInByUserId = new Map((authUsers ?? []).map(u => [u.id, u.last_sign_in_at ?? null]))
 
   const objCountByMuseum = (objects ?? []).reduce<Record<string, number>>((acc, obj) => {
     if (obj.museum_id) acc[obj.museum_id] = (acc[obj.museum_id] ?? 0) + 1
@@ -82,6 +85,26 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     if (a.museum_id && !lastActivityByMuseum.has(a.museum_id)) {
       lastActivityByMuseum.set(a.museum_id, a.created_at)
     }
+  }
+
+  // Extra (non-owner) users per museum, from the staff_members table
+  const staffUserIdsByMuseum = new Map<string, string[]>()
+  for (const s of (staff ?? [])) {
+    if (!s.museum_id || !s.user_id) continue
+    const list = staffUserIdsByMuseum.get(s.museum_id) ?? []
+    list.push(s.user_id)
+    staffUserIdsByMuseum.set(s.museum_id, list)
+  }
+
+  // Last login = most recent last_sign_in_at across the owner + all staff of the museum
+  function lastLoginForMuseum(museumId: string, ownerId: string): string | null {
+    const memberIds = [ownerId, ...(staffUserIdsByMuseum.get(museumId) ?? [])]
+    let latest: string | null = null
+    for (const id of memberIds) {
+      const ts = lastSignInByUserId.get(id) ?? null
+      if (ts && (!latest || ts > latest)) latest = ts
+    }
+    return latest
   }
 
   const allRows = museums ?? []
@@ -172,6 +195,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <th className="px-4 py-3 text-right">Objects</th>
                 <th className="px-4 py-3">Signed up</th>
                 <th className="px-4 py-3">Last active</th>
+                <th className="px-4 py-3">Last login</th>
                 <th className="px-4 py-3 text-center">Discoverable</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -181,6 +205,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const objCount   = objCountByMuseum[m.id] ?? 0
                 const isEmpty    = objCount === 0
                 const lastActive = lastActivityByMuseum.get(m.id)
+                const lastLogin  = lastLoginForMuseum(m.id, m.owner_id)
                 const status     = subStatus(m.plan, m.stripe_subscription_id, m.payment_past_due)
                 const isTest     = m.is_test_account
 
@@ -224,6 +249,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         ? new Date(lastActive).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : <span className="text-gray-300">—</span>}
                     </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                      {lastLogin
+                        ? new Date(lastLogin).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
                     <td className="px-4 py-3 text-right">
                       {showDelete ? (
@@ -240,7 +270,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
+                  <td colSpan={10} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
                 </tr>
               )}
             </tbody>
