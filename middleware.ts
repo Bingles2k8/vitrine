@@ -30,6 +30,11 @@ function isBetaExempt(pathname: string): boolean {
   if (pathname.startsWith('/login')) return true
   if (pathname.startsWith('/signup')) return true
   if (pathname.startsWith('/auth')) return true
+  // The iOS app's privacy policy and terms links. An App Store reviewer must be
+  // able to open these cold; a redirect to the beta wall would fail Guideline
+  // 5.1.1(i). BETA_PASSWORD is currently unset in production, so this is a guard
+  // against the gate being switched on later and silently blocking app review.
+  if (pathname.startsWith('/legal/')) return true
   // Public API routes
   if (CSRF_EXEMPT_PATHS.has(pathname)) return true
   if (pathname.startsWith('/api/tickets/')) return true

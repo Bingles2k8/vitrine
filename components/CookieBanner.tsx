@@ -3,10 +3,19 @@
 import { useState, useEffect } from 'react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function CookieBanner() {
   const [consent, setConsent] = useState<string | null>(null)
   const [show, setShow] = useState(false)
+  const pathname = usePathname()
+
+  // The banner links to /privacy, which would put site chrome — and from there a
+  // route to the pricing page — on the otherwise bare /legal/* pages the iOS app
+  // opens. Those pages must offer no path to purchase outside the app (App Store
+  // Guideline 3.1.3(f)), so the banner stays off. Nothing is lost: these pages
+  // set no cookies and this also keeps Speed Insights off them.
+  const isBareLegalPage = pathname?.startsWith('/legal/') ?? false
 
   useEffect(() => {
     const stored = localStorage.getItem('cookie-consent')
@@ -28,6 +37,8 @@ export default function CookieBanner() {
     setConsent('essential')
     setShow(false)
   }
+
+  if (isBareLegalPage) return null
 
   return (
     <>
