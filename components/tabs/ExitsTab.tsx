@@ -138,7 +138,7 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     }).select('id').single()
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
 
-    // Spectrum 3 & 6: update object's current location and log movement on exit.
+    // Update object's current location and log movement on exit.
     // A permanent disposal-type exit also sets the object status to
     // Deaccessioned so it no longer shows as On Display/Storage (finding 6.1).
     const newLocation = exitForm.destination_address?.trim() || 'Off-site'

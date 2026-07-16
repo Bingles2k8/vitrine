@@ -22,7 +22,7 @@ export async function GET() {
 > Vitrine is a collection management platform for museums, galleries, and hobbyist collectors.
 > Catalog, organise, track value, and showcase collections of coins, stamps, trading cards,
 > vinyl records, comic books, LEGO, watches, wine, art, books, and more. Free to start;
-> museum-grade plans include Spectrum 5.1-aligned compliance procedures.
+> museum-grade plans include full collections documentation registers.
 
 ## Core Pages
 
@@ -31,7 +31,7 @@ export async function GET() {
 - [Pricing](${SITE_URL}/plans): All plans compared, with full feature table
 - [FAQ](${SITE_URL}/faq): Common questions about Vitrine answered
 - [Discover](${SITE_URL}/discover): Browse public collections on Vitrine
-- [Spectrum 5.1 Compliance](${SITE_URL}/compliance): Collection management procedures for museums
+- [Collections Documentation](${SITE_URL}/compliance): Documentation registers and records for museums
 
 ## Guides
 

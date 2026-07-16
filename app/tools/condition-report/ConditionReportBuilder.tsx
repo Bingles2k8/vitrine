@@ -205,7 +205,7 @@ export default function ConditionReportBuilder() {
         <p className="mt-2 text-sm text-stone-400 leading-relaxed max-w-2xl">
           One-off reports are fine for a single object. <span className="text-stone-200">Vitrine</span> keeps condition
           reporting connected to your whole collection: track condition over time, link reports to objects, loans and
-          conservation records, and keep your documentation aligned with Spectrum — the UK collections standard.
+          conservation records, and keep every check on one documented history.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/signup" className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2.5 text-sm font-mono text-stone-950 transition-colors">

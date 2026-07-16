@@ -251,7 +251,7 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
     const updated = treatment ? { ...treatment, ...updates } : null
     setConservationHistory(h => h.map(t => t.id === id ? { ...t, ...updates } : t))
     if (selectedTreatment?.id === id) setSelectedTreatment(t => (t ? { ...t, ...updates } : t))
-    // SPECTRUM: document the result of treatment at completion. If the outcome /
+    // Document the result of treatment at completion. If the outcome /
     // condition-after fields are still empty, open the edit form focused on Outcome
     // so the conservator records the result now.
     if (status === 'Completed' && updated && !updated.outcome && !updated.condition_after) {

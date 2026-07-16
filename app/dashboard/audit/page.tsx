@@ -325,7 +325,7 @@ export default function AuditPage() {
             ))}
           </div>
 
-          {/* Audit Exercises — Spectrum 5.1 Proc 21 */}
+          {/* Audit Exercises */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800">
               <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Audit Exercises</div>
