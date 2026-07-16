@@ -102,6 +102,15 @@ interface EventObjectLink {
   objects?: MuseumObject | null
 }
 
+/** A damage report logged from an emergency event. */
+interface DamageLink {
+  id: string
+  object_id: string | null
+  emergency_event_id: string | null
+  severity: string | null
+  status: string | null
+}
+
 interface PlanDocument {
   id: string
   plan_id: string
@@ -119,6 +128,7 @@ export default function EmergencyPage() {
   const [events, setEvents] = useState<EmergencyEvent[]>([])
   const [allObjects, setAllObjects] = useState<MuseumObject[]>([])
   const [eventObjects, setEventObjects] = useState<Record<string, EventObjectLink[]>>({})
+  const [damageByEvent, setDamageByEvent] = useState<Record<string, DamageLink[]>>({})
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [objectPickerEventId, setObjectPickerEventId] = useState<string | null>(null)
@@ -155,13 +165,14 @@ export default function EmergencyPage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }, { data: salvagePris }] = await Promise.all([
+      const [{ data: plans }, { data: evts }, { data: objs }, { data: eoLinks }, { data: eDocs }, { data: salvagePris }, { data: eventDamage }] = await Promise.all([
         supabase.from('emergency_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
         supabase.from('emergency_events').select('*').eq('museum_id', museum.id).order('event_date', { ascending: false }),
         supabase.from('objects').select('id, title, accession_no, emoji').eq('museum_id', museum.id).is('deleted_at', null).order('title'),
         supabase.from('emergency_event_objects').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id),
         supabase.from('emergency_plan_documents').select('*').eq('museum_id', museum.id).is('deleted_at', null),
         supabase.from('emergency_salvage_priorities').select('*, objects(id, title, accession_no, emoji)').eq('museum_id', museum.id).order('priority_rank', { ascending: true }),
+        supabase.from('damage_reports').select('id, object_id, emergency_event_id, severity, status').eq('museum_id', museum.id).not('emergency_event_id', 'is', null),
       ])
       setMuseum(museum)
       setIsOwner(isOwner)
@@ -169,6 +180,15 @@ export default function EmergencyPage() {
       setPlans(plans || [])
       setEvents(evts || [])
       setAllObjects(objs || [])
+      // event_id → damage reports logged from that event
+      const dmg: Record<string, DamageLink[]> = {}
+      for (const d of (eventDamage || [])) {
+        if (!d.emergency_event_id) continue
+        if (!dmg[d.emergency_event_id]) dmg[d.emergency_event_id] = []
+        dmg[d.emergency_event_id].push(d)
+      }
+      setDamageByEvent(dmg)
+
       // build map: event_id → [object records]
       const map: Record<string, EventObjectLink[]> = {}
       for (const link of (eoLinks || [])) {
@@ -567,12 +587,22 @@ export default function EmergencyPage() {
                                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">Affected Objects</div>
                                 {affectedObjects.length > 0 && (
                                   <div className="flex flex-wrap gap-2 mb-2">
-                                    {affectedObjects.map(link => (
-                                      <div key={link.object_id} className="flex items-center gap-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded px-2 py-1">
-                                        <span className="text-xs text-stone-700 dark:text-stone-300">{link.objects?.emoji} {link.objects?.title}</span>
-                                        {canEdit && <button type="button" onClick={() => removeObjectFromEvent(ev.id, link.object_id)} className="text-stone-400 hover:text-red-500 ml-1 text-xs">×</button>}
-                                      </div>
-                                    ))}
+                                    {affectedObjects.map(link => {
+                                      const reports = damageByEvent[ev.id]?.filter(d => d.object_id === link.object_id) ?? []
+                                      return (
+                                        <div key={link.object_id} className="flex items-center gap-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded px-2 py-1">
+                                          <span className="text-xs text-stone-700 dark:text-stone-300">{link.objects?.emoji} {link.objects?.title}</span>
+                                          {/* Damage reports are only creatable on an object's Damage tab, so
+                                              link there carrying the event rather than build a second form. */}
+                                          {canEdit && (
+                                            reports.length > 0
+                                              ? <a href={`/dashboard/objects/${link.object_id}?tab=damage`} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 ml-1">{reports.length} report{reports.length === 1 ? '' : 's'} →</a>
+                                              : <a href={`/dashboard/objects/${link.object_id}?tab=damage&event=${ev.id}`} className="text-xs font-mono text-stone-400 hover:text-amber-600 dark:hover:text-amber-500 ml-1">Log damage →</a>
+                                          )}
+                                          {canEdit && <button type="button" onClick={() => removeObjectFromEvent(ev.id, link.object_id)} className="text-stone-400 hover:text-red-500 ml-1 text-xs">×</button>}
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 )}
                                 {canEdit && (

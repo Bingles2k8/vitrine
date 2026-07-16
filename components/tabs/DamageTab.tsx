@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, DAMAGE_TYPES, DAMAGE_SEVERITIES, DAMAGE_SEVERITY_STYLES, CURRENCIES } from '@/components/tabs/shared'
 import { useToast } from '@/components/Toast'
 import { getPlan } from '@/lib/plans'
@@ -44,6 +45,29 @@ interface DamageReport {
 
 const OBJECT_STATUSES_AFTER = ['Intact — no treatment needed', 'Awaiting conservation', 'Under conservation', 'Repaired', 'Irreparable — retained', 'Write-off']
 
+// Emergency events and damage reports use different vocabularies. When a report
+// is logged from an event we can only suggest a type; the user can change it.
+const EVENT_TYPE_TO_DAMAGE_TYPE: Record<string, string> = {
+  'Fire': 'Environmental',
+  'Flood': 'Environmental',
+  'Water Damage': 'Environmental',
+  'Environmental Incident': 'Environmental',
+  'Power Failure': 'Environmental',
+  'Structural Damage': 'Accidental',
+  'Theft': 'Theft',
+  'Vandalism': 'Vandalism',
+  'Pest': 'Pest',
+  'Other': 'Unknown',
+}
+
+interface LinkedEvent {
+  id: string
+  event_reference: string | null
+  event_type: string | null
+  event_date: string | null
+  description: string | null
+}
+
 export default function DamageTab({ canEdit, object, museum, supabase, logActivity }: DamageTabProps) {
   const [damageHistory, setDamageHistory] = useState<DamageReport[]>([])
   const [damageLoaded, setDamageLoaded] = useState(false)
@@ -55,10 +79,33 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
   const { toast } = useToast()
   const canAttach = canEdit && getPlan(museum.plan).compliance
 
+  // Arriving from an emergency event's "Log damage" link. The report is linked
+  // to the event and the form starts from what the event already knows.
+  const searchParams = useSearchParams()
+  const fromEventId = searchParams.get('event')
+  const [linkedEvent, setLinkedEvent] = useState<LinkedEvent | null>(null)
+
   useEffect(() => {
     supabase.from('damage_reports').select('*').eq('object_id', object.id).order('created_at', { ascending: false })
       .then(({ data }: { data: DamageReport[] | null }) => { setDamageHistory(data || []); setDamageLoaded(true) })
   }, [object.id])
+
+  useEffect(() => {
+    if (!fromEventId) { setLinkedEvent(null); return }
+    supabase.from('emergency_events').select('id, event_reference, event_type, event_date, description')
+      .eq('id', fromEventId).maybeSingle()
+      .then(({ data }: { data: LinkedEvent | null }) => {
+        if (!data) return
+        setLinkedEvent(data)
+        setDamageForm(f => ({
+          ...f,
+          incident_date: f.incident_date || (data.event_date || '').slice(0, 10),
+          discovered_date: f.discovered_date || (data.event_date || '').slice(0, 10),
+          damage_type: EVENT_TYPE_TO_DAMAGE_TYPE[data.event_type || ''] || f.damage_type,
+          cause: f.cause || (data.event_type ? `${data.event_type}${data.event_reference ? ` (${data.event_reference})` : ''}` : ''),
+        }))
+      })
+  }, [fromEventId])
 
   const blankDamageForm = { incident_date: '', discovered_date: '', discovered_by: '', damage_type: 'Accidental', severity: 'Minor', description: '', cause: '', location_at_incident: '', repair_estimate: '', repair_currency: 'GBP', insurance_claim_ref: '', insurance_notified: false, police_report_ref: '', insurance_claim_outcome: '', object_status_after_event: '', reported_to_governing_body: false, action_taken: '', notes: '' }
 
@@ -138,6 +185,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
         police_report_ref: damageForm.police_report_ref || null,
         insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
         object_status_after_event: damageForm.object_status_after_event || null,
+        emergency_event_id: linkedEvent?.id ?? null,
         object_id: object.id, museum_id: museum.id,
       })
     )
@@ -173,6 +221,13 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
       {canEdit && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
           <div className={sectionTitle}>{editingId ? 'Edit Damage Report' : 'Report Damage'}</div>
+          {linkedEvent && !editingId && (
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+              This report will be linked to <span className="font-mono">{linkedEvent.event_reference || linkedEvent.event_type}</span>
+              {linkedEvent.event_date ? ` on ${new Date(linkedEvent.event_date).toLocaleDateString('en-GB')}` : ''}. The dates and
+              type below are filled in from the event, so change anything that is not right for this object.
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls} data-learn="damage.incident_date">Incident Date <span className="text-red-400">*</span></label>
