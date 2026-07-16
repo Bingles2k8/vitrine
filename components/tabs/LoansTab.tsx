@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface LoanRecord {
@@ -86,9 +87,11 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
   async function addLoan() {
     if (!loanForm.borrowing_institution || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
-    const { data: newLoan, error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, status: loanForm.status || 'Requested', loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null }).select('id').single()
+    const { data: newLoan, error: loanErr } = await insertWithReference(
+      supabase,
+      { table: 'loans', column: 'loan_number', prefix: 'LN', museumId: museum.id },
+      loanNumber => ({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, status: loanForm.status || 'Requested', loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null })
+    )
     if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
     // Only an outbound loan puts the object on loan elsewhere; a borrowed (In) object
     // keeps its own status and its loan state is carried by the loan register.
@@ -96,7 +99,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
       await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
       set('status', 'On Loan')
     }
-    if (stagedDocs.length > 0) {
+    if (stagedDocs.length > 0 && newLoan) {
       const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'loan', newLoan.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])

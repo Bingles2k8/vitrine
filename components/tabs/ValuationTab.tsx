@@ -8,6 +8,7 @@ import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 
 const VALUATION_BASES = ['Fair market value', 'Replacement value', 'Insurance value', 'Salvage value', 'Nominal', 'Other']
 const VALUATION_PURPOSES = ['Insurance', 'Sale', 'Estate', 'Grant', 'Probate', 'Internal', 'Other']
@@ -61,20 +62,21 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   async function addValuation() {
     if (!valuationForm.value || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const count = valuations.filter(v => v.valuation_reference?.startsWith(`VL-${year}-`)).length
-    const valRef = `VL-${year}-${String(count + 1).padStart(3, '0')}`
-    const { data: inserted, error: valErr } = await supabase.from('valuations').insert({
-      ...valuationForm,
-      value: parseFloat(valuationForm.value),
-      object_id: object.id,
-      museum_id: museum.id,
-      valuation_reference: valRef,
-      valuation_basis: valuationForm.valuation_basis || null,
-      method: valuationForm.method || null,
-      purpose: valuationForm.purpose || null,
-      validity_date: valuationForm.validity_date || null,
-    }).select('id').single()
+    const { data: inserted, error: valErr } = await insertWithReference(
+      supabase,
+      { table: 'valuations', column: 'valuation_reference', prefix: 'VL', museumId: museum.id },
+      valRef => ({
+        ...valuationForm,
+        value: parseFloat(valuationForm.value),
+        object_id: object.id,
+        museum_id: museum.id,
+        valuation_reference: valRef,
+        valuation_basis: valuationForm.valuation_basis || null,
+        method: valuationForm.method || null,
+        purpose: valuationForm.purpose || null,
+        validity_date: valuationForm.validity_date || null,
+      })
+    )
     if (valErr) { toast(valErr.message, 'error'); setSubmitting(false); return }
     if (stagedDocs.length > 0 && inserted) {
       const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'valuation', inserted.id)

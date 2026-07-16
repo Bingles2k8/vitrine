@@ -7,6 +7,7 @@ import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 
 interface ExitsTabProps {
   canEdit: boolean
@@ -118,24 +119,26 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
   async function addExit() {
     if (!exitForm.recipient_name.trim() || !exitForm.exit_authorised_by.trim() || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const exitNumber = `OE-${year}-${String(exitHistory.length + 1).padStart(3, '0')}`
     const isTemp = TEMP_REASONS.has(exitForm.exit_reason)
-    const { data: inserted, error } = await supabase.from('object_exits').insert({
-      museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
-      exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
-      recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
-      destination_address: exitForm.destination_address || null,
-      transport_method: exitForm.transport_method || null,
-      insurance_indemnity_confirmed: exitForm.insurance_indemnity_confirmed,
-      packing_notes: exitForm.packing_notes || null,
-      exit_condition: exitForm.exit_condition || null,
-      signed_receipt: exitForm.signed_receipt,
-      signed_receipt_date: exitForm.signed_receipt ? (exitForm.signed_receipt_date || today) : null,
-      expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
-      exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
-      related_loan_id: exitForm.related_loan_id || null,
-    }).select('id').single()
+    const { data: inserted, error, reference: exitNumber } = await insertWithReference(
+      supabase,
+      { table: 'object_exits', column: 'exit_number', prefix: 'OE', museumId: museum.id },
+      exitNumber => ({
+        museum_id: museum.id, object_id: object.id, exit_number: exitNumber,
+        exit_date: exitForm.exit_date, exit_reason: exitForm.exit_reason,
+        recipient_name: exitForm.recipient_name, recipient_contact: exitForm.recipient_contact || null,
+        destination_address: exitForm.destination_address || null,
+        transport_method: exitForm.transport_method || null,
+        insurance_indemnity_confirmed: exitForm.insurance_indemnity_confirmed,
+        packing_notes: exitForm.packing_notes || null,
+        exit_condition: exitForm.exit_condition || null,
+        signed_receipt: exitForm.signed_receipt,
+        signed_receipt_date: exitForm.signed_receipt ? (exitForm.signed_receipt_date || today) : null,
+        expected_return_date: isTemp && exitForm.expected_return_date ? exitForm.expected_return_date : null,
+        exit_authorised_by: exitForm.exit_authorised_by, notes: exitForm.notes || null,
+        related_loan_id: exitForm.related_loan_id || null,
+      })
+    )
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
 
     // Update object's current location and log movement on exit.

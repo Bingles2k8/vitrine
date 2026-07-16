@@ -578,6 +578,96 @@ export type Database = {
           },
         ]
       }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          assigned_to_name: string | null
+          assigned_to_user_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          object_id: string | null
+          recipient_museum_id: string
+          sender_museum_id: string
+          started_by_name: string
+          started_by_user_id: string
+          subject: string
+        }
+        Insert: {
+          assigned_to_name?: string | null
+          assigned_to_user_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          object_id?: string | null
+          recipient_museum_id: string
+          sender_museum_id: string
+          started_by_name: string
+          started_by_user_id: string
+          subject: string
+        }
+        Update: {
+          assigned_to_name?: string | null
+          assigned_to_user_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          object_id?: string | null
+          recipient_museum_id?: string
+          sender_museum_id?: string
+          started_by_name?: string
+          started_by_user_id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_recipient_museum_id_fkey"
+            columns: ["recipient_museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_sender_museum_id_fkey"
+            columns: ["sender_museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       damage_reports: {
         Row: {
           action_taken: string | null
@@ -679,6 +769,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      deletion_log: {
+        Row: {
+          deleted_at: string
+          id: string
+          museum_id: string
+          museum_name: string | null
+          museum_slug: string | null
+          owner_email: string | null
+          reason: string
+        }
+        Insert: {
+          deleted_at?: string
+          id?: string
+          museum_id: string
+          museum_name?: string | null
+          museum_slug?: string | null
+          owner_email?: string | null
+          reason: string
+        }
+        Update: {
+          deleted_at?: string
+          id?: string
+          museum_id?: string
+          museum_name?: string | null
+          museum_slug?: string | null
+          owner_email?: string | null
+          reason?: string
+        }
+        Relationships: []
       }
       disposal_record_documents: {
         Row: {
@@ -1551,6 +1671,27 @@ export type Database = {
           },
         ]
       }
+      fx_rates: {
+        Row: {
+          base: string
+          fetched_at: string
+          quote: string
+          rate: number
+        }
+        Insert: {
+          base: string
+          fetched_at?: string
+          quote: string
+          rate: number
+        }
+        Update: {
+          base?: string
+          fetched_at?: string
+          quote?: string
+          rate?: number
+        }
+        Relationships: []
+      }
       insurance_policies: {
         Row: {
           claims_procedure: string | null
@@ -2016,10 +2157,91 @@ export type Database = {
           },
         ]
       }
+      message_attachments: {
+        Row: {
+          filename: string
+          id: string
+          message_id: string
+          mime_type: string
+          size_bytes: number
+          url: string
+        }
+        Insert: {
+          filename: string
+          id?: string
+          message_id: string
+          mime_type: string
+          size_bytes: number
+          url: string
+        }
+        Update: {
+          filename?: string
+          id?: string
+          message_id?: string
+          mime_type?: string
+          size_bytes?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_museum_id: string
+          sender_name: string
+          sender_user_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_museum_id: string
+          sender_name: string
+          sender_user_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_museum_id?: string
+          sender_name?: string
+          sender_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_museum_id_fkey"
+            columns: ["sender_museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       museums: {
         Row: {
           about_text: string | null
           accent_color: string | null
+          accept_messages: boolean
           address: string | null
           card_metadata: string | null
           card_padding: string | null
@@ -2032,17 +2254,26 @@ export type Database = {
           contact_phone: string | null
           created_at: string | null
           dark_mode: boolean | null
+          deletion_warning_30d_sent_at: string | null
+          deletion_warning_7d_sent_at: string | null
           discoverable: boolean
+          display_currencies: string[] | null
+          ever_paid: boolean
           facilities: string | null
           footer_text: string | null
           grid_columns: number | null
+          header_image_zoom: number
           heading_font: string
           hero_height: string | null
           hero_image_position: string
           hero_image_url: string | null
+          hide_money_values: boolean
           hide_vitrine_branding: boolean | null
           id: string
           image_ratio: string | null
+          is_test_account: boolean
+          lock_reason: string | null
+          locked_at: string | null
           logo_emoji: string | null
           logo_image_url: string | null
           maps_embed_url: string | null
@@ -2054,6 +2285,12 @@ export type Database = {
           pending_downgrade_plan: string | null
           plan: string | null
           primary_color: string | null
+          reengage_a3_sent_at: string | null
+          reengage_a30_sent_at: string | null
+          reengage_a7_sent_at: string | null
+          reengage_b180_sent_at: string | null
+          reengage_b30_sent_at: string | null
+          scheduled_deletion_at: string | null
           seo_description: string | null
           show_collection_value: boolean | null
           show_wanted: boolean | null
@@ -2069,11 +2306,13 @@ export type Database = {
           stripe_subscription_id: string | null
           tagline: string | null
           template: string | null
+          trial_used_at: string | null
           ui_mode: string
         }
         Insert: {
           about_text?: string | null
           accent_color?: string | null
+          accept_messages?: boolean
           address?: string | null
           card_metadata?: string | null
           card_padding?: string | null
@@ -2086,17 +2325,26 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string | null
           dark_mode?: boolean | null
+          deletion_warning_30d_sent_at?: string | null
+          deletion_warning_7d_sent_at?: string | null
           discoverable?: boolean
+          display_currencies?: string[] | null
+          ever_paid?: boolean
           facilities?: string | null
           footer_text?: string | null
           grid_columns?: number | null
+          header_image_zoom?: number
           heading_font?: string
           hero_height?: string | null
           hero_image_position?: string
           hero_image_url?: string | null
+          hide_money_values?: boolean
           hide_vitrine_branding?: boolean | null
           id?: string
           image_ratio?: string | null
+          is_test_account?: boolean
+          lock_reason?: string | null
+          locked_at?: string | null
           logo_emoji?: string | null
           logo_image_url?: string | null
           maps_embed_url?: string | null
@@ -2108,6 +2356,12 @@ export type Database = {
           pending_downgrade_plan?: string | null
           plan?: string | null
           primary_color?: string | null
+          reengage_a3_sent_at?: string | null
+          reengage_a30_sent_at?: string | null
+          reengage_a7_sent_at?: string | null
+          reengage_b180_sent_at?: string | null
+          reengage_b30_sent_at?: string | null
+          scheduled_deletion_at?: string | null
           seo_description?: string | null
           show_collection_value?: boolean | null
           show_wanted?: boolean | null
@@ -2123,11 +2377,13 @@ export type Database = {
           stripe_subscription_id?: string | null
           tagline?: string | null
           template?: string | null
+          trial_used_at?: string | null
           ui_mode?: string
         }
         Update: {
           about_text?: string | null
           accent_color?: string | null
+          accept_messages?: boolean
           address?: string | null
           card_metadata?: string | null
           card_padding?: string | null
@@ -2140,17 +2396,26 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string | null
           dark_mode?: boolean | null
+          deletion_warning_30d_sent_at?: string | null
+          deletion_warning_7d_sent_at?: string | null
           discoverable?: boolean
+          display_currencies?: string[] | null
+          ever_paid?: boolean
           facilities?: string | null
           footer_text?: string | null
           grid_columns?: number | null
+          header_image_zoom?: number
           heading_font?: string
           hero_height?: string | null
           hero_image_position?: string
           hero_image_url?: string | null
+          hide_money_values?: boolean
           hide_vitrine_branding?: boolean | null
           id?: string
           image_ratio?: string | null
+          is_test_account?: boolean
+          lock_reason?: string | null
+          locked_at?: string | null
           logo_emoji?: string | null
           logo_image_url?: string | null
           maps_embed_url?: string | null
@@ -2162,6 +2427,12 @@ export type Database = {
           pending_downgrade_plan?: string | null
           plan?: string | null
           primary_color?: string | null
+          reengage_a3_sent_at?: string | null
+          reengage_a30_sent_at?: string | null
+          reengage_a7_sent_at?: string | null
+          reengage_b180_sent_at?: string | null
+          reengage_b30_sent_at?: string | null
+          scheduled_deletion_at?: string | null
           seo_description?: string | null
           show_collection_value?: boolean | null
           show_wanted?: boolean | null
@@ -2177,6 +2448,7 @@ export type Database = {
           stripe_subscription_id?: string | null
           tagline?: string | null
           template?: string | null
+          trial_used_at?: string | null
           ui_mode?: string
         }
         Relationships: []
@@ -2366,6 +2638,8 @@ export type Database = {
           recipient_contact: string | null
           recipient_name: string
           related_loan_id: string | null
+          returned_condition: string | null
+          returned_date: string | null
           signed_receipt: boolean
           signed_receipt_date: string | null
           transport_method: string | null
@@ -2388,6 +2662,8 @@ export type Database = {
           recipient_contact?: string | null
           recipient_name: string
           related_loan_id?: string | null
+          returned_condition?: string | null
+          returned_date?: string | null
           signed_receipt?: boolean
           signed_receipt_date?: string | null
           transport_method?: string | null
@@ -2410,6 +2686,8 @@ export type Database = {
           recipient_contact?: string | null
           recipient_name?: string
           related_loan_id?: string | null
+          returned_condition?: string | null
+          returned_date?: string | null
           signed_receipt?: boolean
           signed_receipt_date?: string | null
           transport_method?: string | null
@@ -2446,6 +2724,7 @@ export type Database = {
           is_primary: boolean
           museum_id: string
           object_id: string
+          phash: unknown
           sort_order: number
           url: string
         }
@@ -2456,6 +2735,7 @@ export type Database = {
           is_primary?: boolean
           museum_id: string
           object_id: string
+          phash?: unknown
           sort_order?: number
           url: string
         }
@@ -2466,6 +2746,7 @@ export type Database = {
           is_primary?: boolean
           museum_id?: string
           object_id?: string
+          phash?: unknown
           sort_order?: number
           url?: string
         }
@@ -2482,6 +2763,62 @@ export type Database = {
             columns: ["object_id"]
             isOneToOne: false
             referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      object_share_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          label: string | null
+          last_viewed_at: string | null
+          max_views: number | null
+          museum_id: string
+          passcode_hash: string
+          passcode_salt: string
+          revoked_at: string | null
+          scope_filter: Json
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          last_viewed_at?: string | null
+          max_views?: number | null
+          museum_id: string
+          passcode_hash: string
+          passcode_salt: string
+          revoked_at?: string | null
+          scope_filter?: Json
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          last_viewed_at?: string | null
+          max_views?: number | null
+          museum_id?: string
+          passcode_hash?: string
+          passcode_salt?: string
+          revoked_at?: string | null
+          scope_filter?: Json
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "object_share_links_museum_id_fkey"
+            columns: ["museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
             referencedColumns: ["id"]
           },
         ]
@@ -2514,6 +2851,7 @@ export type Database = {
           associated_place: string | null
           attributed_to: string | null
           attribution_notes: string | null
+          barcode: string | null
           category: string | null
           colour: string | null
           condition_assessor: string | null
@@ -2577,6 +2915,11 @@ export type Database = {
           non_accession_reason: string | null
           number_of_parts: number | null
           object_type: string | null
+          origin_country: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          origin_map_public: boolean
+          origin_place: string | null
           other_names: string | null
           physical_description: string | null
           physical_materials: string | null
@@ -2634,6 +2977,7 @@ export type Database = {
           associated_place?: string | null
           attributed_to?: string | null
           attribution_notes?: string | null
+          barcode?: string | null
           category?: string | null
           colour?: string | null
           condition_assessor?: string | null
@@ -2697,6 +3041,11 @@ export type Database = {
           non_accession_reason?: string | null
           number_of_parts?: number | null
           object_type?: string | null
+          origin_country?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          origin_map_public?: boolean
+          origin_place?: string | null
           other_names?: string | null
           physical_description?: string | null
           physical_materials?: string | null
@@ -2754,6 +3103,7 @@ export type Database = {
           associated_place?: string | null
           attributed_to?: string | null
           attribution_notes?: string | null
+          barcode?: string | null
           category?: string | null
           colour?: string | null
           condition_assessor?: string | null
@@ -2817,6 +3167,11 @@ export type Database = {
           non_accession_reason?: string | null
           number_of_parts?: number | null
           object_type?: string | null
+          origin_country?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          origin_map_public?: boolean
+          origin_place?: string | null
           other_names?: string | null
           physical_description?: string | null
           physical_materials?: string | null
@@ -2889,6 +3244,63 @@ export type Database = {
           },
           {
             foreignKeyName: "page_views_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_loans: {
+        Row: {
+          borrower_contact: string | null
+          borrower_name: string
+          created_at: string
+          due_back: string | null
+          id: string
+          lent_on: string
+          museum_id: string
+          note: string | null
+          object_id: string
+          reminder_sent_at: string | null
+          returned_on: string | null
+        }
+        Insert: {
+          borrower_contact?: string | null
+          borrower_name: string
+          created_at?: string
+          due_back?: string | null
+          id?: string
+          lent_on: string
+          museum_id: string
+          note?: string | null
+          object_id: string
+          reminder_sent_at?: string | null
+          returned_on?: string | null
+        }
+        Update: {
+          borrower_contact?: string | null
+          borrower_name?: string
+          created_at?: string
+          due_back?: string | null
+          id?: string
+          lent_on?: string
+          museum_id?: string
+          note?: string | null
+          object_id?: string
+          reminder_sent_at?: string | null
+          returned_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_loans_museum_id_fkey"
+            columns: ["museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_loans_object_id_fkey"
             columns: ["object_id"]
             isOneToOne: false
             referencedRelation: "objects"
@@ -3430,6 +3842,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_similar_object_images: {
+        Args: {
+          p_exclude_object_id?: string
+          p_limit?: number
+          p_museum_id: string
+          p_phash: unknown
+          p_threshold?: number
+        }
+        Returns: {
+          accession_no: string
+          distance: number
+          emoji: string
+          object_id: string
+          title: string
+          url: string
+        }[]
+      }
       increment_slot_bookings: {
         Args: { qty: number; slot_uuid: string }
         Returns: boolean
@@ -3473,7 +3902,181 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      insert_object_if_quota_ok: {
+        Args: {
+          p_created_by: string
+          p_limit: number
+          p_museum_id: string
+          p_object_data: Json
+          p_owner_id: string
+        }
+        Returns: {
+          accession_date: string | null
+          accession_no: string | null
+          accession_register_confirmed: boolean | null
+          acknowledgement_sent_to_donor: boolean | null
+          acquisition_authorised_by: string | null
+          acquisition_authority_date: string | null
+          acquisition_currency: string | null
+          acquisition_date: string | null
+          acquisition_documentation_ref: string | null
+          acquisition_ethics_notes: string | null
+          acquisition_justification: string | null
+          acquisition_method: string | null
+          acquisition_note: string | null
+          acquisition_object_count: number | null
+          acquisition_source: string | null
+          acquisition_source_contact: string | null
+          acquisition_title_guarantee: string | null
+          acquisition_value: number | null
+          artist: string | null
+          associated_concept: string | null
+          associated_event: string | null
+          associated_organisation: string | null
+          associated_person: string | null
+          associated_place: string | null
+          attributed_to: string | null
+          attribution_notes: string | null
+          barcode: string | null
+          category: string | null
+          colour: string | null
+          condition_assessor: string | null
+          condition_date: string | null
+          condition_grade: string | null
+          conditions_attached_to_acquisition: string | null
+          copyright_status: string | null
+          copyright_status_checked: boolean | null
+          created_at: string | null
+          credit_line: string | null
+          culture: string | null
+          current_location: string | null
+          deaccession_protected: boolean | null
+          deleted_at: string | null
+          description: string | null
+          dimension_depth: number | null
+          dimension_height: number | null
+          dimension_notes: string | null
+          dimension_unit: string | null
+          dimension_weight: number | null
+          dimension_weight_unit: string | null
+          dimension_width: number | null
+          dimensions: string | null
+          disposal_authorization: string | null
+          disposal_date: string | null
+          disposal_method: string | null
+          disposal_note: string | null
+          disposal_recipient: string | null
+          distinguishing_features: string | null
+          emoji: string | null
+          estimated_value: number | null
+          estimated_value_currency: string | null
+          ethics_art_loss_register: boolean | null
+          ethics_cites: boolean | null
+          ethics_dealing_act: boolean | null
+          ethics_human_remains: boolean | null
+          featured_order: number | null
+          field_collection_info: string | null
+          formally_accessioned: boolean | null
+          full_description: string | null
+          hazard_note: string | null
+          historical_context: string | null
+          id: string
+          image_url: string | null
+          inscription: string | null
+          insured_value: number | null
+          insured_value_currency: string | null
+          inventoried_by: string | null
+          is_featured: boolean | null
+          is_gift: boolean | null
+          last_inventoried: string | null
+          legal_transfer_date: string | null
+          licence_type_terms: string | null
+          location_after_accessioning: string | null
+          location_note: string | null
+          maker_name: string | null
+          maker_role: string | null
+          marks: string | null
+          medium: string | null
+          museum_id: string | null
+          non_accession_reason: string | null
+          number_of_parts: number | null
+          object_type: string | null
+          origin_country: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          origin_map_public: boolean
+          origin_place: string | null
+          other_names: string | null
+          physical_description: string | null
+          physical_materials: string | null
+          production_date: string | null
+          production_date_early: string | null
+          production_date_late: string | null
+          production_date_qualifier: string | null
+          production_place: string | null
+          provenance: string | null
+          provenance_date_range: string | null
+          rarity: string | null
+          record_completeness: string | null
+          record_source: string | null
+          rights_expiry_date: string | null
+          rights_holder: string | null
+          rights_holder_contact: string | null
+          rights_in_obtained: boolean | null
+          rights_notes: string | null
+          rights_out_granted: boolean | null
+          rights_type: string | null
+          school_style_period: string | null
+          shape: string | null
+          show_on_site: boolean
+          status: string | null
+          subject_depicted: string | null
+          surface_treatment: string | null
+          technique: string | null
+          title: string
+          year: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "objects"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      insert_staff_member_if_quota_ok: {
+        Args: {
+          p_access: string
+          p_department: string
+          p_email: string
+          p_limit: number
+          p_museum_id: string
+          p_name: string
+          p_role: string
+        }
+        Returns: {
+          access: string
+          created_at: string | null
+          department: string
+          email: string
+          id: string
+          invited_at: string | null
+          museum_id: string
+          name: string
+          role: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "staff_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_staff_of_museum: { Args: { museum_uuid: string }; Returns: boolean }
+      museum_has_compliance_plan: {
+        Args: { p_museum_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

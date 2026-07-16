@@ -7,6 +7,7 @@ import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface DamageTabProps {
@@ -128,17 +129,18 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
   async function addDamage() {
     if (!damageForm.incident_date || !damageForm.discovered_date || !damageForm.discovered_by || !damageForm.description || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const existingCount = damageHistory.filter(r => r.report_number?.startsWith(`DR-${year}-`)).length
-    const reportNumber = `DR-${year}-${String(existingCount + 1).padStart(3, '0')}`
-    const { data: inserted, error } = await supabase.from('damage_reports').insert({
-      ...damageForm, report_number: reportNumber,
-      repair_estimate: damageForm.repair_estimate ? Number(damageForm.repair_estimate) : null,
-      police_report_ref: damageForm.police_report_ref || null,
-      insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
-      object_status_after_event: damageForm.object_status_after_event || null,
-      object_id: object.id, museum_id: museum.id,
-    }).select('id').single()
+    const { data: inserted, error } = await insertWithReference(
+      supabase,
+      { table: 'damage_reports', column: 'report_number', prefix: 'DR', museumId: museum.id },
+      reportNumber => ({
+        ...damageForm, report_number: reportNumber,
+        repair_estimate: damageForm.repair_estimate ? Number(damageForm.repair_estimate) : null,
+        police_report_ref: damageForm.police_report_ref || null,
+        insurance_claim_outcome: damageForm.insurance_claim_outcome || null,
+        object_status_after_event: damageForm.object_status_after_event || null,
+        object_id: object.id, museum_id: museum.id,
+      })
+    )
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     if (stagedDocs.length > 0 && inserted) {
       const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'damage', inserted.id)

@@ -8,6 +8,7 @@ import { getPlan } from '@/lib/plans'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 
 const COPYRIGHT_TOOLTIPS: Record<string, string> = {
   'In Copyright': 'Someone holds the copyright and permission is needed to reproduce it',
@@ -90,16 +91,18 @@ export default function RightsTab({ form, set, canEdit, saving, object, museum, 
   async function addRightsRecord() {
     if (!rightsForm.rights_type || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const rightsReference = `RR-${year}-${String(rightsRecords.length + 1).padStart(3, '0')}`
-    const { data: newRecord, error } = await supabase.from('rights_records').insert({
-      museum_id: museum.id, object_id: object.id, rights_reference: rightsReference,
-      rights_type: rightsForm.rights_type, rights_status: rightsForm.rights_status,
-      rights_holder: rightsForm.rights_holder || null, expiry_date: rightsForm.expiry_date || null,
-      licence_terms: rightsForm.licence_terms || null, restrictions: rightsForm.restrictions || null,
-      rights_in: rightsForm.rights_in || null, rights_out: rightsForm.rights_out || null,
-      notes: rightsForm.notes || null,
-    }).select('id').single()
+    const { data: newRecord, error, reference: rightsReference } = await insertWithReference(
+      supabase,
+      { table: 'rights_records', column: 'rights_reference', prefix: 'RR', museumId: museum.id },
+      rightsReference => ({
+        museum_id: museum.id, object_id: object.id, rights_reference: rightsReference,
+        rights_type: rightsForm.rights_type, rights_status: rightsForm.rights_status,
+        rights_holder: rightsForm.rights_holder || null, expiry_date: rightsForm.expiry_date || null,
+        licence_terms: rightsForm.licence_terms || null, restrictions: rightsForm.restrictions || null,
+        rights_in: rightsForm.rights_in || null, rights_out: rightsForm.rights_out || null,
+        notes: rightsForm.notes || null,
+      })
+    )
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
     if (stagedRightsDocs.length > 0 && newRecord) {
       const failed = await uploadStagedDocs(stagedRightsDocs, object.id, museum.id, 'rights', newRecord.id)

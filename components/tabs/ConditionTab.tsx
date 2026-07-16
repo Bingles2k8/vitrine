@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -81,25 +82,26 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
     if (!conditionForm.grade || !conditionForm.assessed_at) return
     setSubmitting(true)
     try {
-      const year = new Date().getFullYear()
-      const count = conditionHistory.filter(h => h.assessment_reference?.startsWith(`CC-${year}-`)).length
-      const assessmentRef = `CC-${year}-${String(count + 1).padStart(3, '0')}`
       const effectiveReason = conditionForm.reason_for_check === 'Other' ? (conditionForm.other_reason || 'Other') : conditionForm.reason_for_check
 
-      const { data: newAssessment, error: insertErr } = await supabase.from('condition_assessments').insert({
-        assessment_reference: assessmentRef,
-        grade: conditionForm.grade,
-        assessed_at: conditionForm.assessed_at,
-        assessor: conditionForm.assessor,
-        notes: conditionForm.notes,
-        reason_for_check: effectiveReason || null,
-        long_description: conditionForm.long_description || null,
-        hazard_note: conditionForm.hazard_note || null,
-        recommendations: conditionForm.recommendations || null,
-        next_check_date: conditionForm.next_check_date || null,
-        object_id: object.id,
-        museum_id: museum.id,
-      }).select('id').single()
+      const { data: newAssessment, error: insertErr } = await insertWithReference(
+        supabase,
+        { table: 'condition_assessments', column: 'assessment_reference', prefix: 'CC', museumId: museum.id },
+        assessmentRef => ({
+          assessment_reference: assessmentRef,
+          grade: conditionForm.grade,
+          assessed_at: conditionForm.assessed_at,
+          assessor: conditionForm.assessor,
+          notes: conditionForm.notes,
+          reason_for_check: effectiveReason || null,
+          long_description: conditionForm.long_description || null,
+          hazard_note: conditionForm.hazard_note || null,
+          recommendations: conditionForm.recommendations || null,
+          next_check_date: conditionForm.next_check_date || null,
+          object_id: object.id,
+          museum_id: museum.id,
+        })
+      )
       if (insertErr) throw insertErr
 
       // Only overwrite the object snapshot if this assessment is not older than the current snapshot,
@@ -119,7 +121,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         set('hazard_note', conditionForm.hazard_note || '')
       }
 
-      if (stagedDocs.length > 0) {
+      if (stagedDocs.length > 0 && newAssessment) {
         const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'condition_assessment', newAssessment.id)
         if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])

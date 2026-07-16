@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumentPicker'
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
+import { insertWithReference } from '@/lib/nextReference'
 import AutocompleteInput from '@/components/AutocompleteInput'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
@@ -199,36 +200,37 @@ export default function ConservationTab({ form, canEdit, object, museum, supabas
   async function addConservation() {
     if (!conservationForm.treatment_type || submitting) return
     setSubmitting(true)
-    const year = new Date().getFullYear()
-    const count = conservationHistory.filter(t => t.treatment_reference?.startsWith(`CT-${year}-`)).length
-    const treatmentRef = `CT-${year}-${String(count + 1).padStart(3, '0')}`
     const effectiveType = conservationForm.treatment_type === 'Other'
       ? (conservationForm.other_treatment_type || 'Other')
       : conservationForm.treatment_type
 
-    const { data: newTreatment, error: consErr } = await supabase.from('conservation_treatments').insert({
-      treatment_name: conservationForm.treatment_name || null,
-      treatment_type: effectiveType,
-      conservator: conservationForm.conservator,
-      start_date: conservationForm.start_date || null,
-      end_date: conservationForm.end_date || null,
-      description: conservationForm.description,
-      condition_before: conservationForm.condition_description || null,
-      condition_after: conservationForm.condition_after || null,
-      outcome: conservationForm.outcome || null,
-      materials_used: conservationForm.materials_used || null,
-      cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null,
-      cost_currency: conservationForm.cost_currency || null,
-      recommendation_future: conservationForm.recommendation_future || null,
-      images: conservationForm.images,
-      object_id: object.id,
-      museum_id: museum.id,
-      treatment_reference: treatmentRef,
-    }).select('id').single()
+    const { data: newTreatment, error: consErr } = await insertWithReference(
+      supabase,
+      { table: 'conservation_treatments', column: 'treatment_reference', prefix: 'CT', museumId: museum.id },
+      treatmentRef => ({
+        treatment_name: conservationForm.treatment_name || null,
+        treatment_type: effectiveType,
+        conservator: conservationForm.conservator,
+        start_date: conservationForm.start_date || null,
+        end_date: conservationForm.end_date || null,
+        description: conservationForm.description,
+        condition_before: conservationForm.condition_description || null,
+        condition_after: conservationForm.condition_after || null,
+        outcome: conservationForm.outcome || null,
+        materials_used: conservationForm.materials_used || null,
+        cost: conservationForm.cost ? parseFloat(conservationForm.cost) : null,
+        cost_currency: conservationForm.cost_currency || null,
+        recommendation_future: conservationForm.recommendation_future || null,
+        images: conservationForm.images,
+        object_id: object.id,
+        museum_id: museum.id,
+        treatment_reference: treatmentRef,
+      })
+    )
 
     if (consErr) { toast(consErr.message, 'error'); setSubmitting(false); return }
 
-    if (stagedDocs.length > 0) {
+    if (stagedDocs.length > 0 && newTreatment) {
       const failed = await uploadStagedDocs(stagedDocs, object.id, museum.id, 'conservation_treatment', newTreatment.id)
       if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
       setStagedDocs([])
