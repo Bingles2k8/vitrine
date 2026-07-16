@@ -90,6 +90,24 @@ export default function RiskPage() {
     setSubmitting(false)
   }
 
+  const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
+
+  // Collection-wide risks (object_id null) have no object page to click through
+  // to, so without these they could never be progressed or removed — they sat
+  // at Open forever, inflating the Open Risks and Due for Review stats (B4).
+  async function updateCollectionRiskStatus(id: string, status: string) {
+    const { error } = await supabase.from('risk_register').update({ status }).eq('id', id)
+    if (error) { setFormError(error.message); return }
+    setRisks(prev => prev.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  async function deleteCollectionRisk(id: string) {
+    if (!confirm('Delete this collection-wide risk? This cannot be undone.')) return
+    const { error } = await supabase.from('risk_register').delete().eq('id', id)
+    if (error) { setFormError(error.message); return }
+    setRisks(prev => prev.filter(r => r.id !== id))
+  }
+
   if (loading) return (
     <DashboardShell museum={null} activePath="/dashboard/risk" onSignOut={() => {}}>
       <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950" />
@@ -296,6 +314,7 @@ export default function RiskPage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Likelihood</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Review Date</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -341,6 +360,18 @@ export default function RiskPage() {
                           <span className={`text-xs font-mono px-2 py-1 rounded-full ${STATUS_STYLES[r.status] || STATUS_STYLES.Open}`}>
                             {r.status}
                           </span>
+                        </td>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          {/* Object risks are managed on the object's Risk tab, which this
+                              row clicks through to. Collection-wide risks have no such page. */}
+                          {!r.object_id && canEdit && (
+                            <div className="flex items-center gap-3">
+                              {r.status === 'Open' && <button type="button" onClick={() => updateCollectionRiskStatus(r.id, 'Mitigated')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Mitigated</button>}
+                              {r.status !== 'Closed' && <button type="button" onClick={() => updateCollectionRiskStatus(r.id, 'Closed')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Close</button>}
+                              {r.status === 'Closed' && <button type="button" onClick={() => updateCollectionRiskStatus(r.id, 'Open')} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Reopen</button>}
+                              <button type="button" onClick={() => deleteCollectionRisk(r.id)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )

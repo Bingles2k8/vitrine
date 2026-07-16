@@ -6,9 +6,11 @@ import { inputCls, labelCls, sectionTitle, ENTRY_REASONS, ENTRY_OUTCOMES } from 
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
 import { getPlan } from '@/lib/plans'
+import { insertWithReference } from '@/lib/nextReference'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const ENTRY_METHODS = ['In person', 'Courier', 'Post / carrier', 'Found in collection', 'Digital transfer']
+const RETURNED_OUTCOME = 'Returned to depositor'
 
 interface EntryRecord {
   id: string
@@ -28,6 +30,9 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
   const [entryRecord, setEntryRecord] = useState<EntryRecord | null>(null)
   const [entryLoaded, setEntryLoaded] = useState(false)
   const [savingEntry, setSavingEntry] = useState(false)
+  // The outcome as last persisted, so we only fire the return-exit on the
+  // transition into "Returned to depositor" rather than on every save.
+  const [savedOutcome, setSavedOutcome] = useState('')
   const [entryForm, setEntryForm] = useState({
     entry_number: '',
     entry_date: '',
@@ -108,6 +113,7 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
           digital_acknowledgement: data.digital_acknowledgement || false,
           digital_acknowledgement_date: data.digital_acknowledgement_date || '',
         })
+        setSavedOutcome(data.outcome || '')
       }
       setEntryLoaded(true)
     }
@@ -129,10 +135,61 @@ export default function EntryTab({ object, museum, canEdit, supabase }: EntryTab
 
     if (error) {
       toast(error.message, 'error')
-    } else {
-      toast('Entry record saved')
+      setSavingEntry(false)
+      return
     }
+
+    // Returning a deposit means the object physically leaves. Record the exit
+    // and release the object, so the exit register and the object's status
+    // agree with the entry outcome (audit E2).
+    if (entryForm.outcome === RETURNED_OUTCOME && savedOutcome !== RETURNED_OUTCOME) {
+      await recordReturnExit()
+    }
+    setSavedOutcome(entryForm.outcome)
+
+    toast('Entry record saved')
     setSavingEntry(false)
+  }
+
+  /** Creates the exit for a returned deposit. Idempotent via related_entry_id. */
+  async function recordReturnExit() {
+    if (!entryRecord) return
+
+    const { data: existing } = await supabase
+      .from('object_exits')
+      .select('id')
+      .eq('related_entry_id', entryRecord.id)
+      .maybeSingle()
+    if (existing) return
+
+    const { error: exitErr } = await insertWithReference(
+      supabase,
+      { table: 'object_exits', column: 'exit_number', prefix: 'OE', museumId: museum.id },
+      exitNumber => ({
+        museum_id: museum.id,
+        object_id: object.id,
+        exit_number: exitNumber,
+        exit_date: today,
+        exit_reason: 'Return to depositor',
+        recipient_name: entryForm.depositor_name || entryForm.legal_owner || 'Depositor',
+        recipient_contact: entryForm.depositor_contact || null,
+        exit_authorised_by: entryForm.received_by || 'Not recorded',
+        signed_receipt: false,
+        notes: `Created automatically when entry ${entryRecord.entry_number ?? ''} was marked returned to depositor`.trim(),
+        related_entry_id: entryRecord.id,
+      })
+    )
+    if (exitErr) {
+      toast(`Entry saved, but the exit record could not be created: ${exitErr.message}`, 'error')
+      return
+    }
+
+    // objects.status is deliberately left alone. A returned deposit was never
+    // accessioned, so none of the STATUSES values describes it — and inventing
+    // one the badges, filters and simple-mode labels don't know would break
+    // them. The exit record and the entry outcome carry the fact.
+    toast(`Exit recorded for the returned deposit`)
+    router.refresh()
   }
 
   if (!entryLoaded) {

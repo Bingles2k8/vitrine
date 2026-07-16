@@ -636,7 +636,7 @@ export default function ObjectDetail() {
           )}
 
           {activeTab === 'loans' && (
-            <LoansTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} />
+            <LoansTab form={form} set={set} canEdit={canEdit} object={object} museum={museum} supabase={supabase} logActivity={logActivity} currentUserName={currentUserName} />
           )}
 
           {activeTab === 'rights' && (

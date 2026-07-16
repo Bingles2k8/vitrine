@@ -9,6 +9,10 @@ import StagedDocumentPicker, { type StagedDoc } from '@/components/StagedDocumen
 import { uploadStagedDocs } from '@/lib/uploadStagedDocs'
 import { insertWithReference } from '@/lib/nextReference'
 
+// A permanent exit for one of these reasons takes the object out of the
+// collection for good.
+const DEACCESSION_EXIT_REASONS = new Set(['Disposal', 'Sale', 'Transfer'])
+
 interface ExitsTabProps {
   canEdit: boolean
   object: any
@@ -89,12 +93,30 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     }
     const { error } = await supabase.from('object_exits').update(payload).eq('id', editingId)
     if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    // Editing a reason into (or out of) the deaccession set has to move the
+    // object with it; previously the status side-effect only ever fired on
+    // create, so an edited exit left the object mislabelled (B6).
+    await applyExitStatusEffects(exitForm.exit_reason)
     setEditingId(null)
     setExitForm(blankExitForm)
     const { data } = await supabase.from('object_exits').select('*').eq('object_id', object.id).order('exit_date', { ascending: false })
     setExitHistory(data || [])
     logActivity('exit_updated', `Updated exit record for "${object.title}" (${exitForm.exit_reason})`)
     setSubmitting(false)
+  }
+
+  /**
+   * A permanent exit deaccessions the object. deaccession_protected is set to
+   * match the disposal register's behaviour, so the DB trigger guards objects
+   * deaccessioned by either route (B6).
+   */
+  async function applyExitStatusEffects(reason: string) {
+    if (!DEACCESSION_EXIT_REASONS.has(reason)) return
+    const { error } = await supabase.from('objects').update({
+      status: 'Deaccessioned',
+      deaccession_protected: true,
+    }).eq('id', object.id)
+    if (error) toast(`Exit saved, but the object status could not be updated: ${error.message}`, 'error')
   }
 
   async function deleteExit(r: any) {
@@ -107,12 +129,17 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
   }
 
   async function markReturned(r: any) {
-    const when = typeof window !== 'undefined' ? window.prompt('Return date (YYYY-MM-DD)', today) : null
+    if (typeof window === 'undefined') return
+    const when = window.prompt('Return date (YYYY-MM-DD)', today)
     if (!when) return
-    const { error } = await supabase.from('object_exits').update({ returned_date: when }).eq('id', r.id)
+    // returned_condition exists on the table and shows in the register; without
+    // this it was never written by any path (B7).
+    const condition = window.prompt('Condition on return (optional)', '') ?? ''
+    const patch = { returned_date: when, returned_condition: condition.trim() || null }
+    const { error } = await supabase.from('object_exits').update(patch).eq('id', r.id)
     if (error) { toast(error.message, 'error'); return }
-    setExitHistory(h => h.map(x => x.id === r.id ? { ...x, returned_date: when } : x))
-    if (selectedRecord?.id === r.id) setSelectedRecord((s: any) => ({ ...s, returned_date: when }))
+    setExitHistory(h => h.map(x => x.id === r.id ? { ...x, ...patch } : x))
+    if (selectedRecord?.id === r.id) setSelectedRecord((s: any) => ({ ...s, ...patch }))
     logActivity('exit_returned', `Recorded return of exit ${r.exit_number || ''} for "${object.title}"`)
   }
 
@@ -145,10 +172,8 @@ export default function ExitsTab({ canEdit, object, museum, supabase, logActivit
     // A permanent disposal-type exit also sets the object status to
     // Deaccessioned so it no longer shows as On Display/Storage (finding 6.1).
     const newLocation = exitForm.destination_address?.trim() || 'Off-site'
-    const DEACCESSION_EXIT_REASONS = new Set(['Disposal', 'Sale', 'Transfer'])
-    const objectUpdate: Record<string, string> = { current_location: newLocation }
-    if (DEACCESSION_EXIT_REASONS.has(exitForm.exit_reason)) objectUpdate.status = 'Deaccessioned'
-    await supabase.from('objects').update(objectUpdate).eq('id', object.id)
+    await supabase.from('objects').update({ current_location: newLocation }).eq('id', object.id)
+    await applyExitStatusEffects(exitForm.exit_reason)
     await supabase.from('location_history').insert({
       museum_id: museum.id, object_id: object.id,
       location: newLocation, moved_by: exitForm.exit_authorised_by,

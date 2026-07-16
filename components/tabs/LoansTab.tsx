@@ -54,9 +54,10 @@ interface LoansTabProps {
   museum: { id: string; plan: string; [key: string]: unknown }
   supabase: SupabaseClient
   logActivity: (actionType: string, description: string) => Promise<void>
+  currentUserName?: string
 }
 
-export default function LoansTab({ form, set, canEdit, object, museum, supabase, logActivity }: LoansTabProps) {
+export default function LoansTab({ form, set, canEdit, object, museum, supabase, logActivity, currentUserName }: LoansTabProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loanHistory, setLoanHistory] = useState<LoanRecord[]>([])
@@ -240,19 +241,61 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
 
   async function confirmEndLoan(loanId: string) {
     const today = new Date().toISOString().slice(0, 10)
+    const loan = loanHistory.find(l => l.id === loanId)
+    const isInbound = loan?.direction === 'In'
+
     await supabase.from('loans').update({ status: 'Returned', condition_return: returnCondition || null, return_confirmed: true, return_confirmed_date: today }).eq('id', loanId)
-    await supabase.from('objects').update({ status: 'Storage', current_location: returnLocation }).eq('id', object.id)
-    if (returnLocation) {
-      await supabase.from('location_history').insert({
-        object_id: object.id, museum_id: museum.id,
-        location: returnLocation, reason: 'Loan', moved_by: '',
-      })
+
+    if (isInbound) {
+      // A borrowed object goes back to its lender — it does not land in our
+      // storage. Ending an inbound loan is an exit, not a return to shelf
+      // (audit 7.x / O5).
+      await recordInboundLoanExit(loan!, today)
+    } else {
+      await supabase.from('objects').update({ status: 'Storage', current_location: returnLocation }).eq('id', object.id)
+      if (returnLocation) {
+        await supabase.from('location_history').insert({
+          object_id: object.id, museum_id: museum.id,
+          location: returnLocation, reason: 'Loan', moved_by: currentUserName || 'Not recorded',
+        })
+      }
+      set('status', 'Storage')
+      set('current_location', returnLocation)
     }
-    set('status', 'Storage')
-    set('current_location', returnLocation)
+
     setLoanHistory(h => h.map(l => l.id === loanId ? { ...l, status: 'Returned' } : l))
     setEndingLoanId(null)
     router.refresh()
+  }
+
+  /** Records the exit for a borrowed object going back to its lender. */
+  async function recordInboundLoanExit(loan: LoanRecord, today: string) {
+    const { data: existing } = await supabase
+      .from('object_exits')
+      .select('id')
+      .eq('related_loan_id', loan.id)
+      .maybeSingle()
+    if (existing) return
+
+    const { error } = await insertWithReference(
+      supabase,
+      { table: 'object_exits', column: 'exit_number', prefix: 'OE', museumId: museum.id },
+      exitNumber => ({
+        museum_id: museum.id,
+        object_id: object.id,
+        exit_number: exitNumber,
+        exit_date: today,
+        exit_reason: 'Return to depositor',
+        recipient_name: loan.borrowing_institution || 'Lender',
+        recipient_contact: loan.contact_email || null,
+        exit_condition: returnCondition || null,
+        exit_authorised_by: loan.loan_coordinator || loan.approved_by || currentUserName || 'Not recorded',
+        signed_receipt: false,
+        notes: `Created automatically when inbound loan ${loan.loan_number ?? ''} was returned to its lender`.trim(),
+        related_loan_id: loan.id,
+      })
+    )
+    if (error) toast(`Loan closed, but the exit record could not be created: ${error.message}`, 'error')
   }
 
   return (

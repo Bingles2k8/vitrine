@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { insertWithReference } from '@/lib/nextReference'
 import { checkStorageQuota } from '@/lib/storageUsage'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
@@ -13,6 +14,17 @@ import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/component
 const inputCls = 'w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100'
 const labelCls = 'block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1.5'
 const DISPOSAL_METHODS = ['Sale', 'Transfer', 'Destruction', 'Return to Owner', 'Exchange', 'Gift to another museum']
+
+// Disposal methods and exit reasons are separate vocabularies; completing a
+// disposal has to express itself in the exit register's terms (EXIT_REASONS).
+const DISPOSAL_METHOD_TO_EXIT_REASON: Record<string, string> = {
+  'Sale': 'Sale',
+  'Transfer': 'Transfer',
+  'Exchange': 'Transfer',
+  'Gift to another museum': 'Transfer',
+  'Return to Owner': 'Return to depositor',
+  'Destruction': 'Disposal',
+}
 const CURRENCIES = ['GBP', 'USD', 'EUR', 'CHF', 'AUD', 'CAD', 'JPY']
 const DISPOSAL_DOC_TYPES = ['Authorisation Letter', 'Governing Body Minutes', 'Transfer Agreement', 'Sale Receipt', 'Public Notice', 'Deaccession Form', 'Correspondence', 'Other']
 const DISPOSAL_SELECT = '*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)'
@@ -256,12 +268,63 @@ export default function DisposalPage() {
   }
 
   async function deleteRecord(id: string) {
+    const record = records.find(r => r.id === id)
+    // A completed disposal has protected its object. Deleting the record would
+    // strand that object: permanently Deaccessioned, with the trigger telling
+    // the user to "reverse the disposal in the Disposal register" — the very
+    // row they just deleted. Reverse it first.
+    if (record?.status === 'Completed') {
+      setError('Completed disposals cannot be deleted. Reverse the disposal first, which releases the object.')
+      return
+    }
     if (!confirm('Delete this disposal record? This cannot be undone.')) return
     const { error: err } = await supabase.from('disposal_records').delete().eq('id', id)
     if (err) { setError(err.message); return }
     setRecords(r => r.filter(rec => rec.id !== id))
     if (editingId === id) cancelEdit()
     if (expandedRecordId === id) setExpandedRecordId(null)
+  }
+
+  /**
+   * Unwinds a completed disposal: releases the object, removes the exit the
+   * completion created, and marks the record Cancelled.
+   *
+   * The two object updates cannot be merged. The trigger keys off
+   * OLD.deaccession_protected, so an update that clears the flag *and* changes
+   * status in one statement is still rejected — the flag must be cleared by an
+   * update that leaves status alone.
+   */
+  async function reverseDisposal(id: string) {
+    const record = records.find(r => r.id === id)
+    if (!record) return
+    if (!confirm('Reverse this disposal?\n\nThe object will be released back into the collection and its exit record removed. The disposal record is kept, marked Cancelled.')) return
+
+    if (record.object_id) {
+      const { error: unlockErr } = await supabase
+        .from('objects')
+        .update({ deaccession_protected: false })
+        .eq('id', record.object_id)
+      if (unlockErr) { setError(`Could not release the object: ${unlockErr.message}`); return }
+
+      const { error: resetErr } = await supabase.from('objects').update({
+        status: 'Storage',
+        disposal_method: null,
+        disposal_date: null,
+        disposal_authorization: null,
+        disposal_recipient: null,
+        disposal_note: null,
+      }).eq('id', record.object_id)
+      if (resetErr) { setError(`Object released but could not be reset: ${resetErr.message}`); return }
+    }
+
+    const { error: exitErr } = await supabase.from('object_exits').delete().eq('related_disposal_id', id)
+    if (exitErr) { setError(`Object released, but its exit record could not be removed: ${exitErr.message}`); return }
+
+    const { error: statusErr } = await supabase.from('disposal_records').update({ status: 'Cancelled' }).eq('id', id)
+    if (statusErr) { setError(statusErr.message); return }
+
+    setRecords(r => r.map(rec => rec.id === id ? { ...rec, status: 'Cancelled' } : rec))
+    setError('')
   }
 
   async function updateStatus(id: string, status: string) {
@@ -281,8 +344,43 @@ export default function DisposalPage() {
         deaccession_protected: true,
       }).eq('id', record.object_id)
       if (objErr) { setError(`Disposal marked complete, but object sync failed: ${objErr.message}`) }
+      await createExitForDisposal(record)
     }
     setRecords(r => r.map(rec => rec.id === id ? { ...rec, status } : rec))
+  }
+
+  /**
+   * A completed disposal means the object physically left. Record that exit so
+   * the object's own history and the exit register agree with the disposal
+   * register (audit 6.5). Idempotent via related_disposal_id.
+   */
+  async function createExitForDisposal(record: DisposalRecordRow) {
+    if (!record.object_id || !museum) return
+
+    const { data: existing } = await supabase
+      .from('object_exits')
+      .select('id')
+      .eq('related_disposal_id', record.id)
+      .maybeSingle()
+    if (existing) return
+
+    const { error: exitErr } = await insertWithReference(
+      supabase,
+      { table: 'object_exits', column: 'exit_number', prefix: 'OE', museumId: museum.id },
+      exitNumber => ({
+        museum_id: museum.id,
+        object_id: record.object_id,
+        exit_number: exitNumber,
+        exit_date: record.deaccession_date,
+        exit_reason: DISPOSAL_METHOD_TO_EXIT_REASON[record.disposal_method ?? ''] ?? 'Disposal',
+        recipient_name: record.recipient_name || 'Not recorded',
+        exit_authorised_by: record.authorised_by || 'Not recorded',
+        signed_receipt: false,
+        notes: `Created automatically on completion of disposal ${record.disposal_reference ?? ''}`.trim(),
+        related_disposal_id: record.id,
+      })
+    )
+    if (exitErr) setError(`Disposal completed, but the exit record could not be created: ${exitErr.message}`)
   }
 
   if (loading) return (
@@ -539,7 +637,9 @@ export default function DisposalPage() {
                             {(r.status === 'Proposed' || r.status === 'Approved') && <button type="button" onClick={() => updateStatus(r.id, 'Rejected')} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Reject</button>}
                             {r.status !== 'Completed' && r.status !== 'Cancelled' && r.status !== 'Rejected' && <button type="button" onClick={() => updateStatus(r.id, 'Cancelled')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Cancel</button>}
                             {r.status !== 'Completed' && <button type="button" onClick={() => startEdit(r)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Edit</button>}
-                            <button type="button" onClick={() => deleteRecord(r.id)} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>
+                            {r.status === 'Completed'
+                              ? <button type="button" onClick={() => reverseDisposal(r.id)} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Reverse</button>
+                              : <button type="button" onClick={() => deleteRecord(r.id)} className="text-xs font-mono text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">Delete</button>}
                             <button type="button" onClick={() => setExpandedRecordId(isExpanded ? null : r.id)} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">{isExpanded ? '▲' : '▼'}</button>
                           </div>
                         </td>
