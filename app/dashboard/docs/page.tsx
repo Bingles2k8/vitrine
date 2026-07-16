@@ -657,6 +657,17 @@ export default function DocumentationPlanPage() {
               <div className="flex justify-between mt-1 text-xs font-mono text-stone-300 dark:text-stone-600">
                 <span>0%</span><span>50%</span><span>100%</span>
               </div>
+              {/* The index that explains what this score measures. Opens in a new
+                  tab: /compliance is the public marketing page with its own dark
+                  shell, so replacing the dashboard with it reads as getting lost. */}
+              <a
+                href="/compliance"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-4 text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+              >
+                What each register covers ↗
+              </a>
             </div>
           </div>
 

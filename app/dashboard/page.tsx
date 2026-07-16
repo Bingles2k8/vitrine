@@ -15,6 +15,7 @@ import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue
 import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 import { fetchAll } from '@/lib/fetchAll'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
+import UpgradeChecklist from '@/components/UpgradeChecklist'
 
 const STATUS_STYLES: Record<string, string> = {
   'Entry':         'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
@@ -42,6 +43,7 @@ export default function Dashboard() {
   const [collectionCategory, setCollectionCategory] = useState('')
   const [savingDiscovery, setSavingDiscovery] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(true) // true until localStorage checked
+  const [showUpgradeChecklist, setShowUpgradeChecklist] = useState(false)
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulking, setBulking] = useState(false)
   const [loadError, setLoadError] = useState(false)
@@ -156,6 +158,7 @@ export default function Dashboard() {
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
         setDiscoverable(museum.discoverable ?? false)
+        setShowUpgradeChecklist(!museum.upgrade_checklist_seen_at)
         setCollectionCategory(museum.collection_category || '')
         setTrashedCount(trashed ?? 0)
         setDuplicateObjectIds(new Set((dupeLinks || []).map((d: any) => d.object_id)))
@@ -400,6 +403,18 @@ export default function Dashboard() {
           )}
 
           {/* Discoverability */}
+          {/* Shown once, to whoever can act on it, when a museum first reaches a
+              full-mode plan. Sits above the discover banner so the newest thing
+              is explained first. */}
+          {showUpgradeChecklist && fullMode && (isOwner || staffAccess === 'Admin') && museum && (
+            <UpgradeChecklist
+              museumId={museum.id}
+              planLabel={getPlan(museum.plan).label}
+              supabase={supabase}
+              onDismissed={() => setShowUpgradeChecklist(false)}
+            />
+          )}
+
           {!bannerDismissed && fullMode && (isOwner || staffAccess === 'Admin') && (
             <div className="mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-6 py-5 space-y-3">
               <div className="flex items-start justify-between gap-4">
