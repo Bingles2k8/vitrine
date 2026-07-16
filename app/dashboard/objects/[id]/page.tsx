@@ -109,6 +109,7 @@ export default function ObjectDetail() {
     insured_value: '', insured_value_currency: 'GBP',
     // Cataloguing (Proc 5)
     production_date: '', production_date_qualifier: '',
+    maker_name: '', maker_role: '',
     production_place: '', physical_materials: '', technique: '',
     school_style_period: '', subject_depicted: '', number_of_parts: 1,
     distinguishing_features: '', full_description: '',
@@ -227,6 +228,8 @@ export default function ObjectDetail() {
         // Cataloguing (Proc 5)
         production_date: object.production_date || object.production_date_early || '',
         production_date_qualifier: object.production_date_qualifier || '',
+        maker_name: object.maker_name || '',
+        maker_role: object.maker_role || '',
         production_place: object.production_place || '',
         physical_materials: object.physical_materials || '',
         technique: object.technique || '',

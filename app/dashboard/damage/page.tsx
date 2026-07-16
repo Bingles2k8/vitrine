@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
+import { convertValue } from '@/lib/fx'
 import { TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 
@@ -70,6 +72,7 @@ export default function DamagePage() {
   const [isOwner, setIsOwner] = useState(true)
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [reports, setReports] = useState<DamageReportRow[]>([])
+  const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,15 +88,19 @@ export default function DamagePage() {
       const result = await getMuseumForUser(supabase)
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
-      const { data: reports } = await supabase
-        .from('damage_reports')
-        .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)')
-        .eq('museum_id', museum.id)
-        .order('created_at', { ascending: false })
+      const [{ data: reports }, fxRates] = await Promise.all([
+        supabase
+          .from('damage_reports')
+          .select('*, objects(title, accession_no, emoji, description, medium, physical_materials, artist, maker_name, object_type, status, created_at, production_date, acquisition_method, accession_register_confirmed)')
+          .eq('museum_id', museum.id)
+          .order('created_at', { ascending: false }),
+        loadFxRates(supabase),
+      ])
       setMuseum(museum)
       setIsOwner(isOwner)
       setStaffAccess(staffAccess)
       setReports(reports || [])
+      setRates(fxRates)
       setLoading(false)
     }
     load()
@@ -138,9 +145,10 @@ export default function DamagePage() {
 
   const openReports = reports.filter(r => r.status === 'Open' || r.status === 'Under Investigation')
   const thisYear = reports.filter(r => r.incident_date?.startsWith(String(new Date().getFullYear())))
-  const totalRepairCost = reports.filter(r => r.repair_estimate).reduce((sum, r) => sum + (r.repair_estimate || 0), 0)
-  // Use the most common currency for the summary, defaulting to GBP
-  const summaryCurrency = reports.find(r => r.repair_estimate)?.repair_currency || 'GBP'
+  const summaryCurrency = getBaseCurrency(museum)
+  const totalRepairCost = reports
+    .filter(r => r.repair_estimate)
+    .reduce((sum, r) => sum + convertValue(r.repair_estimate || 0, r.repair_currency || 'GBP', summaryCurrency, rates), 0)
 
   const mediumOptions = Array.from(new Set(reports.map(r => r.objects?.medium).filter(Boolean))).sort() as string[]
   const objectTypeOptions = Array.from(new Set(reports.map(r => r.objects?.object_type).filter(Boolean))).sort() as string[]

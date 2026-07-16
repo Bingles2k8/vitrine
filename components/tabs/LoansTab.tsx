@@ -90,7 +90,9 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
     const loanNumber = `LN-${year}-${String(loanHistory.length + 1).padStart(3, '0')}`
     const { data: newLoan, error: loanErr } = await supabase.from('loans').insert({ ...loanForm, object_id: object.id, museum_id: museum.id, loan_number: loanNumber, status: loanForm.status || 'Requested', loan_start_date: loanForm.loan_start_date || null, loan_end_date: loanForm.loan_end_date || null, insurance_value: loanForm.insurance_value ? parseFloat(loanForm.insurance_value) : null, agreement_signed_date: loanForm.agreement_signed_date || null, lender_object_ref: loanForm.direction === 'In' ? (loanForm.lender_object_ref || null) : null, borrower_address: loanForm.borrower_address || null, borrower_phone: loanForm.borrower_phone || null, facility_report_reference: loanForm.facility_report_reference || null, environmental_requirements: loanForm.environmental_requirements || null, display_requirements: loanForm.display_requirements || null, courier_transport_arrangements: loanForm.courier_transport_arrangements || null, object_location_during_loan: loanForm.object_location_during_loan || null }).select('id').single()
     if (loanErr) { toast(loanErr.message, 'error'); setSubmitting(false); return }
-    if (loanForm.status === 'Active') {
+    // Only an outbound loan puts the object on loan elsewhere; a borrowed (In) object
+    // keeps its own status and its loan state is carried by the loan register.
+    if (loanForm.status === 'Active' && loanForm.direction === 'Out') {
       await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id)
       set('status', 'On Loan')
     }
@@ -632,7 +634,7 @@ export default function LoansTab({ form, set, canEdit, object, museum, supabase,
                           <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Agreed' }).eq('id', l.id); setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Agreed' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Agreed →</button>
                         )}
                         {canEdit && l.status === 'Agreed' && (
-                          <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Active' }).eq('id', l.id); await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id); set('status', 'On Loan'); setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Active' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Active →</button>
+                          <button type="button" onClick={async () => { await supabase.from('loans').update({ status: 'Active' }).eq('id', l.id); if (l.direction === 'Out') { await supabase.from('objects').update({ status: 'On Loan' }).eq('id', object.id); set('status', 'On Loan') } setLoanHistory(h => h.map(x => x.id === l.id ? { ...x, status: 'Active' } : x)) }} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100">Mark Active →</button>
                         )}
                         {canEdit && l.status === 'Active' && (
                           endingLoanId === l.id

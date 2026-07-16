@@ -12,6 +12,7 @@ import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
+import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [objects, setObjects] = useState<any[]>([])
   const [loans, setLoans] = useState<any[]>([])
+  const [rates, setRates] = useState<Map<string, number>>(new Map())
   const [activityLog, setActivityLog] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
@@ -135,7 +137,7 @@ export default function Dashboard() {
       const { museum, isOwner, staffAccess } = result
 
       try {
-        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }, { data: personalLoans }] = await Promise.all([
+        const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }, { data: personalLoans }, fxRates] = await Promise.all([
           supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
           supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(200),
@@ -144,6 +146,7 @@ export default function Dashboard() {
           supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
           supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
           supabase.from('personal_loans').select('object_id').eq('museum_id', museum.id).is('returned_on', null),
+          loadFxRates(supabase),
         ])
 
         setMuseum(museum)
@@ -159,6 +162,7 @@ export default function Dashboard() {
         setLoans(activeLoans || [])
         setActivityLog(activity || [])
         setValuations(valuationRows || [])
+        setRates(fxRates)
       } catch {
         setLoadError(true)
       }
@@ -295,7 +299,7 @@ export default function Dashboard() {
   function fmtCurrency(amount: number, currency: string) {
     return new Intl.NumberFormat('en-GB', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
   }
-  const { total: collectionValue, currency: collectionValueCurrency } = getCollectionValue(objects, valuations)
+  const { total: collectionValue, currency: collectionValueCurrency } = getCollectionValue(objects, valuations, { rates, targetCurrency: getBaseCurrency(museum) })
   const SIMPLE_CARDS = [
     { label: 'Total Objects',  filterKey: null,                   value: String(objects.length + trashedCount),       sub: objects.length === 0 && trashedCount === 0 ? 'Add your first item' : trashedCount > 0 ? `${objects.length} in collection · ${trashedCount} in bin` : `${objects.length} in collection`, learnKey: 'dashboard.total_objects', isValue: false },
     { label: 'On Public Site', filterKey: '__on_public_site__',   value: String(onPublicSiteCount),                    sub: objects.length ? `${Math.round(onPublicSiteCount/objects.length*100)}% of collection` : '—', learnKey: 'dashboard.on_public_site', isValue: false },

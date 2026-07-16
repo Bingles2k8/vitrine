@@ -271,7 +271,7 @@ export default function DamageTab({ canEdit, object, museum, supabase, logActivi
             </div>
           )}
           <div className="flex items-center gap-3">
-            <button type="button" onClick={editingId ? saveDamageEdit : addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_by || !damageForm.description || submitting}
+            <button type="button" onClick={editingId ? saveDamageEdit : addDamage} disabled={!damageForm.incident_date || !damageForm.discovered_date || !damageForm.discovered_by || !damageForm.description || submitting}
               className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
               {submitting ? 'Saving\u2026' : editingId ? 'Save changes \u2192' : 'Save report \u2192'}
             </button>
