@@ -3,6 +3,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { getPlan } from '@/lib/plans'
 import { formatDimensions } from '@/lib/formatDimensions'
+import { fetchAll } from '@/lib/fetchAll'
 
 export async function GET(request: Request) {
   const supabase = await createServerSideClient()
@@ -49,44 +50,50 @@ export async function GET(request: Request) {
   const acquiredTo   = searchParams.get('acquired_to')   // YYYY-MM-DD
   const includeDeleted = searchParams.get('include_deleted') === 'true'
 
-  let query = supabase
-    .from('objects')
-    .select([
-      'accession_no', 'title', 'artist', 'year', 'medium', 'culture', 'object_type',
-      'status', 'current_location', 'acquisition_date', 'acquisition_method',
-      'acquisition_source', 'acquisition_authorised_by', 'accession_register_confirmed',
-      'condition_grade', 'condition_date', 'condition_assessor',
-      'last_inventoried', 'inventoried_by',
-      'copyright_status', 'rights_holder',
-      'provenance', 'inscription', 'description',
-      'dimension_height', 'dimension_width', 'dimension_depth', 'dimension_unit',
-      'dimension_weight', 'dimension_weight_unit', 'dimension_notes', 'dimensions',
-    ].join(', '))
-    .eq('museum_id', museumId)
-    .order('accession_no')
+  // Rebuilt per page: fetchAll needs a fresh query for each .range() window.
+  function buildQuery(range: { from: number; to: number }) {
+    let query = supabase
+      .from('objects')
+      .select([
+        'accession_no', 'title', 'artist', 'year', 'medium', 'culture', 'object_type',
+        'status', 'current_location', 'acquisition_date', 'acquisition_method',
+        'acquisition_source', 'acquisition_authorised_by', 'accession_register_confirmed',
+        'condition_grade', 'condition_date', 'condition_assessor',
+        'last_inventoried', 'inventoried_by',
+        'copyright_status', 'rights_holder',
+        'provenance', 'inscription', 'description',
+        'dimension_height', 'dimension_width', 'dimension_depth', 'dimension_unit',
+        'dimension_weight', 'dimension_weight_unit', 'dimension_notes', 'dimensions',
+      ].join(', '))
+      .eq('museum_id', museumId)
+      .order('accession_no')
 
-  if (!includeDeleted) {
-    query = query.is('deleted_at', null)
+    if (!includeDeleted) {
+      query = query.is('deleted_at', null)
+    }
+
+    if (statusParam) {
+      const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean)
+      if (statuses.length > 0) query = query.in('status', statuses)
+    }
+
+    if (mediumParam) {
+      query = query.ilike('medium', `%${mediumParam}%`)
+    }
+
+    if (acquiredFrom) {
+      query = query.gte('acquisition_date', acquiredFrom)
+    }
+
+    if (acquiredTo) {
+      query = query.lte('acquisition_date', acquiredTo)
+    }
+
+    return query.range(range.from, range.to)
   }
 
-  if (statusParam) {
-    const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean)
-    if (statuses.length > 0) query = query.in('status', statuses)
-  }
-
-  if (mediumParam) {
-    query = query.ilike('medium', `%${mediumParam}%`)
-  }
-
-  if (acquiredFrom) {
-    query = query.gte('acquisition_date', acquiredFrom)
-  }
-
-  if (acquiredTo) {
-    query = query.lte('acquisition_date', acquiredTo)
-  }
-
-  const { data: objects } = await query
+  // A full export must not stop at PostgREST's 1,000-row cap (audit N5).
+  const { data: objects } = await fetchAll(r => buildQuery(r))
 
   const HEADERS = [
     'Accession No', 'Title', 'Artist', 'Year', 'Medium', 'Culture', 'Object Type',

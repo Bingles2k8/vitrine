@@ -13,6 +13,7 @@ import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
+import { fetchAll } from '@/lib/fetchAll'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -138,14 +139,16 @@ export default function Dashboard() {
 
       try {
         const [{ data: objects }, { data: activeLoans }, { data: activity }, { count: trashed }, { data: dupeLinks }, { data: conditionDue }, { data: valuationRows }, { data: personalLoans }, fxRates] = await Promise.all([
-          supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
-          supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active'),
+          // Paged: the collection list and every stat derived from it must not
+          // stop at PostgREST's 1,000-row cap (audit N5).
+          fetchAll(r => supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }).range(r.from, r.to)),
+          fetchAll(r => supabase.from('loans').select('*').eq('museum_id', museum.id).eq('status', 'Active').range(r.from, r.to)),
           supabase.from('activity_log').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).limit(200),
           supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
-          supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id),
-          supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null),
-          supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
-          supabase.from('personal_loans').select('object_id').eq('museum_id', museum.id).is('returned_on', null),
+          fetchAll(r => supabase.from('object_duplicates').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+          fetchAll(r => supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).lte('next_check_date', new Date().toISOString().slice(0, 10)).not('next_check_date', 'is', null).range(r.from, r.to)),
+          fetchAll(r => supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id).range(r.from, r.to)),
+          fetchAll(r => supabase.from('personal_loans').select('object_id').eq('museum_id', museum.id).is('returned_on', null).range(r.from, r.to)),
           loadFxRates(supabase),
         ])
 

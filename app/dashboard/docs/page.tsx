@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { fetchAll } from '@/lib/fetchAll'
 import { checkStorageQuota } from '@/lib/storageUsage'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import { TableSkeleton } from '@/components/Skeleton'
@@ -127,6 +128,9 @@ export default function DocumentationPlanPage() {
       if (!result) { router.push('/onboarding'); return }
       const { museum, isOwner, staffAccess } = result
 
+      // Every one of these feeds a compliance numerator or denominator, so all
+      // of them must be complete: a plain .select() stops at PostgREST's
+      // 1,000-row cap and would skew the score without any error (audit N5).
       const [
         { data: objects },
         { data: entryRecords },
@@ -149,26 +153,26 @@ export default function DocumentationPlanPage() {
         { data: reproductionRequests },
         { data: conservationTreatments },
       ] = await Promise.all([
-        supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null),
-        supabase.from('entry_records').select('object_id').eq('museum_id', museum.id),
-        supabase.from('location_history').select('object_id').eq('museum_id', museum.id),
-        supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id),
-        supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active'),
-        supabase.from('object_exits').select('id, object_id').eq('museum_id', museum.id),
-        supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }),
-        supabase.from('valuations').select('object_id').eq('museum_id', museum.id),
-        supabase.from('object_images').select('object_id').eq('museum_id', museum.id),
-        supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open'),
-        supabase.from('emergency_plans').select('id, status').eq('museum_id', museum.id),
-        supabase.from('insurance_policies').select('id, status').eq('museum_id', museum.id),
-        supabase.from('damage_reports').select('id, status').eq('museum_id', museum.id),
-        supabase.from('collection_use_records').select('id, status').eq('museum_id', museum.id),
-        supabase.from('disposal_records').select('id, status').eq('museum_id', museum.id),
-        supabase.from('collection_reviews').select('id, status').eq('museum_id', museum.id),
-        supabase.from('audit_exercises').select('id, status').eq('museum_id', museum.id),
-        supabase.from('rights_records').select('object_id').eq('museum_id', museum.id),
-        supabase.from('reproduction_requests').select('object_id').eq('museum_id', museum.id),
-        supabase.from('conservation_treatments').select('object_id').eq('museum_id', museum.id),
+        fetchAll(r => supabase.from('objects').select('*').eq('museum_id', museum.id).is('deleted_at', null).range(r.from, r.to)),
+        fetchAll(r => supabase.from('entry_records').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('location_history').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('condition_assessments').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('loans').select('id, agreement_reference').eq('museum_id', museum.id).eq('status', 'Active').range(r.from, r.to)),
+        fetchAll(r => supabase.from('object_exits').select('id, object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('documentation_plans').select('*').eq('museum_id', museum.id).order('created_at', { ascending: false }).range(r.from, r.to)),
+        fetchAll(r => supabase.from('valuations').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('object_images').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('risk_register').select('id').eq('museum_id', museum.id).eq('status', 'Open').range(r.from, r.to)),
+        fetchAll(r => supabase.from('emergency_plans').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('insurance_policies').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('damage_reports').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('collection_use_records').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('disposal_records').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('collection_reviews').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('audit_exercises').select('id, status').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('rights_records').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('reproduction_requests').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
+        fetchAll(r => supabase.from('conservation_treatments').select('object_id').eq('museum_id', museum.id).range(r.from, r.to)),
       ])
 
       const all = objects || []
