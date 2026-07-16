@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { signUnsubscribeToken } from '@/lib/emailTokens'
 
 // Daily cron: re-engagement emails to museum owners, in two tracks keyed off
 // the owner's auth account.
@@ -76,7 +77,7 @@ function dueStage(createdAt: string, lastSignInAt: string | null, m: OwnerRow): 
   return null
 }
 
-function copy(stage: Stage, museumName: string | null, siteUrl: string): { subject: string; html: string } {
+function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscribeUrl: string): { subject: string; html: string } {
   const dash = '/dashboard'
   const newObject = `${siteUrl}/dashboard/objects/new`
   const dashboard = `${siteUrl}${dash}`
@@ -92,7 +93,12 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string): { subje
       <p style="margin:24px 0"><a href="${ctaHref}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px">${ctaLabel}</a></p>
       <p>— The Vitrine team</p>
       <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
-      <p style="font-size:12px;color:#888">Vitrine</p>
+      <p style="font-size:12px;color:#888">
+        Vitrine &middot; <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from these emails</a><br>
+        You are receiving this because you created a museum on Vitrine. This is not
+        an essential account email &mdash; unsubscribing will not affect billing or
+        security notices.
+      </p>
     </div>`,
   })
 
@@ -185,6 +191,7 @@ export async function GET(request: Request) {
     .eq('payment_past_due', false)
     .is('scheduled_deletion_at', null)
     .eq('is_test_account', false)
+    .eq('reengage_opt_out', false)
     .limit(5000)
 
   const counts: Record<Stage, number> = { a3: 0, a7: 0, a30: 0, b30: 0, b180: 0 }
@@ -206,12 +213,18 @@ export async function GET(request: Request) {
 
     if (!resend) continue
     try {
-      const { subject, html } = copy(stage, m.name, siteUrl)
+      const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signUnsubscribeToken(m.id)}`
+      const { subject, html } = copy(stage, m.name, siteUrl, unsubscribeUrl)
       await resend.emails.send({
         from: 'Vitrine <noreply@contact.vitrinecms.com>',
         to: owner.email,
         subject,
         html,
+        headers: {
+          // Lets mail clients surface a native Unsubscribe control.
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
       await service
         .from('museums')
