@@ -605,12 +605,12 @@ export default function DocumentationPlanPage() {
     return (
       <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
           <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
+            <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Compliance &amp; Documentation</span>
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="text-5xl mb-5">◉</div>
-              <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Documentation Plan is a Professional feature</h2>
+              <h2 className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-3">Compliance &amp; Documentation is a Professional feature</h2>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Track documentation compliance and standards across your collection. Available on Professional, Institution, and Enterprise plans.</p>
               <button
                 onClick={() => router.push('/dashboard/plan')}
@@ -634,7 +634,7 @@ export default function DocumentationPlanPage() {
   return (
     <DashboardShell museum={museum} activePath="/dashboard/docs" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <div className="h-14 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 flex items-center px-4 md:px-8 sticky top-0">
-          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Documentation Plan</span>
+          <span className="font-serif text-lg italic text-stone-900 dark:text-stone-100">Compliance &amp; Documentation</span>
         </div>
 
         <div className="p-6 md:p-10 space-y-8">

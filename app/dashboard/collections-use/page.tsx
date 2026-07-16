@@ -22,6 +22,7 @@ function emptyUseForm() {
     use_date_end: '',
     location_of_use: '',
     purpose: '',
+    outcome: '',
     information_generated: '',
     conditions: '',
     approved_by: '',
@@ -163,6 +164,7 @@ export default function CollectionsUsePage() {
       use_date_end: form.use_date_end || null,
       purpose: form.purpose || null,
       location_of_use: form.location_of_use || null,
+      outcome: form.outcome || null,
       information_generated: form.information_generated || null,
       conditions: form.conditions || null,
       approved_by: form.approved_by || null,
@@ -207,6 +209,7 @@ export default function CollectionsUsePage() {
       use_date_end: r.use_date_end || '',
       location_of_use: r.location_of_use || '',
       purpose: r.purpose || '',
+      outcome: r.outcome || '',
       information_generated: r.information_generated || '',
       conditions: r.conditions || '',
       approved_by: r.approved_by || '',
@@ -387,6 +390,19 @@ export default function CollectionsUsePage() {
                   onChange={e => setForm({ ...form, location_of_use: e.target.value })}
                   placeholder="Where the collection will be accessed or used"
                   className={inputCls}
+                />
+              </div>
+
+              <div>
+                {/* Also set by the Complete action, but editable here so a typo in
+                    the recorded outcome can be corrected afterwards (O13). */}
+                <label className="block text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">Outcome</label>
+                <textarea
+                  value={form.outcome}
+                  onChange={e => setForm({ ...form, outcome: e.target.value })}
+                  placeholder="What came of this use of the collection…"
+                  className={inputCls}
+                  rows={2}
                 />
               </div>
 

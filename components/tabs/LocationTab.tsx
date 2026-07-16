@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { inputCls, labelCls, sectionTitle, INVENTORY_OUTCOMES } from '@/components/tabs/shared'
+import { inputCls, labelCls, sectionTitle } from '@/components/tabs/shared'
 import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
-import StagedDocumentPicker, { StagedDoc } from '@/components/StagedDocumentPicker'
-import { uploadToR2 } from '@/lib/r2-upload'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface LocationRow {
@@ -37,12 +35,6 @@ interface AuditRecordRow {
   action_completed_date: string | null
   discrepancy: string | null
   notes: string | null
-}
-
-interface AuditExerciseRow {
-  id: string
-  audit_reference: string | null
-  scope: string | null
 }
 
 interface AuditDocRow {
@@ -158,6 +150,9 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     location_code: '',
     moved_by: currentUserName || '',
     moved_at: today,
+    move_type: 'Permanent',
+    expected_return_date: '',
+    reason: '',
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -170,22 +165,6 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
   // Audit state
   const [auditHistory, setAuditHistory] = useState<AuditRecordRow[]>([])
   const [auditLoaded, setAuditLoaded] = useState(false)
-  const [exercises, setExercises] = useState<AuditExerciseRow[]>([])
-  const [auditForm, setAuditForm] = useState({
-    inventoried_at: new Date().toISOString().slice(0, 10),
-    inventoried_by: currentUserName || '',
-    exercise_id: '',
-    location_confirmed: form.current_location || '',
-    inventory_outcome: '',
-    action_required: '',
-    action_completed: false,
-    action_completed_date: '',
-    discrepancy: '',
-    notes: '',
-  })
-  const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
-  const [auditSubmitting, setAuditSubmitting] = useState(false)
-  const [stagedUploadProgress, setStagedUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [selectedRecord, setSelectedRecord] = useState<AuditRecordRow | null>(null)
   const [selectedRecordDocs, setSelectedRecordDocs] = useState<AuditDocRow[]>([])
 
@@ -195,8 +174,6 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
       .then(({ data }) => { setLocationHistory(data || []); setLocationLoaded(true) })
     supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
       .then(({ data }) => { setAuditHistory(data || []); setAuditLoaded(true) })
-    supabase.from('audit_exercises').select('*').eq('museum_id', museum.id).order('date_started', { ascending: false })
-      .then(({ data }) => { setExercises(data || []) })
   }, [object.id])
 
   useEffect(() => {
@@ -336,11 +313,19 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
         ? new Date().toISOString()
         : `${locationForm.moved_at}T12:00:00`
 
+      // move_type / expected_return_date / reason are columns the Location
+      // register displays and computes its overdue-returns stat from. Until now
+      // only exits ever wrote them, so a temporary internal move — the core
+      // case for location control — could not be recorded (O10).
+      const isTemporary = locationForm.move_type === 'Temporary'
       await supabase.from('location_history').insert({
         location: locationForm.location_code,
         location_code: locationForm.location_code,
         moved_by: locationForm.moved_by || null,
         moved_at: movedAtIso,
+        move_type: locationForm.move_type || 'Permanent',
+        expected_return_date: isTemporary && locationForm.expected_return_date ? locationForm.expected_return_date : null,
+        reason: locationForm.reason || null,
         object_id: object.id,
         museum_id: museum.id,
       })
@@ -357,6 +342,9 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
         location_code: '',
         moved_by: currentUserName || '',
         moved_at: today,
+        move_type: 'Permanent',
+        expected_return_date: '',
+        reason: '',
       })
       // Clear extra lists since they're now in the registry
       setExtraBuildings([])
@@ -375,50 +363,6 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
     }
   }
 
-  async function addAudit() {
-    if (!auditForm.inventoried_at || auditSubmitting) return
-    setAuditSubmitting(true)
-    const { data: auditRecord, error: auditErr } = await supabase.from('audit_records').insert({
-      ...auditForm,
-      object_id: object.id, museum_id: museum.id,
-      exercise_id: auditForm.exercise_id || null,
-      action_completed_date: auditForm.action_completed && auditForm.action_completed_date ? auditForm.action_completed_date : null,
-    }).select().single()
-    if (auditErr) { toast(auditErr.message, 'error'); setAuditSubmitting(false); return }
-    await supabase.from('objects').update({ last_inventoried: auditForm.inventoried_at, inventoried_by: auditForm.inventoried_by }).eq('id', object.id)
-    set('last_inventoried', auditForm.inventoried_at)
-    set('inventoried_by', auditForm.inventoried_by)
-
-    if (stagedDocs.length > 0 && auditRecord) {
-      const userId = (await supabase.auth.getUser()).data.user?.id ?? null
-      setStagedUploadProgress({ done: 0, total: stagedDocs.length })
-      let done = 0
-      for (const doc of stagedDocs) {
-        const ext = doc.file.name.split('.').pop()
-        const path = `${museum.id}/audits/documents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        let publicUrl: string
-        try { publicUrl = await uploadToR2('object-documents', path, doc.file) } catch { done++; setStagedUploadProgress({ done, total: stagedDocs.length }); continue }
-        await supabase.from('object_documents').insert({
-          object_id: object.id, museum_id: museum.id,
-          related_to_type: 'audit_record', related_to_id: auditRecord.id,
-          label: doc.label || doc.file.name, document_type: doc.docType || 'Other',
-          file_url: publicUrl, file_name: doc.file.name,
-          file_size: doc.file.size, mime_type: doc.file.type,
-          uploaded_by: userId,
-        })
-        done++
-        setStagedUploadProgress({ done, total: stagedDocs.length })
-      }
-      setStagedUploadProgress(null)
-    }
-
-    setAuditForm({ inventoried_at: new Date().toISOString().slice(0, 10), inventoried_by: currentUserName || '', exercise_id: '', location_confirmed: form.current_location || '', inventory_outcome: '', action_required: '', action_completed: false, action_completed_date: '', discrepancy: '', notes: '' })
-    setStagedDocs([])
-    const { data } = await supabase.from('audit_records').select('*').eq('object_id', object.id).order('inventoried_at', { ascending: false })
-    setAuditHistory(data || [])
-    logActivity('audit_recorded', `Audited "${object.title}"${auditForm.inventory_outcome ? ` — ${auditForm.inventory_outcome}` : ''}`)
-    setAuditSubmitting(false)
-  }
 
   // Simple mode (Hobbyist / non-fullMode plans)
   if (!getPlan(museum.plan).fullMode) {
@@ -537,9 +481,32 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
             </div>
           </div>
 
-          <div>
-            <label className={labelCls}>Moved By</label>
-            <input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Moved By</label>
+              <input value={locationForm.moved_by} onChange={e => setLocationForm(f => ({ ...f, moved_by: e.target.value }))} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Move Type</label>
+              <select value={locationForm.move_type} onChange={e => setLocationForm(f => ({ ...f, move_type: e.target.value }))} className={inputCls}>
+                <option value="Permanent">Permanent</option>
+                <option value="Temporary">Temporary</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Reason</label>
+              <input value={locationForm.reason} onChange={e => setLocationForm(f => ({ ...f, reason: e.target.value }))} placeholder="e.g. Gallery rotation, Photography, Storage reorganisation" className={inputCls} />
+            </div>
+            {locationForm.move_type === 'Temporary' && (
+              <div>
+                <label className={labelCls}>Expected Return</label>
+                <input type="date" value={locationForm.expected_return_date} onChange={e => setLocationForm(f => ({ ...f, expected_return_date: e.target.value }))} className={inputCls} />
+                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Overdue returns are flagged on the Location register</p>
+              </div>
+            )}
           </div>
 
           <button
@@ -553,101 +520,10 @@ export default function LocationTab({ form, set, canEdit, saving, object, museum
         </div>
       )}
 
-      {/* Record Inventory Check */}
-      {canEdit && (
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-          <div className={sectionTitle}>Record Inventory Check</div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls} data-learn="audit.date">Date *</label>
-              <input type="date" value={auditForm.inventoried_at} onChange={e => setAuditForm(f => ({ ...f, inventoried_at: e.target.value }))} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} data-learn="audit.inventoried_by">Inventoried By</label>
-              <input value={auditForm.inventoried_by} onChange={e => setAuditForm(f => ({ ...f, inventoried_by: e.target.value }))} className={inputCls} />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>Audit Exercise</label>
-            <select value={auditForm.exercise_id} onChange={e => setAuditForm(f => ({ ...f, exercise_id: e.target.value }))} className={inputCls}>
-              <option value="">— Not part of an exercise —</option>
-              {exercises.map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.audit_reference} — {ex.scope || 'General'}</option>
-              ))}
-            </select>
-            <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Link this audit record to a formal audit exercise</p>
-          </div>
-          <div>
-            <label className={labelCls} data-learn="audit.location_confirmed">Location Confirmed</label>
-            <input value={auditForm.location_confirmed} onChange={e => setAuditForm(f => ({ ...f, location_confirmed: e.target.value }))} placeholder="Actual location found" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls} data-learn="audit.outcome">Inventory Outcome *</label>
-            <div className="flex gap-2 flex-wrap">
-              {INVENTORY_OUTCOMES.map(o => (
-                <button key={o} type="button" onClick={() => setAuditForm(f => ({ ...f, inventory_outcome: o }))}
-                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${auditForm.inventory_outcome === o ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                  {o}
-                </button>
-              ))}
-            </div>
-          </div>
-          {auditForm.inventory_outcome && auditForm.inventory_outcome !== 'Present and correct' && (
-            <div className="space-y-3 border border-amber-200 dark:border-amber-800 rounded-lg p-4 bg-amber-50/30 dark:bg-amber-950/20">
-              <div className="text-xs uppercase tracking-widest text-amber-600">Action Required</div>
-              <div>
-                <label className={labelCls}>Action Required</label>
-                <input value={auditForm.action_required} onChange={e => setAuditForm(f => ({ ...f, action_required: e.target.value }))} placeholder="Describe action needed (e.g. update location, further investigation)" className={inputCls} />
-              </div>
-              {auditForm.action_required && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" id="action_completed" checked={auditForm.action_completed} onChange={e => setAuditForm(f => ({ ...f, action_completed: e.target.checked }))} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900" />
-                    <label htmlFor="action_completed" className="text-sm text-stone-700 dark:text-stone-300">Action completed</label>
-                  </div>
-                  {auditForm.action_completed && (
-                    <div>
-                      <label className={labelCls}>Completed Date</label>
-                      <input type="date" value={auditForm.action_completed_date} onChange={e => setAuditForm(f => ({ ...f, action_completed_date: e.target.value }))} className={inputCls} />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          <div>
-            <label className={labelCls}>Discrepancy</label>
-            <textarea value={auditForm.discrepancy} onChange={e => setAuditForm(f => ({ ...f, discrepancy: e.target.value }))} rows={2}
-              placeholder="Note any discrepancy from the catalogue record…"
-              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-          </div>
-          <div>
-            <label className={labelCls} data-learn="audit.notes">Notes</label>
-            <textarea value={auditForm.notes} onChange={e => setAuditForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-              className="w-full border border-stone-200 dark:border-stone-700 rounded px-3 py-2 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 transition-colors resize-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100" />
-          </div>
-          <div>
-            <label className={labelCls}>Supporting Documents</label>
-            <StagedDocumentPicker relatedToType="audit_record" value={stagedDocs} onChange={setStagedDocs} />
-          </div>
-          {stagedUploadProgress && (
-            <div>
-              <div className="flex justify-between text-xs font-mono text-stone-400 dark:text-stone-500 mb-1">
-                <span>Uploading documents…</span>
-                <span>{stagedUploadProgress.done} / {stagedUploadProgress.total}</span>
-              </div>
-              <div className="h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
-                <div className="h-full bg-stone-900 dark:bg-white rounded-full transition-all duration-300"
-                  style={{ width: `${(stagedUploadProgress.done / stagedUploadProgress.total) * 100}%` }} />
-              </div>
-            </div>
-          )}
-          <button type="button" onClick={addAudit} disabled={auditSubmitting}
-            className="bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-sm font-mono px-6 py-2.5 rounded disabled:opacity-50">
-            {auditSubmitting ? 'Saving…' : 'Save audit record →'}
-          </button>
-        </div>
-      )}
+      {/* The per-object inventory-check form lives on the Audit tab, which is the
+          register's own home. It used to be duplicated here as well — and below
+          Professional it could only ever fail, since audit_records INSERT is
+          gated on museum_has_compliance_plan() in RLS. */}
 
       {/* Last Inventoried */}
       {form.last_inventoried && (

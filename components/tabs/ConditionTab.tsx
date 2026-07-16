@@ -23,6 +23,8 @@ interface ConditionAssessment {
   hazard_note: string | null
   recommendations: string | null
   next_check_date: string | null
+  location_on_object: string | null
+  priority: string | null
 }
 
 type ConditionForm = {
@@ -36,6 +38,8 @@ type ConditionForm = {
   hazard_note: string
   recommendations: string
   next_check_date: string
+  location_on_object: string
+  priority: string
 }
 
 interface ConditionTabProps {
@@ -49,17 +53,18 @@ interface ConditionTabProps {
 }
 
 const REASONS_FOR_CHECK = ['Acquisition', 'Loan out', 'Loan return', 'Display change', 'Routine', 'Damage suspected', 'Conservation', 'Insurance', 'Other']
+const CONDITION_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
 const OTHER_REASON_SUGGESTIONS = ['Pest inspection', 'Environmental check', 'Pre-loan', 'Post-loan', 'Before photography', 'After photography', 'Emergency', 'Staff training', 'Insurance renewal', 'Public exhibition']
 const today = new Date().toISOString().split('T')[0]
 
 export default function ConditionTab({ form, set, canEdit, object, museum, supabase, logActivity }: ConditionTabProps) {
   const [conditionHistory, setConditionHistory] = useState<ConditionAssessment[]>([])
   const [conditionLoaded, setConditionLoaded] = useState(false)
-  const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
+  const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '', location_on_object: '', priority: '' })
   const [submitting, setSubmitting] = useState(false)
   const [docsAssessmentId, setDocsAssessmentId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<ConditionForm>({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
+  const [editForm, setEditForm] = useState<ConditionForm>({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '', location_on_object: '', priority: '' })
   const [savingEdit, setSavingEdit] = useState(false)
   const [stagedDocs, setStagedDocs] = useState<StagedDoc[]>([])
   const canAttach = canEdit && (getPlan(museum.plan).compliance || getPlan(museum.plan).advancedCustomisation)
@@ -98,6 +103,8 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           hazard_note: conditionForm.hazard_note || null,
           recommendations: conditionForm.recommendations || null,
           next_check_date: conditionForm.next_check_date || null,
+          location_on_object: conditionForm.location_on_object || null,
+          priority: conditionForm.priority || null,
           object_id: object.id,
           museum_id: museum.id,
         })
@@ -126,7 +133,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         if (failed.length > 0) toast(`Failed to attach: ${failed.join(', ')}`, 'error')
         setStagedDocs([])
       }
-      setConditionForm({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '' })
+      setConditionForm({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '', location_on_object: '', priority: '' })
 
       const { data } = await supabase
         .from('condition_assessments')
@@ -156,6 +163,8 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
       long_description: h.long_description || '',
       hazard_note: h.hazard_note || '',
       recommendations: h.recommendations || '',
+      location_on_object: h.location_on_object || '',
+      priority: h.priority || '',
       next_check_date: h.next_check_date || '',
     })
     setEditingId(h.id)
@@ -176,6 +185,8 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
         hazard_note: editForm.hazard_note || null,
         recommendations: editForm.recommendations || null,
         next_check_date: editForm.next_check_date || null,
+        location_on_object: editForm.location_on_object || null,
+        priority: editForm.priority || null,
       }
       const { error: updErr } = await supabase.from('condition_assessments').update(changedFields).eq('id', h.id)
       if (updErr) { toast(updErr.message, 'error'); return }
@@ -292,9 +303,23 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           <textarea value={conditionForm.recommendations} onChange={e => setConditionForm(f => ({ ...f, recommendations: e.target.value }))} rows={2} placeholder="Recommended actions..." className={`${inputCls} resize-none`} disabled={!canEdit} />
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} data-learn="condition.next_check_date">Next Check Date</label>
+            <input type="date" value={conditionForm.next_check_date} onChange={e => setConditionForm(f => ({ ...f, next_check_date: e.target.value }))} className={inputCls} disabled={!canEdit} />
+          </div>
+          <div>
+            <label className={labelCls}>Priority</label>
+            <select value={conditionForm.priority} onChange={e => setConditionForm(f => ({ ...f, priority: e.target.value }))} className={inputCls} disabled={!canEdit}>
+              <option value="">— Not set —</option>
+              {CONDITION_PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        </div>
+
         <div>
-          <label className={labelCls} data-learn="condition.next_check_date">Next Check Date</label>
-          <input type="date" value={conditionForm.next_check_date} onChange={e => setConditionForm(f => ({ ...f, next_check_date: e.target.value }))} className={inputCls} disabled={!canEdit} />
+          <label className={labelCls}>Location on Object</label>
+          <input value={conditionForm.location_on_object} onChange={e => setConditionForm(f => ({ ...f, location_on_object: e.target.value }))} placeholder="Where on the object is the issue — e.g. lower left corner, reverse, base" className={inputCls} disabled={!canEdit} />
         </div>
 
         <div>
@@ -464,6 +489,17 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                             <div>
                               <label className={labelCls}>Recommendations</label>
                               <textarea value={editForm.recommendations} onChange={e => setEditForm(f => ({ ...f, recommendations: e.target.value }))} rows={2} placeholder="Recommended actions..." className={`${inputCls} resize-none`} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Location on Object</label>
+                              <input value={editForm.location_on_object} onChange={e => setEditForm(f => ({ ...f, location_on_object: e.target.value }))} placeholder="Where on the object is the issue" className={inputCls} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Priority</label>
+                              <select value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))} className={inputCls}>
+                                <option value="">— Not set —</option>
+                                {CONDITION_PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
                             </div>
                             <div>
                               <label className={labelCls}>Next Check Date</label>
