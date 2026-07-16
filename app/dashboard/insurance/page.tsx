@@ -336,12 +336,12 @@ export default function InsurancePage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Active Policies', value: String(activePolicies.length), warn: activePolicies.length === 0 },
-              { label: 'Total Coverage', value: activePolicies.length > 0 ? formatCurrency(totalCoverage, baseCurrency) : '—', warn: false },
-              { label: 'Expiring Soon', value: String(soonExpiring.length), warn: soonExpiring.length > 0 },
-              { label: 'Expired', value: String(expiredPolicies.length), warn: expiredPolicies.length > 0 },
+              { label: 'Active Policies', learn: 'register.insurance.active_policies', value: String(activePolicies.length), warn: activePolicies.length === 0 },
+              { label: 'Total Coverage', learn: 'register.insurance.total_coverage', value: activePolicies.length > 0 ? formatCurrency(totalCoverage, baseCurrency) : '—', warn: false },
+              { label: 'Expiring Soon', learn: 'register.insurance.expiring_soon', value: String(soonExpiring.length), warn: soonExpiring.length > 0 },
+              { label: 'Expired', learn: 'register.insurance.expired', value: String(expiredPolicies.length), warn: expiredPolicies.length > 0 },
             ].map(s => (
-              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div key={s.label} data-learn={s.learn} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
                 <div className={`font-serif text-3xl ${s.warn ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>

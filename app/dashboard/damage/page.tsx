@@ -195,11 +195,11 @@ export default function DamagePage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { label: 'Open Reports', value: String(openReports.length), warn: openReports.length > 0 },
-              { label: 'Incidents This Year', value: String(thisYear.length), warn: false },
-              { label: 'Est. Repair Costs', value: totalRepairCost > 0 ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: summaryCurrency, minimumFractionDigits: 0 }).format(totalRepairCost) : '—', warn: false },
+              { label: 'Open Reports', value: String(openReports.length), warn: openReports.length > 0, learn: 'register.damage.open_reports' },
+              { label: 'Incidents This Year', value: String(thisYear.length), warn: false, learn: 'register.damage.incidents_this_year' },
+              { label: 'Est. Repair Costs', value: totalRepairCost > 0 ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: summaryCurrency, minimumFractionDigits: 0 }).format(totalRepairCost) : '—', warn: false, learn: 'register.damage.repair_costs' },
             ].map(s => (
-              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div key={s.label} data-learn={s.learn} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
                 <div className={`font-serif text-4xl ${s.warn ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>
@@ -246,9 +246,9 @@ export default function DamagePage() {
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Report</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Object</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Type</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Severity</th>
+                    <th data-learn="damage.severity" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Severity</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
+                    <th data-learn="damage.status" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -162,11 +162,11 @@ export default function ValuationPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { label: 'Objects Valued', value: objectsValued },
-              { label: 'Total Collection Value', value: totalValue > 0 ? formatCurrency(totalValue, baseCurrency) : '—' },
-              { label: 'Objects Without Valuation', value: objectsWithoutValuation, warn: objectsWithoutValuation > 0 },
+              { label: 'Objects Valued', learn: 'register.valuation.objects_valued', value: objectsValued },
+              { label: 'Total Collection Value', learn: 'register.valuation.total_value', value: totalValue > 0 ? formatCurrency(totalValue, baseCurrency) : '—' },
+              { label: 'Objects Without Valuation', learn: 'register.valuation.objects_without', value: objectsWithoutValuation, warn: objectsWithoutValuation > 0 },
             ].map(s => (
-              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div key={s.label} data-learn={s.learn} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
                 <div className={`font-serif text-4xl ${(s as any).warn && (s.value as number) > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>
@@ -198,10 +198,10 @@ export default function ValuationPage() {
                 <thead>
                   <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Value</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Purpose</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Valuer</th>
+                    <th data-learn="valuation.value" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Value</th>
+                    <th data-learn="valuation.method" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Method</th>
+                    <th data-learn="valuation.purpose" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Purpose</th>
+                    <th data-learn="valuation.valuer" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Valuer</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Date</th>
                   </tr>
                 </thead>

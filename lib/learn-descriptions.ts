@@ -964,4 +964,168 @@ export const learnDescriptions: Record<string, LearnEntry> = {
     description: 'You found it! When enabled, hovering over fields and buttons shows educational tooltips explaining what everything does, including data structure details.',
     technical: { type: 'localStorage: learnMode' },
   },
+
+  // ── Register summary figures ──────────────────────────────────────────
+  // These describe the stat cards on the museum-wide registers. Column headers
+  // on those pages reuse the object-tab keys above, since a column means the
+  // same thing as the field it came from.
+
+  'register.damage.open_reports': {
+    label: 'Open Reports',
+    description: 'Damage reports still open or under investigation. A report stays here until you close it, so this is your list of unfinished business rather than a count of incidents.',
+    technical: { table: 'damage_reports', column: "status in ('Open','Under Investigation')", practice: 'Close a report once the outcome is recorded, so the number reflects real outstanding work.' },
+  },
+  'register.damage.incidents_this_year': {
+    label: 'Incidents This Year',
+    description: 'Damage reports with an incident date in the current calendar year, open or closed. Useful for spotting a pattern before it becomes a trend.',
+    technical: { table: 'damage_reports', column: 'incident_date' },
+  },
+  'register.damage.repair_costs': {
+    label: 'Est. Repair Costs',
+    description: 'Repair estimates added up across every report, converted into your base currency. Estimates only, so treat it as a rough scale rather than a budget.',
+    technical: { table: 'damage_reports', column: 'repair_estimate, repair_currency', practice: 'Converted using the daily exchange rates in fx_rates.' },
+  },
+
+  'register.risk.open_risks': {
+    label: 'Open Risks',
+    description: 'Risks you have identified but not yet mitigated or closed. Covers both risks to a single object and risks to the whole collection.',
+    technical: { table: 'risk_register', column: "status = 'Open'" },
+  },
+  'register.risk.critical_severity': {
+    label: 'Critical Severity',
+    description: 'Open risks rated Critical. These are the ones worth a conversation rather than a note.',
+    technical: { table: 'risk_register', column: "severity = 'Critical'" },
+  },
+  'register.risk.due_review': {
+    label: 'Due for Review',
+    description: 'Open risks whose review date has passed. A risk that is never reviewed quietly stops reflecting reality.',
+    technical: { table: 'risk_register', column: 'review_date', practice: 'Reassess after any incident, not only on the date.' },
+  },
+
+  'register.valuation.total_value': {
+    label: 'Total Collection Value',
+    description: 'Every object added up, using its latest formal valuation where there is one and its estimated value otherwise, converted into your base currency.',
+    technical: { table: 'valuations, objects', column: 'value, estimated_value', practice: 'Mixed currencies are converted using the daily rates in fx_rates.' },
+  },
+  'register.valuation.objects_valued': {
+    label: 'Objects Valued',
+    description: 'Objects with at least one formal valuation recorded. An estimated value on the object itself does not count here.',
+    technical: { table: 'valuations', column: 'object_id' },
+  },
+  'register.valuation.objects_without': {
+    label: 'Objects Without Valuation',
+    description: 'Objects with no formal valuation. Insurers and funders tend to ask about these first.',
+    technical: { table: 'objects, valuations' },
+  },
+
+  'register.insurance.active_policies': {
+    label: 'Active Policies',
+    description: 'Policies currently marked Active. Policies you have let lapse stay on the register as history.',
+    technical: { table: 'insurance_policies', column: "status = 'Active'" },
+  },
+  'register.insurance.total_coverage': {
+    label: 'Total Coverage',
+    description: 'Coverage across every active policy, converted into your base currency. Compare it against the collection value rather than reading it alone.',
+    technical: { table: 'insurance_policies', column: 'coverage_amount, currency' },
+  },
+  'register.insurance.expiring_soon': {
+    label: 'Expiring Soon',
+    description: 'Active policies renewing within 30 days. Renewal dates also trigger a reminder email to the owner.',
+    technical: { table: 'insurance_policies', column: 'renewal_date' },
+  },
+  'register.insurance.expired': {
+    label: 'Expired',
+    description: 'Active policies whose renewal date has already passed. Usually means the record needs updating rather than that cover has actually stopped.',
+    technical: { table: 'insurance_policies', column: 'renewal_date' },
+  },
+
+  // ── Fields that had a data-learn tag but no description ───────────────
+  // Added with the July 2026 register work; the tags shipped, the copy did
+  // not, so hovering them showed nothing. __tests__/lib/learnKeys.test.ts now
+  // fails if that happens again.
+
+  'objects.maker_name': {
+    label: 'Maker / Attributed name',
+    description: 'Who made it. Use the name you would put on a label. If the attribution is uncertain, say so in Attribution Notes rather than hedging here.',
+    technical: { column: 'objects.maker_name', type: 'text', table: 'objects', practice: 'The older free-text Artist field still exists; new records should use this one.' },
+  },
+  'objects.maker_role': {
+    label: 'Maker role',
+    description: 'What they did: artist, maker, manufacturer, workshop, publisher. Useful when the name alone does not tell you the relationship.',
+    technical: { column: 'objects.maker_role', type: 'text', table: 'objects' },
+  },
+  'objects.technique': {
+    label: 'Technique',
+    description: 'How it was made. Thrown, cast, woodblock, letterpress, hand-stitched. Materials go in Materials; this is the method.',
+    technical: { column: 'objects.technique', type: 'text', table: 'objects' },
+  },
+  'objects.school_style_period': {
+    label: 'School / Style / Period',
+    description: 'The tradition or period it belongs to. Art Deco, Ming, Arts and Crafts. Helps people find related things in your collection.',
+    technical: { column: 'objects.school_style_period', type: 'text', table: 'objects' },
+  },
+  'objects.subject_depicted': {
+    label: 'Subject depicted',
+    description: 'What the object shows, for anything pictorial. A person, a place, an event. Leave it empty when the object is not depicting something.',
+    technical: { column: 'objects.subject_depicted', type: 'text', table: 'objects' },
+  },
+  'objects.distinguishing_features': {
+    label: 'Distinguishing features',
+    description: 'What tells this object apart from a near-identical one: a chip, a repair, a serial number, an odd glaze. This is the field that identifies your object after a theft.',
+    technical: { column: 'objects.distinguishing_features', type: 'text', table: 'objects', practice: 'Worth filling in properly for anything you own more than one of.' },
+  },
+  'objects.physical_description': {
+    label: 'Physical description',
+    description: 'What the object physically is, described plainly enough that someone could pick it out of a store without a photograph.',
+    technical: { column: 'objects.physical_description', type: 'text', table: 'objects' },
+  },
+
+  'acquisition.credit_line': {
+    label: 'Credit line',
+    description: 'How the source should be credited when the object is displayed or published. Agree the wording with a donor at the point of acquisition, not years later.',
+    technical: { column: 'objects.credit_line', type: 'text', table: 'objects' },
+  },
+  'acquisition.legal_transfer_date': {
+    label: 'Legal transfer of title',
+    description: 'The date ownership actually passed to you, which is not always the date the object arrived. This is the date that matters if title is ever questioned.',
+    technical: { column: 'objects.legal_transfer_date', type: 'date', table: 'objects' },
+  },
+  'acquisition.location_after_accessioning': {
+    label: 'Location after accessioning',
+    description: 'Where the object went once it was formally accessioned. Recording it here closes the gap between the entry record and the location register.',
+    technical: { column: 'objects.location_after_accessioning', type: 'text', table: 'objects' },
+  },
+
+  'conservation.treatment_name': {
+    label: 'Treatment name',
+    description: 'A short name for the treatment, so it is recognisable in a list. "Surface clean and consolidate" beats "Treatment 3".',
+    technical: { column: 'conservation_treatments.treatment_name', type: 'text', table: 'conservation_treatments' },
+  },
+  'conservation.condition_after': {
+    label: 'Condition after treatment',
+    description: 'The object\'s condition once the work was finished. Together with the before description it is the evidence that the treatment did what it set out to do.',
+    technical: { column: 'conservation_treatments.condition_after', type: 'text', table: 'conservation_treatments' },
+  },
+  'conservation.outcome': {
+    label: 'Outcome',
+    description: 'How the treatment ended: completed, partially completed, abandoned. Record it when the work finishes rather than leaving the record open.',
+    technical: { column: 'conservation_treatments.outcome', type: 'text', table: 'conservation_treatments' },
+  },
+
+  'valuation.valuation_basis': {
+    label: 'Basis',
+    description: 'What the figure represents: market value, replacement cost, insurance value. Two valuations on different bases are not comparable, which is why this matters.',
+    technical: { column: 'valuations.valuation_basis', type: 'text', table: 'valuations' },
+  },
+  'valuation.valuation_date': {
+    label: 'Valuation date',
+    description: 'When the valuation was made. Values age, so this is what tells you whether the figure can still be relied on.',
+    technical: { column: 'valuations.valuation_date', type: 'date', table: 'valuations' },
+  },
+
+  'damage.status': {
+    label: 'Status',
+    description: 'Where the report has got to: open, under investigation, repaired, claimed, closed, or written off. Move it on as things happen so the open count stays meaningful.',
+    technical: { column: 'damage_reports.status', type: 'text: Open | Under Investigation | Repaired | Claimed | Closed | Write-off', table: 'damage_reports' },
+  },
 }

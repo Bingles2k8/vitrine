@@ -197,11 +197,11 @@ export default function RiskPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { label: 'Open Risks', value: openRisks.length, warn: openRisks.length > 0 },
-              { label: 'Critical Severity', value: criticalOpen.length, warn: criticalOpen.length > 0 },
-              { label: 'Due for Review', value: dueForReview.length, warn: dueForReview.length > 0 },
+              { label: 'Open Risks', learn: 'register.risk.open_risks', value: openRisks.length, warn: openRisks.length > 0 },
+              { label: 'Critical Severity', learn: 'register.risk.critical_severity', value: criticalOpen.length, warn: criticalOpen.length > 0 },
+              { label: 'Due for Review', learn: 'register.risk.due_review', value: dueForReview.length, warn: dueForReview.length > 0 },
             ].map(s => (
-              <div key={s.label} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
+              <div key={s.label} data-learn={s.learn} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-5">
                 <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{s.label}</div>
                 <div className={`font-serif text-4xl ${s.warn && s.value > 0 ? 'text-amber-600' : 'text-stone-900 dark:text-stone-100'}`}>{s.value}</div>
               </div>
@@ -310,9 +310,9 @@ export default function RiskPage() {
                   <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4">Risk</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Linked Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Severity</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Likelihood</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Review Date</th>
+                    <th data-learn="risk.severity" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Severity</th>
+                    <th data-learn="risk.likelihood" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Likelihood</th>
+                    <th data-learn="risk.review_date" className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Review Date</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4">Status</th>
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4"></th>
                   </tr>
