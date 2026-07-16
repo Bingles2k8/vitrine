@@ -46,6 +46,9 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
     { data: conservation },
     { data: exits },
     { data: damage },
+    { data: risks },
+    { data: rightsRecords },
+    { data: reproductions },
   ] = await Promise.all([
     serviceClient.from('valuations').select('*').eq('object_id', id).order('valuation_date', { ascending: false }),
     serviceClient.from('condition_assessments').select('*').eq('object_id', id).order('assessed_at', { ascending: false }),
@@ -54,6 +57,9 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
     serviceClient.from('conservation_treatments').select('*').eq('object_id', id).order('start_date', { ascending: false }),
     serviceClient.from('object_exits').select('*').eq('object_id', id).order('exit_date', { ascending: false }),
     serviceClient.from('damage_reports').select('*').eq('object_id', id).order('incident_date', { ascending: false }),
+    serviceClient.from('risk_register').select('*').eq('object_id', id).order('created_at', { ascending: false }),
+    serviceClient.from('rights_records').select('*').eq('object_id', id).order('created_at', { ascending: false }),
+    serviceClient.from('reproduction_requests').select('*').eq('object_id', id).order('created_at', { ascending: false }),
   ])
 
   const fmt = (d: string | null | undefined) => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('en-GB') : '—'
@@ -96,7 +102,9 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
       {/* Object Information */}
       <div className="pr-h2">Object Information</div>
       <div className="pr-grid">
-        <div><span className="pr-label">Artist / Maker</span><span className="pr-value">{val(object.artist)}</span></div>
+        {/* maker_name is the structured Production & Attribution field; artist is
+            the older free-text one. Prefer the structured value, fall back. */}
+        <div><span className="pr-label">Artist / Maker</span><span className="pr-value">{val(object.maker_name || object.artist)}{object.maker_role ? ` (${object.maker_role})` : ''}</span></div>
         <div><span className="pr-label">Year</span><span className="pr-value">{val(object.production_date || object.year)}</span></div>
         <div><span className="pr-label">Medium</span><span className="pr-value">{val(object.medium)}</span></div>
         <div><span className="pr-label">Object Type</span><span className="pr-value">{val(object.object_type)}</span></div>
@@ -104,6 +112,10 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
         <div><span className="pr-label">Status</span><span className="pr-value"><span className="pr-tag">{object.status}</span></span></div>
         <div><span className="pr-label">Dimensions</span><span className="pr-value">{val(formatDimensions(object))}</span></div>
         <div><span className="pr-label">Current Location</span><span className="pr-value">{val(object.current_location)}</span></div>
+        {object.production_place && <div><span className="pr-label">Production Place</span><span className="pr-value">{object.production_place}</span></div>}
+        {object.technique && <div><span className="pr-label">Technique</span><span className="pr-value">{object.technique}</span></div>}
+        {object.school_style_period && <div><span className="pr-label">School / Style / Period</span><span className="pr-value">{object.school_style_period}</span></div>}
+        {object.subject_depicted && <div><span className="pr-label">Subject Depicted</span><span className="pr-value">{object.subject_depicted}</span></div>}
       </div>
       {object.description && <div style={{ marginTop: '6pt' }}><span className="pr-label">Description</span><p className="pr-value">{object.description}</p></div>}
 
@@ -237,6 +249,21 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
         </>
       )}
 
+      {/* Risk */}
+      {risks && risks.length > 0 && (
+        <>
+          <div className="pr-h2">Risk History</div>
+          <table className="pr-table">
+            <thead><tr><th>Type</th><th>Severity</th><th>Likelihood</th><th>Status</th><th>Review Due</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              {risks.map((r: any) => (
+                <tr key={r.id}><td>{val(r.risk_type)}</td><td>{val(r.severity)}</td><td>{val(r.likelihood)}</td><td>{val(r.status)}</td><td>{r.review_date ? fmt(r.review_date) : '—'}</td><td>{val(r.mitigation)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
       {/* Rights */}
       <div className="pr-h2">Rights & Legal</div>
       <div className="pr-grid">
@@ -244,6 +271,34 @@ export default async function PrintObjectPage({ params }: { params: Promise<{ id
         <div><span className="pr-label">Rights Holder</span><span className="pr-value">{val(object.rights_holder)}</span></div>
       </div>
       {object.rights_notes && <div><span className="pr-label">Notes</span><p className="pr-value">{object.rights_notes}</p></div>}
+
+      {/* Rights records — the object-level fields above are a summary; these are
+          the actual licences and their terms. */}
+      {rightsRecords && rightsRecords.length > 0 && (
+        <table className="pr-table">
+          <thead><tr><th>Reference</th><th>Type</th><th>Status</th><th>Holder</th><th>Expires</th><th>Terms</th><th>Restrictions</th></tr></thead>
+          <tbody>
+            {rightsRecords.map((r: any) => (
+              <tr key={r.id}><td>{val(r.rights_reference)}</td><td>{val(r.rights_type)}</td><td>{val(r.rights_status)}</td><td>{val(r.rights_holder)}</td><td>{r.expiry_date ? fmt(r.expiry_date) : '—'}</td><td>{val(r.licence_terms)}</td><td>{val(r.restrictions)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Reproduction */}
+      {reproductions && reproductions.length > 0 && (
+        <>
+          <div className="pr-h2">Reproduction Requests</div>
+          <table className="pr-table">
+            <thead><tr><th>Requested</th><th>Requester</th><th>Purpose</th><th>Type</th><th>Status</th><th>Fee</th></tr></thead>
+            <tbody>
+              {reproductions.map((r: any) => (
+                <tr key={r.id}><td>{fmt(r.request_date || r.created_at)}</td><td>{val(r.requester_name)}</td><td>{val(r.purpose)}</td><td>{val(r.reproduction_type)}</td><td>{val(r.status)}</td><td>{r.fee != null ? `${r.fee_currency || ''} ${r.fee}`.trim() : '—'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
       <div style={{ marginTop: '24pt', paddingTop: '8pt', borderTop: '1px solid #eee', fontSize: '8pt', color: '#aaa', fontFamily: 'monospace' }}>
         Printed from Vitrine Collection Management — {museum.name} — {new Date().toLocaleDateString('en-GB')}

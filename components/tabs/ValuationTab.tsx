@@ -53,6 +53,10 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
   const [showRecordModal, setShowRecordModal] = useState(false)
   const { toast } = useToast()
   const canAttach = canEdit && getPlan(museum.plan).compliance
+  // valuations INSERT is gated on museum_has_compliance_plan() in RLS, so below
+  // Professional this form could only ever fail at the database (X2/O6). The
+  // estimated-value field on the object itself still works on every tier.
+  const canRecordValuation = getPlan(museum.plan).compliance
 
   useEffect(() => {
     supabase.from('valuations').select('*').eq('object_id', object.id).order('valuation_date', { ascending: false })
@@ -203,7 +207,7 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
         </div>
       )}
 
-      {canEdit && (
+      {canEdit && canRecordValuation && (
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 flex items-center justify-between gap-4">
           <div>
             <div className={sectionTitle} style={{ marginBottom: 2 }}>Official Recorded Valuation</div>
@@ -219,7 +223,17 @@ export default function ValuationTab({ canEdit, object, museum, supabase, logAct
         </div>
       )}
 
-      {showRecordModal && canEdit && (
+      {canEdit && !canRecordValuation && (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+          <div className={sectionTitle} style={{ marginBottom: 2 }}>Official Recorded Valuation</div>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Formal valuations — with valuer, basis, validity date and supporting documents —
+            are part of the Professional plan. The estimated value above is saved on this object.
+          </p>
+        </div>
+      )}
+
+      {showRecordModal && canEdit && canRecordValuation && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!submitting) setShowRecordModal(false) }}>
           <div className="bg-white dark:bg-stone-900 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between p-6 border-b border-stone-200 dark:border-stone-700">

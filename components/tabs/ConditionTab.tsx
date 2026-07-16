@@ -195,9 +195,25 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
     if (docsAssessmentId === h.id) setDocsAssessmentId(null)
   }
 
+  // condition_assessments INSERT is gated on museum_has_compliance_plan() in
+  // RLS, so on Community/Hobbyist this form could only ever fail at the
+  // database. Show the register read-only there instead of a dead form (X2/O6).
+  // The object's own condition snapshot below is unaffected and still works.
+  const canLogAssessment = getPlan(museum.plan).compliance
+
   return (
     <>
       {/* Log Condition Assessment */}
+      {!canLogAssessment ? (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+          <div className={sectionTitle}>Condition Assessment Register</div>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">
+            Formal condition assessments — with assessor, re-check dates and supporting
+            documents — are part of the Professional plan. You can still record this
+            object&apos;s current condition below.
+          </p>
+        </div>
+      ) : (
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
         <div className={sectionTitle}>Log Condition Assessment</div>
 
@@ -310,6 +326,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           </button>
         )}
       </div>
+      )}
 
       {/* Current Condition */}
       {form.condition_grade && (
