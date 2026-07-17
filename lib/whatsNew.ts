@@ -18,6 +18,27 @@ export interface WhatsNewEntry {
  */
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: 'learn-mode-registers',
+    date: '2026-07-16',
+    emoji: '💡',
+    title: 'Learn Mode on every register',
+    body: 'Learn Mode explained the fields on an object but went quiet the moment you opened a register. It now covers those too, so hovering a column or a summary figure tells you what it means and why it matters. Switch it on from Settings.',
+  },
+  {
+    id: 'linked-registers',
+    date: '2026-07-16',
+    emoji: '⇄',
+    title: 'Registers that fill each other in',
+    body: 'Completing a disposal now writes the object exit for you, and returning a deposit does the same. An emergency event can log damage against each affected object with the dates and cause already filled in. Reversing a disposal releases the object properly rather than leaving it stuck.',
+  },
+  {
+    id: 'currency-totals',
+    date: '2026-07-16',
+    emoji: '◈',
+    title: 'Totals across currencies',
+    body: 'Collection value, insurance coverage and repair costs now convert into your base currency using daily exchange rates. If you record values in more than one currency your totals will look different, because until now they were added together without being converted.',
+  },
+  {
     id: 'android-capture',
     date: '2026-07-13',
     emoji: '🤖',
