@@ -20,6 +20,17 @@ export default function PublicFooter() {
         </div>
         <div className="flex items-center gap-4">
           <a
+            href="https://apps.apple.com/app/id6771412604"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Vitrine Capture on the App Store"
+            className="text-stone-500 hover:text-stone-300 transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.06 2.098-.987 3.938-.987 1.837 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.036-.012-3.19-1.226-3.226-4.85-.03-3.026 2.48-4.48 2.594-4.545-1.418-2.09-3.63-2.324-4.406-2.376-2.006-.155-3.686 1.09-4.638 1.09zm3.63-3.304c.837-1.012 1.4-2.42 1.245-3.822-1.2.05-2.65.802-3.514 1.813-.775.898-1.454 2.333-1.272 3.71 1.343.104 2.708-.682 3.54-1.7z" />
+            </svg>
+          </a>
+          <a
             href="https://play.google.com/store/apps/details?id=com.bingles.vitrinecapture"
             target="_blank"
             rel="noopener noreferrer"
