@@ -5,9 +5,12 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { TEMPLATES } from '@/lib/templates'
 import { PLANS, PLAN_ORDER, FREE_TIER_TEMPLATES, type PlanId } from '@/lib/plans'
+import { formatPlanPrice } from '@/lib/planPricing'
+import { readCurrencyCookie } from '@/lib/currencyCookie'
 
 export default function Onboarding() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [currency, setCurrency] = useState<ReturnType<typeof readCurrencyCookie>>('GBP')
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🏛️')
   const [template, setTemplate] = useState('minimal')
@@ -22,6 +25,10 @@ export default function Onboarding() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    setCurrency(readCurrencyCookie())
+  }, [])
 
   // Redirect to dashboard if user already has a museum (as owner or staff)
   useEffect(() => {
@@ -295,7 +302,7 @@ export default function Onboarding() {
                     >
                       <div className="mb-3">
                         <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-1">{p.label}</div>
-                        <div className="text-2xl font-serif font-medium text-stone-900">{p.price}</div>
+                        <div className="text-2xl font-serif font-medium text-stone-900">{formatPlanPrice(id, currency)}</div>
                       </div>
                       <ul className="space-y-1.5 mb-4">
                         {p.features.map(f => (
@@ -329,7 +336,7 @@ export default function Onboarding() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-1">{p.label}</div>
-                        <div className="text-2xl font-serif font-medium text-stone-900">{p.price}</div>
+                        <div className="text-2xl font-serif font-medium text-stone-900">{formatPlanPrice(id, currency)}</div>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all ${
                         selected ? 'border-stone-900 bg-stone-900' : 'border-stone-300'

@@ -1,5 +1,8 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
+import { formatPlanPrice } from '@/lib/planPricing'
+import type { BillingCurrency } from '@/lib/countryCurrency'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import PublicNav from '@/components/PublicNav'
@@ -78,7 +81,9 @@ function Dash() {
   return <span className="text-stone-600">—</span>
 }
 
-export default function PlansPage() {
+export default async function PlansPage() {
+  const cookieStore = await cookies()
+  const currency = (cookieStore.get('vitrine_currency')?.value as BillingCurrency | undefined) ?? 'GBP'
   const pageUrl = `${SITE_URL}/plans`
 
   const breadcrumbSchema = {
@@ -191,8 +196,8 @@ export default function PlansPage() {
             Simple pricing for every collection.
           </h1>
           <p className="text-lg text-stone-400 font-light leading-relaxed max-w-2xl mx-auto">
-            Free for small collections. £5/month for serious hobbyists.
-            Museum-grade plans from £79/month. No credit card required to start.
+            Free for small collections. {formatPlanPrice('hobbyist', currency)} for serious hobbyists.
+            Museum-grade plans from {formatPlanPrice('professional', currency)}. No credit card required to start.
           </p>
         </div>
       </section>
@@ -213,7 +218,7 @@ export default function PlansPage() {
                   <p className="text-[10px] font-mono text-amber-500 uppercase tracking-widest mb-3">Most popular</p>
                 )}
                 <h2 className="font-serif text-2xl italic mb-1">{plan.label}</h2>
-                <p className="font-mono text-sm text-stone-300 mb-4">{plan.price}</p>
+                <p className="font-mono text-sm text-stone-300 mb-4">{formatPlanPrice(id, currency)}</p>
                 <p className="text-sm text-stone-400 font-light leading-relaxed mb-5">{TAGLINES[id]}</p>
                 <ul className="text-sm text-stone-400 font-light space-y-2 mb-6">
                   {plan.features.slice(0, 5).map((f) => (
@@ -267,7 +272,7 @@ export default function PlansPage() {
                   {PLAN_ORDER.map((id) => (
                     <th key={id} className="px-4 py-3 font-normal whitespace-nowrap">
                       <span className="font-serif italic text-base">{PLANS[id].label}</span>
-                      <span className="block font-mono text-xs text-stone-500 mt-0.5">{PLANS[id].price}</span>
+                      <span className="block font-mono text-xs text-stone-500 mt-0.5">{formatPlanPrice(id, currency)}</span>
                     </th>
                   ))}
                 </tr>
@@ -287,7 +292,7 @@ export default function PlansPage() {
             </table>
           </div>
           <p className="text-xs text-stone-600 font-light mt-4">
-            All prices in GBP. Professional includes a 30-day free trial. Cancel anytime.
+            Prices shown in {currency}, based on your location. Professional includes a 30-day free trial. Cancel anytime.
           </p>
         </div>
       </section>
