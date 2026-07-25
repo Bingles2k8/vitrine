@@ -69,3 +69,17 @@ export function getCurrencyForCountry(countryCode?: string | null): BillingCurre
   if (EUR_FALLBACK_COUNTRIES.has(cc)) return 'EUR'
   return 'USD'
 }
+
+/**
+ * Validate a raw `vitrine_currency` cookie value against BILLING_CURRENCIES,
+ * falling back to GBP. Shared by the client-side cookie reader
+ * (lib/currencyCookie.ts) and the checkout route, so the currency used to
+ * display a price and the currency used to charge for it can never diverge —
+ * both resolve the same cookie through this one function.
+ */
+export function normalizeBillingCurrency(raw?: string | null): BillingCurrency {
+  const value = raw?.toUpperCase()
+  return (BILLING_CURRENCIES as readonly string[]).includes(value ?? '')
+    ? (value as BillingCurrency)
+    : 'GBP'
+}

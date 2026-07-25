@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
 import { formatPlanAmount } from '@/lib/planPricing'
-import type { BillingCurrency } from '@/lib/countryCurrency'
+import { normalizeBillingCurrency } from '@/lib/countryCurrency'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
@@ -467,7 +467,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const details = PLAN_DETAILS[planId]
   const stats = getStatLabels(planId)
   const cookieStore = await cookies()
-  const currency = (cookieStore.get('vitrine_currency')?.value as BillingCurrency | undefined) ?? 'GBP'
+  const currency = normalizeBillingCurrency(cookieStore.get('vitrine_currency')?.value)
   const localisedAmount = formatPlanAmount(planId, currency)
 
   const isEnterprise = planId === 'enterprise'

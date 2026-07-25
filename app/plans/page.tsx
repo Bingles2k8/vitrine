@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
 import { formatPlanPrice } from '@/lib/planPricing'
-import type { BillingCurrency } from '@/lib/countryCurrency'
+import { normalizeBillingCurrency } from '@/lib/countryCurrency'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import PublicNav from '@/components/PublicNav'
@@ -83,7 +83,7 @@ function Dash() {
 
 export default async function PlansPage() {
   const cookieStore = await cookies()
-  const currency = (cookieStore.get('vitrine_currency')?.value as BillingCurrency | undefined) ?? 'GBP'
+  const currency = normalizeBillingCurrency(cookieStore.get('vitrine_currency')?.value)
   const pageUrl = `${SITE_URL}/plans`
 
   const breadcrumbSchema = {

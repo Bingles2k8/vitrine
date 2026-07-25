@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe, STRIPE_PRICE_MAP } from '@/lib/stripe'
 import { stripeCheckoutSchema, parseBody } from '@/lib/validations'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
+import { normalizeBillingCurrency } from '@/lib/countryCurrency'
+import type Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const supabase = await createServerSideClient()
@@ -61,7 +64,19 @@ export async function POST(request: Request) {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
-  const session = await stripe.checkout.sessions.create({
+
+  // Charge in the same currency the plans/onboarding/upgrade pages advertised
+  // to this visitor — both read the same vitrine_currency cookie through
+  // normalizeBillingCurrency, so display and checkout can't diverge. Every
+  // BillingCurrency has a matching currency_options entry on all three live
+  // Prices (verified against Stripe), so this is only ever a defensive
+  // fallback, not the expected path. GBP is the Price's own default currency,
+  // so it's omitted from the request rather than passed explicitly.
+  const cookieStore = await cookies()
+  const currency = normalizeBillingCurrency(cookieStore.get('vitrine_currency')?.value)
+  const stripeCurrency = currency.toLowerCase()
+
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
@@ -73,7 +88,20 @@ export async function POST(request: Request) {
     },
     // Stripe requires card on file by default; trials auto-convert to paid
     // on day 31 unless cancelled. No payment_method_collection override.
-  })
+  }
+
+  let session: Stripe.Checkout.Session
+  try {
+    session = await stripe.checkout.sessions.create(
+      stripeCurrency === 'gbp' ? sessionParams : { ...sessionParams, currency: stripeCurrency }
+    )
+  } catch (err) {
+    // Defensive fallback only — e.g. this customer's currency is already
+    // locked to something else by a past invoice. Retry in the Price's
+    // default currency (GBP) rather than fail the checkout outright.
+    if (stripeCurrency === 'gbp') throw err
+    session = await stripe.checkout.sessions.create(sessionParams)
+  }
 
   return NextResponse.json({ url: session.url })
 }
