@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/dashboard/", "/_preview/"],
+        disallow: ["/admin/", "/api/", "/dashboard/", "/_preview/", "/design"],
       },
     ],
     sitemap: "https://vitrinecms.com/sitemap.xml",
