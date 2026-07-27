@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v21', name: 'Orbit & Inspect', thesis: 'Drag to orbit the plinth, click to lift the glass, swap the object.' },
+  { id: 'v22', name: 'Walk the Room', thesis: 'A corridor of lit plinths. Steer with the pointer, hold to walk faster.' },
+  { id: 'v23', name: 'The Beam', thesis: 'You hold the spotlight. Everything you are not lighting is undocumented.' },
+  { id: 'v24', name: 'The Turntable', thesis: 'Turn the object, take the case off, change the lighting. All live.' },
+  { id: 'v25', name: 'Assembly', thesis: 'Scroll and the exhibit builds itself: plinth, object, glass.' },
   { id: 'v16', name: 'The Gallery', thesis: 'A raymarched WebGL room. The fold is a lit gallery, not a picture of one.' },
   { id: 'v17', name: 'Loud', thesis: 'Maximalist type at 19vw, object marquees, three colours, no whitespace.' },
   { id: 'v18', name: 'Immersion', thesis: 'One enormous object filling the screen, drifting, cross-fading.' },

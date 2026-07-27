@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v21: {
+    best: 'Closest to "handling the object". The lift-the-glass moment is the one people will remember.',
+    risk: 'Orbit needs a hint or some visitors never drag at all and just see a still.',
+    measure: 'Share of sessions that drag or lift, then signup rate among those who did versus did not.',
+  },
+  v22: {
+    best: 'Conveys scale — the collection does not run out. Good for "I have hundreds of things".',
+    risk: 'Constant motion with no user input can read as a video and get ignored. Also the heaviest scene.',
+    measure: 'Time in the fold and CTA clicks; watch for motion-sickness complaints in feedback.',
+  },
+  v23: {
+    best: 'The strongest argument of the five — the dark is the pitch, not decoration.',
+    risk: 'Deliberately hides your product behind a beam. Impatient traffic may bounce.',
+    measure: 'Time to first CTA click. If the metaphor works, it should be faster, not slower.',
+  },
+  v24: {
+    best: 'Answers "does it work for what I collect?" without a word of copy. Most controls, most dwell.',
+    risk: 'Configurator UI competes with the CTA. Fiddling is not converting.',
+    measure: 'Control interactions per session against signup rate — check dwell is not just play.',
+  },
+  v25: {
+    best: 'A guided story with a real payoff, and no interaction to learn. Safest of the five.',
+    risk: 'Scroll-jacked builds age fast, and the offer only appears at the end.',
+    measure: 'Scroll completion to the final stage, then CTA clicks from that stage.',
+  },
   v16: {
     best: 'Maximum first-impression impact. Nothing else in this category looks remotely like it.',
     risk: 'A per-pixel raymarched shader. Needs a real frame-rate check on mid-range Android before it ships.',
@@ -120,7 +145,7 @@ export default function DesignIndex() {
           Internal · not indexed · not linked from the site
         </p>
         <h1 className="type-book mb-4 text-4xl leading-tight sm:text-5xl">
-          Twenty homepage concepts, aimed at conversion.
+          Twenty-five homepage concepts, aimed at conversion.
         </h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
           Each one is a working page with real pricing and real public collections, not a mockup.
