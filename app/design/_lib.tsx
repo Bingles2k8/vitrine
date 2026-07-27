@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v16', name: 'The Gallery', thesis: 'A raymarched WebGL room. The fold is a lit gallery, not a picture of one.' },
+  { id: 'v17', name: 'Loud', thesis: 'Maximalist type at 19vw, object marquees, three colours, no whitespace.' },
+  { id: 'v18', name: 'Immersion', thesis: 'One enormous object filling the screen, drifting, cross-fading.' },
+  { id: 'v19', name: 'The Pile', thesis: 'Your collection as a physics pile you can grab and throw.' },
+  { id: 'v20', name: 'Torchlight', thesis: 'A dark attic. Your cursor is the torch. Objects exist where you point.' },
   { id: 'v11', name: 'The Case', thesis: 'A real glass vitrine in CSS 3D. Cursor-lit, tactile, physical.' },
   { id: 'v12', name: "Curator's Table", thesis: 'A draggable canvas of real objects. Grab it, fling it, open one.' },
   { id: 'v13', name: 'Zoom', thesis: 'One continuous scroll-driven pull-back from serial number to whole collection.' },

@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v16: {
+    best: 'Maximum first-impression impact. Nothing else in this category looks remotely like it.',
+    risk: 'A per-pixel raymarched shader. Needs a real frame-rate check on mid-range Android before it ships.',
+    measure: 'Signup rate, but watch bounce rate on low-end devices as the counterweight.',
+  },
+  v17: {
+    best: 'Hobbyist collectors arriving from social. Impossible to scroll past, very screenshot-able.',
+    risk: 'Loud enough to put off the museum buyer entirely. Would need a separate institutional entry point.',
+    measure: 'Signup rate from consumer channels; check the £79 tier does not fall off a cliff.',
+  },
+  v18: {
+    best: 'Prestige and desire. The cheapest of the five to build and the easiest to get wrong.',
+    risk: 'Entirely dependent on image quality — one mediocre photo and the whole page collapses.',
+    measure: 'Signup rate, plus scroll-past-fold rate as a proxy for whether the image earns its space.',
+  },
+  v19: {
+    best: 'Cold traffic that has never heard of collection management. The most memorable page here.',
+    risk: 'Playfulness can undercut the "this protects your valuables" argument. Test the tone carefully.',
+    measure: 'Interaction rate with the pile → signup. Watch returning-visitor share too; toys get revisited.',
+  },
+  v20: {
+    best: 'Atmosphere with almost no cost — CSS masks, no 3D, no heavy assets. Strong on mobile.',
+    risk: 'Hiding your own content behind a beam is a real conversion gamble on impatient traffic.',
+    measure: 'Time to first CTA click, and signup rate against v18 which shows everything up front.',
+  },
   v11: {
     best: 'Brand-building and design-led collectors. The most photographable page here.',
     risk: 'CSS 3D is the whole hook — it must be flawless on mid-range Android or it reads as broken.',
@@ -95,7 +120,7 @@ export default function DesignIndex() {
           Internal · not indexed · not linked from the site
         </p>
         <h1 className="type-book mb-4 text-4xl leading-tight sm:text-5xl">
-          Fifteen homepage concepts, aimed at conversion.
+          Twenty homepage concepts, aimed at conversion.
         </h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
           Each one is a working page with real pricing and real public collections, not a mockup.
