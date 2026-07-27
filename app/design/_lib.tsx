@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v11', name: 'The Case', thesis: 'A real glass vitrine in CSS 3D. Cursor-lit, tactile, physical.' },
+  { id: 'v12', name: "Curator's Table", thesis: 'A draggable canvas of real objects. Grab it, fling it, open one.' },
+  { id: 'v13', name: 'Zoom', thesis: 'One continuous scroll-driven pull-back from serial number to whole collection.' },
+  { id: 'v14', name: 'Kinetic Ledger', thesis: 'Kinetic type plus a record that catalogues itself as you watch.' },
+  { id: 'v15', name: 'Spotlight', thesis: 'The homepage is a live search across real collections.' },
   { id: 'v1', name: 'Accession', thesis: 'Craft as credibility — the page is a museum object label.' },
   { id: 'v2', name: 'First Object', thesis: 'Catalogue something before you sign up. Commitment, not screenshots.' },
   { id: 'v3', name: 'The Wall', thesis: 'Real collections as the hero. Aspiration and live proof.' },

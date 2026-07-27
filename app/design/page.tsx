@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v11: {
+    best: 'Brand-building and design-led collectors. The most photographable page here.',
+    risk: 'CSS 3D is the whole hook — it must be flawless on mid-range Android or it reads as broken.',
+    measure: 'Signup rate, but also time-on-page and direct/social referral share.',
+  },
+  v12: {
+    best: 'Cold visitors who do not yet know what "collection management" means. Play sells it.',
+    risk: 'Drag-to-explore hides the pitch below the fold; needs the CTA pinned in view.',
+    measure: 'Table interaction rate → record-drawer opens → signup. Watch mobile separately.',
+  },
+  v13: {
+    best: 'Social and campaign traffic. A one-take scroll people finish and share.',
+    risk: 'Five screens of scroll before an offer. Wrong for anyone arriving ready to buy.',
+    measure: 'Scroll completion to the final act, then CTA clicks at the landing section.',
+  },
+  v14: {
+    best: 'The safest of the five — familiar SaaS rhythm, but the record catalogues itself.',
+    risk: 'Kinetic type is now common enough that it can read as trend-following.',
+    measure: 'Straight signup rate against the current homepage. This is the fair fight.',
+  },
+  v15: {
+    best: 'Everyone, and it compounds — the search doubles as a Discover funnel and SEO surface.',
+    risk: 'Only as good as the published collections behind it; thin data makes a thin page.',
+    measure: 'Search usage rate, empty-result CTA clicks (the strongest moment), signup rate.',
+  },
   v1: {
     best: 'Collectors who care about provenance and craft; also reads credible to curators.',
     risk: 'Slow burn — the offer arrives late. Weakest for cold paid traffic.',
@@ -70,13 +95,20 @@ export default function DesignIndex() {
           Internal · not indexed · not linked from the site
         </p>
         <h1 className="type-book mb-4 text-4xl leading-tight sm:text-5xl">
-          Ten homepage concepts, aimed at conversion.
+          Fifteen homepage concepts, aimed at conversion.
         </h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
           Each one is a working page with real pricing and real public collections, not a mockup.
           They are different arguments for signing up, not different paint jobs — so they should be
           judged on which argument is true for the traffic you actually get. Nothing here invents
           testimonials, customer counts or logos; where a page has a slot for proof it is marked.
+        </p>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
+          The first five (v11–v15) are the ambitious round: the interface is built out of the
+          objects themselves — a glass case in CSS 3D, a draggable curator&apos;s table, a
+          scroll-driven pull-back, a record that catalogues itself, and a homepage that is a live
+          search. The ten below them are the quieter first round, kept for reference and for the
+          arguments they make.
         </p>
 
         <ol className="mt-12 space-y-px border-t border-[#16150f]/15">
