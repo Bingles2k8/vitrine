@@ -30,7 +30,7 @@ export default function V31() {
           className="pointer-events-none absolute inset-0 z-[5]"
           style={{
             background:
-              'linear-gradient(100deg, rgba(6,8,6,0.92) 0%, rgba(6,8,6,0.78) 34%, rgba(6,8,6,0.18) 62%, transparent 78%)',
+              'linear-gradient(96deg, rgba(4,5,4,0.96) 0%, rgba(4,5,4,0.86) 30%, rgba(4,5,4,0.15) 58%, transparent 72%)',
           }}
         />
 

@@ -50,11 +50,11 @@ vec3 shade(vec3 p, vec3 rd, float m){
 
   vec3 alb = vec3(0.32);
   float spec = 0.05;
-  if (m < 1.5)      { alb = vec3(0.26, 0.28, 0.27); spec = 0.22; }
-  else if (m < 2.5) { alb = vec3(0.42, 0.46, 0.44); spec = 0.02; }
-  else if (m < 3.5) { alb = vec3(0.40, 0.44, 0.42); spec = 0.25; }
-  else if (m < 4.5) { alb = vec3(0.74, 0.73, 0.70); spec = 0.60; }
-  else              { alb = vec3(0.44, 0.35, 0.22); spec = 0.05; }
+  if (m < 1.5)      { alb = vec3(0.50, 0.52, 0.52); spec = 0.34; }   // sealed floor
+  else if (m < 2.5) { alb = vec3(0.80, 0.83, 0.81); spec = 0.03; }   // painted block
+  else if (m < 3.5) { alb = vec3(0.66, 0.70, 0.68); spec = 0.35; }   // steel
+  else if (m < 4.5) { alb = vec3(0.30, 0.31, 0.33); spec = 0.85; }   // the object
+  else              { alb = vec3(0.62, 0.52, 0.36); spec = 0.08; }   // ply crates
 
   // two strip lights running down the room
   vec3 l1 = vec3(-1.6, 2.28, p.z);
@@ -64,16 +64,16 @@ vec3 shade(vec3 p, vec3 rd, float m){
 
   vec3 d1 = normalize(l1 - p);
   vec3 d2 = normalize(l2 - p);
-  float s1 = softShadow(p + n * 0.006, d1, 7.0);
-  float s2 = softShadow(p + n * 0.006, d2, 7.0);
-  col += alb * TUBE * clamp(dot(n, d1), 0.0, 1.0) * s1 * 1.25;
-  col += alb * TUBE * clamp(dot(n, d2), 0.0, 1.0) * s2 * 1.25;
+  float s1 = softShadow(p + n * 0.006, d1, 18.0);
+  float s2 = softShadow(p + n * 0.006, d2, 18.0);
+  col += alb * TUBE * clamp(dot(n, d1), 0.0, 1.0) * s1 * 1.75;
+  col += alb * TUBE * clamp(dot(n, d2), 0.0, 1.0) * s2 * 1.75;
 
   float hemi = 0.5 + 0.5 * n.y;
-  col += alb * mix(vec3(0.16, 0.18, 0.17), vec3(0.30, 0.34, 0.33), hemi) * occ;
+  col += alb * mix(vec3(0.30, 0.33, 0.32), vec3(0.62, 0.68, 0.68), hemi) * occ;
 
   vec3 h = normalize(d1 - rd);
-  col += TUBE * spec * pow(clamp(dot(n, h), 0.0, 1.0), 42.0) * s1;
+  col += TUBE * spec * pow(clamp(dot(n, h), 0.0, 1.0), 96.0) * s1 * 2.2;
   return col;
 }
 
@@ -81,17 +81,11 @@ void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
   vec3 rd = camRay(uCam, uTarget, uv, 1.45);
   vec2 hit = march(uCam, rd);
-  vec3 col = hit.x > 36.0 ? vec3(0.05, 0.06, 0.06) : shade(uCam + rd * hit.x, rd, hit.y);
+  vec3 col = hit.x > 36.0 ? vec3(0.86, 0.88, 0.88) : shade(uCam + rd * hit.x, rd, hit.y);
 
-  col = 1.0 - exp(-col * 1.30);
-  col = pow(col, vec3(0.4545));
-  col *= 1.0 - 0.30 * length(uv * vec2(0.7, 1.0));
-
-  // The copy sits bottom-left, so pull that corner down hard.
-  float copy = smoothstep(0.16, -0.55, uv.x) * smoothstep(0.30, -0.30, uv.y);
-  col *= mix(1.0, 0.26, copy);
-
-  gl_FragColor = vec4(grain(col, 0.020), 1.0);
+  col = gradeClean(col, 1.14);
+  col *= 1.0 - 0.06 * length(uv * vec2(0.7, 1.0));
+  gl_FragColor = vec4(grain(col, 0.004), 1.0);
 }
 `
 
@@ -132,10 +126,10 @@ export default function Scene() {
     [reduced]
   )
 
-  const failed = useShader(canvasRef, FRAG, onFrame)
+  const failed = useShader(canvasRef, FRAG, onFrame, 1.0)
 
   if (failed) {
-    return <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#5c6260,#222624)' }} />
+    return <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#f2f4f2,#cfd4d1)' }} />
   }
 
   return (

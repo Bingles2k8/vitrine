@@ -142,4 +142,15 @@ vec3 camRay(vec3 ro, vec3 ta, vec2 uv, float fov){
 vec3 grain(vec3 col, float amt){
   return col + (hash(vec3(gl_FragCoord.xy, uTime)) - 0.5) * amt;
 }
+
+/* Filmic curve (ACES fit). Unlike x/(x+k) this keeps blacks genuinely black
+   and rolls highlights off cleanly, instead of pushing everything to grey. */
+vec3 filmic(vec3 x){
+  const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+vec3 gradeClean(vec3 col, float exposure){
+  return pow(filmic(col * exposure), vec3(0.4545));
+}
 `

@@ -43,7 +43,7 @@ vec2 map(vec3 p){
   return res;
 }
 
-vec3 BULB = vec3(1.0, 0.88, 0.66);
+vec3 BULB = vec3(1.0, 0.91, 0.74);
 
 vec3 shade(vec3 p, vec3 rd, float m){
   vec3 n = normal(p);
@@ -58,14 +58,21 @@ vec3 shade(vec3 p, vec3 rd, float m){
 
   vec3  ld  = normalize(uLight - p);
   float dif = clamp(dot(n, ld), 0.0, 1.0);
-  float sh  = softShadow(p + n * 0.006, ld, 10.0);
+  float sh  = softShadow(p + n * 0.006, ld, 26.0);      // crisp, not smoky
   float occ = ao(p, n);
-  float att = 1.0 / (1.0 + 0.24 * dot(uLight - p, uLight - p));
+  float att = 1.0 / (1.0 + 0.16 * dot(uLight - p, uLight - p));
 
-  vec3 col = alb * BULB * (3.8 * dif * sh * att) * occ;
-  col += alb * vec3(0.026, 0.032, 0.030) * occ;
+  vec3 col = alb * BULB * (6.4 * dif * sh * att) * occ;
+
+  // a tight cool rim so the object separates from the dark instead of fogging into it
+  vec3 rimDir = normalize(vec3(-1.4, 1.6, 2.6) - p);
+  float rim = pow(clamp(dot(n, rimDir), 0.0, 1.0), 3.0);
+  col += alb * vec3(0.42, 0.52, 0.68) * rim * (m > 3.5 && m < 4.5 ? 1.15 : 0.28);
+
+  col += alb * vec3(0.012, 0.015, 0.019) * occ;         // almost no lift — blacks stay black
+
   vec3 h = normalize(ld - rd);
-  col += BULB * spec * pow(clamp(dot(n, h), 0.0, 1.0), 36.0) * sh * att * 1.4;
+  col += BULB * spec * pow(clamp(dot(n, h), 0.0, 1.0), 90.0) * sh * att * 4.0;
   return col;
 }
 
@@ -88,15 +95,9 @@ void main(){
     col += BULB * 0.26 * smoothstep(1.3, 0.0, d);
   }
 
-  col = col / (col + 0.85);
-  col = pow(col, vec3(0.4545));
-  col *= 1.0 - 0.46 * length(uv * vec2(0.7, 1.0));
-
-  // Hold the left third down so the headline always has something to sit on.
-  float copy = smoothstep(0.10, -0.62, uv.x);
-  col *= mix(1.0, 0.30, copy);
-
-  gl_FragColor = vec4(grain(col, 0.026), 1.0);
+  col = gradeClean(col, 1.15);
+  col *= 1.0 - 0.10 * length(uv * vec2(0.7, 1.0));
+  gl_FragColor = vec4(grain(col, 0.004), 1.0);
 }
 `
 
@@ -149,7 +150,7 @@ export default function Scene() {
     [reduced]
   )
 
-  const failed = useShader(canvasRef, FRAG, onFrame)
+  const failed = useShader(canvasRef, FRAG, onFrame, 1.0)
 
   if (failed) {
     return <div className="absolute inset-0" style={{ background: 'radial-gradient(40% 36% at 46% 28%, #6b6350 0%, #0b0d0b 72%)' }} />
