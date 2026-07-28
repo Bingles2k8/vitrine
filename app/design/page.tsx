@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v31: {
+    best: 'The darkest step. Strongest problem statement, and the crate labels make the photos feel found rather than staged.',
+    risk: 'Almost no light. Photos are small and the room does the talking.',
+    measure: 'Professional trial starts; this end should over-index with institutions.',
+  },
+  v32: {
+    best: 'Keeps the store honesty but you can actually see the place. Prints read clearly.',
+    risk: 'Fluorescent green-grey is nobody\u2019s favourite colour. Least attractive step in the ramp.',
+    measure: 'Signup rate against v31 — this isolates whether the darkness helps or hurts.',
+  },
+  v33: {
+    best: 'The true midpoint and probably the most broadly likeable: a real room, real light, real work.',
+    risk: 'Middle of a spectrum can mean committing to nothing. Check it does not read as bland.',
+    measure: 'Straight signup rate. If the ramp has a peak, expect it near here.',
+  },
+  v34: {
+    best: 'Bright and aspirational while still a place. Prints are large enough to carry real proof.',
+    risk: 'Starts to look like a furniture catalogue rather than software for keeping records.',
+    measure: 'Signup rate plus £5 tier mix; this end should favour hobbyists.',
+  },
+  v35: {
+    best: 'The clean end. Loudest, most product-like, best for cold paid traffic.',
+    risk: 'Loses the room entirely — no context, no story, just an object and a claim.',
+    measure: 'Signup rate from paid; compare directly against v31 to size the whole spectrum.',
+  },
   v26: {
     best: 'Reads modern and calm, and the black-on-white type is far easier to make legible.',
     risk: 'A bright room hides the shader\u2019s best trick — no beam, no drama. Can look like a render, not a place.',
@@ -170,7 +195,7 @@ export default function DesignIndex() {
           Internal · not indexed · not linked from the site
         </p>
         <h1 className="type-book mb-4 text-4xl leading-tight sm:text-5xl">
-          Thirty homepage concepts, aimed at conversion.
+          Thirty-five homepage concepts, aimed at conversion.
         </h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
           Each one is a working page with real pricing and real public collections, not a mockup.

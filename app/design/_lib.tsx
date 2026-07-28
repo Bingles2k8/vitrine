@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v31', name: 'Store, dark', thesis: 'Spectrum 1/5 — the dark end. Crates labelled with real object photos.' },
+  { id: 'v32', name: 'Store, lit', thesis: 'Spectrum 2/5 — strip lights on, real prints hung along the wall.' },
+  { id: 'v33', name: 'Workroom', thesis: 'Spectrum 3/5 — the midpoint. A bench, a task lamp, a pinboard of real objects.' },
+  { id: 'v34', name: 'Showroom', thesis: 'Spectrum 4/5 — bright room, low blocks, big framed prints.' },
+  { id: 'v35', name: 'Studio', thesis: 'Spectrum 5/5 — the clean end. Cyclorama, colour, one real print behind.' },
   { id: 'v26', name: 'White Cube', thesis: 'Daylit white gallery. Skylight, no spotlight, black type.' },
   { id: 'v27', name: 'After Hours', thesis: 'Cold security lighting, mirror floor, glowing case edges.' },
   { id: 'v28', name: 'Afternoon', thesis: 'Sun through a window onto a table. Terracotta, not black.' },
