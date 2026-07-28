@@ -108,28 +108,57 @@ vec2 march(vec3 ro, vec3 rd){
 
 float softShadow(vec3 ro, vec3 rd, float sharp){
   float res = 1.0;
-  float t = 0.05;
-  for (int i = 0; i < 28; i++){
+  float t = 0.03;
+  for (int i = 0; i < 36; i++){
     float h = map(ro + rd * t).x;
-    if (h < 0.0018) return 0.0;
+    if (h < 0.0012) return 0.0;
     res = min(res, sharp * h / t);
-    t += clamp(h, 0.02, 0.4);
+    t += clamp(h, 0.012, 0.18);        // small steps: no banding, no mush
     if (t > 9.0) break;
   }
-  return clamp(res, 0.0, 1.0);
+  res = clamp(res, 0.0, 1.0);
+  return res * res * (3.0 - 2.0 * res); // firm up the penumbra
 }
 
-/* Cheap ambient occlusion — what sells a soft-lit room. */
+/* Contact occlusion. The radius is deliberately small (~0.12 units against
+   objects ~0.25 across) so this reads as a tight seam where things meet,
+   never as a broad grey halo across a flat surface. Apply it to ambient and
+   indirect only — never to the key light, or the render looks dirty. */
 float ao(vec3 p, vec3 n){
   float occ = 0.0;
   float sca = 1.0;
   for (int i = 0; i < 5; i++){
-    float hr = 0.02 + 0.14 * float(i);
+    float hr = 0.010 + 0.110 * float(i) / 4.0;
     float dd = map(p + n * hr).x;
     occ += (hr - dd) * sca;
-    sca *= 0.72;
+    sca *= 0.75;
   }
-  return clamp(1.0 - 1.4 * occ, 0.0, 1.0);
+  return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
+}
+
+/* Satin specular: a GGX lobe with a Schlick fresnel. Broad enough to travel
+   across the form as it turns, which is what stops a surface reading as flat
+   plastic — a single tight Phong dot never does that. */
+vec3 satinSpec(vec3 n, vec3 rd, vec3 l, vec3 tint, float rough, float f0){
+  vec3  h  = normalize(l - rd);
+  float nh = clamp(dot(n, h), 0.0, 1.0);
+  float nv = clamp(dot(n, -rd), 0.0, 1.0);
+  float nl = clamp(dot(n, l), 0.0, 1.0);
+  float a  = max(rough * rough, 0.002);
+  float den = nh * nh * (a * a - 1.0) + 1.0;
+  float d  = (a * a) / (3.14159265 * den * den);
+  float f  = f0 + (1.0 - f0) * pow(1.0 - nv, 5.0);
+  return tint * d * f * nl;
+}
+
+/* A two-tone environment sampled by the reflection vector. No extra marching —
+   just enough sky-above / floor-below variation to read as a real material. */
+vec3 envSheen(vec3 n, vec3 rd, vec3 skyCol, vec3 groundCol, float f0){
+  vec3  r  = reflect(rd, n);
+  float t  = clamp(r.y * 0.5 + 0.5, 0.0, 1.0);
+  float nv = clamp(dot(n, -rd), 0.0, 1.0);
+  float f  = f0 + (1.0 - f0) * pow(1.0 - nv, 5.0);
+  return mix(groundCol, skyCol, smoothstep(0.0, 1.0, t)) * f;
 }
 
 vec3 camRay(vec3 ro, vec3 ta, vec2 uv, float fov){

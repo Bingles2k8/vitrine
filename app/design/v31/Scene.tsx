@@ -15,11 +15,11 @@ vec2 map(vec3 p){
 
   // racking down both sides
   vec3 r = p;
-  r.x = abs(r.x) - 2.5;
-  r.z = mod(p.z + 1.6, 3.2) - 1.6;
+  r.x = abs(r.x) - 3.3;
+  r.z = mod(p.z + 2.2, 4.4) - 2.2;
   vec3 up = r; up.z = abs(up.z) - 1.45;
   float uprights = sdBox(up, vec3(0.05, 2.2, 0.05));
-  vec3 shv = r; shv.y = mod(p.y + 0.35, 1.05) - 0.525;
+  vec3 shv = r; shv.y = mod(p.y + 0.55, 1.45) - 0.725;
   float shelves = sdBox(shv, vec3(0.55, 0.028, 1.45));
   float rack = min(uprights, shelves);
   if (rack < res.x) res = vec2(rack, 3.0);
@@ -29,10 +29,9 @@ vec2 map(vec3 p){
     float crate = sdBox(p - vec3(1.05, 0.30 + float(i) * 0.60, 0.55), vec3(0.42, 0.30, 0.34)) - 0.012;
     if (crate < res.x) res = vec2(crate, 5.0);
   }
-  // more crates further down the aisle, out of the way
-  for (int i = 0; i < 3; i++){
-    float fi = float(i);
-    float crate = sdBox(p - vec3(-1.7 + fi * 1.0, 0.30, -1.5 - fi * 0.8), vec3(0.42, 0.30, 0.34)) - 0.012;
+  // one more stack, well back — enough to say "store room", not enough to shout
+  for (int i = 0; i < 2; i++){
+    float crate = sdBox(p - vec3(-1.95, 0.30 + float(i) * 0.60, -2.4), vec3(0.42, 0.30, 0.34)) - 0.012;
     if (crate < res.x) res = vec2(crate, 5.0);
   }
 
@@ -48,31 +47,32 @@ vec3 BULB = vec3(1.0, 0.91, 0.74);
 vec3 shade(vec3 p, vec3 rd, float m){
   vec3 n = normal(p);
 
-  vec3 alb = vec3(0.20);
-  float spec = 0.05;
-  if (m < 1.5)      { alb = vec3(0.15, 0.16, 0.15); spec = 0.20; }   // painted concrete
-  else if (m < 2.5) { alb = vec3(0.21, 0.24, 0.21); spec = 0.02; }   // breeze block
-  else if (m < 3.5) { alb = vec3(0.28, 0.31, 0.29); spec = 0.30; }   // galvanised steel
-  else if (m < 4.5) { alb = vec3(0.70, 0.68, 0.64); spec = 0.60; }   // the object
-  else              { alb = vec3(0.36, 0.28, 0.18); spec = 0.05; }   // plywood crates
+  vec3 alb; float rough; float f0;
+  if (m < 1.5)      { alb = vec3(0.15, 0.16, 0.15); rough = 0.42; f0 = 0.05; }  // sealed concrete
+  else if (m < 2.5) { alb = vec3(0.21, 0.24, 0.21); rough = 0.85; f0 = 0.03; }  // block wall
+  else if (m < 3.5) { alb = vec3(0.30, 0.33, 0.31); rough = 0.30; f0 = 0.10; }  // galvanised steel
+  else if (m < 4.5) { alb = vec3(0.68, 0.67, 0.64); rough = 0.26; f0 = 0.09; }  // the object — satin
+  else              { alb = vec3(0.36, 0.28, 0.18); rough = 0.70; f0 = 0.04; }  // plywood
 
   vec3  ld  = normalize(uLight - p);
   float dif = clamp(dot(n, ld), 0.0, 1.0);
-  float sh  = softShadow(p + n * 0.006, ld, 26.0);      // crisp, not smoky
+  float sh  = softShadow(p + n * 0.005, ld, 44.0);
   float occ = ao(p, n);
   float att = 1.0 / (1.0 + 0.16 * dot(uLight - p, uLight - p));
 
-  vec3 col = alb * BULB * (6.4 * dif * sh * att) * occ;
+  // Key light: no AO here. Occlusion belongs to indirect light only.
+  vec3 col = alb * BULB * (6.4 * dif * sh * att);
+  col += satinSpec(n, rd, ld, BULB, rough, f0) * sh * att * 26.0;
 
-  // a tight cool rim so the object separates from the dark instead of fogging into it
+  // Indirect: a tight cool rim, a sliver of bounce — both occluded.
   vec3 rimDir = normalize(vec3(-1.4, 1.6, 2.6) - p);
   float rim = pow(clamp(dot(n, rimDir), 0.0, 1.0), 3.0);
-  col += alb * vec3(0.42, 0.52, 0.68) * rim * (m > 3.5 && m < 4.5 ? 1.15 : 0.28);
+  col += alb * vec3(0.42, 0.52, 0.68) * rim * occ * (m > 3.5 && m < 4.5 ? 1.15 : 0.26);
+  col += alb * vec3(0.014, 0.017, 0.022) * occ;
 
-  col += alb * vec3(0.012, 0.015, 0.019) * occ;         // almost no lift — blacks stay black
-
-  vec3 h = normalize(ld - rd);
-  col += BULB * spec * pow(clamp(dot(n, h), 0.0, 1.0), 90.0) * sh * att * 4.0;
+  // Satin sheen — what makes a surface read as material rather than plastic.
+  col += envSheen(n, rd, vec3(0.10, 0.12, 0.16), vec3(0.030, 0.026, 0.020), f0)
+         * mix(0.25, 1.0, 1.0 - rough) * occ;
   return col;
 }
 
@@ -95,7 +95,7 @@ void main(){
     col += BULB * 0.26 * smoothstep(1.3, 0.0, d);
   }
 
-  col = gradeClean(col, 1.15);
+  col = gradeClean(col, 0.92);
   col *= 1.0 - 0.10 * length(uv * vec2(0.7, 1.0));
   gl_FragColor = vec4(grain(col, 0.004), 1.0);
 }
