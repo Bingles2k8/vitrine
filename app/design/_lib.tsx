@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v26', name: 'White Cube', thesis: 'Daylit white gallery. Skylight, no spotlight, black type.' },
+  { id: 'v27', name: 'After Hours', thesis: 'Cold security lighting, mirror floor, glowing case edges.' },
+  { id: 'v28', name: 'Afternoon', thesis: 'Sun through a window onto a table. Terracotta, not black.' },
+  { id: 'v29', name: 'The Store', thesis: 'The racking behind the gallery, lit by one swinging bulb.' },
+  { id: 'v30', name: 'Studio', thesis: 'Cyclorama, softboxes, colour. A product shot, not a museum.' },
   { id: 'v21', name: 'Orbit & Inspect', thesis: 'Drag to orbit the plinth, click to lift the glass, swap the object.' },
   { id: 'v22', name: 'Walk the Room', thesis: 'A corridor of lit plinths. Steer with the pointer, hold to walk faster.' },
   { id: 'v23', name: 'The Beam', thesis: 'You hold the spotlight. Everything you are not lighting is undocumented.' },

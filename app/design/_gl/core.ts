@@ -1,0 +1,136 @@
+/**
+ * Geometry-only GLSL core for the museum scenes.
+ *
+ * Unlike PRELUDE in scene.ts (which also bakes in one opinionated spotlit
+ * look), CORE stops at primitives and the marcher. Each variant supplies its
+ * own `map()`, its own `shade()` and its own tone curve — so the rooms can
+ * differ in architecture, lighting model, materials and grade, not just camera.
+ */
+export const CORE = `
+precision highp float;
+
+uniform vec2  uRes;
+uniform float uTime;
+uniform vec3  uCam;
+uniform vec3  uTarget;
+uniform vec3  uLight;
+uniform vec4  uP;
+uniform vec4  uQ;
+
+mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+float hash2(vec2 p){ return fract(sin(dot(p, vec2(41.7, 289.1))) * 43758.5453); }
+
+float smin(float a, float b, float k){
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+float sdBox(vec3 p, vec3 b){
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float sdCyl(vec3 p, float h, float r){
+  vec2 d = vec2(length(p.xz) - r, abs(p.y) - h);
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+float sdTorus(vec3 p, vec2 t){
+  vec2 q = vec2(length(p.xz) - t.x, p.y);
+  return length(q) - t.y;
+}
+
+float sdFrame(vec3 p, vec3 b, float t){
+  vec3 q = abs(p);
+  float x = sdBox(vec3(q.x, q.y - b.y, q.z - b.z), vec3(b.x, t, t));
+  float y = sdBox(vec3(q.x - b.x, q.y, q.z - b.z), vec3(t, b.y, t));
+  float z = sdBox(vec3(q.x - b.x, q.y - b.y, q.z), vec3(t, t, b.z));
+  return min(x, min(y, z));
+}
+
+/* Four things off a shelf: rangefinder, vase, wristwatch, record. */
+float shapeAt(vec3 q, float id){
+  if (id < 0.5) {
+    float body = sdBox(q, vec3(0.20, 0.125, 0.075)) - 0.03;
+    float lens = length((q - vec3(0.0, -0.01, 0.115)) * vec3(1.0, 1.0, 0.55)) - 0.075;
+    float knob = length(q - vec3(0.13, 0.14, 0.0)) - 0.04;
+    return min(body, min(lens, knob));
+  } else if (id < 1.5) {
+    float belly = length(q - vec3(0.0, -0.02, 0.0)) - 0.17;
+    float neck  = sdCyl(q - vec3(0.0, 0.19, 0.0), 0.09, 0.055);
+    float lip   = sdTorus(q - vec3(0.0, 0.27, 0.0), vec2(0.062, 0.016));
+    float foot  = sdCyl(q - vec3(0.0, -0.19, 0.0), 0.015, 0.09);
+    return min(smin(belly, neck, 0.06), min(lip, foot));
+  } else if (id < 2.5) {
+    float caseB = sdCyl(q, 0.035, 0.13);
+    float bezel = sdTorus(q - vec3(0.0, 0.036, 0.0), vec2(0.125, 0.014));
+    float strap = sdBox(q, vec3(0.055, 0.30, 0.018)) - 0.012;
+    float crown = sdCyl((q - vec3(0.145, 0.0, 0.0)).yxz, 0.022, 0.022);
+    return min(min(caseB, bezel), min(strap, crown));
+  }
+  float disc = sdCyl(q, 0.006, 0.245);
+  float hole = sdCyl(q, 0.02, 0.018);
+  return max(disc, -hole);
+}
+
+vec2 map(vec3 p);
+
+vec3 normal(vec3 p){
+  vec2 e = vec2(0.0014, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy).x - map(p - e.xyy).x,
+    map(p + e.yxy).x - map(p - e.yxy).x,
+    map(p + e.yyx).x - map(p - e.yyx).x
+  ));
+}
+
+vec2 march(vec3 ro, vec3 rd){
+  float t = 0.0;
+  float m = 0.0;
+  for (int i = 0; i < 90; i++){
+    vec2 h = map(ro + rd * t);
+    if (h.x < 0.0016 * t || t > 36.0) { m = h.y; break; }
+    t += h.x * 0.86;
+    m = h.y;
+  }
+  return vec2(t, m);
+}
+
+float softShadow(vec3 ro, vec3 rd, float sharp){
+  float res = 1.0;
+  float t = 0.05;
+  for (int i = 0; i < 28; i++){
+    float h = map(ro + rd * t).x;
+    if (h < 0.0018) return 0.0;
+    res = min(res, sharp * h / t);
+    t += clamp(h, 0.02, 0.4);
+    if (t > 9.0) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+/* Cheap ambient occlusion — what sells a soft-lit room. */
+float ao(vec3 p, vec3 n){
+  float occ = 0.0;
+  float sca = 1.0;
+  for (int i = 0; i < 5; i++){
+    float hr = 0.02 + 0.14 * float(i);
+    float dd = map(p + n * hr).x;
+    occ += (hr - dd) * sca;
+    sca *= 0.72;
+  }
+  return clamp(1.0 - 1.4 * occ, 0.0, 1.0);
+}
+
+vec3 camRay(vec3 ro, vec3 ta, vec2 uv, float fov){
+  vec3 fw = normalize(ta - ro);
+  vec3 rt = normalize(cross(vec3(0.0, 1.0, 0.0), fw));
+  vec3 up = cross(fw, rt);
+  return normalize(uv.x * rt + uv.y * up + fov * fw);
+}
+
+vec3 grain(vec3 col, float amt){
+  return col + (hash(vec3(gl_FragCoord.xy, uTime)) - 0.5) * amt;
+}
+`

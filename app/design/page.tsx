@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v26: {
+    best: 'Reads modern and calm, and the black-on-white type is far easier to make legible.',
+    risk: 'A bright room hides the shader\u2019s best trick — no beam, no drama. Can look like a render, not a place.',
+    measure: 'Signup rate against the dark rooms; bright pages usually win on trust, lose on memorability.',
+  },
+  v27: {
+    best: 'The most premium-looking of the lot. Mirror floor plus glowing case is the screenshot people share.',
+    risk: 'Very dark and very cold — reads as security software rather than a hobby you enjoy.',
+    measure: 'Direct/social referral share and time on page, then signup rate.',
+  },
+  v28: {
+    best: 'The only one that says "your home", not "an institution". Best fit for the hobbyist tier.',
+    risk: 'Warm and soft can read as lifestyle rather than software. The sun shaft is also the heaviest effect here.',
+    measure: 'Signup rate from consumer channels, and £5 tier mix specifically.',
+  },
+  v29: {
+    best: 'Truest to the actual problem — this is what an uncatalogued collection really looks like.',
+    risk: 'Deliberately unglamorous. Sells the pain, not the pleasure.',
+    measure: 'Professional trial starts; this one should over-index with institutional buyers.',
+  },
+  v30: {
+    best: 'Loud, colourful, high-key. The clearest "this works for whatever you collect" statement.',
+    risk: 'Abandons the museum metaphor almost entirely — closer to a hardware launch page.',
+    measure: 'Signup rate from cold paid traffic, plus swatch/shape interaction as an intent signal.',
+  },
   v21: {
     best: 'Closest to "handling the object". The lift-the-glass moment is the one people will remember.',
     risk: 'Orbit needs a hint or some visitors never drag at all and just see a still.',
@@ -145,7 +170,7 @@ export default function DesignIndex() {
           Internal · not indexed · not linked from the site
         </p>
         <h1 className="type-book mb-4 text-4xl leading-tight sm:text-5xl">
-          Twenty-five homepage concepts, aimed at conversion.
+          Thirty homepage concepts, aimed at conversion.
         </h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-[#544f45]">
           Each one is a working page with real pricing and real public collections, not a mockup.
