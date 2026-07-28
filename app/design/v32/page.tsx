@@ -18,12 +18,15 @@ export default function V32() {
       <section className="relative h-[calc(100vh-30px)] min-h-[620px] w-full overflow-hidden">
         <Scene />
 
-        {/* The room is bright, so the copy is ink — and the corner is lifted, not dimmed */}
+        {/* The room is bright, so the copy is ink — and the corner is lifted, not
+            dimmed. Kept to the bottom-left corner the copy actually occupies:
+            the old full-width wash flattened the bench and the object along
+            with it, which is no use when the render is the point. */}
         <div
           className="pointer-events-none absolute inset-0 z-[5]"
           style={{
             background:
-              'linear-gradient(18deg, rgba(238,240,238,0.96) 0%, rgba(238,240,238,0.80) 30%, rgba(238,240,238,0.12) 60%, transparent 78%)',
+              'linear-gradient(58deg, rgba(238,240,238,0.95) 0%, rgba(238,240,238,0.74) 24%, rgba(238,240,238,0.16) 44%, transparent 60%)',
           }}
         />
 

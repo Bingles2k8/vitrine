@@ -120,6 +120,31 @@ float softShadow(vec3 ro, vec3 rd, float sharp){
   return res * res * (3.0 - 2.0 * res); // firm up the penumbra
 }
 
+/* Area-light shadow. Unlike softShadow's fixed sharpness, the penumbra here
+   widens with the distance the shadow is thrown, because "size" is the angular
+   radius of the source: crisp where an object meets the floor, soft ten feet
+   away. That single behaviour is most of what reads as "ray traced" — a
+   constant-width edge always looks like a shader trick.
+   (The y/d correction is iq's: it measures the true closest approach of the
+   ray to the occluder rather than the sample distance, which kills the banding
+   you otherwise get on shallow contacts.) */
+float penumbra(vec3 ro, vec3 rd, float size, float maxT){
+  float res = 1.0;
+  float t = 0.02;
+  float ph = 1e10;
+  for (int i = 0; i < 48; i++){
+    float h = map(ro + rd * t).x;
+    if (h < 0.0008) return 0.0;
+    float y = h * h / (2.0 * ph);
+    float d = sqrt(max(h * h - y * y, 0.0));
+    res = min(res, d / (size * max(t - y, 0.001)));
+    ph = h;
+    t += clamp(h, 0.008, 0.22);
+    if (t > maxT) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
 /* Contact occlusion. The radius is deliberately small (~0.12 units against
    objects ~0.25 across) so this reads as a tight seam where things meet,
    never as a broad grey halo across a flat surface. Apply it to ambient and
@@ -181,5 +206,20 @@ vec3 filmic(vec3 x){
 
 vec3 gradeClean(vec3 col, float exposure){
   return pow(filmic(col * exposure), vec3(0.4545));
+}
+
+/* As above, with an S-curve pivoted on mid grey. Applied after gamma so it
+   moves perceived contrast rather than crushing linear values — shadows sit
+   down, highlights hold, nothing clips to a flat black or white plate. */
+vec3 gradeRT(vec3 col, float exposure, float contrast){
+  vec3 c = pow(filmic(col * exposure), vec3(0.4545));
+  return clamp((c - 0.5) * contrast + 0.5, 0.0, 1.0);
+}
+
+/* Fresnel for a dielectric, by viewing angle. Grazing rays reflect almost
+   everything — the reason a floor mirrors the room at a distance but barely
+   at your feet. */
+float fresnel(vec3 n, vec3 rd, float f0){
+  return f0 + (1.0 - f0) * pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 5.0);
 }
 `

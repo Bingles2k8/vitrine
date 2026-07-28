@@ -43,36 +43,67 @@ vec2 map(vec3 p){
 }
 
 vec3 BULB = vec3(1.0, 0.91, 0.74);
+vec3 DARK = vec3(0.005, 0.006, 0.006);
 
-vec3 shade(vec3 p, vec3 rd, float m){
-  vec3 n = normal(p);
+void mat(float m, out vec3 alb, out float rough, out float f0){
+  if (m < 1.5)      { alb = vec3(0.14, 0.15, 0.14); rough = 0.30; f0 = 0.05; }  // polished screed
+  else if (m < 2.5) { alb = vec3(0.20, 0.23, 0.20); rough = 0.85; f0 = 0.03; }  // block wall
+  else if (m < 3.5) { alb = vec3(0.30, 0.33, 0.31); rough = 0.28; f0 = 0.10; }  // galvanised steel
+  else if (m < 4.5) { alb = vec3(0.68, 0.67, 0.64); rough = 0.24; f0 = 0.09; }  // the object — satin
+  else              { alb = vec3(0.33, 0.28, 0.21); rough = 0.70; f0 = 0.04; }  // plywood
+}
 
+/* The bulb drawn as something the ray can see, not a sprite pasted on at the
+   end — so it turns up in the floor reflection too. */
+vec3 bulbGlow(vec3 ro, vec3 rd, float tmax){
+  vec3  toL   = uLight - ro;
+  float along = clamp(dot(toL, rd), 0.0, 40.0);
+  if (along >= tmax) return vec3(0.0);
+  float d = length(toL - rd * along);
+  // A tight filament and a small bloom. The wide halo this used to carry was
+  // the last of the fog — a bare bulb does not veil half a room.
+  return BULB * (2.8 * smoothstep(0.085, 0.0, d) + 0.16 * smoothstep(0.55, 0.0, d));
+}
+
+/* bounce = 1 on the second ray: no AO, a slightly cheaper shadow. Nobody can
+   read contact occlusion in a reflection, and it halves the cost. */
+vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   vec3 alb; float rough; float f0;
-  if (m < 1.5)      { alb = vec3(0.15, 0.16, 0.15); rough = 0.42; f0 = 0.05; }  // sealed concrete
-  else if (m < 2.5) { alb = vec3(0.21, 0.24, 0.21); rough = 0.85; f0 = 0.03; }  // block wall
-  else if (m < 3.5) { alb = vec3(0.30, 0.33, 0.31); rough = 0.30; f0 = 0.10; }  // galvanised steel
-  else if (m < 4.5) { alb = vec3(0.68, 0.67, 0.64); rough = 0.26; f0 = 0.09; }  // the object — satin
-  else              { alb = vec3(0.36, 0.28, 0.18); rough = 0.70; f0 = 0.04; }  // plywood
+  mat(m, alb, rough, f0);
 
-  vec3  ld  = normalize(uLight - p);
+  vec3  lv  = uLight - p;
+  float d2  = dot(lv, lv);
+  vec3  ld  = lv * inversesqrt(d2);
   float dif = clamp(dot(n, ld), 0.0, 1.0);
-  float sh  = softShadow(p + n * 0.005, ld, 44.0);
-  float occ = ao(p, n);
-  float att = 1.0 / (1.0 + 0.16 * dot(uLight - p, uLight - p));
+
+  // True inverse square. This is where the contrast comes from: the crates
+  // under the bulb blaze, the back of the room falls off a cliff. A gentle
+  // 1/(1+kd²) rolloff is what made the old render look painted.
+  float att = 1.0 / max(d2, 0.10);
+  float sh  = bounce > 0.5 ? penumbra(p + n * 0.006, ld, 0.10, 6.0)
+                           : penumbra(p + n * 0.006, ld, 0.045, 9.0);
+  float occ = bounce > 0.5 ? 1.0 : ao(p, n);
 
   // Key light: no AO here. Occlusion belongs to indirect light only.
-  vec3 col = alb * BULB * (6.4 * dif * sh * att);
-  col += satinSpec(n, rd, ld, BULB, rough, f0) * sh * att * 26.0;
+  vec3 col = alb * BULB * (3.1 * dif * sh * att);
+  col += satinSpec(n, rd, ld, BULB, rough, f0) * sh * att * 11.0;
 
-  // Indirect: a tight cool rim, a sliver of bounce — both occluded.
+  // Indirect: a tight cool rim, a sliver of bounce — both occluded. Kept
+  // deliberately mean so shadow interiors stay properly black.
   vec3 rimDir = normalize(vec3(-1.4, 1.6, 2.6) - p);
   float rim = pow(clamp(dot(n, rimDir), 0.0, 1.0), 3.0);
-  col += alb * vec3(0.42, 0.52, 0.68) * rim * occ * (m > 3.5 && m < 4.5 ? 1.15 : 0.26);
-  col += alb * vec3(0.014, 0.017, 0.022) * occ;
+  col += alb * vec3(0.30, 0.38, 0.50) * rim * occ * (m > 3.5 && m < 4.5 ? 0.85 : 0.16);
+  col += alb * vec3(0.009, 0.011, 0.015) * occ;
 
-  // Satin sheen — what makes a surface read as material rather than plastic.
-  col += envSheen(n, rd, vec3(0.10, 0.12, 0.16), vec3(0.030, 0.026, 0.020), f0)
-         * mix(0.25, 1.0, 1.0 - rough) * occ;
+  // Floor bounce. In a room lit by one bulb this is the only indirect path
+  // that carries any energy: the hot pool of light under the bulb, thrown
+  // back up. Without it the crate fronts go to absolute black and the
+  // silhouette stops reading — which is a lighting failure, not contrast.
+  float near = exp(-length(p.xz - uLight.xz) * 0.55) * exp(-max(p.y, 0.0) * 0.85);
+  col += alb * BULB * (0.40 * near * clamp(0.55 - 0.55 * n.y, 0.0, 1.0)) * occ;
+
+  col += envSheen(n, rd, vec3(0.07, 0.085, 0.115), vec3(0.020, 0.017, 0.013), f0)
+         * mix(0.20, 0.85, 1.0 - rough) * occ;
   return col;
 }
 
@@ -81,21 +112,44 @@ void main(){
 
   // Lens shift: the camera stays aimed at the object, but the frame is offset
   // so the object sits in the right-hand third and the copy gets clear space.
-  vec2 suv = uv - vec2(0.34, 0.02);
-  vec3 rd = camRay(uCam, uTarget, suv, 1.45);
+  // uv.x only spans ±0.5·aspect, so on a phone a fixed 0.34 pushes the object
+  // clean off the side of the screen — hence the shift follows the aspect, and
+  // on a narrow screen it goes up instead of across, above the copy.
+  float ar = uRes.x / uRes.y;
+  bool wide = ar > 1.0;
+  vec2 suv = uv - vec2(wide ? clamp(ar * 0.22, 0.09, 0.34) : 0.05, wide ? 0.02 : 0.33);
+  // Wider angle on a phone, or the object crops against the top of the frame.
+  vec3 rd = camRay(uCam, uTarget, suv, wide ? 1.45 : 1.00);
 
   vec2 hit = march(uCam, rd);
-  vec3 col = hit.x > 36.0 ? vec3(0.009, 0.011, 0.010) : shade(uCam + rd * hit.x, rd, hit.y);
+  vec3 col = DARK;
 
-  vec3 toL = uLight - uCam;
-  float along = clamp(dot(toL, rd), 0.0, 40.0);
-  float d = length(toL - rd * along);
-  if (along < hit.x) {
-    col += BULB * 2.4 * smoothstep(0.085, 0.0, d);
-    col += BULB * 0.26 * smoothstep(1.3, 0.0, d);
+  if (hit.x <= 36.0) {
+    vec3 p = uCam + rd * hit.x;
+    vec3 n = normal(p);
+    col = shade(p, n, rd, hit.y, 0.0);
+
+    // One real bounce, traced. Floor and object only — the block walls and the
+    // ply are matt enough that a second ray would cost frames and show nothing.
+    float gloss = hit.y < 1.5 ? 1.0 : (hit.y > 3.5 && hit.y < 4.5 ? 0.5 : 0.0);
+    if (gloss > 0.0) {
+      vec3 ro = p + n * 0.02;
+      vec3 rr = reflect(rd, n);
+      vec2 h2 = march(ro, rr);
+      vec3 q  = ro + rr * h2.x;
+      // Capped short: past this the marcher runs out of steps on a grazing ray
+      // and an unconverged hit gives a garbage normal — visible as speckle.
+      vec3 rc = h2.x > 13.0 ? DARK : shade(q, normal(q), rr, h2.y, 1.0);
+      rc += bulbGlow(ro, rr, min(h2.x, 36.0));
+      // Energy off with the length of the bounce — the stand-in for the blur a
+      // real rough floor puts on anything more than a stride away.
+      col += rc * gloss * fresnel(n, rd, 0.05) * exp(-h2.x * 0.30);
+    }
   }
 
-  col = gradeClean(col, 0.92);
+  col += bulbGlow(uCam, rd, hit.x);
+
+  col = gradeRT(col, 1.05, 1.14);
   col *= 1.0 - 0.10 * length(uv * vec2(0.7, 1.0));
   gl_FragColor = vec4(grain(col, 0.004), 1.0);
 }
