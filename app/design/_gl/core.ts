@@ -49,7 +49,11 @@ float sdFrame(vec3 p, vec3 b, float t){
   return min(x, min(y, z));
 }
 
-/* Four things off a shelf: rangefinder, vase, wristwatch, record. */
+/* Four things off a shelf: rangefinder, vase, record, teacup. A wristwatch
+   and a book were tried and dropped — neither read at this scale without a
+   texture, and untextured they were just a ring and a slab.
+   Only shapes I can model convincingly from primitives — nothing that needs a
+   texture to be legible. */
 float shapeAt(vec3 q, float id){
   if (id < 0.5) {
     float body = sdBox(q, vec3(0.20, 0.125, 0.075)) - 0.03;
@@ -63,15 +67,20 @@ float shapeAt(vec3 q, float id){
     float foot  = sdCyl(q - vec3(0.0, -0.19, 0.0), 0.015, 0.09);
     return min(smin(belly, neck, 0.06), min(lip, foot));
   } else if (id < 2.5) {
-    float caseB = sdCyl(q, 0.035, 0.13);
-    float bezel = sdTorus(q - vec3(0.0, 0.036, 0.0), vec2(0.125, 0.014));
-    float strap = sdBox(q, vec3(0.055, 0.30, 0.018)) - 0.012;
-    float crown = sdCyl((q - vec3(0.145, 0.0, 0.0)).yxz, 0.022, 0.022);
-    return min(min(caseB, bezel), min(strap, crown));
+    vec3 r = q - vec3(0.0, 0.10, 0.0);
+    r.yz = rot(1.5708) * r.yz;          // stood on edge
+    r.xz = rot(0.42) * r.xz;            // turned off-square
+    float disc = sdCyl(r, 0.007, 0.245);
+    float hole = sdCyl(r, 0.03, 0.017);
+    float foot = sdBox(q - vec3(0.0, -0.145, 0.0), vec3(0.075, 0.012, 0.055));
+    return min(max(disc, -hole), foot);
   }
-  float disc = sdCyl(q, 0.006, 0.245);
-  float hole = sdCyl(q, 0.02, 0.018);
-  return max(disc, -hole);
+    float cup    = sdCyl(q - vec3(0.0, 0.02, 0.0), 0.095, 0.125);
+    float hollow = sdCyl(q - vec3(0.0, 0.075, 0.0), 0.075, 0.105);
+    cup = max(cup, -hollow);
+    float handle = sdTorus((q - vec3(0.155, 0.02, 0.0)).yxz, vec2(0.058, 0.015));
+    float saucer = sdCyl(q - vec3(0.0, -0.10, 0.0), 0.011, 0.205);
+  return min(min(cup, handle), saucer);
 }
 
 vec2 map(vec3 p);

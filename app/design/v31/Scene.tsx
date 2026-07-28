@@ -2,12 +2,12 @@
 
 import { useCallback, useRef } from 'react'
 import { CORE } from '../_gl/core'
-import { ATLAS_COLS, ATLAS_ROWS, PHOTO_GLSL, usePhotoAtlas } from '../_gl/photo'
+import { SHAPE_COUNT } from '../_gl/shapes'
 import { useShader } from '../_gl/useShader'
 import { useReducedMotion } from '../_motion'
 
-/** Step 1 of 5 — the darkest end. Racking, one bulb, photos as crate labels. */
-const FRAG = `${CORE}${PHOTO_GLSL}
+/** The dark store: racking, crates, one bulb on a flex. Geometry only. */
+const FRAG = `${CORE}
 vec2 map(vec3 p){
   vec2 res = vec2(p.y, 1.0);
   float room = -sdBox(p - vec3(0.0, 2.6, 0.0), vec3(6.0, 2.6, 9.0));
@@ -24,48 +24,37 @@ vec2 map(vec3 p){
   float rack = min(uprights, shelves);
   if (rack < res.x) res = vec2(rack, 3.0);
 
-  // stacked crates in the aisle, each with a label facing the camera
-  for (int i = 0; i < 5; i++){
+  // two crates stacked clear of the copy, with the object standing on top
+  for (int i = 0; i < 2; i++){
+    float crate = sdBox(p - vec3(1.05, 0.30 + float(i) * 0.60, 0.55), vec3(0.42, 0.30, 0.34)) - 0.012;
+    if (crate < res.x) res = vec2(crate, 5.0);
+  }
+  // more crates further down the aisle, out of the way
+  for (int i = 0; i < 3; i++){
     float fi = float(i);
-    vec3 c = vec3(-1.25 + mod(fi, 3.0) * 1.25, 0.30 + floor(fi / 3.0) * 0.62, 0.9 - floor(fi / 3.0) * 0.5);
-    float crate = sdBox(p - c, vec3(0.44, 0.30, 0.34));
-    if (crate < res.x) res = vec2(crate, 10.0 + fi);
+    float crate = sdBox(p - vec3(-1.7 + fi * 1.0, 0.30, -1.5 - fi * 0.8), vec3(0.42, 0.30, 0.34)) - 0.012;
+    if (crate < res.x) res = vec2(crate, 5.0);
   }
 
-  vec3 q = p - vec3(0.55, 1.30, 0.55);
+  vec3 q = p - vec3(1.05, 1.38, 0.55);
   q.xz = rot(uP.z) * q.xz;
-  float obj = shapeAt(q, 0.0);
+  float obj = shapeAt(q, uP.x);
   if (obj < res.x) res = vec2(obj, 4.0);
   return res;
 }
 
 vec3 BULB = vec3(1.0, 0.88, 0.66);
 
-vec3 crateCentre(float i){
-  return vec3(-1.25 + mod(i, 3.0) * 1.25, 0.30 + floor(i / 3.0) * 0.62, 0.9 - floor(i / 3.0) * 0.5);
-}
-
 vec3 shade(vec3 p, vec3 rd, float m){
   vec3 n = normal(p);
 
   vec3 alb = vec3(0.20);
   float spec = 0.05;
-  if (m > 9.5) {
-    vec3 c = crateCentre(m - 10.0);
-    alb = vec3(0.34, 0.27, 0.17);                       // plywood
-    if (n.z > 0.6 && uPhoto.x > 0.5) {
-      vec2 uv = (p.xy - c.xy) / vec2(0.36, 0.22) * 0.5 + 0.5;
-      uv.x = 1.0 - uv.x;
-      if (uv.x > 0.02 && uv.x < 0.98 && uv.y > 0.02 && uv.y < 0.98) {
-        alb = atlasSample(m - 10.0, uv) * 0.85;         // the label
-      }
-    }
-    spec = 0.05;
-  }
-  else if (m < 1.5)      { alb = vec3(0.15, 0.16, 0.15); spec = 0.20; }
-  else if (m < 2.5)      { alb = vec3(0.21, 0.24, 0.21); spec = 0.02; }
-  else if (m < 3.5)      { alb = vec3(0.28, 0.31, 0.29); spec = 0.30; }
-  else                   { alb = vec3(0.66, 0.64, 0.60); spec = 0.55; }
+  if (m < 1.5)      { alb = vec3(0.15, 0.16, 0.15); spec = 0.20; }   // painted concrete
+  else if (m < 2.5) { alb = vec3(0.21, 0.24, 0.21); spec = 0.02; }   // breeze block
+  else if (m < 3.5) { alb = vec3(0.28, 0.31, 0.29); spec = 0.30; }   // galvanised steel
+  else if (m < 4.5) { alb = vec3(0.70, 0.68, 0.64); spec = 0.60; }   // the object
+  else              { alb = vec3(0.36, 0.28, 0.18); spec = 0.05; }   // plywood crates
 
   vec3  ld  = normalize(uLight - p);
   float dif = clamp(dot(n, ld), 0.0, 1.0);
@@ -82,7 +71,11 @@ vec3 shade(vec3 p, vec3 rd, float m){
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-  vec3 rd = camRay(uCam, uTarget, uv, 1.45);
+
+  // Lens shift: the camera stays aimed at the object, but the frame is offset
+  // so the object sits in the right-hand third and the copy gets clear space.
+  vec2 suv = uv - vec2(0.34, 0.02);
+  vec3 rd = camRay(uCam, uTarget, suv, 1.45);
 
   vec2 hit = march(uCam, rd);
   vec3 col = hit.x > 36.0 ? vec3(0.009, 0.011, 0.010) : shade(uCam + rd * hit.x, rd, hit.y);
@@ -98,19 +91,46 @@ void main(){
   col = col / (col + 0.85);
   col = pow(col, vec3(0.4545));
   col *= 1.0 - 0.46 * length(uv * vec2(0.7, 1.0));
+
+  // Hold the left third down so the headline always has something to sit on.
+  float copy = smoothstep(0.10, -0.62, uv.x);
+  col *= mix(1.0, 0.30, copy);
+
   gl_FragColor = vec4(grain(col, 0.026), 1.0);
 }
 `
 
-export default function Scene({ photos }: { photos: string[] }) {
+
+/** Random per load, or pinned with ?shape=N so each model can be reviewed. */
+function pickShape() {
+  try {
+    const forced = new URLSearchParams(window.location.search).get('shape')
+    if (forced !== null) {
+      const n = Number(forced)
+      if (Number.isFinite(n)) return ((n % SHAPE_COUNT) + SHAPE_COUNT) % SHAPE_COUNT
+    }
+  } catch {
+    /* no window search params — fall through to random */
+  }
+  return Math.floor(Math.random() * SHAPE_COUNT)
+}
+
+export default function Scene() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
-  const { atlasRef, count } = usePhotoAtlas(photos)
-  const s = useRef({ swing: 0.3, vel: 0, spin: 0, drag: null as null | { x: number } })
+  const s = useRef({
+    swing: 0.3, vel: 0, spin: 0,
+    shape: null as number | null,
+    drag: null as null | { x: number },
+  })
 
   const onFrame = useCallback(
     (t: number) => {
       const st = s.current
+      // Picked once, on the client, in the render loop — a different object each
+      // page load without risking a server/client mismatch.
+      if (st.shape === null) st.shape = pickShape()
+
       if (!reduced) {
         st.vel += -st.swing * 0.0042
         st.vel *= 0.995
@@ -120,17 +140,16 @@ export default function Scene({ photos }: { photos: string[] }) {
       const a = st.swing
       return {
         uTime: t,
-        uCam: [0.15, 1.55, 3.6],
-        uTarget: [0.3, 0.9, 0.5],
-        uLight: [Math.sin(a) * 1.4, 2.2 - Math.abs(Math.sin(a)) * 0.2, 0.8 + Math.cos(a) * 0.22],
-        uP: [0, 0, st.spin, 0],
-        uPhoto: [count, ATLAS_COLS, ATLAS_ROWS, 0],
+        uCam: [0.10, 1.52, 3.15],
+        uTarget: [1.05, 1.34, 0.55],
+        uLight: [1.05 + Math.sin(a) * 0.85, 2.25 - Math.abs(Math.sin(a)) * 0.15, 0.85 + Math.cos(a) * 0.2],
+        uP: [st.shape, 0, st.spin, 0],
       }
     },
-    [count, reduced]
+    [reduced]
   )
 
-  const failed = useShader(canvasRef, FRAG, onFrame, 0.72, atlasRef)
+  const failed = useShader(canvasRef, FRAG, onFrame)
 
   if (failed) {
     return <div className="absolute inset-0" style={{ background: 'radial-gradient(40% 36% at 46% 28%, #6b6350 0%, #0b0d0b 72%)' }} />
@@ -152,7 +171,7 @@ export default function Scene({ photos }: { photos: string[] }) {
       }}
       onPointerUp={() => { s.current.drag = null }}
       onPointerCancel={() => { s.current.drag = null }}
-      aria-label="A dark store room with crates; drag to swing the light"
+      aria-label="A dark store room with racking and crates; drag to swing the light"
     />
   )
 }

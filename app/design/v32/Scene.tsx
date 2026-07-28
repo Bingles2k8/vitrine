@@ -2,14 +2,12 @@
 
 import { useCallback, useRef } from 'react'
 import { CORE } from '../_gl/core'
-import { ATLAS_COLS, ATLAS_ROWS, PHOTO_GLSL, usePhotoAtlas } from '../_gl/photo'
+import { SHAPE_COUNT } from '../_gl/shapes'
 import { useShader } from '../_gl/useShader'
 import { useReducedMotion } from '../_motion'
 
-/** Step 2 of 5 — same store, strip lights on. Prints hung along the end wall. */
-const FRAG = `${CORE}${PHOTO_GLSL}
-vec3 printCentre(float i){ return vec3(-2.55 + i * 1.28, 1.62, -3.9); }
-
+/** The same store with the strip lights on. Bare walls — geometry only. */
+const FRAG = `${CORE}
 vec2 map(vec3 p){
   vec2 res = vec2(p.y, 1.0);
   float room = -sdBox(p - vec3(0.0, 2.4, -0.5), vec3(5.2, 2.4, 4.8));
@@ -31,15 +29,16 @@ vec2 map(vec3 p){
   float table = min(bench, legs);
   if (table < res.x) res = vec2(table, 3.0);
 
-  for (int i = 0; i < 5; i++){
-    float fi = float(i);
-    float pr = sdBox(p - printCentre(fi), vec3(0.44, 0.44, 0.025));
-    if (pr < res.x) res = vec2(pr, 10.0 + fi);
-  }
+  // a couple of crates waiting to be worked through
+  vec3 c = p - vec3(-1.85, 0.28, 0.55);
+  c.y = mod(c.y + 0.28, 0.56) - 0.28;
+  float crate = sdBox(c, vec3(0.40, 0.26, 0.32)) - 0.012;
+  crate = max(crate, p.y - 1.12);
+  if (crate < res.x) res = vec2(crate, 5.0);
 
   vec3 q = p - vec3(0.35, 1.10, 0.2);
   q.xz = rot(uP.z) * q.xz;
-  float obj = shapeAt(q, 1.0);
+  float obj = shapeAt(q, uP.x);
   if (obj < res.x) res = vec2(obj, 4.0);
   return res;
 }
@@ -51,20 +50,11 @@ vec3 shade(vec3 p, vec3 rd, float m){
 
   vec3 alb = vec3(0.32);
   float spec = 0.05;
-  if (m > 9.5) {
-    vec3 c = printCentre(m - 10.0);
-    alb = vec3(0.10, 0.11, 0.11);                       // frame
-    if (n.z > 0.6 && uPhoto.x > 0.5) {
-      vec2 uv = (p.xy - c.xy) / vec2(0.38, 0.38) * 0.5 + 0.5;
-      uv.x = 1.0 - uv.x;
-      if (uv.x > 0.02 && uv.x < 0.98 && uv.y > 0.02 && uv.y < 0.98) alb = atlasSample(m - 10.0, uv);
-    }
-    spec = 0.08;
-  }
-  else if (m < 1.5) { alb = vec3(0.26, 0.28, 0.27); spec = 0.22; }
+  if (m < 1.5)      { alb = vec3(0.26, 0.28, 0.27); spec = 0.22; }
   else if (m < 2.5) { alb = vec3(0.42, 0.46, 0.44); spec = 0.02; }
   else if (m < 3.5) { alb = vec3(0.40, 0.44, 0.42); spec = 0.25; }
-  else              { alb = vec3(0.70, 0.69, 0.66); spec = 0.55; }
+  else if (m < 4.5) { alb = vec3(0.74, 0.73, 0.70); spec = 0.60; }
+  else              { alb = vec3(0.44, 0.35, 0.22); spec = 0.05; }
 
   // two strip lights running down the room
   vec3 l1 = vec3(-1.6, 2.28, p.z);
@@ -96,19 +86,39 @@ void main(){
   col = 1.0 - exp(-col * 1.30);
   col = pow(col, vec3(0.4545));
   col *= 1.0 - 0.30 * length(uv * vec2(0.7, 1.0));
+
+  // The copy sits bottom-left, so pull that corner down hard.
+  float copy = smoothstep(0.16, -0.55, uv.x) * smoothstep(0.30, -0.30, uv.y);
+  col *= mix(1.0, 0.26, copy);
+
   gl_FragColor = vec4(grain(col, 0.020), 1.0);
 }
 `
 
-export default function Scene({ photos }: { photos: string[] }) {
+
+/** Random per load, or pinned with ?shape=N so each model can be reviewed. */
+function pickShape() {
+  try {
+    const forced = new URLSearchParams(window.location.search).get('shape')
+    if (forced !== null) {
+      const n = Number(forced)
+      if (Number.isFinite(n)) return ((n % SHAPE_COUNT) + SHAPE_COUNT) % SHAPE_COUNT
+    }
+  } catch {
+    /* no window search params — fall through to random */
+  }
+  return Math.floor(Math.random() * SHAPE_COUNT)
+}
+
+export default function Scene() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
-  const { atlasRef, count } = usePhotoAtlas(photos)
-  const s = useRef({ mx: 0, tx: 0, spin: 0 })
+  const s = useRef({ mx: 0, tx: 0, spin: 0, shape: null as number | null })
 
   const onFrame = useCallback(
     (t: number) => {
       const st = s.current
+      if (st.shape === null) st.shape = pickShape()
       st.mx += (st.tx - st.mx) * 0.05
       if (!reduced) st.spin += 0.0028
       return {
@@ -116,14 +126,13 @@ export default function Scene({ photos }: { photos: string[] }) {
         uCam: [0.2 + st.mx * 0.5, 1.62, 3.5],
         uTarget: [0.35, 1.05, 0.1],
         uLight: [0, 2.28, 0],
-        uP: [0, 0, st.spin, 0],
-        uPhoto: [count, ATLAS_COLS, ATLAS_ROWS, 0],
+        uP: [st.shape, 0, st.spin, 0],
       }
     },
-    [count, reduced]
+    [reduced]
   )
 
-  const failed = useShader(canvasRef, FRAG, onFrame, 0.72, atlasRef)
+  const failed = useShader(canvasRef, FRAG, onFrame)
 
   if (failed) {
     return <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#5c6260,#222624)' }} />
@@ -137,7 +146,7 @@ export default function Scene({ photos }: { photos: string[] }) {
         const r = (e.target as HTMLElement).getBoundingClientRect()
         s.current.tx = ((e.clientX - r.left) / r.width - 0.5) * 2
       }}
-      aria-label="A store room with the strip lights on and prints on the wall"
+      aria-label="A store room with the strip lights on, racking and a work bench"
     />
   )
 }
