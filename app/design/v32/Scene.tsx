@@ -70,9 +70,8 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   float a2 = 1.0 / max(dot(v2, v2), 0.6);
 
   float sm = bounce > 0.5 ? 0.26 : 0.16;   // angular size of a 6ft tube
-  float mx = bounce > 0.5 ? 5.0 : 8.0;
-  float s1 = penumbra(p + n * 0.006, d1, sm, mx);
-  float s2 = penumbra(p + n * 0.006, d2, sm, mx);
+  float s1 = penumbra(p + n * 0.006, d1, sm, length(v1) - 0.03);
+  float s2 = penumbra(p + n * 0.006, d2, sm, length(v2) - 0.03);
   float occ = bounce > 0.5 ? 1.0 : ao(p, n);
 
   // Key lights: unoccluded, so flats stay perfectly even. With falloff in play

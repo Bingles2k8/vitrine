@@ -10,6 +10,31 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v36: {
+    best: 'The brand name rendered instead of described. Real refraction is the thing nobody else on this market has.',
+    risk: 'Glass over type is a legibility fight, and refraction that is slightly wrong just reads as a bug.',
+    measure: 'Drag rate, then signup rate among visitors who dragged versus those who did not.',
+  },
+  v37: {
+    best: 'Total confidence and nothing to read. Cheapest scene here by a distance, so it is the one that will be smooth on a mid-range phone.',
+    risk: 'It is a product shot for a product that is not the object. The copy has to carry the whole argument alone.',
+    measure: 'Signup rate from cold paid traffic — this is the one built for it.',
+  },
+  v38: {
+    best: 'Scale made physical. The counter climbing as you travel is the argument, and it is impossible to argue with.',
+    risk: 'Repetition can read as repetition. Also the only concept that hijacks the scroll, which some visitors hate.',
+    measure: 'Scroll depth through the pinned section, then CTA clicks past 50% travel.',
+  },
+  v39: {
+    best: 'The only one that demonstrates the actual software above the fold. Answers "what do I get" without a screenshot.',
+    risk: 'Busiest of the five, and the leader lines have to keep pointing at the object on every screen size.',
+    measure: 'Signup rate, and time to first CTA click against v37 — this trades speed for substance.',
+  },
+  v40: {
+    best: 'Pure curiosity. The button is a payoff rather than a link, so pressing it costs nothing and commits nothing.',
+    risk: 'A hero with nothing in it. Lives or dies on the headline, and the reveal only lands once.',
+    measure: 'Reveal press rate, then signup rate among those who pressed. If the first number is low the concept is dead.',
+  },
   v31: {
     best: 'The darkest step. Strongest problem statement, and the crate labels make the photos feel found rather than staged.',
     risk: 'Almost no light. Photos are small and the room does the talking.',

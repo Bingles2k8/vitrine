@@ -130,6 +130,11 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v36', name: 'Vitrine', thesis: 'A real glass case with refraction and a steel frame. Drag to walk around it.' },
+  { id: 'v37', name: 'Macro', thesis: 'No room. One object on a seamless sweep, four words, one button.' },
+  { id: 'v38', name: 'The Long Shelf', thesis: 'An aisle that does not end. Scroll to travel it; the counter climbs.' },
+  { id: 'v39', name: 'Accession', thesis: 'The object holds still and the catalogue record builds itself over the top.' },
+  { id: 'v40', name: 'The Empty Plinth', thesis: 'Nothing on it. The button is the payoff — press it and the object arrives.' },
   { id: 'v31', name: 'Store, dark', thesis: 'Racking, crates, one swinging bulb. Object changes on every load.' },
   { id: 'v32', name: 'Store, lit', thesis: 'Same room, strip lights on and a bench. Object changes on every load.' },
   { id: 'v33', name: 'Workroom', thesis: 'Spectrum 3/5 — the midpoint. A bench, a task lamp, a pinboard of real objects.' },

@@ -73,20 +73,21 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
 
   vec3  lv  = uLight - p;
   float d2  = dot(lv, lv);
-  vec3  ld  = lv * inversesqrt(d2);
+  float dl  = sqrt(d2);
+  vec3  ld  = lv / dl;
   float dif = clamp(dot(n, ld), 0.0, 1.0);
 
   // True inverse square. This is where the contrast comes from: the crates
   // under the bulb blaze, the back of the room falls off a cliff. A gentle
   // 1/(1+kd²) rolloff is what made the old render look painted.
   float att = 1.0 / max(d2, 0.10);
-  float sh  = bounce > 0.5 ? penumbra(p + n * 0.006, ld, 0.10, 6.0)
-                           : penumbra(p + n * 0.006, ld, 0.045, 9.0);
+  float sh  = bounce > 0.5 ? penumbra(p + n * 0.006, ld, 0.10, dl - 0.03)
+                           : penumbra(p + n * 0.006, ld, 0.045, dl - 0.03);
   float occ = bounce > 0.5 ? 1.0 : ao(p, n);
 
   // Key light: no AO here. Occlusion belongs to indirect light only.
-  vec3 col = alb * BULB * (3.1 * dif * sh * att);
-  col += satinSpec(n, rd, ld, BULB, rough, f0) * sh * att * 11.0;
+  vec3 col = alb * BULB * (1.6 * dif * sh * att);
+  col += satinSpec(n, rd, ld, BULB, rough, f0) * sh * att * 6.0;
 
   // Indirect: a tight cool rim, a sliver of bounce — both occluded. Kept
   // deliberately mean so shadow interiors stay properly black.
@@ -100,7 +101,7 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   // back up. Without it the crate fronts go to absolute black and the
   // silhouette stops reading — which is a lighting failure, not contrast.
   float near = exp(-length(p.xz - uLight.xz) * 0.55) * exp(-max(p.y, 0.0) * 0.85);
-  col += alb * BULB * (0.40 * near * clamp(0.55 - 0.55 * n.y, 0.0, 1.0)) * occ;
+  col += alb * BULB * (0.14 * near * clamp(0.55 - 0.55 * n.y, 0.0, 1.0)) * occ;
 
   col += envSheen(n, rd, vec3(0.07, 0.085, 0.115), vec3(0.020, 0.017, 0.013), f0)
          * mix(0.20, 0.85, 1.0 - rough) * occ;
@@ -149,7 +150,7 @@ void main(){
 
   col += bulbGlow(uCam, rd, hit.x);
 
-  col = gradeRT(col, 1.05, 1.14);
+  col = gradeRT(col, 0.88, 1.15);
   col *= 1.0 - 0.10 * length(uv * vec2(0.7, 1.0));
   gl_FragColor = vec4(grain(col, 0.004), 1.0);
 }

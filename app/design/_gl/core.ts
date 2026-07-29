@@ -127,12 +127,16 @@ float softShadow(vec3 ro, vec3 rd, float sharp){
    constant-width edge always looks like a shader trick.
    (The y/d correction is iq's: it measures the true closest approach of the
    ray to the occluder rather than the sample distance, which kills the banding
-   you otherwise get on shallow contacts.) */
+   you otherwise get on shallow contacts.)
+   maxT must be the distance to the light itself. March past it and the ray
+   carries on into the ceiling, which reads as a hit and puts the whole room in
+   shadow — a light cannot be occluded by something behind it. */
 float penumbra(vec3 ro, vec3 rd, float size, float maxT){
   float res = 1.0;
   float t = 0.02;
   float ph = 1e10;
   for (int i = 0; i < 48; i++){
+    if (t >= maxT) break;
     float h = map(ro + rd * t).x;
     if (h < 0.0008) return 0.0;
     float y = h * h / (2.0 * ph);
