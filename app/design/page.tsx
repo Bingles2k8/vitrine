@@ -10,6 +10,11 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v41: {
+    best: 'The concept you picked, wearing the real brand — stone-950, amber, the serif wordmark. Closest thing here to a page that could ship.',
+    risk: 'Hijacks the scroll, which some visitors hate, and the counter has to keep reading as an odometer rather than a claim.',
+    measure: 'Scroll depth through the pinned section, then CTA clicks past 50% travel.',
+  },
   v36: {
     best: 'The brand name rendered instead of described. Real refraction is the thing nobody else on this market has.',
     risk: 'Glass over type is a legibility fight, and refraction that is slightly wrong just reads as a bug.',

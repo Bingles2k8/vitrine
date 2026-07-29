@@ -130,6 +130,7 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v41', name: 'Long Shelf, in brand', thesis: 'v38 rebuilt in the live Vitrine palette, wordmark and type. Desktop and mobile.' },
   { id: 'v36', name: 'Vitrine', thesis: 'A real glass case with refraction and a steel frame. Drag to walk around it.' },
   { id: 'v37', name: 'Macro', thesis: 'No room. One object on a seamless sweep, four words, one button.' },
   { id: 'v38', name: 'The Long Shelf', thesis: 'An aisle that does not end. Scroll to travel it; the counter climbs.' },
