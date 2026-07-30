@@ -11,9 +11,19 @@ export const metadata = buildPageMetadata({
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
   v41: {
-    best: 'The concept you picked, wearing the real brand — stone-950, amber, the serif wordmark. Closest thing here to a page that could ship.',
-    risk: 'Hijacks the scroll, which some visitors hate, and the counter has to keep reading as an odometer rather than a claim.',
+    best: 'The live brand exactly: stone-950, tungsten lamps, amber on the type. Warmest of the three and the least work to ship.',
+    risk: 'Warm greys plus warm light can drift toward sepia. Watch it does not read as a period piece.',
     measure: 'Scroll depth through the pinned section, then CTA clicks past 50% travel.',
+  },
+  v42: {
+    best: 'Cold room, warm signature. Fluorescent tubes against a bone-white interface, with amber left on the wordmark alone — reads institutional and expensive.',
+    risk: 'Loses the amber CTA the rest of the site uses, so it is a brand decision, not just a page one.',
+    measure: 'Same as v41, plus CTA click rate — a white button on a cold page is a real change to the primary action.',
+  },
+  v43: {
+    best: 'The full inversion. Depth comes from haze instead of darkness, and dark objects on pale shelves are far easier to read at a glance.',
+    risk: 'Furthest from the current site of the three, and a bright hero gives the render nowhere to hide.',
+    measure: 'Signup rate against v41 head to head; light pages usually win on trust and lose on memorability.',
   },
   v36: {
     best: 'The brand name rendered instead of described. Real refraction is the thing nobody else on this market has.',

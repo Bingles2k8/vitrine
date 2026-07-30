@@ -130,7 +130,9 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
-  { id: 'v41', name: 'Long Shelf, in brand', thesis: 'v38 rebuilt in the live Vitrine palette, wordmark and type. Desktop and mobile.' },
+  { id: 'v41', name: 'Long Shelf, stone', thesis: 'The live Vitrine palette: stone-950, tungsten lamps, amber accent.' },
+  { id: 'v42', name: 'Long Shelf, cold store', thesis: 'Blue-black room, fluorescent tubes, bone UI. Amber kept for the wordmark alone.' },
+  { id: 'v43', name: 'Long Shelf, daylight', thesis: 'Shutters open. Paper page, ink type, depth from haze rather than darkness.' },
   { id: 'v36', name: 'Vitrine', thesis: 'A real glass case with refraction and a steel frame. Drag to walk around it.' },
   { id: 'v37', name: 'Macro', thesis: 'No room. One object on a seamless sweep, four words, one button.' },
   { id: 'v38', name: 'The Long Shelf', thesis: 'An aisle that does not end. Scroll to travel it; the counter climbs.' },
@@ -178,8 +180,11 @@ export function VariantBar({ current }: { current: string }) {
   const active = VARIANTS.find(v => v.id === current)
 
   return (
-    <div className="type-mono sticky top-0 z-[60] w-full border-b border-black/10 bg-white text-[11px] text-neutral-700 print:hidden">
-      <div className="mx-auto flex max-w-none items-center gap-3 overflow-x-auto px-3 py-1.5">
+    // Height is pinned at exactly 32px (h-8) because the variants that render a
+    // fixed site header have to offset by it — a bar that grows with its content
+    // leaves a sliver of scene showing above the header.
+    <div className="type-mono sticky top-0 z-[60] h-8 w-full overflow-hidden border-b border-black/10 bg-white text-[11px] text-neutral-700 print:hidden">
+      <div className="mx-auto flex h-full max-w-none items-center gap-3 overflow-x-auto px-3">
         <Link href="/design" className="shrink-0 font-semibold text-black hover:underline">
           design ↩
         </Link>
