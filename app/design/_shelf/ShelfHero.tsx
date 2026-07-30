@@ -149,7 +149,49 @@ function Canvas({
   )
 }
 
-export default function ShelfHero({ look, theme }: { look: Look; theme: Theme }) {
+export type Copy = {
+  eyebrow: string
+  headline: React.ReactNode
+  body: React.ReactNode
+  primary: { label: string; href: string }
+  secondary: { label: string; href: string }
+  fine: string
+}
+
+const DEFAULT_COPY: Copy = {
+  eyebrow: 'Your collection, from the inside',
+  headline: (
+    <>
+      Somewhere in here
+      <br />
+      is everything you own.
+    </>
+  ),
+  body: 'Vitrine gives every object a record — what it is, what it cost, where it is now, and who it goes to next. Then it gives the collection a page worth showing.',
+  primary: { label: 'Start free →', href: '/signup' },
+  secondary: { label: 'Browse collections', href: '/discover' },
+  fine: 'Free plan available · No credit card required',
+}
+
+export default function ShelfHero({
+  look,
+  theme,
+  copy = DEFAULT_COPY,
+  /** False when the page already has its own fixed site header above this. */
+  ownNav = true,
+  /**
+   * Colour the bottom of the hero resolves to, as "r,g,b". Set it to the colour
+   * of whatever follows when that is not the band colour — otherwise midday's
+   * lighter page meets a stone-950 section at a visible seam.
+   */
+  handoffRgb,
+}: {
+  look: Look
+  theme: Theme
+  copy?: Copy
+  ownNav?: boolean
+  handoffRgb?: string
+}) {
   const sectionRef = useRef<HTMLElement>(null)
   const progressRef = useRef(0)
   const counterRef = useRef<HTMLSpanElement>(null)
@@ -172,6 +214,7 @@ export default function ShelfHero({ look, theme }: { look: Look; theme: Theme })
   }, [])
 
   const rgb = theme.scrimRgb
+  const foot = handoffRgb ?? rgb
 
   return (
     <section ref={sectionRef} className="relative h-[300vh]">
@@ -183,12 +226,12 @@ export default function ShelfHero({ look, theme }: { look: Look; theme: Theme })
         <div
           className="pointer-events-none absolute inset-0 z-[5]"
           style={{
-            background: `linear-gradient(180deg, rgba(${rgb},0.92) 0%, rgba(${rgb},0.55) 10%, rgba(${rgb},0.18) 20%, rgba(${rgb},0.04) 30%, rgba(${rgb},0) 42%, rgba(${rgb},0.10) 54%, rgba(${rgb},0.30) 64%, rgba(${rgb},0.58) 74%, rgba(${rgb},0.82) 86%, rgba(${rgb},0.96) 100%)`,
+            background: `linear-gradient(180deg, rgba(${rgb},0.92) 0%, rgba(${rgb},0.55) 10%, rgba(${rgb},0.18) 20%, rgba(${rgb},0.04) 30%, rgba(${rgb},0) 42%, rgba(${foot},0.10) 54%, rgba(${foot},0.30) 64%, rgba(${foot},0.62) 74%, rgba(${foot},0.88) 88%, rgb(${foot}) 100%)`,
           }}
         />
 
         <div className="pointer-events-none relative z-10 h-full">
-          <Nav theme={theme} />
+          {ownNav && <Nav theme={theme} />}
 
           {/* Scroll odometer. Under the header on a phone, mid-right on a
               desktop where the aisle has clear space. */}
@@ -211,28 +254,25 @@ export default function ShelfHero({ look, theme }: { look: Look; theme: Theme })
           <div className="absolute inset-x-0 bottom-0">
             <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20">
               <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
-                Your collection, from the inside
+                {copy.eyebrow}
               </p>
               <h1 className={`font-serif text-4xl italic leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl ${theme.headline}`}>
-                Somewhere in here
-                <br />
-                is everything you own.
+                {copy.headline}
               </h1>
               <p className={`mt-5 max-w-lg text-[15px] leading-relaxed sm:mt-6 sm:text-base ${theme.body}`}>
-                Vitrine gives every object a record — what it is, what it cost, where it is now,
-                and who it goes to next. Then it gives the collection a page worth showing.
+                {copy.body}
               </p>
 
               <div className="pointer-events-auto mt-7 flex flex-wrap items-center gap-3 sm:mt-8">
-                <Link href="/signup" className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaPrimary}`}>
-                  Start free →
+                <Link href={copy.primary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaPrimary}`}>
+                  {copy.primary.label}
                 </Link>
-                <Link href="/discover" className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaGhost}`}>
-                  Browse collections
+                <Link href={copy.secondary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaGhost}`}>
+                  {copy.secondary.label}
                 </Link>
               </div>
               <p className={`mt-4 font-mono text-xs ${theme.fine}`}>
-                Free plan available · No credit card required
+                {copy.fine}
               </p>
             </div>
           </div>
