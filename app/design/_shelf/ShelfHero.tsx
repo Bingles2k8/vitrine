@@ -9,8 +9,6 @@ import type { Theme } from './theme'
 
 const START_Z = 5.0
 const TRAVEL = 46.0
-/** Bay spacing in the shader — the counter has to agree with the geometry. */
-const BAY = 2.4
 
 /**
  * Offset for the site header. The /design review bar is pinned at exactly 32px
@@ -91,16 +89,14 @@ function Canvas({
   look,
   theme,
   progressRef,
-  counterRef,
 }: {
   look: Look
   theme: Theme
   progressRef: React.RefObject<number>
-  counterRef: React.RefObject<HTMLSpanElement | null>
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
-  const s = useRef({ z: START_Z, shown: -1, px: 0, py: 0, tpx: 0, tpy: 0 })
+  const s = useRef({ z: START_Z, px: 0, py: 0, tpx: 0, tpy: 0 })
 
   // Reduced motion still travels, it just does not ease toward the target.
   const ease = reduced ? 1 : 0.08
@@ -110,14 +106,6 @@ function Canvas({
       const st = s.current
       const want = START_Z - progressRef.current * TRAVEL
       st.z += (want - st.z) * ease
-
-      // Counts the bays you have actually gone past — a scroll odometer, not a
-      // claim about anybody's collection.
-      const passed = Math.max(0, Math.round((START_Z - st.z) / BAY)) * 31 + 14
-      if (passed !== st.shown && counterRef.current) {
-        st.shown = passed
-        counterRef.current.textContent = passed.toLocaleString('en-GB')
-      }
 
       st.px += (st.tpx - st.px) * 0.03
       st.py += (st.tpy - st.py) * 0.03
@@ -141,14 +129,10 @@ function Canvas({
         uP: [0, 0, 0, 0],
       }
     },
-    [ease, reduced, progressRef, counterRef]
+    [ease, reduced, progressRef]
   )
 
   const failed = useShader(canvasRef, aisleFrag(look), onFrame, 0.92)
-
-  useEffect(() => {
-    if (counterRef.current) counterRef.current.textContent = '14'
-  }, [counterRef])
 
   if (failed) {
     return <div className="absolute inset-0" style={{ background: theme.fallback }} />
@@ -215,7 +199,8 @@ export default function ShelfHero({
 }) {
   const sectionRef = useRef<HTMLElement>(null)
   const progressRef = useRef(0)
-  const counterRef = useRef<HTMLSpanElement>(null)
+  const copyRef = useRef<HTMLDivElement>(null)
+  const veilRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const read = () => {
@@ -223,7 +208,23 @@ export default function ShelfHero({
       if (!el) return
       const r = el.getBoundingClientRect()
       const span = r.height - window.innerHeight
-      progressRef.current = span > 0 ? Math.min(Math.max(-r.top / span, 0), 1) : 0
+      const p = span > 0 ? Math.min(Math.max(-r.top / span, 0), 1) : 0
+      progressRef.current = p
+
+      // The frame is pinned, so without this the page appears to stop dead
+      // while the wheel keeps turning. Moving the copy at about a fifth of
+      // scroll speed gives the reader something that responds — the aisle
+      // stays full-bleed, the words drift up and out. Written straight to
+      // the node: scrolling must not re-render this component.
+      const c = copyRef.current
+      if (c) {
+        c.style.transform = `translate3d(0, ${-p * 26}vh, 0)`
+        c.style.opacity = String(Math.max(0, 1 - Math.max(0, p - 0.40) / 0.32))
+      }
+      // The copy's own shade fades in only as it climbs out of the frame's
+      // scrim. At rest it would just be a second layer of dark over the first.
+      const v = veilRef.current
+      if (v) v.style.opacity = String(Math.min(1, p / 0.18))
     }
     read()
     window.addEventListener('scroll', read, { passive: true })
@@ -240,7 +241,7 @@ export default function ShelfHero({
   return (
     <section ref={sectionRef} className="relative h-[300vh]">
       <div className={`sticky top-0 h-screen w-full overflow-hidden ${theme.page}`}>
-        <Canvas look={look} theme={theme} progressRef={progressRef} counterRef={counterRef} />
+        <Canvas look={look} theme={theme} progressRef={progressRef} />
 
         {/* Page colour top and bottom, nothing across the middle, and enough
             stops that the transition never shows as a band on a lit shelf. */}
@@ -254,25 +255,17 @@ export default function ShelfHero({
         <div className="pointer-events-none relative z-10 h-full">
           {ownNav && <Nav theme={theme} />}
 
-          {/* Scroll odometer. Under the header on a phone, mid-right on a
-              desktop where the aisle has clear space. */}
-          <div className="absolute right-6 top-28 text-right sm:right-10 sm:top-[22%] lg:right-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]">
-            {/* The aisle scrolls past underneath, so the odometer carries its own
-                pool of shade — otherwise the label lands on a lit shelf and
-                disappears every second bay. */}
+          <div ref={copyRef} className="absolute inset-x-0 bottom-0 will-change-transform">
+            {/* The copy travels up out of the frame's own scrim, so it carries a
+                second one with it. Without this the body text ends up over a lit
+                shelf halfway through the scroll and stops being readable. */}
             <div
-              className="pointer-events-none absolute -inset-x-10 -inset-y-8 -z-10"
-              style={{ background: `radial-gradient(65% 65% at 62% 50%, rgba(${rgb},0.90), rgba(${rgb},0) 76%)` }}
+              ref={veilRef}
+              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[155%] opacity-0"
+              style={{
+                background: `linear-gradient(180deg, rgba(${rgb},0) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.66) 64%, rgba(${rgb},0.88) 86%, rgba(${rgb},0.94) 100%)`,
+              }}
             />
-            <p className={`font-mono text-[10px] uppercase tracking-[0.18em] sm:text-xs sm:tracking-[0.28em] ${theme.counterLabel}`}>
-              Objects passed
-            </p>
-            <p className={`mt-1.5 font-mono text-4xl leading-none tabular-nums sm:mt-2 sm:text-6xl ${theme.counterValue}`}>
-              <span ref={counterRef}>14</span>
-            </p>
-          </div>
-
-          <div className="absolute inset-x-0 bottom-0">
             <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20">
               <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
                 {copy.eyebrow}

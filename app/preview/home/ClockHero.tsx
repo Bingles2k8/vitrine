@@ -29,7 +29,7 @@ export default function ClockHero() {
             <>
               Your collection,
               <br />
-              <span className={theme.counterValue}>beautifully</span>
+              <span className={theme.accent}>beautifully</span>
               <br />
               managed.
             </>

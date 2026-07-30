@@ -28,6 +28,20 @@ export type Look = {
   spec: number
   /** Angular size of a lamp — bigger is softer-edged shadows. */
   lampSize: number
+  /**
+   * An optional directional source on top of the lamps. Omit it and not a line
+   * of it reaches the shader — the block is only emitted when a Look asks for
+   * one, so the bands without sun pay nothing for it.
+   */
+  sun?: {
+    /** Direction *toward* the source; normalised in the shader. */
+    dir: [number, number, number]
+    colour: [number, number, number]
+    intensity: number
+    spec: number
+    /** Angular radius. Small is a hard edge — the sun is about 0.005. */
+    size: number
+  }
   /** How fast the aisle fades into `far`. Higher runs out sooner. */
   fog: number
   exposure: number
@@ -71,6 +85,21 @@ const FRAG_CACHE = new Map<Look, string>()
 export function aisleFrag(look: Look): string {
   const cached = FRAG_CACHE.get(look)
   if (cached) return cached
+
+  const sun = look.sun
+  const sunBlock = sun
+    ? `
+  // A directional source with no falloff and a nearly point-sized penumbra:
+  // parallel rays, so the uprights throw hard bars across the floor rather
+  // than the soft pools the overhead lamps give. This is the whole difference
+  // between "the lights are on" and "the sun is out".
+  vec3  sdir = normalize(${v3(sun.dir)});
+  float sndl = clamp(dot(n, sdir), 0.0, 1.0);
+  float ssh  = 1.0;
+  if (sndl > 0.001 && bounce < 0.5) ssh = penumbra(p + n * 0.006, sdir, ${f(sun.size)}, 14.0);
+  col += alb * ${v3(sun.colour)} * (sndl * ssh * ${f(sun.intensity)});
+  col += satinSpec(n, rd, sdir, ${v3(sun.colour)}, rough, f0) * ssh * ${f(sun.spec)};`
+    : ''
 
   const frag = `${CORE}
 float baseY(float id){
@@ -145,6 +174,7 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
 
   vec3 col = alb * LAMP * (ndl * sh * att * ${f(look.key)});
   col += satinSpec(n, rd, ld, LAMP, rough, f0) * sh * att * ${f(look.spec)};
+${sunBlock}
 
   col += alb * ${v3(look.ambient)} * occ;
   col += envSheen(n, rd, ${v3(look.sheenSky)}, ${v3(look.sheenGround)}, f0)

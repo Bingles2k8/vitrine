@@ -20,8 +20,8 @@ export type Theme = {
   headline: string
   body: string
   fine: string
-  counterLabel: string
-  counterValue: string
+  /** Accent colour for type — the amber the live site uses on key words. */
+  accent: string
   scrollCue: string
   sectionBorder: string
   cardBg: string
@@ -69,8 +69,7 @@ export const STONE_THEME: Theme = {
   headline: 'text-stone-100',
   body: 'text-stone-400',
   fine: 'text-stone-600',
-  counterLabel: 'text-stone-400',
-  counterValue: 'text-amber-500',
+  accent: 'text-amber-500',
   scrollCue: 'text-stone-700',
   sectionBorder: 'border-white/5',
   cardBg: 'bg-stone-950',
@@ -120,8 +119,7 @@ export const COLD_THEME: Theme = {
   headline: 'text-white',
   body: 'text-slate-400',
   fine: 'text-slate-600',
-  counterLabel: 'text-slate-300',
-  counterValue: 'text-slate-100',
+  accent: 'text-slate-100',
   scrollCue: 'text-slate-700',
   sectionBorder: 'border-white/8',
   cardBg: 'bg-[#070a0e]',
@@ -176,8 +174,7 @@ export const DAY_THEME: Theme = {
   headline: 'text-stone-900',
   body: 'text-stone-600',
   fine: 'text-stone-400',
-  counterLabel: 'text-stone-500',
-  counterValue: 'text-amber-700',
+  accent: 'text-amber-700',
   scrollCue: 'text-stone-400',
   sectionBorder: 'border-stone-900/10',
   cardBg: 'bg-[#efece6]',
@@ -226,8 +223,7 @@ export const GOLDEN_THEME: Theme = {
   headline: 'text-stone-100',
   body: 'text-stone-400',
   fine: 'text-stone-600',
-  counterLabel: 'text-stone-400',
-  counterValue: 'text-amber-500',
+  accent: 'text-amber-500',
   scrollCue: 'text-stone-700',
   sectionBorder: 'border-white/5',
   cardBg: 'bg-[#0e0b08]',
@@ -252,20 +248,30 @@ export const MIDDAY_LOOK: Look = {
   floor: [0.132, 0.128, 0.120],
   rack: [0.355, 0.346, 0.326],
   object: [0.70, 0.690, 0.665],
-  // Daylight bounce, and slightly cool against the warm lamps — an order of
-  // magnitude above the night ambient, and the reason shadows stop being black.
-  ambient: [0.080, 0.083, 0.090],
+  // Sky bounce, cool against the warm lamps. Deliberately meaner than it was:
+  // hard light needs somewhere dark to throw its shadows into, and a generous
+  // ambient fills them straight back in.
+  ambient: [0.030, 0.033, 0.040],
   sheenSky: [0.175, 0.182, 0.196],
   sheenGround: [0.048, 0.046, 0.042],
   floorRough: 0.28,
   rackRough: 0.34,
   objectRough: 0.24,
-  key: 5.0,
-  spec: 12.0,
+  // The lamps are still on, but they are no longer the story — they sit under
+  // the sun the way real strip lights do at noon.
+  key: 2.4,
+  spec: 7.0,
   lampSize: 0.18,
+  sun: {
+    dir: [0.42, 0.86, 0.28],
+    colour: [1.0, 0.965, 0.905],
+    intensity: 1.75,
+    spec: 3.2,
+    size: 0.02,
+  },
   fog: 0.072,
-  exposure: 1.02,
-  contrast: 1.08,
+  exposure: 1.06,
+  contrast: 1.20,
   vignette: 0.08,
   grain: 0.0035,
 }
@@ -283,8 +289,7 @@ export const MIDDAY_THEME: Theme = {
   headline: 'text-stone-50',
   body: 'text-stone-300',
   fine: 'text-stone-500',
-  counterLabel: 'text-stone-300',
-  counterValue: 'text-amber-400',
+  accent: 'text-amber-400',
   scrollCue: 'text-stone-600',
   sectionBorder: 'border-white/8',
   cardBg: 'bg-[#26221d]',
