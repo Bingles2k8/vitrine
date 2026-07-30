@@ -8,7 +8,10 @@ import { aisleFrag, type Look } from './aisle'
 import type { Theme } from './theme'
 
 const START_Z = 5.0
-const TRAVEL = 46.0
+/* Camera travel over the pinned scroll. Cut alongside the section height so the
+   aisle moves past at the same rate — a shorter pin with the old distance just
+   makes the travel feel like a dolly on fast-forward. */
+const TRAVEL = 34.0
 
 /**
  * Offset for the site header. The /design review bar is pinned at exactly 32px
@@ -201,6 +204,7 @@ export default function ShelfHero({
   const progressRef = useRef(0)
   const copyRef = useRef<HTMLDivElement>(null)
   const veilRef = useRef<HTMLDivElement>(null)
+  const cueRef = useRef<HTMLParagraphElement>(null)
 
   useEffect(() => {
     const read = () => {
@@ -218,13 +222,21 @@ export default function ShelfHero({
       // the node: scrolling must not re-render this component.
       const c = copyRef.current
       if (c) {
-        c.style.transform = `translate3d(0, ${-p * 26}vh, 0)`
-        c.style.opacity = String(Math.max(0, 1 - Math.max(0, p - 0.40) / 0.32))
+        // The fade finishes at 0.95, just before the pin lets go, so the copy
+        // leaving *is* the cue that the page is about to start moving again.
+        // Any earlier and the hero sits there empty while the wheel turns.
+        c.style.transform = `translate3d(0, ${-p * 34}vh, 0)`
+        c.style.opacity = String(Math.max(0, 1 - Math.max(0, p - 0.45) / 0.50))
       }
       // The copy's own shade fades in only as it climbs out of the frame's
       // scrim. At rest it would just be a second layer of dark over the first.
       const v = veilRef.current
       if (v) v.style.opacity = String(Math.min(1, p / 0.18))
+
+      // The cue has done its job the moment scrolling starts; leaving it on
+      // means it is still there telling you to scroll as the pin lets go.
+      const q = cueRef.current
+      if (q) q.style.opacity = String(Math.max(0, 1 - p / 0.12))
     }
     read()
     window.addEventListener('scroll', read, { passive: true })
@@ -239,7 +251,7 @@ export default function ShelfHero({
   const foot = handoffRgb ?? rgb
 
   return (
-    <section ref={sectionRef} className="relative h-[300vh]">
+    <section ref={sectionRef} className="relative h-[250vh]">
       <div className={`sticky top-0 h-screen w-full overflow-hidden ${theme.page}`}>
         <Canvas look={look} theme={theme} progressRef={progressRef} />
 
@@ -291,7 +303,10 @@ export default function ShelfHero({
             </div>
           </div>
 
-          <p className={`absolute inset-x-0 bottom-4 hidden text-center font-mono text-[10px] uppercase tracking-[0.3em] lg:block ${theme.scrollCue}`}>
+          <p
+            ref={cueRef}
+            className={`absolute inset-x-0 bottom-4 hidden text-center font-mono text-[10px] uppercase tracking-[0.3em] lg:block ${theme.scrollCue}`}
+          >
             Scroll ↓
           </p>
         </div>
