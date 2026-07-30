@@ -89,12 +89,20 @@ export function useShader(
       return locs.get(name)!
     }
 
-    const scale = Math.min(window.devicePixelRatio || 1, 1.4) * quality
+    // Per-pixel raymarching costs the same whether a device can afford it or
+    // not, so the render scale is measured rather than guessed: start
+    // conservative on a touch device, then climb or fall to whatever holds a
+    // frame budget. `quality` stays the ceiling each scene asks for.
+    const base = Math.min(window.devicePixelRatio || 1, 1.4) * quality
+    const coarse =
+      typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+    let dynamic = coarse ? 0.7 : 1.0
+
     const resize = () => {
       const w = Math.min(canvas.clientWidth, 1700)
       const h = canvas.clientHeight
-      canvas.width = Math.max(1, Math.floor(w * scale))
-      canvas.height = Math.max(1, Math.floor(h * scale))
+      canvas.width = Math.max(1, Math.floor(w * base * dynamic))
+      canvas.height = Math.max(1, Math.floor(h * base * dynamic))
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
     resize()
@@ -125,12 +133,51 @@ export function useShader(
 
     let raf = 0
     const t0 = performance.now()
+
+    // Rolling frame time, with a wide dead band between the two thresholds so
+    // the scale cannot oscillate. The window closes after 45 frames or ~900ms,
+    // whichever comes first: a device running at 12fps has to be rescued in
+    // about a second, and waiting for a frame count would take eight.
+    let last = performance.now()
+    let acc = 0
+    let samples = 0
+    let resumed = true
+
     const tick = () => {
       raf = requestAnimationFrame(tick)
-      if (!visible) return
+      const now = performance.now()
+      const dt = now - last
+      last = now
+      if (!visible) {
+        resumed = true
+        return
+      }
       uploadAtlas()
 
-      const uniforms = frameRef.current((performance.now() - t0) / 1000)
+      // Drop the first frame after the canvas comes back into view — its dt
+      // spans however long the tab was hidden. Everything else counts, however
+      // slow: a 200ms frame is the strongest possible signal to turn the scale
+      // down, and an earlier version of this threw exactly those away.
+      if (resumed) {
+        resumed = false
+      } else {
+        acc += dt
+        samples++
+        if (samples >= 6 && (samples >= 45 || acc >= 900)) {
+          const avg = acc / samples
+          acc = 0
+          samples = 0
+          if (avg > 23 && dynamic > 0.5) {           // under ~43fps
+            dynamic = Math.max(0.5, dynamic - 0.15)
+            resize()
+          } else if (avg < 12 && dynamic < 1) {      // comfortably over 80fps
+            dynamic = Math.min(1, dynamic + 0.15)
+            resize()
+          }
+        }
+      }
+
+      const uniforms = frameRef.current((now - t0) / 1000)
       gl.uniform2f(loc('uRes'), canvas.width, canvas.height)
       for (const [name, value] of Object.entries(uniforms)) {
         const l = loc(name)

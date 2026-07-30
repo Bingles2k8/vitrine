@@ -134,10 +134,16 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   float dl  = sqrt(d2);
   vec3  ld  = lv / dl;
   float att = 1.0 / max(d2, 0.25);
-  float sh  = bounce > 0.5 ? 1.0 : penumbra(p + n * 0.006, ld, ${f(look.lampSize)}, dl - 0.03);
+  float ndl = clamp(dot(n, ld), 0.0, 1.0);
+
+  // A surface facing away from the lamp is already black; marching a shadow ray
+  // to prove it costs 48 map() calls for a result that gets multiplied by zero.
+  // Roughly a third of the pixels in this scene fall into that case.
+  float sh = 1.0;
+  if (ndl > 0.001 && bounce < 0.5) sh = penumbra(p + n * 0.006, ld, ${f(look.lampSize)}, dl - 0.03);
   float occ = bounce > 0.5 ? 1.0 : ao(p, n);
 
-  vec3 col = alb * LAMP * (clamp(dot(n, ld), 0.0, 1.0) * sh * att * ${f(look.key)});
+  vec3 col = alb * LAMP * (ndl * sh * att * ${f(look.key)});
   col += satinSpec(n, rd, ld, LAMP, rough, f0) * sh * att * ${f(look.spec)};
 
   col += alb * ${v3(look.ambient)} * occ;
@@ -165,13 +171,19 @@ void main(){
     vec3 n = normal(p);
     col = shade(p, n, rd, hit.y, 0.0);
 
-    if (hit.y < 1.5) {
+    // The floor bounce, but only where it is worth a second ray. Head-on, a
+    // dielectric reflects about 4% and the result is invisible; at a grazing
+    // angle it reflects most of what it sees. Gating on the Fresnel term skips
+    // the trace for the near floor and keeps it down the aisle, where it is the
+    // whole reason the floor reads as sealed concrete.
+    float fr = hit.y < 1.5 ? fresnel(n, rd, 0.05) : 0.0;
+    if (fr > 0.10) {
       vec3 ro = p + n * 0.02;
       vec3 rr = reflect(rd, n);
       vec2 h2 = march(ro, rr);
       vec3 q  = ro + rr * h2.x;
       vec3 rc = h2.x > 12.0 ? FAR : shade(q, normal(q), rr, h2.y, 1.0);
-      col += rc * fresnel(n, rd, 0.05) * exp(-h2.x * 0.30);
+      col += rc * fr * exp(-h2.x * 0.30);
     }
   }
 

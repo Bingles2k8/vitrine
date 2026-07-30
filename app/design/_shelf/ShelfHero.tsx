@@ -100,7 +100,7 @@ function Canvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
-  const s = useRef({ z: START_Z, shown: -1 })
+  const s = useRef({ z: START_Z, shown: -1, px: 0, py: 0, tpx: 0, tpy: 0 })
 
   // Reduced motion still travels, it just does not ease toward the target.
   const ease = reduced ? 1 : 0.08
@@ -119,15 +119,29 @@ function Canvas({
         counterRef.current.textContent = passed.toLocaleString('en-GB')
       }
 
+      st.px += (st.tpx - st.px) * 0.03
+      st.py += (st.tpy - st.py) * 0.03
+
+      // A slow handheld drift, so the aisle reads as a place you are standing in
+      // rather than a picture of one. Two incommensurate periods, so it never
+      // settles into a visible loop, and small enough that you notice the
+      // parallax between the near uprights and the far end rather than the
+      // movement itself. Costs nothing — it is three uniforms.
+      const dx = reduced ? 0 : Math.sin(t * 0.21) * 0.065 + Math.sin(t * 0.132 + 1.7) * 0.035
+      const dy = reduced ? 0 : Math.sin(t * 0.17 + 0.6) * 0.03
+      const tx = reduced ? 0 : Math.sin(t * 0.113 + 2.2) * 0.05
+
       return {
         uTime: t,
-        uCam: [0, 1.62, st.z],
-        uTarget: [0, 1.34, st.z - 6.0],
+        uCam: [dx + st.px, 1.62 + dy + st.py, st.z],
+        // The target leans the other way, which is what turns a pan into
+        // parallax: the racking either side shears, the vanishing point holds.
+        uTarget: [-tx - st.px * 0.35, 1.34 - dy * 0.5, st.z - 6.0],
         uLight: [0, 2.85, st.z],
         uP: [0, 0, 0, 0],
       }
     },
-    [ease, progressRef, counterRef]
+    [ease, reduced, progressRef, counterRef]
   )
 
   const failed = useShader(canvasRef, aisleFrag(look), onFrame, 0.92)
@@ -144,6 +158,13 @@ function Canvas({
     <canvas
       ref={canvasRef}
       className="absolute inset-0 h-full w-full"
+      onPointerMove={e => {
+        if (reduced || e.pointerType !== 'mouse') return
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        s.current.tpx = ((e.clientX - r.left) / r.width - 0.5) * 0.34
+        s.current.tpy = ((e.clientY - r.top) / r.height - 0.5) * -0.12
+      }}
+      onPointerLeave={() => { s.current.tpx = 0; s.current.tpy = 0 }}
       aria-label="An aisle of storage racking receding into the dark, an object in every bay"
     />
   )
