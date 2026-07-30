@@ -186,3 +186,110 @@ export const DAY_THEME: Theme = {
   scrimRgb: '239,236,230',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
+
+/* ── Golden hour: the warm end of the clock ─────────────────────
+   The live palette, pushed a little further toward tungsten. This is the one
+   the shelf wears at dawn and dusk. */
+
+export const GOLDEN_LOOK: Look = {
+  lamp: [1.0, 0.845, 0.625],
+  page: '#0e0b08',
+  floor: [0.108, 0.098, 0.086],
+  rack: [0.285, 0.265, 0.238],
+  object: [0.65, 0.62, 0.565],
+  ambient: [0.021, 0.017, 0.013],
+  sheenSky: [0.070, 0.058, 0.045],
+  sheenGround: [0.018, 0.014, 0.010],
+  floorRough: 0.28,
+  rackRough: 0.3,
+  objectRough: 0.24,
+  key: 5.4,
+  spec: 14.0,
+  lampSize: 0.07,
+  fog: 0.085,
+  exposure: 1.22,
+  contrast: 1.14,
+  vignette: 0.13,
+  grain: 0.004,
+}
+
+export const GOLDEN_THEME: Theme = {
+  page: 'bg-[#0e0b08] text-stone-100',
+  navBg: 'bg-[#0e0b08]/70',
+  navLink: 'text-stone-400 hover:text-white',
+  navBorder: 'border-white/5',
+  hamburger: 'bg-stone-400',
+  logoDot: 'text-amber-500',
+  ctaPrimary: 'bg-amber-500 text-stone-950 hover:bg-amber-400',
+  ctaGhost: 'border border-white/10 text-stone-400 hover:border-white/20 hover:text-white',
+  eyebrow: 'text-amber-500',
+  headline: 'text-stone-100',
+  body: 'text-stone-400',
+  fine: 'text-stone-600',
+  counterLabel: 'text-stone-400',
+  counterValue: 'text-amber-500',
+  scrollCue: 'text-stone-700',
+  sectionBorder: 'border-white/5',
+  cardBg: 'bg-[#0e0b08]',
+  cardHover: 'hover:bg-[#171210]',
+  cardTitle: 'text-white',
+  scrimRgb: '14,11,8',
+  fallback: 'radial-gradient(46% 40% at 50% 34%, #46392a 0%, #0e0b08 76%)',
+}
+
+/* ── Midday: the shutters are open, the lights are still on ──────
+   Brighter without going to paper. The page lifts to a warm charcoal, the
+   lamps go daylight-neutral, and the haze thins out so the aisle runs further
+   before it disappears — which is what actually reads as "more light in here",
+   more than any change of hue does. */
+
+export const MIDDAY_LOOK: Look = {
+  lamp: [1.0, 0.975, 0.945],
+  // Lifted well clear of the other two. The far end of the aisle fades into
+  // this, so the page colour *is* the daylight haze — leave it near-black and
+  // the vanishing point stays a hole no matter how bright the near bays get.
+  page: '#26221d',
+  floor: [0.132, 0.128, 0.120],
+  rack: [0.355, 0.346, 0.326],
+  object: [0.70, 0.690, 0.665],
+  // Daylight bounce, and slightly cool against the warm lamps — an order of
+  // magnitude above the night ambient, and the reason shadows stop being black.
+  ambient: [0.080, 0.083, 0.090],
+  sheenSky: [0.175, 0.182, 0.196],
+  sheenGround: [0.048, 0.046, 0.042],
+  floorRough: 0.28,
+  rackRough: 0.34,
+  objectRough: 0.24,
+  key: 5.0,
+  spec: 12.0,
+  lampSize: 0.18,
+  fog: 0.072,
+  exposure: 1.02,
+  contrast: 1.08,
+  vignette: 0.08,
+  grain: 0.0035,
+}
+
+export const MIDDAY_THEME: Theme = {
+  page: 'bg-[#26221d] text-stone-50',
+  navBg: 'bg-[#26221d]/70',
+  navLink: 'text-stone-300 hover:text-white',
+  navBorder: 'border-white/8',
+  hamburger: 'bg-stone-300',
+  logoDot: 'text-amber-400',
+  ctaPrimary: 'bg-amber-400 text-stone-950 hover:bg-amber-300',
+  ctaGhost: 'border border-white/15 text-stone-300 hover:border-white/30 hover:text-white',
+  eyebrow: 'text-amber-400',
+  headline: 'text-stone-50',
+  body: 'text-stone-300',
+  fine: 'text-stone-500',
+  counterLabel: 'text-stone-300',
+  counterValue: 'text-amber-400',
+  scrollCue: 'text-stone-600',
+  sectionBorder: 'border-white/8',
+  cardBg: 'bg-[#26221d]',
+  cardHover: 'hover:bg-[#332e27]',
+  cardTitle: 'text-white',
+  scrimRgb: '38,34,29',
+  fallback: 'radial-gradient(46% 40% at 50% 34%, #6b6459 0%, #26221d 76%)',
+}

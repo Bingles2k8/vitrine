@@ -10,6 +10,11 @@ export const metadata = buildPageMetadata({
 })
 
 const NOTES: Record<string, { best: string; risk: string; measure: string }> = {
+  v44: {
+    best: 'The room is lit by the visitor\u2019s own time of day — fluorescent at 2am, tungsten at dusk, daylight at noon. Costs nothing to run and nobody else does it.',
+    risk: 'Two visitors comparing notes see different sites, and any screenshot only ever shows one of the three.',
+    measure: 'Signup rate split by band. If one band is clearly ahead, ship that one and drop the mechanic.',
+  },
   v41: {
     best: 'The live brand exactly: stone-950, tungsten lamps, amber on the type. Warmest of the three and the least work to ship.',
     risk: 'Warm greys plus warm light can drift toward sepia. Watch it does not read as a period piece.',

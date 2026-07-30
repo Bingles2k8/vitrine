@@ -130,6 +130,7 @@ export async function getWallObjects(limit = 24): Promise<WallObject[]> {
 }
 
 export const VARIANTS = [
+  { id: 'v44', name: 'Long Shelf, by the clock', thesis: 'Palette follows the device clock: fluorescent at night, tungsten at dusk, daylight at noon.' },
   { id: 'v41', name: 'Long Shelf, stone', thesis: 'The live Vitrine palette: stone-950, tungsten lamps, amber accent.' },
   { id: 'v42', name: 'Long Shelf, cold store', thesis: 'Blue-black room, fluorescent tubes, bone UI. Amber kept for the wordmark alone.' },
   { id: 'v43', name: 'Long Shelf, daylight', thesis: 'Shutters open. Paper page, ink type, depth from haze rather than darkness.' },
