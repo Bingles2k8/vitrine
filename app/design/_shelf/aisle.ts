@@ -42,7 +42,16 @@ export type Look = {
     /** Angular radius. Small is a hard edge — the sun is about 0.005. */
     size: number
   }
-  /** How fast the aisle fades into `far`. Higher runs out sooner. */
+  /**
+   * Distance the air stays completely clear for. Everything nearer than this
+   * is rendered untouched.
+   */
+  fogStart: number
+  /**
+   * Density beyond fogStart, applied squared — so haze builds slowly at first
+   * and then quickly, which is how depth actually reads. A plain exp(-d) starts
+   * fogging at the camera's nose and greys the whole scene evenly.
+   */
   fog: number
   exposure: number
   contrast: number
@@ -219,8 +228,12 @@ void main(){
 
   col = gradeRT(col, ${f(look.exposure)}, ${f(look.contrast)});
 
-  // The aisle runs out of light, not out of geometry.
-  col = mix(PAGE, col, miss ? 0.0 : exp(-hit.x * ${f(look.fog)}));
+  // The aisle runs out of light, not out of geometry. Nothing inside
+  // fogStart is touched at all; past it the haze squares up and closes in
+  // fast, so the near bays stay crisp and the far end still disappears into
+  // exactly the page colour.
+  float fd = max(hit.x - ${f(look.fogStart)}, 0.0) * ${f(look.fog)};
+  col = mix(PAGE, col, miss ? 0.0 : exp(-fd * fd));
   col *= 1.0 - ${f(look.vignette)} * length(uv * vec2(0.72, 1.0));
   gl_FragColor = vec4(grain(col, ${f(look.grain)}), 1.0);
 }
