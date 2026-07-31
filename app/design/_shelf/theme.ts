@@ -27,6 +27,14 @@ export type Theme = {
   cardBg: string
   cardHover: string
   cardTitle: string
+  /**
+   * Lift for the hero copy. A tight pass for edge definition plus a wide soft
+   * one for general separation — the wide one is what stops a headline
+   * dissolving when a lit shelf travels behind it. Dark themes shade; light
+   * ones halo, because ink on a mid-grey shelf needs pushing away from it in
+   * the other direction.
+   */
+  textShadow: string
   /** Page background as "r,g,b" so the scrims can be built from it. */
   scrimRgb: string
   fallback: string
@@ -76,6 +84,7 @@ export const STONE_THEME: Theme = {
   cardBg: 'bg-stone-950',
   cardHover: 'hover:bg-stone-900',
   cardTitle: 'text-white',
+  textShadow: '0 1px 2px rgba(0,0,0,0.45), 0 8px 26px rgba(0,0,0,0.38)',
   scrimRgb: '12,10,9',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #3f382c 0%, #0c0a09 76%)',
 }
@@ -127,6 +136,7 @@ export const COLD_THEME: Theme = {
   cardBg: 'bg-[#070a0e]',
   cardHover: 'hover:bg-[#0d1219]',
   cardTitle: 'text-white',
+  textShadow: '0 1px 2px rgba(4,7,11,0.5), 0 8px 26px rgba(4,7,11,0.42)',
   scrimRgb: '7,10,14',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #2b3542 0%, #070a0e 76%)',
 }
@@ -183,6 +193,7 @@ export const DAY_THEME: Theme = {
   cardBg: 'bg-[#efece6]',
   cardHover: 'hover:bg-[#e5e1d9]',
   cardTitle: 'text-stone-900',
+  textShadow: '0 1px 2px rgba(255,255,255,0.85), 0 8px 26px rgba(255,255,255,0.72)',
   scrimRgb: '239,236,230',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
@@ -233,6 +244,7 @@ export const GOLDEN_THEME: Theme = {
   cardBg: 'bg-[#0e0b08]',
   cardHover: 'hover:bg-[#171210]',
   cardTitle: 'text-white',
+  textShadow: '0 1px 2px rgba(0,0,0,0.45), 0 8px 26px rgba(0,0,0,0.38)',
   scrimRgb: '14,11,8',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #46392a 0%, #0e0b08 76%)',
 }
@@ -303,6 +315,7 @@ export const MIDDAY_THEME: Theme = {
   cardBg: 'bg-white',
   cardHover: 'hover:bg-stone-100',
   cardTitle: 'text-stone-900',
+  textShadow: '0 1px 2px rgba(255,255,255,0.85), 0 8px 26px rgba(255,255,255,0.72)',
   scrimRgb: '255,255,255',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }

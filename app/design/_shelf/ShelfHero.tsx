@@ -278,7 +278,7 @@ export default function ShelfHero({
                 background: `linear-gradient(180deg, rgba(${rgb},0) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.66) 64%, rgba(${rgb},0.88) 86%, rgba(${rgb},0.94) 100%)`,
               }}
             />
-            <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20">
+            <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20" style={{ textShadow: theme.textShadow }}>
               <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
                 {copy.eyebrow}
               </p>
@@ -289,7 +289,10 @@ export default function ShelfHero({
                 {copy.body}
               </p>
 
-              <div className="pointer-events-auto mt-7 flex flex-wrap items-center gap-3 sm:mt-8">
+              <div
+                className="pointer-events-auto mt-7 flex flex-wrap items-center gap-3 sm:mt-8"
+                style={{ textShadow: 'none' }}
+              >
                 <Link href={copy.primary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaPrimary}`}>
                   {copy.primary.label}
                 </Link>
@@ -306,6 +309,7 @@ export default function ShelfHero({
           <p
             ref={cueRef}
             className={`absolute inset-x-0 bottom-4 hidden text-center font-mono text-[10px] uppercase tracking-[0.3em] lg:block ${theme.scrollCue}`}
+            style={{ textShadow: theme.textShadow }}
           >
             Scroll ↓
           </p>
