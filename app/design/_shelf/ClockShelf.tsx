@@ -21,7 +21,8 @@ export default function ClockShelf() {
   return (
     <div className={`min-h-screen transition-colors duration-700 ${theme.page}`}>
       <ShelfHero look={look} theme={theme} />
-      <ShelfBody theme={theme} dark />
+      {/* Midday is a light theme now, so the cards and footer flip with it. */}
+      <ShelfBody theme={theme} dark={band !== 'midday'} />
 
       {/* Review control. Not part of the design — it is here so all three bands
           can be seen without changing the system clock. */}

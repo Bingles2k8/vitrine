@@ -4,9 +4,6 @@ import { useState } from 'react'
 import ShelfHero from '@/app/design/_shelf/ShelfHero'
 import { BANDS, bandData, useTimeBand, type Band } from '@/app/design/_shelf/timeOfDay'
 
-/** stone-950, the colour of the rest of the homepage. */
-const PAGE_RGB = '12,10,9'
-
 export default function ClockHero() {
   const auto = useTimeBand()
   const [override, setOverride] = useState<Band | null>(null)
@@ -18,11 +15,12 @@ export default function ClockHero() {
       <ShelfHero
         look={look}
         theme={theme}
-        // The site header is already on the page, and the sections below are
-        // stone-950 whatever the hour — so the hero resolves to that rather
-        // than to its own band colour, or midday meets them at a seam.
+        // The site header is already on the page. The hero resolves to its own
+        // band colour: night and golden hour are within a couple of levels of
+        // the stone-950 sections below, so that join stays invisible, and
+        // midday must not fade to black at the bottom of a sunlit white room —
+        // it meets the dark sections as a deliberate edge instead.
         ownNav={false}
-        handoffRgb={PAGE_RGB}
         copy={{
           eyebrow: 'Collection management software for museums & collectors',
           headline: (

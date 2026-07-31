@@ -244,62 +244,70 @@ export const GOLDEN_THEME: Theme = {
    more than any change of hue does. */
 
 export const MIDDAY_LOOK: Look = {
-  lamp: [1.0, 0.975, 0.945],
-  // Lifted well clear of the other two. The far end of the aisle fades into
-  // this, so the page colour *is* the daylight haze — leave it near-black and
-  // the vanishing point stays a hole no matter how bright the near bays get.
-  page: '#26221d',
-  floor: [0.132, 0.128, 0.120],
-  rack: [0.355, 0.346, 0.326],
-  object: [0.70, 0.690, 0.665],
-  // Sky bounce, cool against the warm lamps. Deliberately meaner than it was:
-  // hard light needs somewhere dark to throw its shadows into, and a generous
-  // ambient fills them straight back in.
-  ambient: [0.030, 0.033, 0.040],
-  sheenSky: [0.175, 0.182, 0.196],
-  sheenGround: [0.048, 0.046, 0.042],
-  floorRough: 0.28,
-  rackRough: 0.34,
+  // Neutral, not warm. Every channel of every albedo here is within a hair of
+  // every other one: the moment a surface carries a tint, its shadow carries
+  // that tint too, and a "brown shadow" is what you get.
+  lamp: [1.0, 1.0, 1.0],
+  page: '#ffffff',
+  // Painted white steel and a sealed white floor. Lit faces run out of range
+  // and clip to paper; the separation between the racking and the background
+  // comes entirely from shading, which is exactly how white architecture reads
+  // in hard sun.
+  floor: [0.60, 0.60, 0.60],
+  rack: [0.74, 0.74, 0.74],
+  object: [0.28, 0.28, 0.285],
+  // Deliberately far below what a white room really bounces. Physically the
+  // shadows would be bright; graphically they need to be dark, and dark is
+  // what "harsh" means.
+  ambient: [0.034, 0.034, 0.036],
+  sheenSky: [0.18, 0.18, 0.185],
+  sheenGround: [0.085, 0.085, 0.085],
+  floorRough: 0.30,
+  rackRough: 0.42,
   objectRough: 0.24,
-  // The lamps are still on, but they are no longer the story — they sit under
-  // the sun the way real strip lights do at noon.
-  key: 2.4,
-  spec: 7.0,
+  // The strip lights are still on, but at noon under this they contribute
+  // almost nothing. Leaving a trace stops the aisle going flat where the sun
+  // does not reach.
+  key: 0.9,
+  spec: 2.5,
   lampSize: 0.18,
   sun: {
     dir: [0.42, 0.86, 0.28],
-    colour: [1.0, 0.965, 0.905],
-    intensity: 1.75,
-    spec: 3.2,
-    size: 0.02,
+    colour: [1.0, 1.0, 1.0],
+    intensity: 2.3,
+    spec: 3.0,
+    // Near enough a point source. This is what makes the shadow edges cut
+    // rather than fade.
+    size: 0.012,
   },
   fogStart: 7.0,
-  fog: 0.078,
-  exposure: 1.06,
-  contrast: 1.20,
-  vignette: 0.08,
-  grain: 0.0035,
+  fog: 0.072,
+  exposure: 1.20,
+  contrast: 1.30,
+  // No vignette. On a white page it only produces dirty grey corners.
+  vignette: 0.0,
+  grain: 0.002,
 }
 
 export const MIDDAY_THEME: Theme = {
-  page: 'bg-[#26221d] text-stone-50',
-  navBg: 'bg-[#26221d]/70',
-  navLink: 'text-stone-300 hover:text-white',
-  navBorder: 'border-white/8',
-  hamburger: 'bg-stone-300',
-  logoDot: 'text-amber-400',
-  ctaPrimary: 'bg-amber-400 text-stone-950 hover:bg-amber-300',
-  ctaGhost: 'border border-white/15 text-stone-300 hover:border-white/30 hover:text-white',
-  eyebrow: 'text-amber-400',
-  headline: 'text-stone-50',
-  body: 'text-stone-300',
-  fine: 'text-stone-500',
-  accent: 'text-amber-400',
-  scrollCue: 'text-stone-600',
-  sectionBorder: 'border-white/8',
-  cardBg: 'bg-[#26221d]',
-  cardHover: 'hover:bg-[#332e27]',
-  cardTitle: 'text-white',
-  scrimRgb: '38,34,29',
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #6b6459 0%, #26221d 76%)',
+  page: 'bg-white text-stone-900',
+  navBg: 'bg-white/75',
+  navLink: 'text-stone-500 hover:text-stone-900',
+  navBorder: 'border-stone-900/10',
+  hamburger: 'bg-stone-500',
+  logoDot: 'text-amber-600',
+  ctaPrimary: 'bg-stone-900 text-white hover:bg-stone-800',
+  ctaGhost: 'border border-stone-900/20 text-stone-600 hover:border-stone-900/40 hover:text-stone-900',
+  eyebrow: 'text-amber-600',
+  headline: 'text-stone-900',
+  body: 'text-stone-600',
+  fine: 'text-stone-400',
+  accent: 'text-amber-600',
+  scrollCue: 'text-stone-400',
+  sectionBorder: 'border-stone-900/10',
+  cardBg: 'bg-white',
+  cardHover: 'hover:bg-stone-100',
+  cardTitle: 'text-stone-900',
+  scrimRgb: '255,255,255',
+  fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }
