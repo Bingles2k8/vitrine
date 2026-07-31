@@ -28,11 +28,10 @@ export type Theme = {
   cardHover: string
   cardTitle: string
   /**
-   * Lift for the hero copy. A tight pass for edge definition plus a wide soft
-   * one for general separation — the wide one is what stops a headline
-   * dissolving when a lit shelf travels behind it. Dark themes shade; light
-   * ones halo, because ink on a mid-grey shelf needs pushing away from it in
-   * the other direction.
+   * Lift for the hero copy: a tight pass for edge definition plus a wide soft
+   * one thrown down and to the left, so the darkening sits under the text the
+   * way the corner veil does. Dark themes shade; light ones halo, because ink
+   * on a mid-grey shelf needs pushing the other way.
    */
   textShadow: string
   /** Page background as "r,g,b" so the scrims can be built from it. */
@@ -73,7 +72,7 @@ export const STONE_THEME: Theme = {
   hamburger: 'bg-stone-400',
   logoDot: 'text-amber-500',
   ctaPrimary: 'bg-amber-500 text-stone-950 hover:bg-amber-400',
-  ctaGhost: 'border border-white/10 text-stone-400 hover:border-white/20 hover:text-white',
+  ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
   eyebrow: 'text-amber-500',
   headline: 'text-stone-100',
   body: 'text-stone-400',
@@ -84,7 +83,7 @@ export const STONE_THEME: Theme = {
   cardBg: 'bg-stone-950',
   cardHover: 'hover:bg-stone-900',
   cardTitle: 'text-white',
-  textShadow: '0 1px 2px rgba(0,0,0,0.45), 0 8px 26px rgba(0,0,0,0.38)',
+  textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '12,10,9',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #3f382c 0%, #0c0a09 76%)',
 }
@@ -125,7 +124,7 @@ export const COLD_THEME: Theme = {
   hamburger: 'bg-slate-400',
   logoDot: 'text-amber-500',
   ctaPrimary: 'bg-slate-100 text-[#070a0e] hover:bg-white',
-  ctaGhost: 'border border-white/15 text-slate-400 hover:border-white/30 hover:text-white',
+  ctaGhost: 'border border-white/25 text-slate-300 hover:border-white/45 hover:text-white',
   eyebrow: 'text-slate-400',
   headline: 'text-white',
   body: 'text-slate-400',
@@ -136,7 +135,7 @@ export const COLD_THEME: Theme = {
   cardBg: 'bg-[#070a0e]',
   cardHover: 'hover:bg-[#0d1219]',
   cardTitle: 'text-white',
-  textShadow: '0 1px 2px rgba(4,7,11,0.5), 0 8px 26px rgba(4,7,11,0.42)',
+  textShadow: '0 1px 2px rgba(4,7,11,0.65), -6px 10px 22px rgba(4,7,11,0.58), -14px 22px 52px rgba(4,7,11,0.45)',
   scrimRgb: '7,10,14',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #2b3542 0%, #070a0e 76%)',
 }
@@ -193,7 +192,7 @@ export const DAY_THEME: Theme = {
   cardBg: 'bg-[#efece6]',
   cardHover: 'hover:bg-[#e5e1d9]',
   cardTitle: 'text-stone-900',
-  textShadow: '0 1px 2px rgba(255,255,255,0.85), 0 8px 26px rgba(255,255,255,0.72)',
+  textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '239,236,230',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
@@ -233,7 +232,7 @@ export const GOLDEN_THEME: Theme = {
   hamburger: 'bg-stone-400',
   logoDot: 'text-amber-500',
   ctaPrimary: 'bg-amber-500 text-stone-950 hover:bg-amber-400',
-  ctaGhost: 'border border-white/10 text-stone-400 hover:border-white/20 hover:text-white',
+  ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
   eyebrow: 'text-amber-500',
   headline: 'text-stone-100',
   body: 'text-stone-400',
@@ -244,7 +243,7 @@ export const GOLDEN_THEME: Theme = {
   cardBg: 'bg-[#0e0b08]',
   cardHover: 'hover:bg-[#171210]',
   cardTitle: 'text-white',
-  textShadow: '0 1px 2px rgba(0,0,0,0.45), 0 8px 26px rgba(0,0,0,0.38)',
+  textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '14,11,8',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #46392a 0%, #0e0b08 76%)',
 }
@@ -315,7 +314,7 @@ export const MIDDAY_THEME: Theme = {
   cardBg: 'bg-white',
   cardHover: 'hover:bg-stone-100',
   cardTitle: 'text-stone-900',
-  textShadow: '0 1px 2px rgba(255,255,255,0.85), 0 8px 26px rgba(255,255,255,0.72)',
+  textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '255,255,255',
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }

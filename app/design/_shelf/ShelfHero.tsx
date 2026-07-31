@@ -264,6 +264,18 @@ export default function ShelfHero({
           }}
         />
 
+        {/* The copy's home corner. An anchored pool of the page colour in the
+            lower left, so the text always sits on shade regardless of which
+            shelf the travel has put behind it — the band scrims fade across
+            the middle precisely so the aisle stays visible, which left the
+            copy's legibility to luck. This takes the luck out. */}
+        <div
+          className="pointer-events-none absolute inset-0 z-[6]"
+          style={{
+            background: `radial-gradient(95% 110% at 12% 88%, rgba(${rgb},0.62) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.10) 58%, transparent 72%)`,
+          }}
+        />
+
         <div className="pointer-events-none relative z-10 h-full">
           {ownNav && <Nav theme={theme} />}
 
@@ -278,7 +290,7 @@ export default function ShelfHero({
                 background: `linear-gradient(180deg, rgba(${rgb},0) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.66) 64%, rgba(${rgb},0.88) 86%, rgba(${rgb},0.94) 100%)`,
               }}
             />
-            <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20" style={{ textShadow: theme.textShadow }}>
+            <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-20" style={{ textShadow: theme.textShadow }}>
               <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
                 {copy.eyebrow}
               </p>

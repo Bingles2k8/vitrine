@@ -147,7 +147,7 @@ vec2 map(vec3 p){
     if (bnd > 0.25) {
       if (bnd < res.x) res = vec2(bnd, 4.45);
     } else {
-      vec2 obj = clusterAt(qc, seed);
+      vec2 obj = clusterAt(qc, seed, sx);
       if (obj.x < res.x) res = obj;
     }
   }

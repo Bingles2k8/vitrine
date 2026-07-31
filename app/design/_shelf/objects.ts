@@ -118,7 +118,7 @@ float objectAt(vec3 q, float id){
    a per-object albedo variance so a row of white ceramics is not one flat
    value. Two hashes per object — everything else is derived by fract-mixing,
    because this runs inside map() and hash2 is a sin(). */
-vec2 clusterAt(vec3 q, float seed){
+vec2 clusterAt(vec3 q, float seed, float sx){
   vec2 best = vec2(1e9, 4.0);
   float n = 1.0 + floor(hash2(vec2(seed, 11.0)) * 2.999);
   for (int i = 0; i < 3; i++){
@@ -127,13 +127,16 @@ vec2 clusterAt(vec3 q, float seed){
     float h1 = hash2(vec2(seed, 21.0 + fi));
     float h2 = hash2(vec2(seed, 61.0 + fi));
     float id = floor(h1 * 10.999);
+    // Biased toward the wall side of the shelf. Objects parked on the aisle
+    // lip end up inches from the lens as the camera passes, where the wide
+    // FOV smears them across the frame edge as huge cropped blobs.
     vec3 c = q - vec3(
-      (h2 - 0.5) * 0.34,
+      sx * mix(-0.06, 0.20, h2),
       0.0,
       (fi - (n - 1.0) * 0.5) * 0.55 + (fract(h2 * 7.31) - 0.5) * 0.18
     );
     c.xz = rot(fract(h1 * 13.7) * 6.2831) * c.xz;
-    float sc = mix(0.85, 1.15, fract(h2 * 3.17));
+    float sc = mix(0.78, 1.05, fract(h2 * 3.17));
     float d = objectAt(c / sc, id) * sc;
     if (d < best.x) best = vec2(d, 4.0 + 0.9 * fract(h1 * 5.13));
   }
