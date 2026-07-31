@@ -1,4 +1,5 @@
 import { CORE } from '../_gl/core'
+import { OBJECTS } from './objects'
 
 /**
  * The aisle scene, with every colour and light level pulled out as a parameter.
@@ -105,19 +106,14 @@ export function aisleFrag(look: Look): string {
   vec3  sdir = normalize(${v3(sun.dir)});
   float sndl = clamp(dot(n, sdir), 0.0, 1.0);
   float ssh  = 1.0;
-  if (sndl > 0.001 && bounce < 0.5) ssh = penumbra(p + n * 0.006, sdir, ${f(sun.size)}, 14.0);
+  if (sndl > 0.001 && bounce < 0.5 && shFade > 0.01)
+    ssh = mix(1.0, penumbra(p + n * 0.006, sdir, ${f(sun.size)}, 14.0), shFade);
   col += alb * ${v3(sun.colour)} * (sndl * ssh * ${f(sun.intensity)});
   col += satinSpec(n, rd, sdir, ${v3(sun.colour)}, rough, f0) * ssh * ${f(sun.spec)};`
     : ''
 
   const frag = `${CORE}
-float baseY(float id){
-  if (id < 0.5) return 0.155;
-  if (id < 1.5) return 0.205;
-  if (id < 2.5) return 0.157;
-  return 0.111;
-}
-
+${OBJECTS}
 const float BAY = 2.4;
 
 vec2 map(vec3 p){
@@ -136,17 +132,25 @@ vec2 map(vec3 p){
   float rack = min(uprights, shelves);
   if (rack < res.x) res = vec2(rack, 3.0);
 
-  // One object per bay: which shape, which side, which shelf, all from the bay
-  // index. Deterministic, so nothing shimmers as the camera travels.
-  float h    = hash2(vec2(bay, 1.0));
-  float id   = floor(hash2(vec2(bay, 7.0)) * 3.999);
-  float side = h < 0.5 ? -1.0 : 1.0;
-  float lvl  = (fract(h * 4.0) < 0.5 ? 1.201 : 2.351) + baseY(id);
-
-  vec3 q = p - vec3(side * 2.35, lvl, bay * BAY);
-  q.xz = rot(hash2(vec2(bay, 3.0)) * 6.2831) * q.xz;
-  float obj = shapeAt(q, id);
-  if (obj < res.x) res = vec2(obj, 4.0);
+  // A cluster of objects per side per bay, each wrapped in a bounding sphere.
+  // The sphere distance is a true lower bound on the cluster's, so handing it
+  // to the marcher is safe — and it means a ray only pays for object detail
+  // when it is actually within arm's reach of a dressed shelf. This is the
+  // single biggest performance lever in the scene: the old version evaluated
+  // its object SDF for every map() call everywhere in the room.
+  for (int sd = 0; sd < 2; sd++){
+    float sx = sd == 0 ? -1.0 : 1.0;
+    float seed = bay * 4.0 + float(sd);
+    float lvl = hash2(vec2(seed, 1.0)) < 0.45 ? 1.201 : 2.351;
+    vec3 qc = p - vec3(sx * 2.35, lvl, bay * BAY);
+    float bnd = length(qc - vec3(0.0, 0.18, 0.0)) - 1.0;
+    if (bnd > 0.25) {
+      if (bnd < res.x) res = vec2(bnd, 4.45);
+    } else {
+      vec2 obj = clusterAt(qc, seed);
+      if (obj.x < res.x) res = obj;
+    }
+  }
   return res;
 }
 
@@ -163,7 +167,7 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   vec3 alb; float rough; float f0;
   if (m < 1.5)      { alb = ${v3(look.floor)};  rough = ${f(look.floorRough)};  f0 = 0.05; }
   else if (m < 3.5) { alb = ${v3(look.rack)};   rough = ${f(look.rackRough)};   f0 = 0.10; }
-  else              { alb = ${v3(look.object)}; rough = ${f(look.objectRough)}; f0 = 0.09; }
+  else              { alb = ${v3(look.object)} * mix(0.86, 1.12, clamp((m - 4.0) * 1.111, 0.0, 1.0)); rough = ${f(look.objectRough)}; f0 = 0.09; }
 
   // Lamps every other bay, so the aisle runs pool, dark, pool, dark.
   vec3  lp  = vec3(0.0, 2.85, floor(p.z / (BAY * 2.0) + 0.5) * BAY * 2.0);
@@ -174,12 +178,17 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   float att = 1.0 / max(d2, 0.25);
   float ndl = clamp(dot(n, ld), 0.0, 1.0);
 
-  // A surface facing away from the lamp is already black; marching a shadow ray
-  // to prove it costs 48 map() calls for a result that gets multiplied by zero.
-  // Roughly a third of the pixels in this scene fall into that case.
+  // Two gates on the expensive rays. A surface facing away from the lamp is
+  // already black, so proving it with a 48-step shadow march is wasted; and
+  // past ~18 units the fog owns the image anyway, so shadows fade to nothing
+  // over 14-18 (a hard cutoff would draw a line) and AO bows out by 12.
+  float cd = length(p - uCam);
+  float shFade = 1.0 - smoothstep(14.0, 18.0, cd);
   float sh = 1.0;
-  if (ndl > 0.001 && bounce < 0.5) sh = penumbra(p + n * 0.006, ld, ${f(look.lampSize)}, dl - 0.03);
-  float occ = bounce > 0.5 ? 1.0 : ao(p, n);
+  if (ndl > 0.001 && bounce < 0.5 && shFade > 0.01)
+    sh = mix(1.0, penumbra(p + n * 0.006, ld, ${f(look.lampSize)}, dl - 0.03), shFade);
+  float occ = 1.0;
+  if (bounce < 0.5 && cd < 12.0) occ = mix(ao(p, n), 1.0, smoothstep(9.0, 12.0, cd));
 
   vec3 col = alb * LAMP * (ndl * sh * att * ${f(look.key)});
   col += satinSpec(n, rd, ld, LAMP, rough, f0) * sh * att * ${f(look.spec)};
