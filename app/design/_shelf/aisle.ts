@@ -185,7 +185,12 @@ vec3 shade(vec3 p, vec3 n, vec3 rd, float m, float bounce){
   col += satinSpec(n, rd, ld, LAMP, rough, f0) * sh * att * ${f(look.spec)};
 ${sunBlock}
 
-  col += alb * ${v3(look.ambient)} * occ;
+  // Hemispheric, not flat. Bounce light in a real room arrives mostly from
+  // above, so upward faces get all of it and undersides get a tenth — which is
+  // the entire reason a white shelf reads as a shelf and not as a white
+  // rectangle. Barely visible on the dark bands, where the ambient is a
+  // hundredth of this; it is the whole modelling of the bright one.
+  col += alb * ${v3(look.ambient)} * (0.55 + 0.45 * n.y) * occ;
   col += envSheen(n, rd, ${v3(look.sheenSky)}, ${v3(look.sheenGround)}, f0)
          * mix(0.20, 0.85, 1.0 - rough) * occ;
   return col;

@@ -244,47 +244,42 @@ export const GOLDEN_THEME: Theme = {
    more than any change of hue does. */
 
 export const MIDDAY_LOOK: Look = {
-  // Neutral, not warm. Every channel of every albedo here is within a hair of
-  // every other one: the moment a surface carries a tint, its shadow carries
-  // that tint too, and a "brown shadow" is what you get.
+  /* A white room lit by its own ceiling, not by a sun through a window. The
+     reference for this is a photographic one: soft overhead strips, everything
+     in the room painted white, shadows that are light cool grey rather than
+     dark, and a floor of polished concrete throwing the whole aisle back at
+     itself. There is no hard directional source in it at all — hence no `sun`
+     here, which also hands back the second shadow march it cost. */
   lamp: [1.0, 1.0, 1.0],
   page: '#ffffff',
-  // Painted white steel and a sealed white floor. Lit faces run out of range
-  // and clip to paper; the separation between the racking and the background
-  // comes entirely from shading, which is exactly how white architecture reads
-  // in hard sun.
-  floor: [0.60, 0.60, 0.60],
-  rack: [0.74, 0.74, 0.74],
-  object: [0.28, 0.28, 0.285],
-  // Deliberately far below what a white room really bounces. Physically the
-  // shadows would be bright; graphically they need to be dark, and dark is
-  // what "harsh" means.
-  ambient: [0.034, 0.034, 0.036],
-  sheenSky: [0.18, 0.18, 0.185],
-  sheenGround: [0.085, 0.085, 0.085],
-  floorRough: 0.30,
+  // Polished concrete: the one thing in the room that is not white, and
+  // smooth enough to carry the reflections that give the aisle its depth.
+  floor: [0.285, 0.290, 0.300],
+  rack: [0.80, 0.80, 0.80],
+  // White ceramics on white shelves. They separate by form and contact
+  // shadow, not by tone — making them dark to "read better" is what turned
+  // them into silhouettes.
+  object: [0.75, 0.75, 0.752],
+  /* An order of magnitude above every other band, and very slightly cool. This
+     is the whole look: a white room bounces enormously, so nothing in it ever
+     goes dark, and the shadows land as pale blue-grey. */
+  ambient: [0.255, 0.265, 0.285],
+  sheenSky: [0.42, 0.44, 0.48],
+  sheenGround: [0.235, 0.240, 0.248],
+  floorRough: 0.18,
   rackRough: 0.42,
-  objectRough: 0.24,
-  // The strip lights are still on, but at noon under this they contribute
-  // almost nothing. Leaving a trace stops the aisle going flat where the sun
-  // does not reach.
-  key: 0.9,
-  spec: 2.5,
-  lampSize: 0.18,
-  sun: {
-    dir: [0.42, 0.86, 0.28],
-    colour: [1.0, 1.0, 1.0],
-    intensity: 2.3,
-    spec: 3.0,
-    // Near enough a point source. This is what makes the shadow edges cut
-    // rather than fade.
-    size: 0.012,
-  },
+  objectRough: 0.30,
+  key: 3.0,
+  spec: 4.0,
+  // A wide source. Fluorescent battens diffuse across the whole ceiling, so
+  // the shelf shadows have no edge worth speaking of.
+  lampSize: 0.35,
+  // Whites out sooner than the dark bands, because the haze is the only thing
+  // left to carry distance once nothing goes dark.
   fogStart: 7.0,
-  fog: 0.072,
-  exposure: 1.20,
-  contrast: 1.30,
-  // No vignette. On a white page it only produces dirty grey corners.
+  fog: 0.068,
+  exposure: 0.95,
+  contrast: 1.14,
   vignette: 0.0,
   grain: 0.002,
 }
