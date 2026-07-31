@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 
 const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`
 
+/** How long without any input before the scene stops drawing. */
+const IDLE_MS = 5000
+/** How long the scene takes to come back up to full motion once woken. */
+const WAKE_MS = 1000
+
 export type Uniforms = Record<string, number | number[]>
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
@@ -31,7 +36,12 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
 export function useShader(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   frag: string,
-  onFrame: (timeSeconds: number) => Uniforms,
+  /**
+   * `wake` ramps 0 → 1 over a second after the scene comes back from idle.
+   * Scale any motion by it and the scene eases back into life instead of
+   * snapping. Callers that ignore it simply resume at full speed.
+   */
+  onFrame: (timeSeconds: number, wake: number) => Uniforms,
   quality = 0.72,
   /**
    * Optional image atlas, uploaded to `uTex` the first frame it appears.
@@ -106,7 +116,13 @@ export function useShader(
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
     resize()
-    window.addEventListener('resize', resize)
+    // A resize reallocates the drawing buffer, which throws away the held
+    // frame — so it has to wake the loop, not just change the size.
+    const onResize = () => {
+      resize()
+      wake()
+    }
+    window.addEventListener('resize', onResize)
 
     let visible = true
     const io = new IntersectionObserver(e => { visible = e[0].isIntersecting }, { threshold: 0.01 })
@@ -132,7 +148,62 @@ export function useShader(
     }
 
     let raf = 0
-    const t0 = performance.now()
+    /* The scene's own clock, advanced by hand rather than read off
+       performance.now(). It only runs while the scene is drawing, and for the
+       first second after waking it runs slow — which is what makes motion ease
+       back in. Ramping the *amplitude* instead would snap the camera to centre
+       at the moment of waking and then swing it back out. */
+    let animMs = 0
+
+    /* ── Sleep ────────────────────────────────────────────────────────
+       A raymarcher that nobody is looking at is the most expensive way in
+       the world to render a still image. The loop stops entirely when the
+       tab is hidden or after five seconds without input; the canvas keeps
+       showing its last composited frame, so the hero holds rather than
+       going blank.
+
+       The animation clock stops with it and resumes where it left off, so
+       coming back is not a jump-cut into wherever the drift would have
+       drifted to — it picks up mid-breath and eases back to full over a
+       second. */
+    let awake = true
+    let wokeAt = performance.now() - WAKE_MS   // full motion on first load
+    let idleTimer = 0
+
+    const sleep = () => {
+      if (!awake) return
+      awake = false
+      if (raf) {
+        cancelAnimationFrame(raf)
+        raf = 0
+      }
+    }
+
+    const armIdle = () => {
+      window.clearTimeout(idleTimer)
+      idleTimer = window.setTimeout(sleep, IDLE_MS)
+    }
+
+    const wake = () => {
+      if (document.visibilityState === 'hidden') return
+      if (!awake) {
+        awake = true
+        wokeAt = performance.now()
+        // The frame-time sampler must not read the gap as a slow frame and
+        // drop the render scale for it.
+        resumed = true
+        last = performance.now()
+        if (!raf) raf = requestAnimationFrame(tick)
+      }
+      armIdle()
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') sleep()
+      else wake()
+    }
+
+    const ACTIVITY = ['pointermove', 'pointerdown', 'wheel', 'keydown', 'touchstart'] as const
 
     // Rolling frame time, with a wide dead band between the two thresholds so
     // the scale cannot oscillate. The window closes after 45 frames or ~900ms,
@@ -148,7 +219,7 @@ export function useShader(
       const now = performance.now()
       const dt = now - last
       last = now
-      if (!visible) {
+      if (!visible || !awake) {
         resumed = true
         return
       }
@@ -177,7 +248,13 @@ export function useShader(
         }
       }
 
-      const uniforms = frameRef.current((now - t0) / 1000)
+      // Ease-in-out on the ramp, so motion does not start with a jerk at the
+      // moment the pointer moves and does not arrive at full speed with a step.
+      const k = Math.min(1, (now - wokeAt) / WAKE_MS)
+      const wakeRamp = k * k * (3 - 2 * k)
+      animMs += Math.min(dt, 100) * wakeRamp
+
+      const uniforms = frameRef.current(animMs / 1000, wakeRamp)
       gl.uniform2f(loc('uRes'), canvas.width, canvas.height)
       for (const [name, value] of Object.entries(uniforms)) {
         const l = loc(name)
@@ -190,11 +267,24 @@ export function useShader(
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
     tick()
+    armIdle()
+
+    for (const ev of ACTIVITY) window.addEventListener(ev, wake, { passive: true })
+    window.addEventListener('scroll', wake, { passive: true })
+    window.addEventListener('focus', wake)
+    window.addEventListener('blur', sleep)
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       cancelAnimationFrame(raf)
+      window.clearTimeout(idleTimer)
       io.disconnect()
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', onResize)
+      for (const ev of ACTIVITY) window.removeEventListener(ev, wake)
+      window.removeEventListener('scroll', wake)
+      window.removeEventListener('focus', wake)
+      window.removeEventListener('blur', sleep)
+      document.removeEventListener('visibilitychange', onVisibility)
       if (tex) gl.deleteTexture(tex)
     }
   }, [canvasRef, frag, quality, atlasRef])
