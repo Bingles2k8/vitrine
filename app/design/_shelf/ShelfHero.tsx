@@ -281,13 +281,20 @@ export default function ShelfHero({
 
           <div ref={copyRef} className="absolute inset-x-0 bottom-0 will-change-transform">
             {/* The copy travels up out of the frame's own scrim, so it carries a
-                second one with it. Without this the body text ends up over a lit
-                shelf halfway through the scroll and stops being readable. */}
+                second one with it. Two rules keep it invisible as a shape:
+                it is plain black in every band (a page-coloured veil only
+                matched on the dark bands anyway), and its bottom hangs 45vh
+                below the wrapper — the copy travels 34vh at most, so the
+                gradient's darkest edge can never rise into the frame and
+                print a hard line across the scene, which it used to. */}
             <div
               ref={veilRef}
-              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[155%] opacity-0"
+              className="pointer-events-none absolute inset-x-0 -z-10 opacity-0"
               style={{
-                background: `linear-gradient(180deg, rgba(${rgb},0) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.66) 64%, rgba(${rgb},0.88) 86%, rgba(${rgb},0.94) 100%)`,
+                top: '-55%',
+                bottom: '-45vh',
+                background:
+                  'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 42%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.68) 100%)',
               }}
             />
             <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-20" style={{ textShadow: theme.textShadow }}>
