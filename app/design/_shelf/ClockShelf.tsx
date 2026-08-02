@@ -19,10 +19,11 @@ export default function ClockShelf() {
   const { look, theme } = bandData(band)
 
   return (
-    <div className={`min-h-screen transition-colors duration-700 ${theme.page}`}>
+    <div className={`min-h-screen transition-colors duration-700 ${theme.bodyPage ?? theme.page}`}>
       <ShelfHero look={look} theme={theme} />
-      {/* Midday is a light theme now, so the cards and footer flip with it. */}
-      <ShelfBody theme={theme} dark={band !== 'midday'} />
+      {/* Every band is dark below the fold, midday included — only its aisle
+          is a white room, and the hero foot lands on black to meet this. */}
+      <ShelfBody theme={theme} dark />
 
       {/* Review control. Not part of the design — it is here so all three bands
           can be seen without changing the system clock. */}

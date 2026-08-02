@@ -6,8 +6,15 @@ import type { Look } from './aisle'
  * the design system yet.
  */
 export type Theme = {
-  /** Applied to the page wrapper and the pinned frame. */
+  /** Applied to the pinned hero frame, behind the canvas. */
   page: string
+  /**
+   * Applied to the page wrapper, so everything below the hero can disagree
+   * with it. Defaults to `page`. Midday is the reason it exists: the aisle up
+   * top is a white room, but the site underneath stays black like the live
+   * one, and the hero already resolves to black at its foot to meet it.
+   */
+  bodyPage?: string
   navBg: string
   navLink: string
   navBorder: string
@@ -388,7 +395,13 @@ export const MIDDAY_LOOK: Look = {
 }
 
 export const MIDDAY_THEME: Theme = {
+  // Only the pinned frame is white, and only because the aisle in it is. The
+  // site itself is the same black as the live one — the hero resolves to black
+  // at its foot, so the two meet without a seam.
   page: 'bg-white text-stone-900',
+  bodyPage: 'bg-stone-950 text-stone-100',
+  // The header sits over the top of the frame, which is the lit end of the
+  // white room, so it alone keeps the light treatment.
   navBg: 'bg-white/75',
   navLink: 'text-stone-500 hover:text-stone-900',
   navBorder: 'border-stone-900/10',
@@ -396,32 +409,29 @@ export const MIDDAY_THEME: Theme = {
   logoDot: 'text-amber-600',
   ctaPrimary: 'bg-stone-900 text-white hover:bg-stone-800',
   ctaGhost: 'border border-stone-900/20 text-stone-600 hover:border-stone-900/40 hover:text-stone-900',
-  eyebrow: 'text-amber-600',
-  headline: 'text-stone-900',
-  body: 'text-stone-600',
-  fine: 'text-stone-400',
-  accent: 'text-amber-600',
-  scrollCue: 'text-stone-400',
-  sectionBorder: 'border-stone-900/10',
-  cardBg: 'bg-white',
-  cardHover: 'hover:bg-stone-100',
-  cardTitle: 'text-stone-900',
-  textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
+  // Everything below the fold now reads on black, same as the other bands.
+  eyebrow: 'text-amber-500',
+  headline: 'text-stone-100',
+  body: 'text-stone-400',
+  fine: 'text-stone-600',
+  accent: 'text-amber-500',
+  scrollCue: 'text-stone-500',
+  sectionBorder: 'border-white/5',
+  cardBg: 'bg-stone-950',
+  cardHover: 'hover:bg-stone-900',
+  cardTitle: 'text-white',
+  textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '255,255,255',
   // The aisle stays the white room it was; only the last third of the frame
   // goes to black, which is the one place the copy sits. Ink on a lit white
   // shelf was the weakest type on any of the bands.
   footRgb: '0,0,0',
   veil: 0.9,
+  // The hero copy is on black like the rest, so it takes the flat fields now.
+  // The one thing it cannot share is the primary button: the header's version
+  // of that sits on white and has to stay dark.
   heroCopy: {
-    eyebrow: 'text-amber-400',
-    headline: 'text-white',
-    body: 'text-stone-300',
-    fine: 'text-stone-500',
     ctaPrimary: 'bg-white text-stone-900 hover:bg-stone-200',
-    ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
-    scrollCue: 'text-stone-500',
-    textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   },
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }

@@ -24,18 +24,6 @@ const POINTS = [
 export default function ShelfBody({ theme, dark }: { theme: Theme; dark: boolean }) {
   return (
     <>
-      {/* A band whose hero ends on a different colour from its page needs the
-          handover made somewhere. Without this, midday's black foot butts
-          straight into a white section and the join reads as a mistake. */}
-      {theme.footRgb && (
-        <div
-          aria-hidden
-          className="h-32 w-full"
-          style={{
-            background: `linear-gradient(180deg, rgb(${theme.footRgb}) 0%, rgba(${theme.footRgb},0.55) 30%, rgba(${theme.footRgb},0.18) 60%, rgba(${theme.footRgb},0) 100%)`,
-          }}
-        />
-      )}
       <section className={`border-t ${theme.sectionBorder}`}>
         <div className="mx-auto max-w-6xl px-6 py-20">
           <p className={`mb-4 font-mono text-xs uppercase tracking-widest ${theme.eyebrow}`}>
