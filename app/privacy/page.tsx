@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PublicNav from '@/components/PublicNav'
 import LegalSections from '@/components/legal/LegalSections'
 import { privacyDoc } from '@/lib/legal/privacy'
 import { buildPageMetadata } from '@/lib/seo'
@@ -11,29 +12,30 @@ export const metadata = buildPageMetadata({
 })
 
 export default function PrivacyPage() {
+  // The public site is dark everywhere; this page used to follow the visitor's
+  // system theme instead, which left a dark nav sitting on a light page.
+  // Scoping `dark` here rather than hardcoding colours keeps LegalSections
+  // working for /legal/*, which is still theme-aware and must stay that way
+  // for the iOS app.
   return (
-    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 py-16 px-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-10">
-          <Link href="/" className="font-serif text-2xl italic text-stone-900 dark:text-stone-100">
-            Vitrine<span className="text-amber-600">.</span>
-          </Link>
-        </div>
+    <main className="dark min-h-screen bg-stone-950 px-6 pb-16 pt-28 text-stone-100">
+      <PublicNav />
 
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl p-10 space-y-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-xl border border-white/10 bg-stone-900 p-10 space-y-8">
           <div>
-            <h1 className="font-serif text-3xl italic text-stone-900 dark:text-stone-100 mb-1">{privacyDoc.title}</h1>
-            <p className="text-xs font-mono text-stone-400 dark:text-stone-500">{privacyDoc.updated}</p>
+            <h1 className="font-serif text-3xl italic text-stone-100 mb-1">{privacyDoc.title}</h1>
+            <p className="text-xs font-mono text-stone-500">{privacyDoc.updated}</p>
           </div>
 
           <LegalSections doc={privacyDoc} siteLinks />
         </div>
 
-        <div className="mt-8 flex gap-6 justify-center">
-          <Link href="/terms" className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+        <div className="mt-8 flex justify-center gap-6">
+          <Link href="/terms" className="text-xs font-mono text-stone-500 transition-colors hover:text-stone-100">
             Terms of Service
           </Link>
-          <Link href="/" className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+          <Link href="/" className="text-xs font-mono text-stone-500 transition-colors hover:text-stone-100">
             ← Back to home
           </Link>
         </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type React from 'react'
+import PublicNav from '@/components/PublicNav'
 
 const ICONS: Record<string, string> = {
   rocket: '🚀',
@@ -56,18 +57,7 @@ export default function GuideLayout({ sections, title, subtitle, tierBadges, pdf
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-stone-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif text-xl italic">Vitrine<span className="text-amber-500">.</span></Link>
-          <div className="flex items-center gap-3">
-            <a href="/login" className="text-sm text-stone-400 hover:text-white transition-colors font-mono hidden sm:block">Sign in</a>
-            <a href="/signup" className="bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm font-mono px-4 py-2 rounded transition-colors">
-              Start free →
-            </a>
-          </div>
-        </div>
-      </nav>
+      <PublicNav activePath="/guide/essentials" />
 
       {/* ── Page header ──────────────────────────────────────────────────────── */}
       <header className="pt-28 pb-10 px-6 border-b border-white/5">
