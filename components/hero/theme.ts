@@ -1,6 +1,14 @@
 import type { Look } from './aisle'
 
 /**
+ * stone-950 — the colour of the page the hero is dropped into. Every band
+ * resolves to it at the foot of the frame whatever its own scene colour is,
+ * because that is what sits directly underneath. Measured the alternative:
+ * golden hour ending on its own aubergine put a visible step against this.
+ */
+const PAGE_RGB = '12,10,9'
+
+/**
  * The copy dressing that goes with each Look — the hero's own type and
  * buttons, plus the colours its scrims are built from. The page around it is
  * the site's, not the band's: only the pinned frame changes with the clock.
@@ -48,6 +56,14 @@ export type Theme = {
    * scene is not supposed to do.
    */
   veil: number
+  /**
+   * How much of that veil is already there before any scrolling. Zero for the
+   * dark bands, where the aisle behind the copy is dark anyway. Midday needs a
+   * floor: its aisle is a lit white room, and the frame's own scrim has not
+   * begun to darken at the height the eyebrow sits at, so without this the
+   * amber lands on near-white at about 1.7:1.
+   */
+  veilRest?: number
 }
 
 /* ── Cold store: blue-black room, fluorescent tubes, bone UI ─────
@@ -108,6 +124,7 @@ export const COLD_THEME: Theme = {
   scrollCue: 'text-slate-700',
   textShadow: '0 1px 2px rgba(4,7,11,0.65), -6px 10px 22px rgba(4,7,11,0.58), -14px 22px 52px rgba(4,7,11,0.45)',
   scrimRgb: '7,10,14',
+  footRgb: PAGE_RGB,
   veil: 1.0,
 }
 
@@ -179,6 +196,7 @@ export const GOLDEN_THEME: Theme = {
   scrollCue: 'text-stone-700',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '23,16,26',
+  footRgb: PAGE_RGB,
   veil: 1.0,
 }
 
@@ -271,12 +289,10 @@ export const MIDDAY_THEME: Theme = {
   // The aisle stays the white room it was; only the last third of the frame
   // goes dark, which is the one place the copy sits. Ink on a lit white shelf
   // was the weakest type on any of the bands.
-  //
-  // Not pure black — this is stone-950, the exact colour of bodyPage below.
-  // Black against it is a close enough match to look like a mistake rather
-  // than a choice, and prints a faint line where the hero ends.
-  footRgb: '12,10,9',
+  footRgb: PAGE_RGB,
   veil: 0.9,
+  // The only band that carries shade behind the copy before you scroll.
+  veilRest: 0.62,
   // The hero copy is on black like the rest, so it takes the flat fields now.
   // The one thing it cannot share is the primary button: the header's version
   // of that sits on white and has to stay dark.

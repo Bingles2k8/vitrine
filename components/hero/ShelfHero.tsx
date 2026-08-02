@@ -153,10 +153,17 @@ export default function ShelfHero({
         c.style.transform = `translate3d(0, ${-p * 34}vh, 0)`
         c.style.opacity = String(Math.max(0, 1 - Math.max(0, p - 0.45) / 0.50))
       }
-      // The copy's own shade fades in only as it climbs out of the frame's
-      // scrim. At rest it would just be a second layer of dark over the first.
+      // The copy's own shade fades in as it climbs out of the frame's scrim.
+      // Most bands start it at nothing, because at rest it would just be a
+      // second layer of dark over the first — but a band whose aisle is a
+      // bright room needs some of it from the very first frame, or the top of
+      // the copy is amber on white. The floor rides on the node so this stays
+      // free of the theme and never rebinds the listener.
       const v = veilRef.current
-      if (v) v.style.opacity = String(Math.min(1, p / 0.18))
+      if (v) {
+        const rest = Number(v.dataset.rest) || 0
+        v.style.opacity = String(Math.max(rest, Math.min(1, p / 0.18)))
+      }
 
       // The cue has done its job the moment scrolling starts; leaving it on
       // means it is still there telling you to scroll as the pin lets go.
@@ -233,6 +240,7 @@ export default function ShelfHero({
                 which band is on. */}
             <div
               ref={veilRef}
+              data-rest={theme.veilRest ?? 0}
               className="pointer-events-none absolute inset-x-0 -z-10 opacity-0"
               style={{ top: '-55%', bottom: '-45vh' }}
             >
