@@ -121,16 +121,34 @@ export const COLD_LOOK: Look = {
   floor: [0.082, 0.092, 0.108],
   rack: [0.235, 0.265, 0.305],
   object: [0.60, 0.635, 0.665],
-  ambient: [0.012, 0.017, 0.026],
-  sheenSky: [0.045, 0.062, 0.088],
+  ambient: [0.014, 0.020, 0.033],
+  sheenSky: [0.048, 0.068, 0.098],
   sheenGround: [0.010, 0.013, 0.018],
   floorRough: 0.22,
   rackRough: 0.26,
   objectRough: 0.22,
-  key: 5.8,
+  key: 5.2,
   spec: 17.0,
   // Long tubes rather than bulbs: a wider source, so softer shadow edges.
   lampSize: 0.14,
+  /**
+   * The moon. Geometrically it is the sun — near enough the same angular
+   * radius seen from here, so the shadow edge is just as hard. What makes it
+   * read as moonlight is everything else: it is cold rather than warm, it is
+   * high and off to the right rather than low, and it is weak enough that the
+   * room's own tubes stay the working light and the moon only rims things.
+   *
+   * Keeping it faint is the whole trick. Moonlight bright enough to light a
+   * room stops looking like moonlight and starts looking like an overcast
+   * afternoon someone put a blue filter on.
+   */
+  sun: {
+    dir: [0.62, 0.74, -0.26],
+    colour: [0.60, 0.73, 1.0],
+    intensity: 0.42,
+    spec: 11.0,
+    size: 0.007,
+  },
   fogStart: 6.5,
   fog: 0.080,
   exposure: 1.24,
@@ -314,8 +332,7 @@ export const MIDDAY_LOOK: Look = {
      reference for this is a photographic one: soft overhead strips, everything
      in the room painted white, shadows that are light cool grey rather than
      dark, and a floor of polished concrete throwing the whole aisle back at
-     itself. There is no hard directional source in it at all — hence no `sun`
-     here, which also hands back the second shadow march it cost. */
+     itself — with the midday sun coming near enough straight down through it. */
   lamp: [1.0, 1.0, 1.0],
   page: '#ffffff',
   // Polished concrete: the one thing in the room that is not white, and
@@ -335,11 +352,31 @@ export const MIDDAY_LOOK: Look = {
   floorRough: 0.18,
   rackRough: 0.42,
   objectRough: 0.30,
-  key: 3.0,
+  key: 2.4,
   spec: 4.0,
   // A wide source. Fluorescent battens diffuse across the whole ceiling, so
   // the shelf shadows have no edge worth speaking of.
   lampSize: 0.35,
+  /**
+   * Noon. Nearly overhead, pure white and hard-edged — the angular radius is
+   * the real sun's, so the shadow edge is as crisp as this renderer draws.
+   * Not perfectly vertical: a sun straight down the y axis hides every shadow
+   * underneath the thing casting it, and the shadows are the point. This is
+   * tipped just far enough to throw them clear and a little to the left, so
+   * the direction agrees with golden hour.
+   *
+   * The shadows stay light despite being hard, because the ambient in this
+   * band is an order of magnitude above the others — which is exactly how a
+   * bright white room behaves and why the reference photograph had crisp
+   * shadows that were nowhere near black.
+   */
+  sun: {
+    dir: [0.30, 1.0, -0.12],
+    colour: [1.0, 1.0, 0.985],
+    intensity: 1.5,
+    spec: 7.0,
+    size: 0.006,
+  },
   // Whites out sooner than the dark bands, because the haze is the only thing
   // left to carry distance once nothing goes dark.
   fogStart: 7.0,
