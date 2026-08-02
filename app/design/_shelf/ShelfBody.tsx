@@ -24,7 +24,12 @@ const POINTS = [
 export default function ShelfBody({ theme, dark }: { theme: Theme; dark: boolean }) {
   return (
     <>
-      <section className={`border-t ${theme.sectionBorder}`}>
+      {/* No rule along the top. The hero above resolves into exactly this
+          colour at its foot, so the two are meant to read as one surface —
+          and a hairline there is the only thing that gives the join away.
+          Measured: the fade lands on the page colour to the value, then a
+          single row of border-white/5 drew a line straight across it. */}
+      <section>
         <div className="mx-auto max-w-6xl px-6 py-20">
           <p className={`mb-4 font-mono text-xs uppercase tracking-widest ${theme.eyebrow}`}>
             Everything a collector needs
