@@ -184,6 +184,7 @@ export default function ShelfHero({
   // Where the foot disagrees with the page, the copy follows the foot. Only
   // the hero: the sections below still sit on the page colour.
   const t = theme.heroCopy ? { ...theme, ...theme.heroCopy } : theme
+  const pool = theme.poolBoost ?? 1
 
   return (
     <section ref={sectionRef} className="relative h-[250vh]">
@@ -217,7 +218,7 @@ export default function ShelfHero({
             <div
               className="pointer-events-none absolute inset-0 z-[6]"
               style={{
-                background: `radial-gradient(95% 110% at 12% 88%, rgba(${foot},0.62) 0%, rgba(${foot},0.34) 38%, rgba(${foot},0.10) 58%, transparent 72%)`,
+                background: `radial-gradient(${95 * pool}% ${110 * pool}% at 12% 88%, rgba(${foot},${Math.min(1, 0.62 * pool)}) 0%, rgba(${foot},${Math.min(1, 0.34 * pool)}) 38%, rgba(${foot},${Math.min(1, 0.10 * pool)}) 58%, transparent 72%)`,
               }}
             />
           </>

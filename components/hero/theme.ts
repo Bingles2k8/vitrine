@@ -64,6 +64,12 @@ export type Theme = {
    * amber lands on near-white at about 1.7:1.
    */
   veilRest?: number
+  /**
+   * Scales the pool of shade the copy sits in, in both reach and weight.
+   * Only midday raises it: its aisle is a lit room, so the copy column needs
+   * real ground under it rather than the touch of darkening a dark band wants.
+   */
+  poolBoost?: number
 }
 
 /* ── Cold store: blue-black room, fluorescent tubes, bone UI ─────
@@ -291,12 +297,21 @@ export const MIDDAY_THEME: Theme = {
   // was the weakest type on any of the bands.
   footRgb: PAGE_RGB,
   veil: 0.9,
-  // The only band that carries shade behind the copy before you scroll.
+  // The only band that carries shade behind the copy before you scroll, and
+  // the only one whose copy column needs a pool with real weight in it.
+  // Measured: amber on the bare aisle here was 1.74:1.
   veilRest: 0.62,
+  poolBoost: 1.5,
   // The hero copy is on black like the rest, so it takes the flat fields now.
   // The one thing it cannot share is the primary button: the header's version
   // of that sits on white and has to stay dark.
   heroCopy: {
     ctaPrimary: 'bg-white text-stone-900 hover:bg-stone-200',
+    // The one band that does not get the amber eyebrow. It sits highest in
+    // the copy, where even a boosted pool leaves the aisle too bright for
+    // amber to clear 4.5:1 — and darkening far enough to rescue it would put
+    // out the white room this band exists for. White clears it comfortably;
+    // the amber stays on "beautifully", which sits lower and darker.
+    eyebrow: 'text-stone-100',
   },
 }
