@@ -36,6 +36,13 @@ export type Theme = {
   textShadow: string
   /** Page background as "r,g,b" so the scrims can be built from it. */
   scrimRgb: string
+  /**
+   * Peak opacity of the black veil the copy carries as it climbs. Black on
+   * every band, but a dark room can take the full weight where a white one
+   * cannot — at 1.0 the midday aisle turns grey, which is the one thing that
+   * scene is not supposed to do.
+   */
+  veil: number
   fallback: string
 }
 
@@ -85,6 +92,7 @@ export const STONE_THEME: Theme = {
   cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '12,10,9',
+  veil: 1.0,
   fallback: 'radial-gradient(46% 40% at 50% 34%, #3f382c 0%, #0c0a09 76%)',
 }
 
@@ -137,6 +145,7 @@ export const COLD_THEME: Theme = {
   cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(4,7,11,0.65), -6px 10px 22px rgba(4,7,11,0.58), -14px 22px 52px rgba(4,7,11,0.45)',
   scrimRgb: '7,10,14',
+  veil: 1.0,
   fallback: 'radial-gradient(46% 40% at 50% 34%, #2b3542 0%, #070a0e 76%)',
 }
 
@@ -194,6 +203,7 @@ export const DAY_THEME: Theme = {
   cardTitle: 'text-stone-900',
   textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '239,236,230',
+  veil: 0.5,
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
 
@@ -245,6 +255,7 @@ export const GOLDEN_THEME: Theme = {
   cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '14,11,8',
+  veil: 1.0,
   fallback: 'radial-gradient(46% 40% at 50% 34%, #46392a 0%, #0e0b08 76%)',
 }
 
@@ -316,5 +327,6 @@ export const MIDDAY_THEME: Theme = {
   cardTitle: 'text-stone-900',
   textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '255,255,255',
+  veil: 0.42,
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }

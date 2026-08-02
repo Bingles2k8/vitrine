@@ -286,17 +286,27 @@ export default function ShelfHero({
                 matched on the dark bands anyway), and its bottom hangs 45vh
                 below the wrapper — the copy travels 34vh at most, so the
                 gradient's darkest edge can never rise into the frame and
-                print a hard line across the scene, which it used to. */}
+                print a hard line across the scene, which it used to.
+
+                Two nested layers rather than one: the outer carries the
+                scroll fade, which is written from the scroll handler and must
+                stay a plain 0–1, and the inner carries the band's weight. The
+                compositor multiplies them, so the handler never has to know
+                which band is on. */}
             <div
               ref={veilRef}
               className="pointer-events-none absolute inset-x-0 -z-10 opacity-0"
-              style={{
-                top: '-55%',
-                bottom: '-45vh',
-                background:
-                  'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 42%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.68) 100%)',
-              }}
-            />
+              style={{ top: '-55%', bottom: '-45vh' }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  opacity: theme.veil,
+                  background:
+                    'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 42%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.68) 100%)',
+                }}
+              />
+            </div>
             <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-20" style={{ textShadow: theme.textShadow }}>
               <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
                 {copy.eyebrow}
