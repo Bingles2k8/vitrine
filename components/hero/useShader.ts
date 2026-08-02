@@ -8,6 +8,27 @@ const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.
 const IDLE_MS = 5000
 /** How long the scene takes to come back up to full motion once woken. */
 const WAKE_MS = 1000
+/* The render scale chases a 60fps budget rather than the display's own rate.
+   These were absolute milliseconds before too, but the one for climbing back up
+   was 12ms — below anything this scene reaches on either kind of panel. Vsync
+   caps a 60Hz frame at ~16.7ms, and on a 120Hz panel the aisle costs about 15ms
+   at its *lowest* scale. So the scale could only ever ratchet down, all the way
+   to the floor, on hardware with room to spare. */
+/** Average frame over this and the scale steps down: under ~43fps. */
+const SLOW_MS = 23
+/** Average frame under this and it steps back up, if it has not already
+ *  learned that the scale above is too slow. Above a 60Hz vsync cap, so a
+ *  scene that is comfortably holding the display can actually reach it. */
+const FAST_MS = 18.4
+/**
+ * Sustained frame time that means even the lowest render scale is too much for
+ * this device — roughly 30fps. Below the floor there is nothing left to give
+ * up, so the scene stops and the caller shows the static hero instead of
+ * grinding for the rest of the visit.
+ */
+const BAIL_MS = 34
+/** Consecutive sampling windows over BAIL_MS before giving up on the scene. */
+const BAIL_WINDOWS = 3
 
 export type Uniforms = Record<string, number | number[]>
 
@@ -60,7 +81,9 @@ export function useShader(
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    // An empty source means the caller does not know which scene it wants yet.
+    // Compiling now would mean building a program only to throw it away.
+    if (!canvas || !frag) return
 
     const gl = (canvas.getContext('webgl', { antialias: false, powerPreference: 'high-performance' }) ||
       canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null
@@ -170,6 +193,10 @@ export function useShader(
     let wokeAt = performance.now() - WAKE_MS   // full motion on first load
     let idleTimer = 0
 
+    /* Set once the scene has given up for good. The loop must not come back:
+       every activity listener still fires, and the caller keeps the fallback. */
+    let bailed = false
+
     const sleep = () => {
       if (!awake) return
       awake = false
@@ -185,6 +212,7 @@ export function useShader(
     }
 
     const wake = () => {
+      if (bailed) return
       if (document.visibilityState === 'hidden') return
       if (!awake) {
         awake = true
@@ -213,6 +241,13 @@ export function useShader(
     let acc = 0
     let samples = 0
     let resumed = true
+    /* Consecutive windows spent below BAIL_MS while already at the scale floor. */
+    let starved = 0
+    /* The lowest scale this device has already proved it cannot hold. Climbing
+       is only allowed strictly below it, so the measurement converges instead
+       of pacing between two scales — a resolution that flickers once a second
+       is worse to look at than one that is simply lower. */
+    let ceiling = Infinity
 
     const tick = () => {
       raf = requestAnimationFrame(tick)
@@ -238,12 +273,26 @@ export function useShader(
           const avg = acc / samples
           acc = 0
           samples = 0
-          if (avg > 23 && dynamic > 0.5) {           // under ~43fps
+          if (avg > SLOW_MS && dynamic > 0.5) {
+            ceiling = dynamic
             dynamic = Math.max(0.5, dynamic - 0.15)
             resize()
-          } else if (avg < 12 && dynamic < 1) {      // comfortably over 80fps
+          } else if (avg < FAST_MS && dynamic + 0.15 < ceiling && dynamic < 1) {
             dynamic = Math.min(1, dynamic + 0.15)
             resize()
+          }
+
+          // Nothing left to give up: already at the floor and still far short
+          // of a usable frame rate. Give the visitor the static hero instead.
+          if (dynamic <= 0.5 && avg > BAIL_MS) {
+            if (++starved >= BAIL_WINDOWS) {
+              bailed = true
+              sleep()
+              setFailed(true)
+              return
+            }
+          } else {
+            starved = 0
           }
         }
       }
@@ -286,6 +335,12 @@ export function useShader(
       window.removeEventListener('blur', sleep)
       document.removeEventListener('visibilitychange', onVisibility)
       if (tex) gl.deleteTexture(tex)
+      // The band re-checks itself every five minutes, so at dusk this teardown
+      // runs on a live page. Without it each change leaves its program behind.
+      gl.deleteProgram(prog)
+      gl.deleteShader(vs)
+      gl.deleteShader(fs)
+      gl.deleteBuffer(buf)
     }
   }, [canvasRef, frag, quality, atlasRef])
 

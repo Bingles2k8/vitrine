@@ -1,11 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useShader } from './useShader'
 import { useReducedMotion } from './reducedMotion'
 import { aisleFrag, type Look } from './aisle'
 import type { Theme } from './theme'
+
+/**
+ * False through the server render and the hydration pass, true from the first
+ * client render onward — the same mechanism the time band uses to correct
+ * itself, so the two settle together rather than one chasing the other.
+ */
+function useHydrated() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+}
 
 const START_Z = 5.0
 /* Camera travel over the pinned scroll. Cut alongside the section height so the
@@ -61,7 +74,15 @@ function Canvas({
     [ease, reduced, progressRef]
   )
 
-  const failed = useShader(canvasRef, aisleFrag(look), onFrame, 0.92)
+  /* The server has no clock to read, so it renders golden hour and the band
+     corrects on hydration — which changes the shader source. Compiling on the
+     first pass would build a 25KB program for the wrong band and bin it a
+     moment later, at roughly 100ms of compile and link apiece. Holding off
+     until the same pass the band settles on compiles once instead of twice. */
+  const settled = useHydrated()
+  const frag = useMemo(() => (settled ? aisleFrag(look) : ''), [settled, look])
+
+  const failed = useShader(canvasRef, frag, onFrame, 0.92)
 
   // Reported upward rather than handled here: without the scene there is no
   // aisle for the frame's scrims to sit on, and they are the parent's.
