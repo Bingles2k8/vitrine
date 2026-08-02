@@ -90,12 +90,13 @@ function Nav({ theme }: { theme: Theme }) {
 
 function Canvas({
   look,
-  theme,
   progressRef,
+  onFail,
 }: {
   look: Look
-  theme: Theme
   progressRef: React.RefObject<number>
+  /** Called once if WebGL or the shader is unavailable. */
+  onFail: (v: boolean) => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
@@ -137,9 +138,11 @@ function Canvas({
 
   const failed = useShader(canvasRef, aisleFrag(look), onFrame, 0.92)
 
-  if (failed) {
-    return <div className="absolute inset-0" style={{ background: theme.fallback }} />
-  }
+  // Reported upward rather than handled here: without the scene there is no
+  // aisle for the frame's scrims to sit on, and they are the parent's.
+  useEffect(() => { if (failed) onFail(true) }, [failed, onFail])
+
+  if (failed) return null
 
   return (
     <canvas
@@ -205,6 +208,7 @@ export default function ShelfHero({
   const copyRef = useRef<HTMLDivElement>(null)
   const veilRef = useRef<HTMLDivElement>(null)
   const cueRef = useRef<HTMLParagraphElement>(null)
+  const [noScene, setNoScene] = useState(false)
 
   useEffect(() => {
     const read = () => {
@@ -255,29 +259,41 @@ export default function ShelfHero({
 
   return (
     <section ref={sectionRef} className="relative h-[250vh]">
-      <div className={`sticky top-0 h-screen w-full overflow-hidden ${theme.page}`}>
-        <Canvas look={look} theme={theme} progressRef={progressRef} />
+      <div
+        className={`sticky top-0 h-screen w-full overflow-hidden ${noScene ? '' : theme.page}`}
+        /* With no scene there is nothing to grade into, so the frame is just
+           the colour the copy was always designed to sit on — the same one the
+           hero resolves to at its foot. Every band the clock can pick is dark,
+           so this is black with the words on it; the light design variants
+           stay light, because their copy is ink. */
+        style={noScene ? { background: `rgb(${foot})` } : undefined}
+      >
+        <Canvas look={look} progressRef={progressRef} onFail={setNoScene} />
 
-        {/* Page colour top and bottom, nothing across the middle, and enough
-            stops that the transition never shows as a band on a lit shelf. */}
-        <div
-          className="pointer-events-none absolute inset-0 z-[5]"
-          style={{
-            background: `linear-gradient(180deg, rgba(${rgb},0.92) 0%, rgba(${rgb},0.55) 10%, rgba(${rgb},0.18) 20%, rgba(${rgb},0.04) 30%, rgba(${rgb},0) 42%, rgba(${foot},0.10) 54%, rgba(${foot},0.30) 64%, rgba(${foot},0.62) 74%, rgba(${foot},0.88) 88%, rgb(${foot}) 100%)`,
-          }}
-        />
+        {!noScene && (
+          <>
+            {/* Page colour top and bottom, nothing across the middle, and enough
+                stops that the transition never shows as a band on a lit shelf. */}
+            <div
+              className="pointer-events-none absolute inset-0 z-[5]"
+              style={{
+                background: `linear-gradient(180deg, rgba(${rgb},0.92) 0%, rgba(${rgb},0.55) 10%, rgba(${rgb},0.18) 20%, rgba(${rgb},0.04) 30%, rgba(${rgb},0) 42%, rgba(${foot},0.10) 54%, rgba(${foot},0.30) 64%, rgba(${foot},0.62) 74%, rgba(${foot},0.88) 88%, rgb(${foot}) 100%)`,
+              }}
+            />
 
-        {/* The copy's home corner. An anchored pool of the page colour in the
-            lower left, so the text always sits on shade regardless of which
-            shelf the travel has put behind it — the band scrims fade across
-            the middle precisely so the aisle stays visible, which left the
-            copy's legibility to luck. This takes the luck out. */}
-        <div
-          className="pointer-events-none absolute inset-0 z-[6]"
-          style={{
-            background: `radial-gradient(95% 110% at 12% 88%, rgba(${foot},0.62) 0%, rgba(${foot},0.34) 38%, rgba(${foot},0.10) 58%, transparent 72%)`,
-          }}
-        />
+            {/* The copy's home corner. An anchored pool of the page colour in the
+                lower left, so the text always sits on shade regardless of which
+                shelf the travel has put behind it — the band scrims fade across
+                the middle precisely so the aisle stays visible, which left the
+                copy's legibility to luck. This takes the luck out. */}
+            <div
+              className="pointer-events-none absolute inset-0 z-[6]"
+              style={{
+                background: `radial-gradient(95% 110% at 12% 88%, rgba(${foot},0.62) 0%, rgba(${foot},0.34) 38%, rgba(${foot},0.10) 58%, transparent 72%)`,
+              }}
+            />
+          </>
+        )}
 
         <div className="pointer-events-none relative z-10 h-full">
           {ownNav && <Nav theme={theme} />}

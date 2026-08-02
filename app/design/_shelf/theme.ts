@@ -65,7 +65,6 @@ export type Theme = {
    * scene is not supposed to do.
    */
   veil: number
-  fallback: string
 }
 
 /* ── Stone: the live site's palette ─────────────────────────────── */
@@ -115,7 +114,6 @@ export const STONE_THEME: Theme = {
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '12,10,9',
   veil: 1.0,
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #3f382c 0%, #0c0a09 76%)',
 }
 
 /* ── Cold store: blue-black room, fluorescent tubes, bone UI ─────
@@ -186,7 +184,6 @@ export const COLD_THEME: Theme = {
   textShadow: '0 1px 2px rgba(4,7,11,0.65), -6px 10px 22px rgba(4,7,11,0.58), -14px 22px 52px rgba(4,7,11,0.45)',
   scrimRgb: '7,10,14',
   veil: 1.0,
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #2b3542 0%, #070a0e 76%)',
 }
 
 /* ── Daylight: the same aisle with the shutters open ─────────────
@@ -244,7 +241,6 @@ export const DAY_THEME: Theme = {
   textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '239,236,230',
   veil: 0.5,
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
 
 /* ── Golden hour: sun through the racking ───────────────────────
@@ -325,7 +321,6 @@ export const GOLDEN_THEME: Theme = {
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '23,16,26',
   veil: 1.0,
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #7a3d1e 0%, #17101a 76%)',
 }
 
 /* ── Midday: the shutters are open, the lights are still on ──────
@@ -408,7 +403,9 @@ export const MIDDAY_THEME: Theme = {
   hamburger: 'bg-stone-500',
   logoDot: 'text-amber-600',
   ctaPrimary: 'bg-stone-900 text-white hover:bg-stone-800',
-  ctaGhost: 'border border-stone-900/20 text-stone-600 hover:border-stone-900/40 hover:text-stone-900',
+  // Unlike the rest of the header's palette this one goes light: the ghost
+  // button is only ever the hero's secondary, which sits on the dark foot.
+  ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
   // Everything below the fold now reads on black, same as the other bands.
   eyebrow: 'text-amber-500',
   headline: 'text-stone-100',
@@ -437,5 +434,4 @@ export const MIDDAY_THEME: Theme = {
   heroCopy: {
     ctaPrimary: 'bg-white text-stone-900 hover:bg-stone-200',
   },
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }
