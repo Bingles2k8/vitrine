@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
-import { formatPlanPrice } from '@/lib/planPricing'
-import { normalizeBillingCurrency } from '@/lib/countryCurrency'
+import { formatPlanAmount, formatPlanPrice, PLAN_PRICES } from '@/lib/planPricing'
+import { normalizeBillingCurrency, type BillingCurrency } from '@/lib/countryCurrency'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import PublicNav from '@/components/PublicNav'
@@ -22,13 +22,9 @@ export const metadata = buildPageMetadata({
   ],
 })
 
-const PRICE_NUMBER: Record<PlanId, string | null> = {
-  community: '0',
-  hobbyist: '5',
-  professional: '79',
-  institution: '349',
-  enterprise: null,
-}
+/** Which plans carry a number at all. Amounts come from PLAN_PRICES, in the
+ *  currency this visitor is being quoted, so the schema agrees with the page. */
+const PRICED_PLANS: PlanId[] = ['community', 'hobbyist', 'professional', 'institution']
 
 const TAGLINES: Record<PlanId, string> = {
   community: 'Start cataloguing for free.',
@@ -38,7 +34,10 @@ const TAGLINES: Record<PlanId, string> = {
   enterprise: 'No limits. Full service.',
 }
 
-const PRICING_FAQS = [
+/* Quoted in the visitor's own currency. These answers sit directly under the
+   tier cards, so a hardcoded £5 read as a contradiction to anyone being shown
+   dollars — and the same strings feed the FAQ schema. */
+const pricingFaqs = (currency: BillingCurrency) => [
   {
     question: 'Is there a free plan?',
     answer:
@@ -47,7 +46,7 @@ const PRICING_FAQS = [
   {
     question: 'Which Vitrine plan do I need?',
     answer:
-      'Community (free) covers up to 100 objects — ideal for trying Vitrine or cataloguing a small personal collection. Hobbyist (£5/month) covers up to 1,000 objects with analytics, CSV import, and full site customisation. Professional (£79/month) adds compliance tools, event ticketing, visitor analytics, and 10 staff accounts for working museums. Institution (£349/month) scales to 100,000 objects with unlimited staff.',
+      `Community (free) covers up to 100 objects — ideal for trying Vitrine or cataloguing a small personal collection. Hobbyist (${formatPlanAmount('hobbyist', currency)}/month) covers up to 1,000 objects with analytics, CSV import, and full site customisation. Professional (${formatPlanAmount('professional', currency)}/month) adds compliance tools, event ticketing, visitor analytics, and 10 staff accounts for working museums. Institution (${formatPlanAmount('institution', currency)}/month) scales to 100,000 objects with unlimited staff.`,
   },
   {
     question: 'Is there a free trial?',
@@ -85,6 +84,7 @@ export default async function PlansPage() {
   const cookieStore = await cookies()
   const currency = normalizeBillingCurrency(cookieStore.get('vitrine_currency')?.value)
   const pageUrl = `${SITE_URL}/plans`
+  const faqs = pricingFaqs(currency)
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -102,13 +102,12 @@ export default async function PlansPage() {
     url: pageUrl,
     applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Any (Web Browser)',
-    description:
-      'Collection management software for museums, galleries, and collectors. Free to start, with plans from £5/month.',
-    offers: PLAN_ORDER.filter((id) => PRICE_NUMBER[id] !== null).map((id) => ({
+    description: `Collection management software for museums, galleries, and collectors. Free to start, with plans from ${formatPlanAmount('hobbyist', currency)}/month.`,
+    offers: PLAN_ORDER.filter((id) => PRICED_PLANS.includes(id)).map((id) => ({
       '@type': 'Offer',
       name: `${PLANS[id].label} Plan`,
-      price: PRICE_NUMBER[id],
-      priceCurrency: 'GBP',
+      price: id === 'community' ? 0 : PLAN_PRICES[id as 'hobbyist' | 'professional' | 'institution'][currency],
+      priceCurrency: currency,
       url: `${SITE_URL}/plans/${id}`,
     })),
   }
@@ -116,7 +115,7 @@ export default async function PlansPage() {
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: PRICING_FAQS.map((f) => ({
+    mainEntity: faqs.map((f) => ({
       '@type': 'Question',
       name: f.question,
       acceptedAnswer: { '@type': 'Answer', text: f.answer },
@@ -302,7 +301,7 @@ export default async function PlansPage() {
         <div className="max-w-3xl mx-auto">
           <h2 className="font-serif text-3xl italic mb-8">Pricing questions</h2>
           <div className="space-y-8">
-            {PRICING_FAQS.map((f) => (
+            {faqs.map((f) => (
               <div key={f.question}>
                 <h3 className="text-lg font-light text-stone-200 mb-2">{f.question}</h3>
                 <p className="text-stone-400 font-light leading-relaxed">{f.answer}</p>
