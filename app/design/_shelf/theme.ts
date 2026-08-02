@@ -245,14 +245,14 @@ export const GOLDEN_LOOK: Look = {
   object: [0.655, 0.640, 0.628],
   // Dusk skylight: the cold half of the picture. Well up on the old value,
   // because a shadow that falls to black cannot show you what colour it is.
-  ambient: [0.020, 0.027, 0.050],
-  sheenSky: [0.050, 0.072, 0.130],
+  ambient: [0.031, 0.039, 0.074],
+  sheenSky: [0.062, 0.090, 0.168],
   // Warm ground bounce, so the undersides pick the sun back up.
-  sheenGround: [0.072, 0.038, 0.020],
+  sheenGround: [0.086, 0.044, 0.022],
   floorRough: 0.28,
   rackRough: 0.3,
   objectRough: 0.24,
-  key: 3.0,
+  key: 2.6,
   spec: 12.0,
   lampSize: 0.07,
   /**
@@ -264,17 +264,17 @@ export const GOLDEN_LOOK: Look = {
    * worth rendering at this distance.
    */
   sun: {
-    dir: [1.0, 0.28, -0.14],
-    colour: [1.0, 0.40, 0.14],
-    intensity: 2.6,
+    dir: [1.0, 0.26, -0.14],
+    colour: [1.0, 0.38, 0.12],
+    intensity: 3.4,
     spec: 9.0,
     size: 0.012,
   },
   fogStart: 6.0,
   fog: 0.085,
-  exposure: 1.15,
+  exposure: 1.22,
   contrast: 1.16,
-  vignette: 0.13,
+  vignette: 0.11,
   grain: 0.004,
 }
 
