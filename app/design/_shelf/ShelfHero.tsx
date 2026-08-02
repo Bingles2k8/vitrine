@@ -248,7 +248,10 @@ export default function ShelfHero({
   }, [])
 
   const rgb = theme.scrimRgb
-  const foot = handoffRgb ?? rgb
+  const foot = handoffRgb ?? theme.footRgb ?? rgb
+  // Where the foot disagrees with the page, the copy follows the foot. Only
+  // the hero: the sections below still sit on the page colour.
+  const t = theme.heroCopy ? { ...theme, ...theme.heroCopy } : theme
 
   return (
     <section ref={sectionRef} className="relative h-[250vh]">
@@ -272,7 +275,7 @@ export default function ShelfHero({
         <div
           className="pointer-events-none absolute inset-0 z-[6]"
           style={{
-            background: `radial-gradient(95% 110% at 12% 88%, rgba(${rgb},0.62) 0%, rgba(${rgb},0.34) 38%, rgba(${rgb},0.10) 58%, transparent 72%)`,
+            background: `radial-gradient(95% 110% at 12% 88%, rgba(${foot},0.62) 0%, rgba(${foot},0.34) 38%, rgba(${foot},0.10) 58%, transparent 72%)`,
           }}
         />
 
@@ -307,14 +310,14 @@ export default function ShelfHero({
                 }}
               />
             </div>
-            <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-20" style={{ textShadow: theme.textShadow }}>
-              <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${theme.eyebrow}`}>
+            <div className="mx-auto max-w-6xl px-6 pb-24 sm:pb-20" style={{ textShadow: t.textShadow }}>
+              <p className={`mb-4 font-mono text-[11px] uppercase tracking-widest sm:mb-5 sm:text-xs ${t.eyebrow}`}>
                 {copy.eyebrow}
               </p>
-              <h1 className={`font-serif text-4xl italic leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl ${theme.headline}`}>
+              <h1 className={`font-serif text-4xl italic leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl ${t.headline}`}>
                 {copy.headline}
               </h1>
-              <p className={`mt-5 max-w-lg text-[15px] leading-relaxed sm:mt-6 sm:text-base ${theme.body}`}>
+              <p className={`mt-5 max-w-lg text-[15px] leading-relaxed sm:mt-6 sm:text-base ${t.body}`}>
                 {copy.body}
               </p>
 
@@ -322,14 +325,14 @@ export default function ShelfHero({
                 className="pointer-events-auto mt-7 flex flex-wrap items-center gap-3 sm:mt-8"
                 style={{ textShadow: 'none' }}
               >
-                <Link href={copy.primary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaPrimary}`}>
+                <Link href={copy.primary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${t.ctaPrimary}`}>
                   {copy.primary.label}
                 </Link>
-                <Link href={copy.secondary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${theme.ctaGhost}`}>
+                <Link href={copy.secondary.href} className={`rounded px-6 py-3 font-mono text-sm transition-colors ${t.ctaGhost}`}>
                   {copy.secondary.label}
                 </Link>
               </div>
-              <p className={`mt-4 font-mono text-xs ${theme.fine}`}>
+              <p className={`mt-4 font-mono text-xs ${t.fine}`}>
                 {copy.fine}
               </p>
             </div>
@@ -337,8 +340,8 @@ export default function ShelfHero({
 
           <p
             ref={cueRef}
-            className={`absolute inset-x-0 bottom-4 hidden text-center font-mono text-[10px] uppercase tracking-[0.3em] lg:block ${theme.scrollCue}`}
-            style={{ textShadow: theme.textShadow }}
+            className={`absolute inset-x-0 bottom-4 hidden text-center font-mono text-[10px] uppercase tracking-[0.3em] lg:block ${t.scrollCue}`}
+            style={{ textShadow: t.textShadow }}
           >
             Scroll ↓
           </p>

@@ -4,10 +4,17 @@
  *
  * These are modelled on classic public-domain forms — a Greek amphora, an
  * apothecary bottle, a footed bowl, a Brown-Betty-ish teapot, book stacks,
- * archive boxes, a plate on a stand — because those silhouettes read instantly
- * without a texture. They are modelled, not loaded: a raymarcher has no meshes,
- * so "use public domain objects" here means public-domain *shapes* built from
- * primitives.
+ * archive boxes, a plate on a stand, a lidded urn, a classical bust, a mantel
+ * clock, a candlestick, a globe, a specimen jar, an ammonite, a column drum, a
+ * shipping crate and a tray of small finds — because those silhouettes read
+ * instantly without a texture. They are modelled, not loaded: a raymarcher has
+ * no meshes, so "use public domain objects" here means public-domain *shapes*
+ * built from primitives.
+ *
+ * Cost is the constraint, not imagination. Every one of these is evaluated
+ * inside map(), so each is held to a handful of primitives and none of them
+ * loops. Anything needing a texture to be legible is not worth its distance
+ * evaluation and has been left out.
  *
  * Everything sits with its base at y = 0 so placement is just an offset to the
  * shelf top. Requires CORE (sdBox/sdCyl/sdTorus/smin/rot/hash2/shapeAt) to be
@@ -97,20 +104,139 @@ float oTeapot(vec3 q){
   return min(min(smin(body, spout, 0.02), knob), handle);
 }
 
-/* Ten forms and one dispatcher. 9 and 10 borrow the rangefinder and vase from
-   CORE's shapeAt, re-based so they sit on the shelf rather than float. */
+/* Slatted shipping crate. Recessed panels inside raised corner battens, which
+   is what makes a crate read as a crate — cutting grooves out of a solid box
+   would have left a distance field the march can overstep. */
+float oCrate(vec3 q){
+  vec3 c = q - vec3(0.0, 0.105, 0.0);
+  float panel  = sdBox(c, vec3(0.122, 0.095, 0.092));
+  float batten = sdFrame(c, vec3(0.132, 0.105, 0.102), 0.014);
+  return min(panel, batten);
+}
+
+/* Lidded urn on a stem foot, finial on top. */
+float oUrn(vec3 q){
+  float foot = sdCyl(q - vec3(0.0, 0.018, 0.0), 0.018, 0.058);
+  float stem = sdCyl(q - vec3(0.0, 0.050, 0.0), 0.030, 0.028);
+  float body = length((q - vec3(0.0, 0.170, 0.0)) * vec3(1.0, 0.85, 1.0)) - 0.105;
+  float lid  = length((q - vec3(0.0, 0.255, 0.0)) * vec3(1.0, 1.60, 1.0)) - 0.085;
+  float fin  = length(q - vec3(0.0, 0.315, 0.0)) - 0.022;
+  return min(min(smin(body, stem, 0.04), foot), min(lid, fin));
+}
+
+/* Classical bust on a plinth. The shoulders are stretched in x rather than
+   scaled up, so it reads as a torso cut off at the chest and not a snowman. */
+float oBust(vec3 q){
+  float plinth = sdBox(q - vec3(0.0, 0.035, 0.0), vec3(0.072, 0.035, 0.062)) - 0.006;
+  float chest  = length((q - vec3(0.0, 0.130, 0.0)) * vec3(0.75, 1.0, 1.0)) - 0.085;
+  float neck   = sdCyl(q - vec3(0.0, 0.190, 0.0), 0.030, 0.026);
+  float head   = length((q - vec3(0.0, 0.245, 0.005)) * vec3(1.0, 0.82, 0.92)) - 0.055;
+  return min(plinth, smin(smin(chest, neck, 0.03), head, 0.03));
+}
+
+/* Mantel clock: rounded case on a plinth, raised bezel where the dial goes. */
+float oClock(vec3 q){
+  vec3 c = q - vec3(0.0, 0.145, 0.0);
+  float shell = sdBox(c, vec3(0.100, 0.115, 0.045)) - 0.022;
+  float bezel = sdTorus((c - vec3(0.0, 0.020, 0.052)).xzy, vec2(0.062, 0.012));
+  float feet  = sdBox(q - vec3(0.0, 0.014, 0.0), vec3(0.095, 0.014, 0.050));
+  return min(min(shell, bezel), feet);
+}
+
+/* Candlestick with a spent candle in it. */
+float oCandle(vec3 q){
+  float base = sdCyl(q - vec3(0.0, 0.014, 0.0), 0.014, 0.062);
+  float stem = sdCyl(q - vec3(0.0, 0.110, 0.0), 0.100, 0.015);
+  float knop = length(q - vec3(0.0, 0.100, 0.0)) - 0.030;
+  float pan  = sdCyl(q - vec3(0.0, 0.215, 0.0), 0.008, 0.045);
+  float cup  = sdCyl(q - vec3(0.0, 0.235, 0.0), 0.022, 0.021);
+  float wax  = sdCyl(q - vec3(0.0, 0.315, 0.0), 0.060, 0.016);
+  return min(min(min(base, stem), min(knop, pan)), min(cup, wax));
+}
+
+/* Terrestrial globe in a tilted meridian ring. */
+float oGlobe(vec3 q){
+  float base = sdCyl(q - vec3(0.0, 0.016, 0.0), 0.016, 0.070);
+  float post = sdCyl(q - vec3(0.0, 0.060, 0.0), 0.045, 0.012);
+  vec3 c = q - vec3(0.0, 0.190, 0.0);
+  float ball = length(c) - 0.098;
+  vec3 r = c; r.xy = rot(0.35) * r.xy;
+  float ring = sdTorus(r.zyx, vec2(0.118, 0.010));
+  return min(min(base, post), min(ball, ring));
+}
+
+/* Specimen jar: straight sides, heavy rim, domed lid with a knob. */
+float oJar(vec3 q){
+  float body = sdCyl(q - vec3(0.0, 0.115, 0.0), 0.115, 0.082);
+  float rim  = sdTorus(q - vec3(0.0, 0.232, 0.0), vec2(0.080, 0.011));
+  float lid  = length((q - vec3(0.0, 0.238, 0.0)) * vec3(1.0, 1.5, 1.0)) - 0.078;
+  float knob = length(q - vec3(0.0, 0.292, 0.0)) - 0.020;
+  return min(min(body, rim), min(lid, knob));
+}
+
+/* Ammonite stood upright on a block. Nested rings rather than a true spiral —
+   a real logarithmic coil costs a loop, and at this distance two tubes and a
+   core read as the same thing. */
+float oFossil(vec3 q){
+  float stand = sdBox(q - vec3(0.0, 0.016, 0.0), vec3(0.070, 0.016, 0.045)) - 0.006;
+  vec3 c = q - vec3(0.0, 0.135, 0.0);
+  c.yz = rot(1.5708) * c.yz;
+  float outer = sdTorus(c, vec2(0.078, 0.036));
+  float inner = sdTorus(c, vec2(0.036, 0.026));
+  float core  = length(c) - 0.022;
+  return min(stand, min(min(outer, inner), core));
+}
+
+/* A column drum off a broken classical order: square base, shaft, collar,
+   square capital. */
+float oColumn(vec3 q){
+  float base  = sdBox(q - vec3(0.0, 0.020, 0.0), vec3(0.068, 0.020, 0.068)) - 0.006;
+  float shaft = sdCyl(q - vec3(0.0, 0.155, 0.0), 0.135, 0.050);
+  float coll  = sdTorus(q - vec3(0.0, 0.283, 0.0), vec2(0.050, 0.010));
+  float cap   = sdBox(q - vec3(0.0, 0.305, 0.0), vec3(0.066, 0.014, 0.066)) - 0.005;
+  return min(min(base, shaft), min(coll, cap));
+}
+
+/* Tray of small finds. Almost everything else here stands up; the shelves need
+   something that lies flat or every bay reads as the same row of silhouettes. */
+float oTray(vec3 q){
+  float pan = sdBox(q - vec3(0.0, 0.022, 0.0), vec3(0.135, 0.016, 0.095)) - 0.008;
+  float rim = sdFrame(q - vec3(0.0, 0.032, 0.0), vec3(0.138, 0.020, 0.098), 0.009);
+  float c1  = sdCyl(q - vec3(-0.060, 0.046, 0.020), 0.008, 0.026);
+  float c2  = sdCyl(q - vec3(0.020, 0.042, -0.030), 0.004, 0.022);
+  float c3  = sdCyl(q - vec3(0.070, 0.050, 0.030), 0.012, 0.024);
+  return min(min(pan, rim), min(c1, min(c2, c3)));
+}
+
+/* Twenty-one forms and one dispatcher. 9 and 10 borrow the rangefinder and
+   vase from CORE's shapeAt, re-based so they sit on the shelf rather than
+   float. Split in two halves rather than one long chain: the compiler emits
+   the comparisons in order, and a bay of tall pots should not have to test its
+   way past the trays to find itself. */
 float objectAt(vec3 q, float id){
-  if (id < 0.5)      return oAmphora(q);
-  else if (id < 1.5) return oJug(q);
-  else if (id < 2.5) return oBowl(q);
-  else if (id < 3.5) return oBottle(q);
-  else if (id < 4.5) return oBooks(q);
-  else if (id < 5.5) return oArchive(q);
-  else if (id < 6.5) return oFrame(q);
-  else if (id < 7.5) return oPlate(q);
-  else if (id < 8.5) return oTeapot(q);
-  else if (id < 9.5) return shapeAt(q - vec3(0.0, 0.16, 0.0), 0.0);
-  return shapeAt(q - vec3(0.0, 0.205, 0.0), 1.0);
+  if (id < 10.5){
+    if (id < 0.5)      return oAmphora(q);
+    else if (id < 1.5) return oJug(q);
+    else if (id < 2.5) return oBowl(q);
+    else if (id < 3.5) return oBottle(q);
+    else if (id < 4.5) return oBooks(q);
+    else if (id < 5.5) return oArchive(q);
+    else if (id < 6.5) return oFrame(q);
+    else if (id < 7.5) return oPlate(q);
+    else if (id < 8.5) return oTeapot(q);
+    else if (id < 9.5) return shapeAt(q - vec3(0.0, 0.16, 0.0), 0.0);
+    return shapeAt(q - vec3(0.0, 0.205, 0.0), 1.0);
+  }
+  if (id < 11.5)      return oCrate(q);
+  else if (id < 12.5) return oUrn(q);
+  else if (id < 13.5) return oBust(q);
+  else if (id < 14.5) return oClock(q);
+  else if (id < 15.5) return oCandle(q);
+  else if (id < 16.5) return oGlobe(q);
+  else if (id < 17.5) return oJar(q);
+  else if (id < 18.5) return oFossil(q);
+  else if (id < 19.5) return oColumn(q);
+  return oTray(q);
 }
 
 /* One shelf's worth: one to three objects, chosen, spread, turned and scaled
@@ -126,7 +252,7 @@ vec2 clusterAt(vec3 q, float seed, float sx){
     float fi = float(i);
     float h1 = hash2(vec2(seed, 21.0 + fi));
     float h2 = hash2(vec2(seed, 61.0 + fi));
-    float id = floor(h1 * 10.999);
+    float id = floor(h1 * 20.999);
     // Biased toward the wall side of the shelf. Objects parked on the aisle
     // lip end up inches from the lens as the camera passes, where the wide
     // FOV smears them across the frame edge as huge cropped blobs.

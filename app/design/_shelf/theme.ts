@@ -37,6 +37,21 @@ export type Theme = {
   /** Page background as "r,g,b" so the scrims can be built from it. */
   scrimRgb: string
   /**
+   * What the hero's base scrim resolves to at the very bottom of the frame,
+   * as "r,g,b". Defaults to scrimRgb, which is what every band wants except
+   * a white one: white copy-shade on a white page is no shade at all, so the
+   * white bands land the hero on black and invert their copy to match.
+   */
+  footRgb?: string
+  /**
+   * Copy colours for the hero only, where the foot disagrees with the page.
+   * The flat fields above are shared with the sections below the fold, which
+   * sit on the page colour and must not follow the hero into the dark.
+   */
+  heroCopy?: Partial<
+    Pick<Theme, 'eyebrow' | 'headline' | 'body' | 'fine' | 'ctaPrimary' | 'ctaGhost' | 'scrollCue' | 'textShadow'>
+  >
+  /**
    * Peak opacity of the black veil the copy carries as it climbs. Black on
    * every band, but a dark room can take the full weight where a white one
    * cannot — at 1.0 the midday aisle turns grey, which is the one thing that
@@ -327,6 +342,20 @@ export const MIDDAY_THEME: Theme = {
   cardTitle: 'text-stone-900',
   textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
   scrimRgb: '255,255,255',
-  veil: 0.42,
+  // The aisle stays the white room it was; only the last third of the frame
+  // goes to black, which is the one place the copy sits. Ink on a lit white
+  // shelf was the weakest type on any of the bands.
+  footRgb: '0,0,0',
+  veil: 0.9,
+  heroCopy: {
+    eyebrow: 'text-amber-400',
+    headline: 'text-white',
+    body: 'text-stone-300',
+    fine: 'text-stone-500',
+    ctaPrimary: 'bg-white text-stone-900 hover:bg-stone-200',
+    ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
+    scrollCue: 'text-stone-500',
+    textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
+  },
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #dedbd5 76%)',
 }
