@@ -423,9 +423,13 @@ export const MIDDAY_THEME: Theme = {
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '255,255,255',
   // The aisle stays the white room it was; only the last third of the frame
-  // goes to black, which is the one place the copy sits. Ink on a lit white
-  // shelf was the weakest type on any of the bands.
-  footRgb: '0,0,0',
+  // goes dark, which is the one place the copy sits. Ink on a lit white shelf
+  // was the weakest type on any of the bands.
+  //
+  // Not pure black — this is stone-950, the exact colour of bodyPage below.
+  // Black against it is a close enough match to look like a mistake rather
+  // than a choice, and prints a faint line where the hero ends.
+  footRgb: '12,10,9',
   veil: 0.9,
   // The hero copy is on black like the rest, so it takes the flat fields now.
   // The one thing it cannot share is the primary button: the header's version
