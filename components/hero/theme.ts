@@ -1,26 +1,13 @@
 import type { Look } from './aisle'
 
 /**
- * The page dressing that goes with each Look. Class strings rather than tokens,
- * because the whole point of these variants is to try colours that are not in
- * the design system yet.
+ * The copy dressing that goes with each Look — the hero's own type and
+ * buttons, plus the colours its scrims are built from. The page around it is
+ * the site's, not the band's: only the pinned frame changes with the clock.
  */
 export type Theme = {
   /** Applied to the pinned hero frame, behind the canvas. */
   page: string
-  /**
-   * Applied to the page wrapper, so everything below the hero can disagree
-   * with it. Defaults to `page`. Midday is the reason it exists: the aisle up
-   * top is a white room, but the site underneath stays black like the live
-   * one, and the hero already resolves to black at its foot to meet it.
-   */
-  bodyPage?: string
-  navBg: string
-  navLink: string
-  navBorder: string
-  hamburger: string
-  /** The wordmark's full stop — the one piece of the logo that carries colour. */
-  logoDot: string
   ctaPrimary: string
   ctaGhost: string
   eyebrow: string
@@ -30,10 +17,6 @@ export type Theme = {
   /** Accent colour for type — the amber the live site uses on key words. */
   accent: string
   scrollCue: string
-  sectionBorder: string
-  cardBg: string
-  cardHover: string
-  cardTitle: string
   /**
    * Lift for the hero copy: a tight pass for edge definition plus a wide soft
    * one thrown down and to the left, so the darkening sits under the text the
@@ -51,9 +34,9 @@ export type Theme = {
    */
   footRgb?: string
   /**
-   * Copy colours for the hero only, where the foot disagrees with the page.
-   * The flat fields above are shared with the sections below the fold, which
-   * sit on the page colour and must not follow the hero into the dark.
+   * Overrides for the copy where it disagrees with the flat fields above.
+   * Midday is the only user: its foot is dark like the rest, but its primary
+   * button has to survive on a white frame as well.
    */
   heroCopy?: Partial<
     Pick<Theme, 'eyebrow' | 'headline' | 'body' | 'fine' | 'ctaPrimary' | 'ctaGhost' | 'scrollCue' | 'textShadow'>
@@ -65,55 +48,6 @@ export type Theme = {
    * scene is not supposed to do.
    */
   veil: number
-}
-
-/* ── Stone: the live site's palette ─────────────────────────────── */
-
-export const STONE_LOOK: Look = {
-  lamp: [1.0, 0.895, 0.735],
-  page: '#0c0a09',
-  floor: [0.105, 0.098, 0.09],
-  rack: [0.28, 0.265, 0.245],
-  object: [0.64, 0.62, 0.575],
-  ambient: [0.017, 0.015, 0.013],
-  sheenSky: [0.06, 0.055, 0.048],
-  sheenGround: [0.015, 0.013, 0.011],
-  floorRough: 0.28,
-  rackRough: 0.3,
-  objectRough: 0.24,
-  key: 5.4,
-  spec: 14.0,
-  lampSize: 0.06,
-  fogStart: 6.0,
-  fog: 0.085,
-  exposure: 1.22,
-  contrast: 1.14,
-  vignette: 0.13,
-  grain: 0.004,
-}
-
-export const STONE_THEME: Theme = {
-  page: 'bg-stone-950 text-stone-100',
-  navBg: 'bg-stone-950/70',
-  navLink: 'text-stone-400 hover:text-white',
-  navBorder: 'border-white/5',
-  hamburger: 'bg-stone-400',
-  logoDot: 'text-amber-500',
-  ctaPrimary: 'bg-amber-500 text-stone-950 hover:bg-amber-400',
-  ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
-  eyebrow: 'text-amber-500',
-  headline: 'text-stone-100',
-  body: 'text-stone-400',
-  fine: 'text-stone-600',
-  accent: 'text-amber-500',
-  scrollCue: 'text-stone-700',
-  sectionBorder: 'border-white/5',
-  cardBg: 'bg-stone-950',
-  cardHover: 'hover:bg-stone-900',
-  cardTitle: 'text-white',
-  textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
-  scrimRgb: '12,10,9',
-  veil: 1.0,
 }
 
 /* ── Cold store: blue-black room, fluorescent tubes, bone UI ─────
@@ -164,11 +98,6 @@ export const COLD_LOOK: Look = {
 
 export const COLD_THEME: Theme = {
   page: 'bg-[#070a0e] text-slate-100',
-  navBg: 'bg-[#070a0e]/70',
-  navLink: 'text-slate-400 hover:text-white',
-  navBorder: 'border-white/8',
-  hamburger: 'bg-slate-400',
-  logoDot: 'text-amber-500',
   ctaPrimary: 'bg-slate-100 text-[#070a0e] hover:bg-white',
   ctaGhost: 'border border-white/25 text-slate-300 hover:border-white/45 hover:text-white',
   eyebrow: 'text-slate-400',
@@ -177,70 +106,9 @@ export const COLD_THEME: Theme = {
   fine: 'text-slate-600',
   accent: 'text-slate-100',
   scrollCue: 'text-slate-700',
-  sectionBorder: 'border-white/8',
-  cardBg: 'bg-[#070a0e]',
-  cardHover: 'hover:bg-[#0d1219]',
-  cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(4,7,11,0.65), -6px 10px 22px rgba(4,7,11,0.58), -14px 22px 52px rgba(4,7,11,0.45)',
   scrimRgb: '7,10,14',
   veil: 1.0,
-}
-
-/* ── Daylight: the same aisle with the shutters open ─────────────
-   Inverts the page. Depth stops coming from darkness and starts coming from
-   aerial perspective — the aisle fades into the paper colour instead of black,
-   and the objects are the dark things on light shelves. */
-
-export const DAY_LOOK: Look = {
-  lamp: [1.0, 0.975, 0.935],
-  page: '#efece6',
-  // Well below the paper they sit against. A light scene needs *darker*
-  // albedos than a dark one, not brighter: the page is already near-white, so
-  // anything that gets close to it has nowhere left to go.
-  floor: [0.185, 0.180, 0.171],
-  rack: [0.255, 0.249, 0.236],
-  object: [0.075, 0.073, 0.069],
-  ambient: [0.115, 0.118, 0.124],
-  sheenSky: [0.40, 0.41, 0.425],
-  sheenGround: [0.13, 0.127, 0.121],
-  floorRough: 0.28,
-  rackRough: 0.40,
-  objectRough: 0.22,
-  key: 5.6,
-  spec: 11.0,
-  lampSize: 0.20,
-  // Distance reads as air rather than as darkness, but not so much of it that
-  // the near bays lose their form.
-  fogStart: 5.5,
-  fog: 0.090,
-  exposure: 0.95,
-  contrast: 1.16,
-  vignette: 0.05,
-  grain: 0.003,
-}
-
-export const DAY_THEME: Theme = {
-  page: 'bg-[#efece6] text-stone-900',
-  navBg: 'bg-[#efece6]/75',
-  navLink: 'text-stone-500 hover:text-stone-900',
-  navBorder: 'border-stone-900/10',
-  hamburger: 'bg-stone-500',
-  logoDot: 'text-amber-600',
-  ctaPrimary: 'bg-stone-900 text-[#efece6] hover:bg-stone-800',
-  ctaGhost: 'border border-stone-900/15 text-stone-600 hover:border-stone-900/30 hover:text-stone-900',
-  eyebrow: 'text-amber-700',
-  headline: 'text-stone-900',
-  body: 'text-stone-600',
-  fine: 'text-stone-400',
-  accent: 'text-amber-700',
-  scrollCue: 'text-stone-400',
-  sectionBorder: 'border-stone-900/10',
-  cardBg: 'bg-[#efece6]',
-  cardHover: 'hover:bg-[#e5e1d9]',
-  cardTitle: 'text-stone-900',
-  textShadow: '0 1px 2px rgba(255,255,255,0.95), -6px 10px 22px rgba(255,255,255,0.85), -14px 22px 55px rgba(255,255,255,0.7)',
-  scrimRgb: '239,236,230',
-  veil: 0.5,
 }
 
 /* ── Golden hour: sun through the racking ───────────────────────
@@ -301,11 +169,6 @@ export const GOLDEN_LOOK: Look = {
 
 export const GOLDEN_THEME: Theme = {
   page: 'bg-[#17101a] text-stone-100',
-  navBg: 'bg-[#17101a]/70',
-  navLink: 'text-stone-400 hover:text-white',
-  navBorder: 'border-white/5',
-  hamburger: 'bg-stone-400',
-  logoDot: 'text-amber-500',
   ctaPrimary: 'bg-amber-500 text-stone-950 hover:bg-amber-400',
   ctaGhost: 'border border-white/25 text-stone-300 hover:border-white/45 hover:text-white',
   eyebrow: 'text-amber-500',
@@ -314,10 +177,6 @@ export const GOLDEN_THEME: Theme = {
   fine: 'text-stone-600',
   accent: 'text-amber-500',
   scrollCue: 'text-stone-700',
-  sectionBorder: 'border-white/5',
-  cardBg: 'bg-[#17101a]',
-  cardHover: 'hover:bg-[#211829]',
-  cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '23,16,26',
   veil: 1.0,
@@ -394,14 +253,8 @@ export const MIDDAY_THEME: Theme = {
   // site itself is the same black as the live one — the hero resolves to black
   // at its foot, so the two meet without a seam.
   page: 'bg-white text-stone-900',
-  bodyPage: 'bg-stone-950 text-stone-100',
   // The header sits over the top of the frame, which is the lit end of the
   // white room, so it alone keeps the light treatment.
-  navBg: 'bg-white/75',
-  navLink: 'text-stone-500 hover:text-stone-900',
-  navBorder: 'border-stone-900/10',
-  hamburger: 'bg-stone-500',
-  logoDot: 'text-amber-600',
   ctaPrimary: 'bg-stone-900 text-white hover:bg-stone-800',
   // Unlike the rest of the header's palette this one goes light: the ghost
   // button is only ever the hero's secondary, which sits on the dark foot.
@@ -413,10 +266,6 @@ export const MIDDAY_THEME: Theme = {
   fine: 'text-stone-600',
   accent: 'text-amber-500',
   scrollCue: 'text-stone-500',
-  sectionBorder: 'border-white/5',
-  cardBg: 'bg-stone-950',
-  cardHover: 'hover:bg-stone-900',
-  cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
   scrimRgb: '255,255,255',
   // The aisle stays the white room it was; only the last third of the frame

@@ -1,4 +1,4 @@
-import { CORE } from '../_gl/core'
+import { CORE } from './core'
 import { OBJECTS } from './objects'
 
 /**

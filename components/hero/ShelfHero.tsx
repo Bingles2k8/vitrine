@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useShader } from '../_gl/useShader'
-import { useReducedMotion } from '../_motion'
+import { useShader } from './useShader'
+import { useReducedMotion } from './reducedMotion'
 import { aisleFrag, type Look } from './aisle'
 import type { Theme } from './theme'
 
@@ -12,81 +12,6 @@ const START_Z = 5.0
    aisle moves past at the same rate — a shorter pin with the old distance just
    makes the travel feel like a dolly on fast-forward. */
 const TRAVEL = 34.0
-
-/**
- * Offset for the site header. The /design review bar is pinned at exactly 32px
- * (see VariantBar), so the header clears it with no sliver of scene showing
- * above. Lifting this page out of the concepts directory means `top-0`.
- */
-const NAV_TOP = 'top-8'
-
-const NAV_LINKS = [
-  { label: 'Discover', href: '/discover' },
-  { label: 'Guides', href: '/guide/essentials' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Pricing', href: '/plans' },
-]
-
-/** The live site's header, recoloured. Same wordmark, links and buttons. */
-function Nav({ theme }: { theme: Theme }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div
-      className={`pointer-events-auto fixed inset-x-0 ${NAV_TOP} z-50 border-b backdrop-blur-md ${theme.navBg} ${theme.navBorder}`}
-    >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="font-serif text-xl italic">
-          Vitrine<span className={theme.logoDot}>.</span>
-        </Link>
-
-        <div className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map(l => (
-            <Link key={l.href} href={l.href} className={`text-sm transition-colors ${theme.navLink}`}>
-              {l.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link href="/login" className={`hidden font-mono text-sm transition-colors sm:block ${theme.navLink}`}>
-            Sign in
-          </Link>
-          <Link href="/signup" className={`rounded px-4 py-2 font-mono text-sm transition-colors ${theme.ctaPrimary}`}>
-            Start free →
-          </Link>
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="flex h-8 w-8 flex-col items-center justify-center gap-1.5 md:hidden"
-            aria-label="Toggle menu"
-          >
-            <span className={`block h-px w-5 transition-all duration-200 ${theme.hamburger} ${open ? 'translate-y-[7px] rotate-45' : ''}`} />
-            <span className={`block h-px w-5 transition-all duration-200 ${theme.hamburger} ${open ? 'opacity-0' : ''}`} />
-            <span className={`block h-px w-5 transition-all duration-200 ${theme.hamburger} ${open ? '-translate-y-[7px] -rotate-45' : ''}`} />
-          </button>
-        </div>
-      </div>
-
-      {open && (
-        <div className={`border-b md:hidden ${theme.navBorder} ${theme.cardBg}`}>
-          <div className="flex flex-col gap-1 px-6 py-4">
-            {NAV_LINKS.map(l => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className={`border-b py-3 font-mono text-sm last:border-0 ${theme.navBorder} ${theme.navLink}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 function Canvas({
   look,
@@ -188,19 +113,15 @@ export default function ShelfHero({
   look,
   theme,
   copy = DEFAULT_COPY,
-  /** False when the page already has its own fixed site header above this. */
-  ownNav = true,
   /**
-   * Colour the bottom of the hero resolves to, as "r,g,b". Set it to the colour
-   * of whatever follows when that is not the band colour — otherwise midday's
-   * lighter page meets a stone-950 section at a visible seam.
+   * Colour the bottom of the hero resolves to, as "r,g,b". Set it when what
+   * follows is not the band colour; otherwise the band's own foot is used.
    */
   handoffRgb,
 }: {
   look: Look
   theme: Theme
   copy?: Copy
-  ownNav?: boolean
   handoffRgb?: string
 }) {
   const sectionRef = useRef<HTMLElement>(null)
@@ -296,8 +217,6 @@ export default function ShelfHero({
         )}
 
         <div className="pointer-events-none relative z-10 h-full">
-          {ownNav && <Nav theme={theme} />}
-
           <div ref={copyRef} className="absolute inset-x-0 bottom-0 will-change-transform">
             {/* The copy travels up out of the frame's own scrim, so it carries a
                 second one with it. Two rules keep it invisible as a shape:
