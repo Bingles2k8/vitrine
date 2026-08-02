@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { PLANS, PLAN_ORDER, PlanId } from '@/lib/plans'
+import { formatPlanAmount } from '@/lib/planPricing'
+import { normalizeBillingCurrency } from '@/lib/countryCurrency'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 
@@ -463,6 +466,9 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
   const plan = PLANS[planId]
   const details = PLAN_DETAILS[planId]
   const stats = getStatLabels(planId)
+  const cookieStore = await cookies()
+  const currency = normalizeBillingCurrency(cookieStore.get('vitrine_currency')?.value)
+  const localisedAmount = formatPlanAmount(planId, currency)
 
   const isEnterprise = planId === 'enterprise'
   const isComingSoon = planId === 'institution' || planId === 'enterprise'
@@ -536,13 +542,13 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
               {plan.label} plan
             </h1>
             <div className="font-serif text-6xl italic font-normal mb-3 leading-none">
-              {details.priceDisplay}
+              {localisedAmount}
               {details.priceNote && (
                 <span className="text-stone-500 text-2xl not-italic font-light ml-2">{details.priceNote}</span>
               )}
             </div>
             {planId === 'professional' && (
-              <p className="text-sm font-mono text-amber-500 mb-4">30 days free, then £79/mo · Cancel anytime</p>
+              <p className="text-sm font-mono text-amber-500 mb-4">30 days free, then {localisedAmount}/mo · Cancel anytime</p>
             )}
             <p className="text-xl font-light text-stone-300 mb-3">{details.tagline}</p>
             <p className="text-stone-400 font-light leading-relaxed mb-8">{details.desc}</p>
@@ -780,7 +786,7 @@ export default async function PlanPage({ params }: { params: Promise<{ tier: str
               {!isEnterprise && (
                 <p className="text-xs text-stone-600 mt-4 font-mono">
                   {planId === 'professional'
-                    ? 'Card required · Converts to £79/mo after 30 days · Cancel any time'
+                    ? `Card required · Converts to ${localisedAmount}/mo after 30 days · Cancel any time`
                     : 'No credit card required · Cancel any time'}
                 </p>
               )}

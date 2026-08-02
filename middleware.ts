@@ -1,5 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getCurrencyForCountry } from '@/lib/countryCurrency'
+
+const CURRENCY_COOKIE = 'vitrine_currency'
 
 // API routes that legitimately receive POST requests from external services
 // or are fully public — exempt from same-origin CSRF check
@@ -39,6 +42,20 @@ function isBetaExempt(pathname: string): boolean {
   if (CSRF_EXEMPT_PATHS.has(pathname)) return true
   if (pathname.startsWith('/api/tickets/')) return true
   return false
+}
+
+// Sets the currency cookie from Vercel's geo header if not already set (or if
+// the visitor's detected country now resolves to a different currency, e.g.
+// they're travelling). No-op if the header is absent (local dev).
+function withCurrencyCookie(response: NextResponse, request: NextRequest): NextResponse {
+  const country = request.headers.get('x-vercel-ip-country')
+  if (!country) return response
+  const detected = getCurrencyForCountry(country)
+  const existing = request.cookies.get(CURRENCY_COOKIE)?.value
+  if (existing !== detected) {
+    response.cookies.set(CURRENCY_COOKIE, detected, { maxAge: 60 * 60 * 24, sameSite: 'lax' })
+  }
+  return response
 }
 
 export async function middleware(request: NextRequest) {
@@ -152,10 +169,10 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return supabaseResponse
+    return withCurrencyCookie(supabaseResponse, request)
   }
 
-  return NextResponse.next({ request })
+  return withCurrencyCookie(NextResponse.next({ request }), request)
 }
 
 export const config = {

@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { PLANS, PLAN_ORDER, getPlan, type PlanId } from '@/lib/plans'
+import { formatPlanPrice } from '@/lib/planPricing'
+import { readCurrencyCookie } from '@/lib/currencyCookie'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
 import { formatSize } from '@/lib/formatSize'
@@ -60,7 +62,12 @@ export default function PlanPage() {
   const [trashedCount, setTrashedCount] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
   const [storageUsedBytes, setStorageUsedBytes] = useState(0)
+  const [currency, setCurrency] = useState<ReturnType<typeof readCurrencyCookie>>('GBP')
   const router = useRouter()
+
+  useEffect(() => {
+    setCurrency(readCurrencyCookie())
+  }, [])
   const supabase = createClient()
 
   useEffect(() => {
@@ -225,7 +232,7 @@ export default function PlanPage() {
           {isTrialing && trialEndDate && (
             <div className="mb-6 px-4 py-3 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
               <p className="text-sm text-stone-600 dark:text-stone-300 font-mono">
-                You&apos;re on a free trial. Converts to £79/mo on{' '}
+                You&apos;re on a free trial. Converts to {formatPlanPrice('professional', currency)} on{' '}
                 <span className="font-medium text-stone-900 dark:text-stone-100">
                   {trialEndDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
@@ -315,7 +322,7 @@ export default function PlanPage() {
                     <div className="text-xs font-mono text-amber-600 dark:text-amber-400 mb-3">Pending downgrade</div>
                   )}
                   <div className="text-xs font-mono uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">{p.label}</div>
-                  <div className="text-2xl font-serif text-stone-900 dark:text-stone-100 mb-4">{p.price}</div>
+                  <div className="text-2xl font-serif text-stone-900 dark:text-stone-100 mb-4">{formatPlanPrice(id, currency)}</div>
 
                   <ul className="space-y-2 mb-6">
                     {p.features.map(f => (
@@ -401,7 +408,7 @@ export default function PlanPage() {
                             {actionLoading === id ? 'Redirecting…' : 'Subscribe now'}
                           </button>
                           <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
-                            Card required. Converts to £79/mo after 30 days. Cancel anytime.
+                            Card required. Converts to {formatPlanPrice('professional', currency)} after 30 days. Cancel anytime.
                           </p>
                         </>
                       ) : (
