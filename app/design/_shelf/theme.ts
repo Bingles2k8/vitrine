@@ -222,36 +222,65 @@ export const DAY_THEME: Theme = {
   fallback: 'radial-gradient(46% 40% at 50% 34%, #ffffff 0%, #d8d4cb 76%)',
 }
 
-/* ── Golden hour: the warm end of the clock ─────────────────────
-   The live palette, pushed a little further toward tungsten. This is the one
-   the shelf wears at dawn and dusk. */
+/* ── Golden hour: sun through the racking ───────────────────────
+   The one thing that separates a sunset from a brown room is that a sunset is
+   two colours, not one. Warm light, cool shade. The previous pass had a warm
+   lamp on warm albedo under warm ambient with a warm sheen, and with nothing
+   anywhere to play the orange against it settled into mud.
+
+   So the paint is close to neutral and every bit of colour arrives as light:
+   a low orange sun from the right, and a cold violet skylight filling
+   everything the sun cannot reach. */
 
 export const GOLDEN_LOOK: Look = {
-  lamp: [1.0, 0.845, 0.625],
-  page: '#0e0b08',
-  floor: [0.108, 0.098, 0.086],
-  rack: [0.285, 0.265, 0.238],
-  object: [0.65, 0.62, 0.565],
-  ambient: [0.021, 0.017, 0.013],
-  sheenSky: [0.070, 0.058, 0.045],
-  sheenGround: [0.018, 0.014, 0.010],
+  // The overhead battens are still on, but well down — they are the room's
+  // working light, not the story. Turned up they wash the sun out and the
+  // brown comes straight back.
+  lamp: [1.0, 0.815, 0.60],
+  page: '#17101a',
+  // Near enough neutral. Any warmth mixed into the albedo gets multiplied by
+  // the warmth of the sun and lands back at brown.
+  floor: [0.104, 0.100, 0.104],
+  rack: [0.292, 0.286, 0.288],
+  object: [0.655, 0.640, 0.628],
+  // Dusk skylight: the cold half of the picture. Well up on the old value,
+  // because a shadow that falls to black cannot show you what colour it is.
+  ambient: [0.020, 0.027, 0.050],
+  sheenSky: [0.050, 0.072, 0.130],
+  // Warm ground bounce, so the undersides pick the sun back up.
+  sheenGround: [0.072, 0.038, 0.020],
   floorRough: 0.28,
   rackRough: 0.3,
   objectRough: 0.24,
-  key: 5.4,
-  spec: 14.0,
+  key: 3.0,
+  spec: 12.0,
   lampSize: 0.07,
+  /**
+   * Low and to the right, so the shadows are thrown long across the aisle to
+   * the left. There is no ceiling and there are no side walls in this room —
+   * only floor, racking and objects — so the rays get in under the shelves and
+   * stripe the floor with the gaps between them, which is the whole effect.
+   * Nearly point-sized, because a sun 150 million km away has no penumbra
+   * worth rendering at this distance.
+   */
+  sun: {
+    dir: [1.0, 0.28, -0.14],
+    colour: [1.0, 0.40, 0.14],
+    intensity: 2.6,
+    spec: 9.0,
+    size: 0.012,
+  },
   fogStart: 6.0,
   fog: 0.085,
-  exposure: 1.22,
-  contrast: 1.14,
+  exposure: 1.15,
+  contrast: 1.16,
   vignette: 0.13,
   grain: 0.004,
 }
 
 export const GOLDEN_THEME: Theme = {
-  page: 'bg-[#0e0b08] text-stone-100',
-  navBg: 'bg-[#0e0b08]/70',
+  page: 'bg-[#17101a] text-stone-100',
+  navBg: 'bg-[#17101a]/70',
   navLink: 'text-stone-400 hover:text-white',
   navBorder: 'border-white/5',
   hamburger: 'bg-stone-400',
@@ -265,13 +294,13 @@ export const GOLDEN_THEME: Theme = {
   accent: 'text-amber-500',
   scrollCue: 'text-stone-700',
   sectionBorder: 'border-white/5',
-  cardBg: 'bg-[#0e0b08]',
-  cardHover: 'hover:bg-[#171210]',
+  cardBg: 'bg-[#17101a]',
+  cardHover: 'hover:bg-[#211829]',
   cardTitle: 'text-white',
   textShadow: '0 1px 2px rgba(0,0,0,0.6), -6px 10px 22px rgba(0,0,0,0.55), -14px 22px 52px rgba(0,0,0,0.42)',
-  scrimRgb: '14,11,8',
+  scrimRgb: '23,16,26',
   veil: 1.0,
-  fallback: 'radial-gradient(46% 40% at 50% 34%, #46392a 0%, #0e0b08 76%)',
+  fallback: 'radial-gradient(46% 40% at 50% 34%, #7a3d1e 0%, #17101a 76%)',
 }
 
 /* ── Midday: the shutters are open, the lights are still on ──────
