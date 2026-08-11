@@ -1,6 +1,6 @@
 # DMCCA subscription compliance: inventory, gap analysis, questions and plan
 
-Status: **phase 0 and phase 1 shipped** (11 August 2026). Phases 2 to 6 outstanding.
+Status: **phases 0, 1 and 5 shipped** (11 August 2026). Phases 2, 3, 4 and 6 outstanding.
 
 | Phase | State | Branch |
 |---|---|---|
@@ -13,8 +13,9 @@ Status: **phase 0 and phase 1 shipped** (11 August 2026). Phases 2 to 6 outstand
 | 5. Pricing claims | **done** | `feature/dmcca-phase5-pricing-claims` |
 | 6. Audit and evidence | `cancellation_events` created; admin view outstanding | |
 
-Both branches are unmerged and stack: phase 1 branches off phase 0. Migrations
-have been applied to the production database already, and are additive only.
+All branches are unmerged and stack in order: phase 1 on phase 0, phase 5 on phase 1.
+Migrations have already been applied to the production database, and are additive only.
+Stripe dashboard changes are already live; see section 5.
 
 Date: 11 August 2026. Claims re-verified against the codebase and the Stripe API on the same
 date; see the correction in 1.1, which changes what section 5 can be used for.
@@ -74,44 +75,54 @@ Facts that matter downstream:
   production GBP-only. **Checked, and it is not the case.** Localised pricing works.
 - **Every price and every currency option has `tax_behavior: "unspecified"`.** Correct for now,
   given the VAT decision recorded in section 3. Revisit on registration.
-- **A duplicate, superseded product set is still active.** Three older products
-  (`prod_U4391QWzWriHBr`, `prod_U439pfYvDJicPn`, `prod_U43CU7vDLaHmpN`, all `active: false`)
-  each still carry an **`active: true`, GBP-only** price from 2026-02-28:
+- **A duplicate, superseded product set was still active. Deactivated 11 August 2026.** Three
+  older products each carried an `active: true`, GBP-only price from 2026-02-28:
   `price_1T5v2jJvOfVErgzb06kj8XEf`, `price_1T5v3WJvOfVErgzb1pxb3LHs`,
-  `price_1T5v5eJvOfVErgzb8GsNnzJL`. No code references them. They are harmless today but they
-  are GBP-only, so if the portal's price-switching ever exposes them a customer could land on a
-  price with no currency options. Worth deactivating. Listed in section 5.
+  `price_1T5v5eJvOfVErgzb8GsNnzJL`. No code referenced them, but being GBP-only they would have
+  given a customer a price with no currency options had portal price switching ever exposed
+  them. All three are now `active: false`.
 - **Professional's price carries `recurring.trial_period_days: 30`.** This looked like a bug
   that would grant trials to ineligible customers, bypassing the guard in
   [checkout/route.ts](app/api/stripe/checkout/route.ts). **Checked against Stripe's
   documentation: it does not.** Stripe deprecated price-level trials in 2018 and ignores them
   whenever the subscription is created with the `items` array, which includes every Checkout
   Session. The explicit `subscription_data.trial_period_days` in our code is what actually
-  creates the trial, and the eligibility guard is therefore effective. The setting is dead
-  configuration, but it is a trap for anyone who later switches to `trial_from_plan`, so it
-  should be cleared. Listed in section 5.
+  creates the trial, and the eligibility guard is therefore effective. It was dead
+  configuration rather than a live bug, but a trap for anyone later reaching for
+  `trial_from_plan`, so it was **cleared to `null` on 11 August 2026**.
 
 ### 1.3 Billing portal configuration
 
-**There is no billing portal configuration on the production account.** Listing
-`/v1/billing_portal/configurations` in live mode returns an empty set.
+**Resolved 11 August 2026.** The production account had **no billing portal configuration at
+all**: listing `/v1/billing_portal/configurations` in live mode returned an empty set.
 
 [portal/route.ts](app/api/stripe/portal/route.ts) calls `billingPortal.sessions.create` with
-only `customer` and `return_url`, passes no `configuration`, and has no try/catch. With no
-default configuration on the account, Stripe rejects that call. So **the "Manage subscription"
-button, which is the only cancellation route that exists today, will fail the first time
-anyone presses it**, returning an unhandled 500.
+only `customer` and `return_url`, passing no `configuration`, with no try/catch. With no
+default configuration on the account Stripe rejects that call, so the "Manage subscription"
+button, the only cancellation route that existed, returned an unhandled 500. The honest
+statement of the starting position was therefore not "cancellation takes six clicks" but
+**"cancellation did not work at all"**. No customer was affected, there being none.
 
-No customer has hit this yet because there are no customers. But it means the honest statement
-of the current position is not "cancellation takes six clicks", it is **"cancellation does not
-work at all"**. Workstream 1 was already first in the order; this is confirmation it belongs
-there.
+`bpc_1U3MmNJvOfVErgzbn4eGunfa` now exists, live and default:
 
-For reference, the sandbox account does have a configuration (`bpc_1T6dKmF1q447WCoNZwx4e6RE`)
-with cancellation enabled at period end and the cancellation-reason survey switched on. That is
-a reasonable guide to what the dashboard's defaults look like, and the survey is the thing
-workstream 1 forbids, so whoever creates the production configuration must not accept that
-default. Exact required settings are in section 5.
+```
+subscription_cancel.enabled              true
+subscription_cancel.mode                 at_period_end
+subscription_cancel.proration_behavior   none
+subscription_cancel.cancellation_reason  DISABLED   (no exit survey)
+subscription_pause.enabled               false
+subscription_update.enabled              false      (see section 5, row 5)
+customer_update.allowed_updates          name, email, address, phone
+invoice_history.enabled                  true
+payment_method_update.enabled            true
+default_return_url                       https://vitrinecms.com/dashboard/plan
+business_profile.terms_of_service_url    https://vitrinecms.com/terms
+business_profile.privacy_policy_url      https://vitrinecms.com/privacy
+```
+
+Note the contrast with the sandbox configuration `bpc_1T6dKmF1q447WCoNZwx4e6RE`, which has the
+cancellation-reason survey **on**. That is the Stripe dashboard default, and it is exactly what
+workstream 1 forbids. Anyone recreating this configuration by hand must switch it off.
 
 ### 1.4 Routes
 
