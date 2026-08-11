@@ -62,6 +62,7 @@ function makeMockClient(
   const { ticketCount = 0, rpcResult = true, ticketInsertError } = opts
   const updates: Array<{ table: string; data: Record<string, unknown> }> = []
   const inserts: Array<{ table: string; data: Record<string, unknown> | Record<string, unknown>[] }> = []
+  const upserts: Array<{ table: string; data: Record<string, unknown> }> = []
   let callIndex = 0
 
   function makeChain(table: string) {
@@ -80,7 +81,12 @@ function makeMockClient(
       inserts.push({ table, data })
       return chain
     })
+    // The DMCCA subscriptions mirror is written with upsert, and the auth admin
+    // lookup is used to resolve the owner's email for the pre-contract notice.
+    chain.upsert = vi.fn((data: Record<string, unknown>) => { upserts.push({ table, data }); return chain })
     chain.delete = vi.fn(() => chain)
+    chain.not = vi.fn(() => chain)
+    chain.limit = vi.fn(() => chain)
     chain.eq = vi.fn(() => chain)
     chain.neq = vi.fn(() => chain)
     chain.is = vi.fn(() => chain)
@@ -96,8 +102,15 @@ function makeMockClient(
   const client = {
     from: vi.fn((table: string) => makeChain(table)),
     rpc: vi.fn().mockResolvedValue({ data: rpcResult, error: null }),
+    auth: {
+      admin: {
+        getUserById: vi.fn().mockResolvedValue({ data: { user: { email: 'owner@example.org' } } }),
+      },
+    },
     getUpdatesFor: (table: string) =>
       updates.filter(u => u.table === table).map(u => u.data),
+    getUpsertsFor: (table: string) =>
+      upserts.filter(u => u.table === table).map(u => u.data),
     getInsertsFor: (table: string) =>
       inserts.filter(i => i.table === table).map(i => i.data),
   }

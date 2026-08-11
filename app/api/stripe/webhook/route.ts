@@ -3,6 +3,8 @@ import { stripe, PRICE_TO_PLAN } from '@/lib/stripe'
 import { PLANS } from '@/lib/plans'
 import { createClient } from '@supabase/supabase-js'
 import { generateTicketCode } from '@/lib/ticket-utils'
+import { syncSubscriptionToMirror } from '@/lib/billing/syncSubscription'
+import { sendPreContractNotice } from '@/lib/billing/sendPreContractNotice'
 import { Resend } from 'resend'
 import type Stripe from 'stripe'
 
@@ -73,6 +75,19 @@ export async function POST(request: Request) {
         }
         await supabase.from('museums').update(update).eq('id', museumId)
       }
+    }
+
+    // Mirror into our own subscriptions table and open a cooling-off window if
+    // this event is one that starts one. Kept separate from the museums update
+    // above so a failure here cannot stop a customer's plan being applied.
+    const sync = await syncSubscriptionToMirror({ supabase, museumId, subscription })
+
+    // Key contract information, sent once, when the subscription first appears.
+    // DMCCA requires it within an hour and in a form the customer can keep, so
+    // it goes out inline. Vercel is on the hobby plan where crons run daily,
+    // which would not meet that.
+    if (event.type === 'customer.subscription.created' && sync.isNew) {
+      await sendPreContractNotice({ supabase, museumId, subscription })
     }
 
     // Check if cancellation at period end is scheduled (downgrade to community)

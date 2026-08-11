@@ -12,6 +12,7 @@ import { CardGridSkeleton } from '@/components/Skeleton'
 import { formatSize } from '@/lib/formatSize'
 import DashboardTopBar from '@/components/DashboardTopBar'
 import CancelSubscription from '@/components/billing/CancelSubscription'
+import PreCheckoutDialog from '@/components/billing/PreCheckoutDialog'
 
 const CHECK = '✓'
 const CROSS = '—'
@@ -57,6 +58,9 @@ export default function PlanPage() {
   const [checkoutResult, setCheckoutResult] = useState<'success' | 'cancelled' | null>(null)
   const [pollingForPlan, setPollingForPlan] = useState(false)
   const [pollingTimedOut, setPollingTimedOut] = useState(false)
+  // Set when a customer picks a plan. Holds them at the key contract
+  // information panel until they choose to continue.
+  const [pendingCheckout, setPendingCheckout] = useState<{ planId: PlanId; trial: boolean } | null>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollAttemptsRef = useRef(0)
   const [objectCount, setObjectCount] = useState(0)
@@ -139,7 +143,18 @@ export default function PlanPage() {
     }
   }, [])
 
-  async function handleUpgrade(planId: PlanId, trial = false) {
+  /**
+   * Opens the key contract information panel. It is not possible to reach
+   * Checkout without passing through it, because DMCCA requires that
+   * information to be given before the customer is bound.
+   */
+  function handleUpgrade(planId: PlanId, trial = false) {
+    setPendingCheckout({ planId, trial })
+  }
+
+  async function proceedToCheckout() {
+    if (!pendingCheckout) return
+    const { planId, trial } = pendingCheckout
     setActionLoading(trial ? `${planId}-trial` : planId)
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -153,10 +168,12 @@ export default function PlanPage() {
       } else {
         alert(data.error || 'Something went wrong')
         setActionLoading(null)
+        setPendingCheckout(null)
       }
     } catch {
       alert('Something went wrong')
       setActionLoading(null)
+      setPendingCheckout(null)
     }
   }
 
@@ -540,6 +557,20 @@ export default function PlanPage() {
             </table>
           </div>
         </div>
+
+        {/* Sits between choosing a plan and paying for it. The key contract
+            information has to be given before the customer is bound, so there
+            is no path from an upgrade button to Checkout that skips it. */}
+        {pendingCheckout && (
+          <PreCheckoutDialog
+            planId={pendingCheckout.planId}
+            currency={currency}
+            trialDays={pendingCheckout.trial ? 30 : null}
+            submitting={actionLoading !== null}
+            onConfirm={proceedToCheckout}
+            onDismiss={() => setPendingCheckout(null)}
+          />
+        )}
     </DashboardShell>
   )
 }
