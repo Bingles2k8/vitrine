@@ -10,7 +10,7 @@ Status: **phase 0 and phase 1 shipped** (11 August 2026). Phases 2 to 6 outstand
 | 2. Pre-contract information | not started | |
 | 3. Reminder notices | not started | |
 | 4. Cooling-off rights | not started | |
-| 5. Pricing claims | policy doc outstanding; Stripe description fixed | |
+| 5. Pricing claims | **done** | `feature/dmcca-phase5-pricing-claims` |
 | 6. Audit and evidence | `cancellation_events` created; admin view outstanding | |
 
 Both branches are unmerged and stack: phase 1 branches off phase 0. Migrations
@@ -438,6 +438,22 @@ irreversible deletion path are in direct conflict, and the conflict is resolved 
 > - **VAT copy audit done.** Zero occurrences of "VAT" or any tax wording across `app/`,
 >   `components/`, `lib/`, `content/` and `public/`. Nothing to remove. The `VAT_REGISTERED`
 >   constant will keep it that way until Matt says otherwise.
+> - **Q6 resolved: read-only is scoped to the cooling-off window.** For the 14 days after a
+>   cooling-off cancellation the dashboard is browsable but frozen, with export intact. After
+>   that the existing payment wall applies unchanged. Full read-only across the whole retention
+>   window, which would mean gating roughly fifty write routes, is explicitly out of scope.
+> - **Q7 resolved: cancellation stays owner-only, and staff are notified.** The contracting
+>   party keeps control of the contract, but every staff member is emailed when the museum they
+>   work on is cancelled, so nobody loses access without warning. An institution whose owner has
+>   left routes through the support cancellation path built in phase 1.
+> - **Q10 resolved by default: no save offer.** None exists and none is being added. The rules
+>   for one if it is ever introduced are recorded in `docs/pricing-claims-policy.md`.
+> - **Q5 resolved: Vercel is on the hobby plan.** Crons are running (fx-sync last fired
+>   2026-08-11 03:43 UTC against an 03:00 schedule, consistent with hobby's approximate timing),
+>   but hobby means daily granularity only. Phase 3 therefore folds notice dispatch and nightly
+>   reconciliation into a **single** daily job rather than adding two hourly ones. Statutory
+>   notices are day-granular so this is sufficient; the "within one hour" emails are sent inline
+>   from the request and never touch a cron.
 
 Ordered roughly by how much they block. Q1 to Q4 gate design; the rest gate individual
 phases.
@@ -947,22 +963,25 @@ blocks nothing. Consider merging it out of order.
 
 All against production, **`acct_1T42edJvOfVErgzb`, live mode**, verified 11 August 2026.
 
-| # | Object | Setting | Current | Required | Phase |
+| # | Object | Setting | Was | Now | State |
 |---|---|---|---|---|---|
-| 1 | Billing portal | Configuration | **none exists** | **Create one.** Cancellation on, `mode: at_period_end`, `proration_behavior: none`, **cancellation reason OFF**, pause off | 1 |
-| 2 | Same, once created | `default_return_url` | n/a | `https://vitrinecms.com/dashboard/plan` | 1 |
-| 3 | Same | `terms_of_service_url` | n/a | `https://vitrinecms.com/terms` | 1 |
-| 4 | Same | `privacy_policy_url` | n/a | `https://vitrinecms.com/privacy` | 1 |
-| 5 | Same | `subscription_update` | n/a | If price switching is enabled, restrict it to the three current prices only, never the 2026-02-28 GBP-only ones | 1 |
-| 6 | Endpoint `we_1TRDpNJvOfVErgzbJcbyLGYN` | Enabled events | 16, see 1.5 | add `invoice.upcoming`, `customer.subscription.trial_will_end`, `price.updated` | 3 |
-| 7 | All three prices | `tax_behavior` | `unspecified` | unchanged for now; set `inclusive` on VAT registration | later |
-| 8 | Product `prod_UQ3zdgNuW3wmkT` | Description | said "spectrum compliance tools" | **done 11 Aug 2026**, now "full documentation registers" | 5 |
-| 9 | Prices `price_1T5v2j…`, `price_1T5v3W…`, `price_1T5v5e…` | `active` | `true`, GBP-only, superseded | set `active: false` | 5 |
-| 10 | Price `price_1TRDrQJvOfVErgzbVIu90WnQ` | `recurring.trial_period_days` | `30` | clear it; ignored by Checkout but a trap later. See 1.2 | 5 |
+| 1 | Billing portal | Configuration | **none existed** | `bpc_1U3MmNJvOfVErgzbn4eGunfa`, default, live | **done** |
+| 2 | Same | `subscription_cancel` | n/a | enabled, `at_period_end`, proration `none`, **reason prompt off** | **done** |
+| 3 | Same | `default_return_url` | n/a | `https://vitrinecms.com/dashboard/plan` | **done** |
+| 4 | Same | terms and privacy URLs | n/a | `/terms` and `/privacy` | **done** |
+| 5 | Same | `subscription_update` | n/a | **disabled.** Plan changes go through our own Checkout, which uses the current multi-currency prices. Enabling portal price switching would have exposed the GBP-only prices in row 9 | **done** |
+| 6 | Endpoint `we_1TRDpNJvOfVErgzbJcbyLGYN` | Enabled events | 16, see 1.5 | add `invoice.upcoming`, `customer.subscription.trial_will_end`, `price.updated` | phase 3 |
+| 7 | All three prices | `tax_behavior` | `unspecified` | unchanged; set `inclusive` on VAT registration | deferred |
+| 8 | Product `prod_UQ3zdgNuW3wmkT` | Description | "spectrum compliance tools" | "full documentation registers" | **done** |
+| 9 | Prices `price_1T5v2j…`, `price_1T5v3W…`, `price_1T5v5e…` | `active` | `true`, GBP-only, superseded | `false` | **done** |
+| 10 | Price `price_1TRDrQJvOfVErgzbVIu90WnQ` | `recurring.trial_period_days` | `30` | `null`. Was ignored by Checkout, but removed so it cannot become live if anyone later uses `trial_from_plan` | **done** |
 
-Item 1 is the important one and it is not a tweak: **the customer portal has never been
-configured on the production account**, so the only cancellation path in the product is
-currently broken. Everything else on this list is tidying by comparison.
+Row 1 was the significant one and it was not a tweak: **the customer portal had never been
+configured on the production account**, so the only cancellation path in the product returned
+an unhandled error. No customer was affected, there being none yet.
+
+Live state after these changes: exactly three active prices, £5 / £79 / £349, monthly, 16
+currencies each, no price-level trials.
 
 ---
 
