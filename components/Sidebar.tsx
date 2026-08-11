@@ -402,6 +402,18 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Data</div>
         {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
         {!nav.simple && navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
+
+        {/* Billing is a top-level nav item, not tucked inside the settings
+            panel. Cancelling has to be reachable within two clicks of the
+            dashboard: one to here, one to "Cancel subscription" on the plan
+            page. Routing it through the settings panel would make that three.
+            Covered by __tests__/lib/cancelClickDepth.test.ts. */}
+        {isOwner && (
+          <>
+            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Account</div>
+            {navItem('/dashboard/plan', '◱', 'Plan & Billing', 'nav.plan')}
+          </>
+        )}
         </>)}
       </nav>
 

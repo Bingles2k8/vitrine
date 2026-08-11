@@ -11,6 +11,7 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { CardGridSkeleton } from '@/components/Skeleton'
 import { formatSize } from '@/lib/formatSize'
 import DashboardTopBar from '@/components/DashboardTopBar'
+import CancelSubscription from '@/components/billing/CancelSubscription'
 
 const CHECK = '✓'
 const CROSS = '—'
@@ -340,13 +341,22 @@ export default function PlanPage() {
                           Current plan
                         </div>
                         {currentPlan !== 'community' && currentPlan !== 'enterprise' && isOwner && (
-                          <button
-                            onClick={handleManageSubscription}
-                            disabled={actionLoading !== null}
-                            className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-                          >
-                            {actionLoading === 'manage' ? 'Redirecting…' : 'Manage subscription'}
-                          </button>
+                          <>
+                            <button
+                              onClick={handleManageSubscription}
+                              disabled={actionLoading !== null}
+                              className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
+                            >
+                              {actionLoading === 'manage' ? 'Redirecting…' : 'Manage subscription'}
+                            </button>
+                            {/* Cancelling must not require a trip through the
+                                Stripe portal. This is click two of two from the
+                                dashboard. */}
+                            <CancelSubscription
+                              museumId={museum.id}
+                              onCancelled={() => router.refresh()}
+                            />
+                          </>
                         )}
                       </>
                     ) : isComingSoon ? (

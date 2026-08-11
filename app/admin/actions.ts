@@ -7,6 +7,9 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { stripe } from '@/lib/stripe'
 import { r2, r2PathFromUrl, DeleteObjectsCommand, ListObjectsV2Command } from '@/lib/r2'
+import { cancelSubscription } from '@/lib/billing/cancel'
+import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
+import { sendComplianceEmail } from '@/lib/email/send'
 
 function adminClient() {
   return createClient(
@@ -15,12 +18,15 @@ function adminClient() {
   )
 }
 
+// Returns the acting admin so callers that write an audit trail can record who
+// performed the action. Existing callers ignore the return value.
 async function assertAdmin() {
   const supabase = await createServerSideClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user || user.id !== process.env.ADMIN_USER_ID) notFound()
+  return { user }
 }
 
 function parseKeywords(raw: string): string[] {
@@ -166,6 +172,61 @@ export async function toggleTestAccount(museumId: string, currentValue: boolean)
     .eq('id', museumId)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
+}
+
+/**
+ * Cancel a subscription on a customer's behalf.
+ *
+ * DMCCA requires that a cancellation received through any channel is honoured,
+ * so an emailed or phoned request has to be actionable by support. This calls
+ * the identical service function as the self-serve flow, which is the point:
+ * the timestamp semantics, the Stripe call and the evidence row are the same
+ * whichever way the request arrived. Only `initiated_by` differs.
+ *
+ * Note this is a cancellation, not a deletion. `deleteUser` below is
+ * irreversible and is not a substitute for this.
+ */
+export async function cancelSubscriptionForCustomer(
+  museumId: string,
+  opts: { mode?: 'period_end' | 'immediate'; note?: string } = {}
+) {
+  const { user } = await assertAdmin()
+  const admin = adminClient()
+
+  const result = await cancelSubscription({
+    museumId,
+    mode: opts.mode ?? 'period_end',
+    initiatedBy: 'support',
+    actorUserId: user?.id ?? null,
+    actorEmail: user?.email ?? null,
+    note: opts.note ?? 'Cancellation requested through support',
+    supabase: admin,
+  })
+
+  if (!result.ok) throw new Error(result.error)
+
+  // Same confirmation the customer would have received had they cancelled
+  // themselves, flagged so they can tell it was actioned on their behalf.
+  if (result.customerEmail) {
+    const { subject, html } = renderCancellationEmail({
+      museumName: result.museumName,
+      effectiveAt: result.effectiveAt,
+      mode: result.mode,
+      retentionDays: result.retentionDays,
+      refundAmount: result.refundAmount,
+      currency: result.currency,
+      initiatedBy: 'support',
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com',
+    })
+    const sent = await sendComplianceEmail({ to: result.customerEmail, subject, html })
+    if (sent.error) {
+      console.error('[admin cancelSubscriptionForCustomer] email failed:', sent.error)
+    }
+  }
+
+  revalidatePath('/admin')
+  revalidatePath(`/admin/${museumId}`)
+  return result
 }
 
 export async function deleteUser(museumId: string) {
