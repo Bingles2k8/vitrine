@@ -1,6 +1,20 @@
 # DMCCA subscription compliance: inventory, gap analysis, questions and plan
 
-Status: step 0 deliverable. No code written. Awaiting answers to section 3 before implementation.
+Status: **phase 0 and phase 1 shipped** (11 August 2026). Phases 2 to 6 outstanding.
+
+| Phase | State | Branch |
+|---|---|---|
+| Production portal configuration | **done**, `bpc_1U3MmNJvOfVErgzbn4eGunfa` | Stripe dashboard |
+| 0. Foundations | **done** | `feature/dmcca-phase0-foundations` |
+| 1. Easy exit | **done** | `feature/dmcca-phase1-easy-exit` |
+| 2. Pre-contract information | not started | |
+| 3. Reminder notices | not started | |
+| 4. Cooling-off rights | not started | |
+| 5. Pricing claims | policy doc outstanding; Stripe description fixed | |
+| 6. Audit and evidence | `cancellation_events` created; admin view outstanding | |
+
+Both branches are unmerged and stack: phase 1 branches off phase 0. Migrations
+have been applied to the production database already, and are additive only.
 
 Date: 11 August 2026. Claims re-verified against the codebase and the Stripe API on the same
 date; see the correction in 1.1, which changes what section 5 can be used for.
