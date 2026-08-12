@@ -12,7 +12,8 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { stripe } from '@/lib/stripe'
+import Stripe from 'stripe'
+import { stripe as defaultStripe } from '@/lib/stripe'
 import {
   coolingOffRefundAmount,
   isWithinCoolingOff,
@@ -70,9 +71,18 @@ export async function cancelSubscription(args: {
   note?: string | null
   supabase?: SupabaseClient
   now?: Date
+  /**
+   * Stripe client override, defaulting to the live singleton. Exists so the
+   * integration suite can drive this exact path, which is where refunds are
+   * actually triggered, against a test-mode key.
+   */
+  stripeClient?: Stripe
+  /** Bypass the refund kill switch. Only the integration suite passes this. */
+  forceRefund?: boolean
 }): Promise<CancelResult> {
   const supabase = args.supabase ?? serviceClient()
   const now = args.now ?? new Date()
+  const stripe = args.stripeClient ?? defaultStripe
 
   const { data: museum } = await supabase
     .from('museums')
@@ -192,6 +202,8 @@ export async function cancelSubscription(args: {
       stripeSubscriptionId: museum.stripe_subscription_id,
       amount: refundAmount,
       coolingOffStartedAt: mirror.cooling_off_started_at,
+      stripeClient: args.stripeClient,
+      force: args.forceRefund,
     })
     if (refund.ok) {
       refundIssued = refund.amount
