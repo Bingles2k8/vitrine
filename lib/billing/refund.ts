@@ -22,8 +22,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type Stripe from 'stripe'
-import { stripe } from '@/lib/stripe'
+import Stripe from 'stripe'
+import { stripe as defaultStripe } from '@/lib/stripe'
 import { COOLING_OFF_REFUND_MODE } from './config'
 
 export type RefundResult =
@@ -50,9 +50,18 @@ export async function issueCoolingOffRefund(args: {
   /** Identifies the window, so a refund for a later period gets a new key. */
   coolingOffStartedAt: string
   reason?: 'cooling_off' | 'goodwill' | 'support'
+  /**
+   * Stripe client override. Defaults to the live singleton. Exists so the
+   * integration script can drive this exact code path against a test-mode key,
+   * rather than testing a reimplementation of it.
+   */
+  stripeClient?: Stripe
+  /** Bypass the kill switch. Only the integration script passes this. */
+  force?: boolean
 }): Promise<RefundResult> {
   const { supabase, museumId, stripeSubscriptionId, amount } = args
   const reason = args.reason ?? 'cooling_off'
+  const stripe = args.stripeClient ?? defaultStripe
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return { ok: false, error: 'Refund amount must be positive', recorded: false }
@@ -74,7 +83,7 @@ export async function issueCoolingOffRefund(args: {
     // `invoice.charge` was removed in the Basil API version. The payment is now
     // reached through invoice.payments, which surfaces either a payment intent
     // or, for older charges without one, a charge directly.
-    const chargeId = await resolveChargeId(invoice)
+    const chargeId = await resolveChargeId(stripe, invoice)
     if (!chargeId) {
       return { ok: false, error: 'No paid charge found to refund', recorded: false }
     }
@@ -102,7 +111,7 @@ export async function issueCoolingOffRefund(args: {
 
   // Guard 2. Refuse rather than clamp: an over-large amount means the
   // computation is wrong, and silently capping it would hide that.
-  const alreadyRefunded = await amountAlreadyRefunded(charge.id)
+  const alreadyRefunded = await amountAlreadyRefunded(stripe, charge.id)
   if (amount + alreadyRefunded > charge.amount) {
     await record(supabase, {
       museum_id: museumId,
@@ -121,7 +130,7 @@ export async function issueCoolingOffRefund(args: {
   // Guard 1. Same window plus same charge always yields the same key.
   const idempotencyKey = `coolingoff:${charge.id}:${args.coolingOffStartedAt}`
 
-  if (!refundsEnabled()) {
+  if (!refundsEnabled() && !args.force) {
     await record(supabase, {
       museum_id: museumId,
       stripe_subscription_id: stripeSubscriptionId,
@@ -190,7 +199,10 @@ export async function issueCoolingOffRefund(args: {
  * Prefers the payment intent, which is what Stripe surfaces for anything
  * finalised since 2019, and falls back to a directly attached charge.
  */
-async function resolveChargeId(invoice: Stripe.Invoice | undefined): Promise<string | null> {
+async function resolveChargeId(
+  stripe: Stripe,
+  invoice: Stripe.Invoice | undefined
+): Promise<string | null> {
   const payment = invoice?.payments?.data?.[0]?.payment
   if (!payment) return null
 
@@ -213,7 +225,7 @@ async function resolveChargeId(invoice: Stripe.Invoice | undefined): Promise<str
 }
 
 /** How much of this charge Stripe has already refunded. */
-async function amountAlreadyRefunded(chargeId: string): Promise<number> {
+async function amountAlreadyRefunded(stripe: Stripe, chargeId: string): Promise<number> {
   try {
     const charge = await stripe.charges.retrieve(chargeId)
     return charge.amount_refunded ?? 0
