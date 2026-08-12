@@ -17,6 +17,7 @@ import {
   coolingOffRefundAmount,
   isWithinCoolingOff,
 } from './coolingOff'
+import { issueCoolingOffRefund } from './refund'
 
 export type CancelInitiator = 'self_serve' | 'support' | 'stripe_portal'
 
@@ -176,6 +177,29 @@ export async function cancelSubscription(args: {
     return { ok: false, error: 'Could not cancel the subscription', status: 502 }
   }
 
+  // Issue the refund for a cooling-off cancellation. Deliberately after the
+  // Stripe cancellation and before the evidence row, so that a refund failure
+  // is visible in the same row as the cancellation rather than lost.
+  //
+  // A failure here does not undo the cancellation. The customer asked to leave
+  // and has left; the money is then a support matter with a recorded trail,
+  // which is a far better outcome than refusing to cancel them.
+  let refundIssued = 0
+  if (args.mode === 'immediate' && refundAmount > 0 && mirror?.cooling_off_started_at) {
+    const refund = await issueCoolingOffRefund({
+      supabase,
+      museumId: museum.id,
+      stripeSubscriptionId: museum.stripe_subscription_id,
+      amount: refundAmount,
+      coolingOffStartedAt: mirror.cooling_off_started_at,
+    })
+    if (refund.ok) {
+      refundIssued = refund.amount
+    } else {
+      console.error(`[cancelSubscription] refund failed for ${museum.id}: ${refund.error}`)
+    }
+  }
+
   await writeEvent(supabase, {
     museum_id: museum.id,
     stripe_subscription_id: museum.stripe_subscription_id,
@@ -186,7 +210,7 @@ export async function cancelSubscription(args: {
     customer_email: customerEmail,
     effective_at: effectiveAt,
     cooling_off_active: coolingOffActive,
-    refund_amount: refundAmount || null,
+    refund_amount: refundIssued || null,
     currency: mirror?.currency ?? null,
     note: args.note ?? null,
   })
@@ -196,7 +220,7 @@ export async function cancelSubscription(args: {
     mode: args.mode,
     effectiveAt,
     coolingOffActive,
-    refundAmount,
+    refundAmount: refundIssued,
     currency: mirror?.currency ?? null,
     customerEmail,
     museumName: museum.name ?? null,

@@ -120,6 +120,59 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Read-only gate for a cooling-off cancellation ─────────────────
+  // A customer who cancels inside their cooling-off window keeps a browsable,
+  // exportable collection but cannot change anything. Enforced here rather than
+  // in each route: one chokepoint on mutating API calls is far harder to leave
+  // a hole in than a guard repeated across fifty handlers.
+  //
+  // Reads pass through untouched, as does the export route, since the whole
+  // point is that the customer can still get their data out.
+  if (
+    pathname.startsWith('/api/') &&
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+    !pathname.startsWith('/api/stripe/webhook') &&
+    !pathname.startsWith('/api/cron/') &&
+    !pathname.startsWith('/api/account/export') &&
+    !pathname.startsWith('/api/subscription/') &&
+    !pathname.startsWith('/api/delete-account')
+  ) {
+    const readOnlyResponse = NextResponse.next({ request })
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              readOnlyResponse.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: museum } = await supabase
+        .from('museums')
+        .select('read_only_until')
+        .eq('owner_id', user.id)
+        .maybeSingle()
+
+      if (museum?.read_only_until && new Date(museum.read_only_until) > new Date()) {
+        return NextResponse.json(
+          {
+            error:
+              'Your subscription has been cancelled and your account is read-only. You can still view and export everything. Resubscribe from your plan page to make changes again.',
+            readOnlyUntil: museum.read_only_until,
+          },
+          { status: 403 }
+        )
+      }
+    }
+  }
+
   // ── Auth protection for dashboard, print, and admin routes ────────
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/print') || pathname.startsWith('/admin')) {
     const supabaseResponse = NextResponse.next({ request })

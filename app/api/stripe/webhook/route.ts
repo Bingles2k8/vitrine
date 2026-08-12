@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { generateTicketCode } from '@/lib/ticket-utils'
 import { syncSubscriptionToMirror } from '@/lib/billing/syncSubscription'
 import { sendPreContractNotice } from '@/lib/billing/sendPreContractNotice'
+import { reconcileSubscriptionRefund } from '@/lib/billing/reconcileRefund'
 import { Resend } from 'resend'
 import type Stripe from 'stripe'
 
@@ -187,10 +188,29 @@ export async function POST(request: Request) {
     const now = new Date()
     const deleteAt = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000)
 
+    // If this ended inside a cooling-off window, the account goes read-only for
+    // the remainder of that window rather than straight to the payment wall.
+    // The collection stays browsable and exportable; writes are refused. When
+    // the window closes the notices cron applies the normal lockout.
+    //
+    // Retention and the deletion date are unaffected: the customer still gets
+    // their 30 or 180 days, and read-only sits at the front of it.
+    const { data: mirrorForLock } = await supabase
+      .from('subscriptions')
+      .select('cooling_off_ends_at')
+      .eq('stripe_subscription_id', subscription.id)
+      .maybeSingle()
+
+    const coolingOffEndsAt = mirrorForLock?.cooling_off_ends_at
+      ? new Date(mirrorForLock.cooling_off_ends_at)
+      : null
+    const stillCoolingOff = coolingOffEndsAt !== null && coolingOffEndsAt.getTime() > now.getTime()
+
     await supabase
       .from('museums')
       .update({
-        locked_at: now.toISOString(),
+        locked_at: stillCoolingOff ? null : now.toISOString(),
+        read_only_until: stillCoolingOff ? coolingOffEndsAt.toISOString() : null,
         lock_reason: lockReason,
         scheduled_deletion_at: deleteAt.toISOString(),
         stripe_subscription_id: null,
@@ -466,7 +486,14 @@ export async function POST(request: Request) {
   if (event.type === 'charge.refunded') {
     const charge = event.data.object as Stripe.Charge
 
-    // Ignore partial refunds — only cancel order and release capacity on full refund
+    // Reconcile subscription refunds first. This must happen before the
+    // partial-refund early return below: a cooling-off refund is pro-rated and
+    // therefore almost always partial, so it would otherwise be dropped in
+    // silence, which is precisely the gap this compliance work exists to close.
+    await reconcileSubscriptionRefund(supabase, charge)
+
+    // Ticketing only from here. Ignore partial refunds: an order is cancelled
+    // and its capacity released only on a full refund.
     if (charge.amount_refunded < charge.amount) {
       return NextResponse.json({ received: true })
     }

@@ -41,6 +41,7 @@ type Report = {
   skipped: number
   failed: Array<{ subscription: string; type: string; error: string }>
   reconciled: string[]
+  lockedAfterReadOnly: string[]
   reconcileError?: string
 }
 
@@ -66,6 +67,7 @@ export async function GET(request: Request) {
     skipped: 0,
     failed: [],
     reconciled: [],
+    lockedAfterReadOnly: [],
   }
 
   // ---- Pass 1: dispatch --------------------------------------------------
@@ -194,6 +196,31 @@ export async function GET(request: Request) {
     } catch (err) {
       // Reconciliation failing must not lose the dispatch results above.
       report.reconcileError = err instanceof Error ? err.message : String(err)
+    }
+  }
+
+  // ---- Pass 3: close expired read-only windows ---------------------------
+  // A cooling-off cancellation leaves the account read-only rather than locked.
+  // When that window closes the normal payment wall applies. Nothing else
+  // performs this transition, so without it an account would stay read-only
+  // until deletion.
+  if (!dryRun) {
+    const { data: expired } = await service
+      .from('museums')
+      .select('id, ever_paid')
+      .not('read_only_until', 'is', null)
+      .lt('read_only_until', now.toISOString())
+
+    for (const museum of expired ?? []) {
+      await service
+        .from('museums')
+        .update({
+          read_only_until: null,
+          locked_at: now.toISOString(),
+          lock_reason: museum.ever_paid ? 'subscription_ended' : 'trial_expired',
+        })
+        .eq('id', museum.id)
+      report.lockedAfterReadOnly.push(museum.id)
     }
   }
 
