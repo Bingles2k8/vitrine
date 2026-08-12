@@ -134,6 +134,36 @@ export async function POST(request: Request) {
     }
   }
 
+  // Stripe tells us a renewal or a trial conversion is coming. We do not send
+  // from here: we re-sync the mirror so the daily notice cron has accurate
+  // period dates to schedule from. Driving sends off the event directly would
+  // make a dropped webhook into a missed statutory notice, which is exactly
+  // what the reconciliation pass exists to prevent.
+  if (
+    event.type === 'invoice.upcoming' ||
+    event.type === 'customer.subscription.trial_will_end'
+  ) {
+    const subscriptionId =
+      event.type === 'customer.subscription.trial_will_end'
+        ? (event.data.object as Stripe.Subscription).id
+        : typeof (event.data.object as Stripe.Invoice).parent?.subscription_details?.subscription === 'string'
+          ? ((event.data.object as Stripe.Invoice).parent!.subscription_details!.subscription as string)
+          : null
+
+    if (subscriptionId) {
+      try {
+        const fresh = await stripe.subscriptions.retrieve(subscriptionId)
+        const museumId = fresh.metadata?.museum_id
+        if (museumId) {
+          await syncSubscriptionToMirror({ supabase, museumId, subscription: fresh })
+        }
+      } catch (err) {
+        console.error('[webhook] could not sync on upcoming/trial_will_end:', err)
+      }
+    }
+    return NextResponse.json({ received: true })
+  }
+
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const museumId = subscription.metadata.museum_id
