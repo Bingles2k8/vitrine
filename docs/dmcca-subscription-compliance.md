@@ -1,7 +1,6 @@
 # DMCCA subscription compliance: inventory, gap analysis, questions and plan
 
-Status: **phases 0, 1, 2 and 5 shipped**, plus the privacy policy (11 August 2026).
-Phases 3, 4 and 6 outstanding.
+Status: **complete**. All six workstreams shipped, 11 to 12 August 2026.
 
 | Phase | State | Branch |
 |---|---|---|
@@ -9,11 +8,11 @@ Phases 3, 4 and 6 outstanding.
 | 0. Foundations | **done** | `feature/dmcca-phase0-foundations` |
 | 1. Easy exit | **done** | `feature/dmcca-phase1-easy-exit` |
 | 2. Pre-contract information | **done** | `feature/dmcca-phase2-precontract` |
-| 3. Reminder notices | not started; `subscription_notices` table already created in phase 2 | |
-| 4. Cooling-off rights | not started | |
+| 3. Reminder notices | **done** | `feature/dmcca-phase3-reminders` |
+| 4. Cooling-off rights | **done** | `feature/dmcca-phase4-cooling-off` |
 | 5. Pricing claims | **done** | `feature/dmcca-phase5-pricing-claims` |
 | Privacy policy retention | **done** | `feature/dmcca-privacy-retention` |
-| 6. Audit and evidence | evidence tables created and append-only; admin view and six-year purge outstanding | |
+| 6. Audit and evidence | **done** | `feature/dmcca-phase6-audit` |
 
 All branches are unmerged and stack in order: phase 1 on phase 0, phase 5 on phase 1.
 Migrations have already been applied to the production database, and are additive only.

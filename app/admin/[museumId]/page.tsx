@@ -6,6 +6,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { DeleteUserButton } from '../DeleteUserModal'
 import { TestAccountToggle } from '../TestAccountToggle'
+import BillingHistory from './BillingHistory'
 
 const PLAN_COLOURS: Record<string, string> = {
   community:    'bg-gray-100 text-gray-700',
@@ -279,6 +280,10 @@ export default async function AdminMuseumDetailPage({
             </DL>
           </Section>
         </div>
+
+        {/* DMCCA workstream 6: every notice, cancellation and refund for this
+            customer, on one screen. */}
+        <BillingHistory museumId={museum.id} />
 
         <div className="mt-12 text-xs text-gray-300">
           Museum ID: <code>{museum.id}</code>

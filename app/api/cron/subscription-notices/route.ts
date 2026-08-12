@@ -42,7 +42,9 @@ type Report = {
   failed: Array<{ subscription: string; type: string; error: string }>
   reconciled: string[]
   lockedAfterReadOnly: string[]
+  purged?: Array<{ table_name: string; rows_deleted: number }>
   reconcileError?: string
+  purgeError?: string
 }
 
 export async function GET(request: Request) {
@@ -221,6 +223,28 @@ export async function GET(request: Request) {
         })
         .eq('id', museum.id)
       report.lockedAfterReadOnly.push(museum.id)
+    }
+  }
+
+  // ---- Pass 4: honour the six-year retention -----------------------------
+  // The privacy policy states billing evidence is kept for six years. Without
+  // this it would be kept forever, and a policy promising a retention period
+  // the code does not honour is worse than one promising nothing.
+  //
+  // The evidence tables have DELETE revoked even from the service role, so this
+  // goes through a SECURITY DEFINER function that can only ever remove rows
+  // past the retention period. See supabase/dmcca-evidence-retention.sql.
+  if (!dryRun) {
+    const { data: purged, error: purgeError } = await service.rpc(
+      'purge_expired_billing_evidence'
+    )
+    if (purgeError) {
+      report.purgeError = purgeError.message
+      console.error('[subscription-notices] evidence purge failed:', purgeError.message)
+    } else {
+      report.purged = (purged ?? []).filter(
+        (row: { rows_deleted: number }) => row.rows_deleted > 0
+      )
     }
   }
 
