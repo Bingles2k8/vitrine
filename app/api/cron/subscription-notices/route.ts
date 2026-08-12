@@ -42,6 +42,7 @@ type Report = {
   failed: Array<{ subscription: string; type: string; error: string }>
   reconciled: string[]
   lockedAfterReadOnly: string[]
+  staleStripeCustomers: string[]
   purged?: Array<{ table_name: string; rows_deleted: number }>
   reconcileError?: string
   purgeError?: string
@@ -70,6 +71,7 @@ export async function GET(request: Request) {
     failed: [],
     reconciled: [],
     lockedAfterReadOnly: [],
+    staleStripeCustomers: [],
   }
 
   // ---- Pass 1: dispatch --------------------------------------------------
@@ -223,6 +225,36 @@ export async function GET(request: Request) {
         })
         .eq('id', museum.id)
       report.lockedAfterReadOnly.push(museum.id)
+    }
+  }
+
+  // ---- Pass 3b: stale Stripe references -----------------------------------
+  // A museum can end up holding a customer id from a different Stripe account.
+  // It happened once already: billing moved account on 2026-04-28 and four
+  // museums kept sandbox ids, so every Stripe call for them failed with
+  // "No such customer" and the billing portal returned a 500. Nothing noticed,
+  // because nothing was checking.
+  //
+  // Cheap to detect, so it is checked daily rather than waiting for a customer
+  // to report a broken button.
+  if (!dryRun) {
+    const { data: withCustomers } = await service
+      .from('museums')
+      .select('id, stripe_customer_id')
+      .not('stripe_customer_id', 'is', null)
+
+    for (const museum of withCustomers ?? []) {
+      try {
+        await stripe.customers.retrieve(museum.stripe_customer_id as string)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (/No such customer/i.test(message)) {
+          report.staleStripeCustomers.push(museum.id)
+          console.error(
+            `[subscription-notices] museum ${museum.id} holds Stripe customer ${museum.stripe_customer_id}, which this account does not recognise. Billing is broken for this account.`
+          )
+        }
+      }
     }
   }
 

@@ -49,6 +49,26 @@ function UsageRow({ label, used, limit, format, note }: {
   )
 }
 
+/**
+ * Parse a response that is supposed to be JSON but might not be.
+ *
+ * A route that throws returns an HTML error page, and calling res.json() on
+ * that throws too, which used to land in the catch block and surface as a bare
+ * "Something went wrong" with the real cause nowhere to be seen. Returning the
+ * status instead at least tells the customer, and us, that the server failed.
+ */
+async function readJson(res: Response): Promise<{ url?: string; error?: string }> {
+  try {
+    return await res.json()
+  } catch {
+    return {
+      error: res.ok
+        ? 'We got an unexpected response from the server. Please try again.'
+        : `Something went wrong at our end (error ${res.status}). Please try again, or contact us if it keeps happening.`,
+    }
+  }
+}
+
 export default function PlanPage() {
   const [museum, setMuseum] = useState<any>(null)
   const [isOwner, setIsOwner] = useState(true)
@@ -162,7 +182,7 @@ export default function PlanPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(trial ? { planId, trial: true } : { planId }),
       })
-      const data = await res.json()
+      const data = await readJson(res)
       if (data.url) {
         window.location.href = data.url
       } else {
@@ -181,7 +201,7 @@ export default function PlanPage() {
     setActionLoading('manage')
     try {
       const res = await fetch('/api/stripe/portal', { method: 'POST' })
-      const data = await res.json()
+      const data = await readJson(res)
       if (data.url) {
         window.location.href = data.url
       } else {
