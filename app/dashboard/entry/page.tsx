@@ -266,22 +266,36 @@ export default function EntryRegisterPage() {
     const year = new Date(entry_date).getFullYear()
     const yearEntries = entries.filter(e => e.entry_number?.startsWith(`EN-${year}-`))
     const entryNumber = newEntry.entry_number.trim() || `EN-${year}-${String(yearEntries.length + 1).padStart(3, '0')}`
-    const { data: created, error } = await supabase.from('entry_records').insert({
-      museum_id: museum!.id,
-      entry_number: entryNumber,
-      entry_date: newEntry.entry_date,
-      depositor_name: newEntry.depositor_name,
-      depositor_contact: newEntry.depositor_contact || null,
-      gdpr_consent: newEntry.gdpr_consent,
-      gdpr_consent_date: newEntry.gdpr_consent && newEntry.gdpr_consent_date ? newEntry.gdpr_consent_date : newEntry.gdpr_consent ? new Date().toISOString().slice(0, 10) : null,
-      entry_reason: newEntry.entry_reason,
-      object_description: newEntry.object_description,
-      object_count: newEntry.object_count,
-      received_by: newEntry.received_by,
-      entry_method: newEntry.entry_method || null,
-      outcome: 'Pending',
-    }).select('*').single()
-    if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+    // An entry record is the Spectrum "Object Entry" procedure — a compliance
+    // artefact, and the database deliberately restricts INSERTs on it to
+    // compliance plans (supabase/compliance-rls-plan-gate.sql).
+    //
+    // Simple-mode collectors reach this same screen as their "Add item" flow,
+    // so writing an entry record for them hit that policy and failed the whole
+    // add with "new row violates row-level security policy". They don't need
+    // one: create the object and skip the register.
+    const keepsEntryRegister = getPlan(museum?.plan ?? '').compliance
+    let created: EntryRow | null = null
+
+    if (keepsEntryRegister) {
+      const { data, error } = await supabase.from('entry_records').insert({
+        museum_id: museum!.id,
+        entry_number: entryNumber,
+        entry_date: newEntry.entry_date,
+        depositor_name: newEntry.depositor_name,
+        depositor_contact: newEntry.depositor_contact || null,
+        gdpr_consent: newEntry.gdpr_consent,
+        gdpr_consent_date: newEntry.gdpr_consent && newEntry.gdpr_consent_date ? newEntry.gdpr_consent_date : newEntry.gdpr_consent ? new Date().toISOString().slice(0, 10) : null,
+        entry_reason: newEntry.entry_reason,
+        object_description: newEntry.object_description,
+        object_count: newEntry.object_count,
+        received_by: newEntry.received_by,
+        entry_method: newEntry.entry_method || null,
+        outcome: 'Pending',
+      }).select('*').single()
+      if (error) { toast(error.message, 'error'); setSubmitting(false); return }
+      created = data as EntryRow
+    }
     // Create the object — auto-generate accession_no for simple mode if blank
     const finalAccessionNo = newEntry.accession_no.trim() || (!fullMode ? await generateAccessionNo() : null)
     const res = await fetch('/api/objects', {
@@ -304,18 +318,48 @@ export default function EntryRegisterPage() {
     const payload = await res.json().catch(() => ({}))
     if (!res.ok) { toast(payload.error || 'Failed to create object', 'error'); setSubmitting(false); return }
     const newObject = payload.object
-    await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
+    if (created) {
+      await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
+    }
     if (mode === 'continue') {
       router.push(`/dashboard/objects/${newObject.id}`)
     } else {
-      setEntries([{ ...created, object_id: newObject.id, objects: { title: newEntry.object_title, accession_no: newEntry.accession_no || null, deleted_at: null } }, ...entries])
+      if (created) {
+        setEntries([{
+          ...created,
+          object_id: newObject.id,
+          // finalAccessionNo, not the raw form field — simple mode generates it,
+          // so the form value is blank and the optimistic row showed no number.
+          objects: {
+            title: newEntry.object_title,
+            accession_no: finalAccessionNo,
+            deleted_at: null,
+            description: newEntry.object_description || null,
+            medium: null,
+            physical_materials: null,
+            artist: null,
+            maker_name: null,
+            object_type: null,
+            status: 'Entry',
+            created_at: new Date().toISOString(),
+            production_date: null,
+            acquisition_method: null,
+            accession_register_confirmed: null,
+          },
+        }, ...entries])
+      }
       setNewEntry(defaultEntry())
       setShowForm(false)
       setSubmitting(false)
       setScannedBarcode(null)
       setLookupSource(null)
       setLookupStatus('idle')
-      toast(`Entry ${entryNumber} recorded.`, 'success')
+      // Without an entry record there's no new row to see, so the toast is the
+      // only confirmation a simple-mode collector gets — name the item.
+      toast(
+        created ? `Entry ${entryNumber} recorded.` : `"${newEntry.object_title}" added.`,
+        'success',
+      )
     }
   }
 
