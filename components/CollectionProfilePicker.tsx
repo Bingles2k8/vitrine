@@ -7,12 +7,8 @@ interface Props {
   /** Ordered list of selected profile ids. Index 0 is the primary. */
   value: string[]
   onChange: (next: string[]) => void
-  /** Shown under the heading. Onboarding and settings word this differently. */
-  hint?: string
   disabled?: boolean
-  /** Compact rendering for the settings sidebar. */
-  compact?: boolean
-  /** Called with a count when removing a profile that objects still use. */
+  /** Object counts per profile, so removing one can warn with a real number. */
   usageCount?: Record<string, number>
 }
 
@@ -24,7 +20,7 @@ interface Props {
  * renders identically to today's UI.
  */
 export default function CollectionProfilePicker({
-  value, onChange, hint, disabled, compact, usageCount,
+  value, onChange, disabled, usageCount,
 }: Props) {
   const [search, setSearch] = useState('')
 
@@ -65,13 +61,7 @@ export default function CollectionProfilePicker({
 
   return (
     <div>
-      {hint && (
-        <p className={`text-stone-400 dark:text-stone-500 mb-4 ${compact ? 'text-xs' : 'text-sm'}`}>
-          {hint}
-        </p>
-      )}
-
-      {!compact && COLLECTION_PROFILES.length > 12 && (
+      {COLLECTION_PROFILES.length > 12 && (
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -80,7 +70,7 @@ export default function CollectionProfilePicker({
         />
       )}
 
-      <div className={compact ? 'space-y-1.5' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map(profile => {
           const index = value.indexOf(profile.id)
           const selected = index >= 0
@@ -92,25 +82,19 @@ export default function CollectionProfilePicker({
               type="button"
               disabled={disabled}
               onClick={() => toggle(profile.id)}
-              className={`text-left border rounded-lg transition-all disabled:opacity-50 ${
-                compact ? 'w-full px-3 py-2' : 'p-4'
-              } ${
+              className={`text-left border rounded-lg transition-all disabled:opacity-50 p-4 ${
                 selected
                   ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-600'
                   : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800/60'
               }`}
             >
               <div className="flex items-start gap-2.5">
-                <span className={compact ? 'text-base leading-none mt-0.5' : 'text-xl leading-none'}>
-                  {profile.emoji}
-                </span>
+                <span className="text-xl leading-none">{profile.emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <div className={`font-medium text-stone-900 dark:text-stone-100 ${compact ? 'text-xs' : 'text-sm'}`}>
+                  <div className="font-medium text-sm text-stone-900 dark:text-stone-100">
                     {profile.label}
                   </div>
-                  {!compact && (
-                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{profile.blurb}</div>
-                  )}
+                  <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{profile.blurb}</div>
                   {selected && (
                     <div className="mt-1.5 flex items-center gap-2">
                       {isPrimary ? (

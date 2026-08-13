@@ -7,7 +7,7 @@ import { getPlan } from '@/lib/plans'
 import { fetchAll } from '@/lib/fetchAll'
 import { useLearnMode } from '@/components/LearnModeProvider'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
-import CollectionProfilePicker from '@/components/CollectionProfilePicker'
+import CollectionProfileModal from '@/components/CollectionProfileModal'
 import { profilesEnabled, getProfile, resolveAppNouns } from '@/lib/collectionProfiles'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { latestWhatsNewId } from '@/lib/whatsNew'
@@ -76,6 +76,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [collectionCategory, setCollectionCategory] = useState<string>('')
   const [collectionProfiles, setCollectionProfiles] = useState<string[]>([])
   const [profileUsage, setProfileUsage] = useState<Record<string, number>>({})
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [hideMoneyValues, setHideMoneyValues] = useState(false)
   const [acceptMessages, setAcceptMessages] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -90,6 +91,10 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     setHideMoneyValues(museum?.hide_money_values ?? false)
     setAcceptMessages(museum?.accept_messages ?? true)
   }, [museum?.discoverable, museum?.collection_category, museum?.collection_profiles, museum?.hide_money_values, museum?.accept_messages])
+
+  const selectedProfiles = collectionProfiles
+    .map(getProfile)
+    .filter((p): p is NonNullable<typeof p> => p !== null)
 
   // How many objects use each profile, so removing one can warn with a count
   // rather than a vague "are you sure". Only needed once settings are open.
@@ -177,13 +182,16 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   // Close settings panel on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      // The profile modal is portalled to <body>, so clicking it reads as
+      // "outside" the panel. Don't pull the panel out from under it.
+      if (profileModalOpen) return
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
         setSettingsOpen(false)
       }
     }
     if (settingsOpen) document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [settingsOpen])
+  }, [settingsOpen, profileModalOpen])
 
   function changeTheme(t: Theme) {
     setTheme(t)
@@ -573,17 +581,37 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </button>
               </div>
 
-              {/* What you collect — Community & Hobbyist only (simple mode) */}
+              {/* What you collect — Community & Hobbyist only (simple mode).
+                  Summary here, full grid in a modal: 21 cards inline made this
+                  panel taller than the viewport. */}
               {museum && profilesEnabled(museum.plan) && (isOwner || staffAccess === 'Admin') && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">What you collect</div>
-                  <CollectionProfilePicker
-                    value={collectionProfiles}
-                    onChange={updateCollectionProfiles}
-                    usageCount={profileUsage}
-                    hint="Vitrine uses the right words for your collection. Pick as many as you like."
-                    compact
-                  />
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">
+                    Vitrine uses the right words for your collection.
+                  </p>
+                  <button
+                    onClick={() => setProfileModalOpen(true)}
+                    className="w-full text-left border border-stone-200 dark:border-stone-700 rounded px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800/60 transition-colors"
+                  >
+                    {selectedProfiles.length === 0 ? (
+                      <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                        Choose types {'→'}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                          <span className="text-sm leading-none">{selectedProfiles[0].emoji}</span>
+                          <span className="truncate">{selectedProfiles[0].label}</span>
+                        </span>
+                        {selectedProfiles.length > 1 && (
+                          <span className="block text-xs font-mono text-stone-400 dark:text-stone-500 mt-1">
+                            +{selectedProfiles.length - 1} more
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
 
@@ -750,6 +778,14 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       </div>
 
       <WhatsNewModal open={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+
+      <CollectionProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        value={collectionProfiles}
+        onChange={updateCollectionProfiles}
+        usageCount={profileUsage}
+      />
     </aside>
   )
 }
