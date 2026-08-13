@@ -1,6 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import {
+  GENERAL_PROFILE, fieldLabel, gradesForAuthority,
+  type CollectionProfile,
+} from '@/lib/collectionProfiles'
 
 export interface FilterState {
   dateFrom: string
@@ -11,14 +15,18 @@ export interface FilterState {
   status: string
   accessionStatus: string
   acquisitionMethod: string
+  certAuthority: string
+  certGrade: string
+  gradedOnly: string
 }
 
 export const EMPTY_FILTERS: FilterState = {
   dateFrom: '', dateTo: '', medium: '', objectType: '',
   artist: '', status: '', accessionStatus: '', acquisitionMethod: '',
+  certAuthority: '', certGrade: '', gradedOnly: '',
 }
 
-export type SortBy = '' | 'alpha' | 'insured_value' | 'date_added' | 'date_made'
+export type SortBy = '' | 'alpha' | 'insured_value' | 'date_added' | 'date_made' | 'grade'
 
 const ACQ_METHODS = ['Purchase', 'Gift', 'Bequest', 'Transfer', 'Found', 'Fieldwork', 'Exchange', 'Unknown']
 const STATUSES = ['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration', 'Deaccessioned']
@@ -38,6 +46,8 @@ interface Props {
   mediumOptions: string[]
   objectTypeOptions: string[]
   artistOptions: string[]
+  /** Collection-wide profile — see docs/collection-profiles-plan.md §6.3. */
+  profile?: CollectionProfile
   placeholder?: string
   additionalFilters?: React.ReactNode
   trailingSlot?: React.ReactNode
@@ -50,6 +60,7 @@ export default function SearchFilterBar({
   sortBy, onSortChange,
   isFullMode,
   mediumOptions, objectTypeOptions, artistOptions,
+  profile = GENERAL_PROFILE,
   placeholder = 'Search objects…',
   additionalFilters,
   trailingSlot,
@@ -61,12 +72,16 @@ export default function SearchFilterBar({
     onFiltersChange({ ...filters, [key]: val })
   }
 
+  const certification = profile.certification
+  const certGrades = gradesForAuthority(certification, filters.certAuthority)
+
   const activeCount = [
     filters.dateFrom, filters.dateTo, filters.medium, filters.objectType,
     ...(isFullMode
       ? [filters.status, filters.accessionStatus, filters.acquisitionMethod]
       : [filters.artist]
     ),
+    ...(certification ? [filters.certAuthority, filters.certGrade, filters.gradedOnly] : []),
   ].filter(Boolean).length
 
   const sortOptions = isFullMode
@@ -81,7 +96,9 @@ export default function SearchFilterBar({
         { value: 'alpha', label: 'Alphabetical' },
         { value: 'insured_value', label: 'Insured Value' },
         { value: 'date_added', label: 'Date Added' },
-        { value: 'date_made', label: 'Date Made' },
+        { value: 'date_made', label: fieldLabel(profile, 'production_date', 'Date Made') },
+        // Sorts on cert_grade_numeric — the whole reason that derived column exists.
+        ...(certification ? [{ value: 'grade', label: 'Grade (high to low)' }] : []),
       ]
 
   return (
@@ -168,7 +185,7 @@ export default function SearchFilterBar({
 
             {/* Medium */}
             <div>
-              <label className={labelCls}>Medium</label>
+              <label className={labelCls}>{fieldLabel(profile, 'medium', 'Medium')}</label>
               <select value={filters.medium} onChange={e => set('medium', e.target.value)} className={selectCls}>
                 <option value="">All mediums</option>
                 {mediumOptions.map(m => <option key={m} value={m}>{m}</option>)}
@@ -177,7 +194,7 @@ export default function SearchFilterBar({
 
             {/* Object Type */}
             <div>
-              <label className={labelCls}>Object Type</label>
+              <label className={labelCls}>{fieldLabel(profile, 'object_type', 'Object Type')}</label>
               <select value={filters.objectType} onChange={e => set('objectType', e.target.value)} className={selectCls}>
                 <option value="">All types</option>
                 {objectTypeOptions.map(t => <option key={t} value={t}>{t}</option>)}
@@ -187,9 +204,9 @@ export default function SearchFilterBar({
             {/* Free / Hobbyist only */}
             {!isFullMode && (
               <div>
-                <label className={labelCls}>Artist / Maker</label>
+                <label className={labelCls}>{fieldLabel(profile, 'artist', 'Artist / Maker')}</label>
                 <select value={filters.artist} onChange={e => set('artist', e.target.value)} className={selectCls}>
-                  <option value="">All artists</option>
+                  <option value="">All</option>
                   {artistOptions.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
@@ -218,6 +235,49 @@ export default function SearchFilterBar({
                   <select value={filters.acquisitionMethod} onChange={e => set('acquisitionMethod', e.target.value)} className={selectCls}>
                     <option value="">All methods</option>
                     {ACQ_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* Certification — only when the collection's profile grades */}
+            {certification && (
+              <>
+                <div>
+                  <label className={labelCls}>{certification.labels?.authority ?? 'Grading Company'}</label>
+                  <select
+                    value={filters.certAuthority}
+                    onChange={e => {
+                      // Changing authority invalidates the grade: a PSA 9 is
+                      // not a PCGS grade.
+                      onFiltersChange({ ...filters, certAuthority: e.target.value, certGrade: '' })
+                    }}
+                    className={selectCls}
+                  >
+                    <option value="">All</option>
+                    {certification.authorities.map(a => (
+                      <option key={a.id} value={a.id}>{a.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>{certification.labels?.grade ?? 'Grade'}</label>
+                  <select
+                    value={filters.certGrade}
+                    onChange={e => set('certGrade', e.target.value)}
+                    disabled={certGrades.length === 0}
+                    className={selectCls}
+                  >
+                    <option value="">All</option>
+                    {certGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Certified</label>
+                  <select value={filters.gradedOnly} onChange={e => set('gradedOnly', e.target.value)} className={selectCls}>
+                    <option value="">All</option>
+                    <option value="yes">Certified only</option>
+                    <option value="no">Not certified</option>
                   </select>
                 </div>
               </>

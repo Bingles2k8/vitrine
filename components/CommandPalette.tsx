@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { resolveAppNouns, type ProfileMuseumLike } from '@/lib/collectionProfiles'
 
-const NAV_ITEMS = [
-  { path: '/dashboard', icon: '⬡', label: 'Objects' },
+// A function rather than a constant, because the first and third labels follow
+// the collection's profile — see docs/collection-profiles-plan.md §6.2.
+const navItems = (nouns: { itemPlural: string; addItem: string }) => [
+  { path: '/dashboard', icon: '⬡', label: nouns.itemPlural },
   { path: '/dashboard/inbox', icon: '✉️', label: 'Inbox' },
-  { path: '/dashboard/entry', icon: '🗂', label: 'Add Object' },
+  { path: '/dashboard/entry', icon: '🗂', label: nouns.addItem },
   { path: '/dashboard/register', icon: '📋', label: 'Accession Register' },
   { path: '/dashboard/loans', icon: '⇄', label: 'Loans Register' },
   { path: '/dashboard/conservation', icon: '⚗', label: 'Conservation' },
@@ -32,9 +35,15 @@ type Result = { type: 'nav'; path: string; icon: string; label: string } | { typ
 
 interface CommandPaletteProps {
   museumId: string | null
+  museum?: ProfileMuseumLike | null
 }
 
-export default function CommandPalette({ museumId }: CommandPaletteProps) {
+export default function CommandPalette({ museumId, museum }: CommandPaletteProps) {
+  const nouns = resolveAppNouns(museum ?? null)
+  const NAV_ITEMS = useMemo(
+    () => navItems(nouns),
+    [nouns.itemPlural, nouns.addItem],
+  )
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Result[]>([])

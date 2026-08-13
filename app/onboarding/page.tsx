@@ -7,13 +7,19 @@ import { TEMPLATES } from '@/lib/templates'
 import { PLANS, PLAN_ORDER, FREE_TIER_TEMPLATES, type PlanId } from '@/lib/plans'
 import { formatPlanPrice } from '@/lib/planPricing'
 import { readCurrencyCookie } from '@/lib/currencyCookie'
+import CollectionProfilePicker from '@/components/CollectionProfilePicker'
+import { getProfile } from '@/lib/collectionProfiles'
 
 export default function Onboarding() {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [currency, setCurrency] = useState<ReturnType<typeof readCurrencyCookie>>('GBP')
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🏛️')
   const [template, setTemplate] = useState('minimal')
+  // Asked of everyone: the plan isn't chosen until step 4, so the tier isn't
+  // known yet. Harmless for paid tiers (full mode ignores profiles) and it
+  // seeds the Discover category for every plan. See plan §7.9.
+  const [collectionProfiles, setCollectionProfiles] = useState<string[]>([])
   const [plan, setPlan] = useState<PlanId>('community')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -135,6 +141,10 @@ export default function Onboarding() {
       accent_color: selectedTemplate.accent_color,
       plan: insertPlan,
       ui_mode: PLANS[plan].fullMode ? 'full' : 'simple',
+      collection_profiles: collectionProfiles,
+      // Seed the Discover category from the primary profile so opting in later
+      // is one click rather than a second decision.
+      collection_category: getProfile(collectionProfiles[0] ?? null)?.category ?? null,
     })
 
     if (error) {
@@ -168,18 +178,18 @@ export default function Onboarding() {
     window.location.href = '/dashboard'
   }
 
-  const TOTAL_STEPS = 3
+  const TOTAL_STEPS = 4
 
   return (
     <main className="min-h-screen bg-stone-50 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-3xl">
         <div className="text-center mb-10">
           <h1 className="font-serif text-4xl italic text-stone-900 mb-2">Welcome to Vitrine.</h1>
-          <p className="text-stone-400 text-sm">Let's set up your museum in three quick steps.</p>
+          <p className="text-stone-400 text-sm">Let&rsquo;s set up your collection in four quick steps.</p>
         </div>
 
         <div className="flex items-center justify-center gap-3 mb-10">
-          {[1, 2, 3].map(s => (
+          {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-3">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono transition-all ${step >= s ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-400'}`}>
                 {s}
@@ -252,15 +262,38 @@ export default function Onboarding() {
                 disabled={slugChecking || slugAvailable === false}
                 className="w-full bg-stone-900 text-white rounded py-2.5 text-sm font-mono disabled:opacity-50"
               >
-                Next — Choose a template →
+                Next — What you collect →
               </button>
             </form>
           </div>
         )}
 
         {step === 2 && (
+          <div className="bg-white border border-stone-200 rounded-xl p-8">
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 2 — What do you collect?</div>
+            <p className="text-sm text-stone-400 text-center mb-8">
+              Pick one or more and Vitrine will use the right words for your collection —
+              a card gets &ldquo;Set&rdquo; and &ldquo;Grade&rdquo;, a bottle gets &ldquo;Producer&rdquo; and &ldquo;Vintage&rdquo;.
+              You can change this any time.
+            </p>
+            <CollectionProfilePicker
+              value={collectionProfiles}
+              onChange={setCollectionProfiles}
+            />
+            <div className="flex gap-3 justify-center mt-8">
+              <button onClick={() => setStep(1)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+                ← Back
+              </button>
+              <button onClick={() => setStep(3)} className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded">
+                Next — Choose a template →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
           <div>
-            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 2 — Choose a template</div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a template</div>
             <p className="text-sm text-stone-400 text-center mb-8">You can customise colours and fonts later in the Site Builder.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {TEMPLATES.slice(0, 3).map(t => (
@@ -274,19 +307,19 @@ export default function Onboarding() {
             </div>
             {error && <p className="text-xs text-red-500 font-mono text-center mb-4">{error}</p>}
             <div className="flex gap-3 justify-center">
-              <button onClick={() => setStep(1)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+              <button onClick={() => setStep(2)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
                 ← Back
               </button>
-              <button onClick={() => setStep(3)} className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded">
+              <button onClick={() => setStep(4)} className="bg-stone-900 text-white text-sm font-mono px-8 py-2.5 rounded">
                 Next — Choose a plan →
               </button>
             </div>
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div>
-            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 3 — Choose a plan</div>
+            <div className="text-xs uppercase tracking-widest text-stone-400 mb-3 text-center">Step 4 — Choose a plan</div>
             <p className="text-sm text-stone-400 text-center mb-8">You can upgrade at any time from your account settings.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {PLAN_ORDER.map(id => {
@@ -358,7 +391,7 @@ export default function Onboarding() {
             </div>
             {error && <p className="text-xs text-red-500 font-mono text-center mb-4">{error}</p>}
             <div className="flex gap-3 justify-center">
-              <button onClick={() => setStep(2)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
+              <button onClick={() => setStep(3)} className="border border-stone-200 text-stone-500 text-sm font-mono px-6 py-2.5 rounded hover:bg-stone-50">
                 ← Back
               </button>
               <button

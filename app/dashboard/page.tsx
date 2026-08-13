@@ -11,6 +11,11 @@ import CSVImportModal from '@/components/CSVImportModal'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
+import {
+  resolveCollectionProfile, resolveAppNouns, readCustomField,
+  formatCustomFieldValue, allCustomFieldDefs, conditionLabel,
+  type ListColumnKey,
+} from '@/lib/collectionProfiles'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 import { loadFxRates, getBaseCurrency } from '@/lib/fxRates'
 import { fetchAll } from '@/lib/fetchAll'
@@ -238,6 +243,24 @@ export default function Dashboard() {
     : 0
 
   const fullMode = getPlan(museum?.plan).fullMode
+
+  // Collection-wide profile: a single active profile dresses the list, a mixed
+  // collection stays neutral. See docs/collection-profiles-plan.md §6.3.
+  const listProfile = resolveCollectionProfile(museum)
+  const nouns = resolveAppNouns(museum)
+  const customDefs = allCustomFieldDefs()
+  const listColumns = (fullMode ? [] : listProfile.listColumns ?? [])
+
+  /** Value for a profile list column — a plain field, a cert column, or a custom key. */
+  function columnValue(obj: Record<string, any>, field: ListColumnKey): string {
+    if (field.startsWith('custom:')) {
+      const key = field.slice('custom:'.length)
+      return formatCustomFieldValue(customDefs.get(key), readCustomField(obj.custom_fields, key))
+    }
+    const raw = obj[field]
+    if (raw === null || raw === undefined) return ''
+    return String(raw)
+  }
   const canImport = getPlan(museum?.plan).analytics
   const hideMoneyValues = !!museum?.hide_money_values
   const onPublicSiteCount = objects.filter(a => a.show_on_site).length
@@ -279,6 +302,12 @@ export default function Dashboard() {
       } else {
         if (filters.artist && a.artist !== filters.artist && a.maker_name !== filters.artist) return false
       }
+      // Certification filters — only ever populated when the collection's
+      // profile grades. See docs/collection-profiles-plan.md §7.6.
+      if (filters.certAuthority && a.cert_authority !== filters.certAuthority) return false
+      if (filters.certGrade && a.cert_grade !== filters.certGrade) return false
+      if (filters.gradedOnly === 'yes' && !a.cert_number) return false
+      if (filters.gradedOnly === 'no' && a.cert_number) return false
       if (!q) return true
       return (
         a.title?.toLowerCase().includes(q) ||
@@ -286,7 +315,8 @@ export default function Dashboard() {
         a.artist?.toLowerCase().includes(q) ||
         a.maker_name?.toLowerCase().includes(q) ||
         a.medium?.toLowerCase().includes(q) ||
-        a.object_type?.toLowerCase().includes(q)
+        a.object_type?.toLowerCase().includes(q) ||
+        a.cert_number?.toLowerCase().includes(q)
       )
     })
     .sort((a, b) => {
@@ -294,6 +324,8 @@ export default function Dashboard() {
       if (sortBy === 'date_added') return (b.created_at || '').localeCompare(a.created_at || '')
       if (sortBy === 'date_made') return (b.production_date || b.year || '').localeCompare(a.production_date || a.year || '')
       if (sortBy === 'insured_value') return (b.insured_value ?? 0) - (a.insured_value ?? 0)
+      // Backed by the derived cert_grade_numeric column, so no string parsing.
+      if (sortBy === 'grade') return (b.cert_grade_numeric ?? -1) - (a.cert_grade_numeric ?? -1)
       return 0
     })
 
@@ -320,6 +352,7 @@ export default function Dashboard() {
     <DashboardShell museum={museum} activePath="/dashboard" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         {showImport && (
           <CSVImportModal
+            profile={listProfile}
             onClose={() => setShowImport(false)}
             onSuccess={(count) => {
               setShowImport(false)
@@ -483,14 +516,14 @@ export default function Dashboard() {
           {objects.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
               <div className="text-5xl mb-4">🏛️</div>
-              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">Your collection is empty</div>
-              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">{fullMode ? 'Log an object in the Entry Register to begin.' : 'Add your first object to begin.'}</p>
+              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">Your {nouns.collection.toLowerCase()} is empty</div>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">{fullMode ? 'Log an object in the Entry Register to begin.' : `Add your first ${nouns.item.toLowerCase()} to begin.`}</p>
               <button
                 onClick={() => router.push('/dashboard/entry')}
                 className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-mono px-5 py-2.5 rounded transition-colors"
                 data-learn="action.new_entry"
               >
-                {fullMode ? '+ New Entry Record' : '+ Add an object'}
+                {fullMode ? '+ New Entry Record' : `+ ${nouns.addItem}`}
               </button>
               <a
                 href="/guide/essentials"
@@ -513,6 +546,7 @@ export default function Dashboard() {
                   sortBy={sortBy}
                   onSortChange={setSortBy}
                   isFullMode={fullMode}
+                  profile={listProfile}
                   mediumOptions={mediumOptions}
                   objectTypeOptions={objectTypeOptions}
                   artistOptions={artistOptions}
@@ -616,9 +650,17 @@ export default function Dashboard() {
                         />
                       </th>
                     )}
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4" data-learn="dashboard.col.object">Object</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.year">Year</th>
-                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.medium">Medium</th>
+                    <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-6 py-4" data-learn="dashboard.col.object">{nouns.item}</th>
+                    {listColumns.length > 0 ? (
+                      listColumns.map(col => (
+                        <th key={col.field} className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell">{col.label}</th>
+                      ))
+                    ) : (
+                      <>
+                        <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.year">Year</th>
+                        <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4 hidden md:table-cell" data-learn="dashboard.col.medium">Medium</th>
+                      </>
+                    )}
                     <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.status">Status</th>
                     {!fullMode && <th className="text-left text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 font-normal px-4 py-4" data-learn="dashboard.col.public">Public</th>}
                     {canEdit && <th className="w-10 px-2 py-4" />}
@@ -674,8 +716,16 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.production_date || a.year}</td>
-                      <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.medium}</td>
+                      {listColumns.length > 0 ? (
+                        listColumns.map(col => (
+                          <td key={col.field} className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400 hidden md:table-cell">{columnValue(a, col.field)}</td>
+                        ))
+                      ) : (
+                        <>
+                          <td className="px-4 py-4 text-xs font-mono text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.production_date || a.year}</td>
+                          <td className="px-4 py-4 text-xs text-stone-500 dark:text-stone-400 hidden md:table-cell">{a.medium}</td>
+                        </>
+                      )}
                       <td className="px-4 py-4">
                         {(() => {
                           const loan = loanByObject[a.id]

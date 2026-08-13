@@ -7,6 +7,8 @@ import { getPlan } from '@/lib/plans'
 import { fetchAll } from '@/lib/fetchAll'
 import { useLearnMode } from '@/components/LearnModeProvider'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
+import CollectionProfilePicker from '@/components/CollectionProfilePicker'
+import { profilesEnabled, getProfile, resolveAppNouns } from '@/lib/collectionProfiles'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { latestWhatsNewId } from '@/lib/whatsNew'
 
@@ -21,7 +23,7 @@ interface SidebarProps {
   onNavigate?: () => void
 }
 
-type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; shareLinks: boolean; name: string; logo_emoji: string; plan: string }
+type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; shareLinks: boolean; name: string; logo_emoji: string; plan: string; collection_profiles: string[] }
 
 export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null, onNavigate }: SidebarProps) {
   const router = useRouter()
@@ -48,15 +50,22 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       name: museum.name,
       logo_emoji: museum.logo_emoji,
       plan: museum.plan,
+      // Cached too, so nav wording doesn't flash from "Items" to "Cards" on load
+      collection_profiles: museum.collection_profiles ?? [],
     }
     setNavCache(next)
     localStorage.setItem('vitrine_nav', JSON.stringify(next))
-  }, [museum?.id, museum?.ui_mode, museum?.plan])
+  }, [museum?.id, museum?.ui_mode, museum?.plan, museum?.collection_profiles])
 
   // Resolved nav values: use live data once available, fall back to cache, else hide
   const nav = museum && planInfo
-    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan }
+    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan, collection_profiles: museum.collection_profiles ?? [] }
     : navCache
+
+  // App terminology. A single active profile earns its own nouns; a mixed
+  // collection falls back to neutral, because "Add Card" while adding a watch
+  // reads as a bug. See docs/collection-profiles-plan.md §6.2.
+  const nouns = resolveAppNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : null)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)
@@ -65,6 +74,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [discoverable, setDiscoverable] = useState(false)
   const [collectionCategory, setCollectionCategory] = useState<string>('')
+  const [collectionProfiles, setCollectionProfiles] = useState<string[]>([])
+  const [profileUsage, setProfileUsage] = useState<Record<string, number>>({})
   const [hideMoneyValues, setHideMoneyValues] = useState(false)
   const [acceptMessages, setAcceptMessages] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -75,9 +86,33 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   useEffect(() => {
     setDiscoverable(museum?.discoverable ?? false)
     setCollectionCategory(museum?.collection_category ?? '')
+    setCollectionProfiles(museum?.collection_profiles ?? [])
     setHideMoneyValues(museum?.hide_money_values ?? false)
     setAcceptMessages(museum?.accept_messages ?? true)
-  }, [museum?.discoverable, museum?.collection_category, museum?.hide_money_values, museum?.accept_messages])
+  }, [museum?.discoverable, museum?.collection_category, museum?.collection_profiles, museum?.hide_money_values, museum?.accept_messages])
+
+  // How many objects use each profile, so removing one can warn with a count
+  // rather than a vague "are you sure". Only needed once settings are open.
+  useEffect(() => {
+    if (!settingsOpen || !museum || collectionProfiles.length < 2) return
+    let active = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('objects')
+        .select('collection_profile')
+        .eq('museum_id', museum.id)
+        .is('deleted_at', null)
+        .not('collection_profile', 'is', null)
+      if (!active || !data) return
+      const counts: Record<string, number> = {}
+      for (const row of data) {
+        const id = (row as { collection_profile: string }).collection_profile
+        counts[id] = (counts[id] ?? 0) + 1
+      }
+      setProfileUsage(counts)
+    })()
+    return () => { active = false }
+  }, [settingsOpen, museum, collectionProfiles.length, supabase])
 
   // Poll unread message count for the inbox badge
   useEffect(() => {
@@ -173,6 +208,39 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     if (!museum) return
     setCollectionCategory(value)
     await supabase.from('museums').update({ collection_category: value || null }).eq('id', museum.id)
+  }
+
+  async function updateCollectionProfiles(next: string[]) {
+    if (!museum) return
+    const removed = collectionProfiles.filter(id => !next.includes(id))
+    setCollectionProfiles(next)
+
+    const patch: Record<string, unknown> = { collection_profiles: next }
+
+    // Seed the Discover category from the primary profile, but never overwrite
+    // a category the user chose explicitly. See plan §8.3.
+    const primary = getProfile(next[0] ?? null)
+    if (primary && !collectionCategory) {
+      patch.collection_category = primary.category
+      setCollectionCategory(primary.category)
+    }
+
+    await supabase.from('museums').update(patch).eq('id', museum.id)
+
+    // Objects pointing at a removed profile fall back to the primary. Their
+    // custom_fields values are deliberately left in place — invariant G.
+    if (removed.length > 0) {
+      await supabase
+        .from('objects')
+        .update({ collection_profile: null })
+        .eq('museum_id', museum.id)
+        .in('collection_profile', removed)
+      setProfileUsage(prev => {
+        const copy = { ...prev }
+        for (const id of removed) delete copy[id]
+        return copy
+      })
+    }
   }
 
   async function toggleAcceptMessages() {
@@ -330,7 +398,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       <nav className="p-3 flex-1 overflow-y-auto">
         {nav && (<>
         <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2">Collections</div>
-        {navItem('/dashboard', '⬡', 'Collection Overview', 'nav.objects')}
+        {navItem('/dashboard', '⬡', `${nouns.collection} Overview`, 'nav.objects')}
         {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
 
         {/* Inbox — all tiers, all staff can read */}
@@ -354,7 +422,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         {nav.simple ? (
           <>
             <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Record</div>
-            {navItem('/dashboard/entry', '🗂', 'Add Object', 'nav.entry')}
+            {navItem('/dashboard/entry', '🗂', nouns.addItem, 'nav.entry')}
             {navItem('/dashboard/on-loan', '📤', 'On Loan', 'nav.on-loan')}
           </>
         ) : (
@@ -504,6 +572,20 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                   {learnMode ? 'Tooltips active' : 'Show field tooltips'}
                 </button>
               </div>
+
+              {/* What you collect — Community & Hobbyist only (simple mode) */}
+              {museum && profilesEnabled(museum.plan) && (isOwner || staffAccess === 'Admin') && (
+                <div>
+                  <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">What you collect</div>
+                  <CollectionProfilePicker
+                    value={collectionProfiles}
+                    onChange={updateCollectionProfiles}
+                    usageCount={profileUsage}
+                    hint="Vitrine uses the right words for your collection. Pick as many as you like."
+                    compact
+                  />
+                </div>
+              )}
 
               {/* Discover (all tiers, owners and admins) */}
               {museum && (isOwner || staffAccess === 'Admin') && (

@@ -18,6 +18,14 @@ export interface WhatsNewEntry {
  */
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: 'collection-profiles',
+    date: '2026-08-13',
+    emoji: '🃏',
+    title: 'Vitrine now speaks your collection’s language',
+    body: 'Tell Vitrine what you collect and the whole app changes to match. A card collector gets Set, Print Run and Grade; a wine collector gets Producer, Vintage and Region. Graded and certified items get a proper home too — record the grading company, grade and certificate number, and Vitrine sets the condition for you and warns you if you have already logged the same certificate. Collect more than one thing? Pick as many types as you like and set each item individually. Choose yours in Settings.',
+    link: { href: '/dashboard', label: 'Open Settings' },
+  },
+  {
     id: 'learn-mode-registers',
     date: '2026-07-16',
     emoji: '💡',

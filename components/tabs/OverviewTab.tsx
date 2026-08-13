@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { inputCls, labelCls, sectionTitle, MEDIUMS, STATUSES, SIMPLE_MODE_STATUSES, SIMPLE_MODE_STATUS_LABELS, EMOJIS, OBJECT_TYPES, CULTURES, CONDITION_STYLES, DATE_QUALIFIERS, DIMENSION_UNITS, WEIGHT_UNITS } from '@/components/tabs/shared'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
@@ -8,6 +8,15 @@ import AutocompleteInput from '@/components/AutocompleteInput'
 import ImageGallery from '@/components/ImageGallery'
 import ObjectComponents from '@/components/ObjectComponents'
 import OriginLocationField from '@/components/OriginLocationField'
+import ObjectProfileSelect from '@/components/ObjectProfileSelect'
+import CertificationCard from '@/components/CertificationCard'
+import CustomFieldsCard from '@/components/CustomFieldsCard'
+import {
+  resolveObjectProfile, activeProfiles, resolveFieldOrder,
+  fieldLabel, fieldPlaceholder, fieldVisible, statusLabel, conditionLabel,
+  conditionIsDerived, findAuthority,
+  type ProfileFieldKey,
+} from '@/lib/collectionProfiles'
 import { getPlan } from '@/lib/plans'
 import { createClient } from '@/lib/supabase'
 import { formatSize } from '@/lib/formatSize'
@@ -241,127 +250,214 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
   const router = useRouter()
   const fullMode = getPlan(museum.plan).fullMode
 
-  return (
-    <>
-      {/* Hazard alert */}
-      {form.hazard_note && (
-        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-3 flex items-start gap-3">
-          <span className="text-lg shrink-0">⚠️</span>
-          <div>
-            <div className="text-xs uppercase tracking-widest text-amber-700 dark:text-amber-400 font-medium mb-0.5">Hazard Note</div>
-            <div className="text-sm text-amber-800 dark:text-amber-300">{form.hazard_note}</div>
+  // ── Collection profile ─────────────────────────────────────────────────
+  // In full mode this resolves to MUSEUM_FIXED, whose overrides reproduce
+  // today's museum wording — so the same call sites serve both modes and the
+  // old `fullMode ? 'Medium' : 'Medium / Material'` ternaries are gone.
+  const profile = resolveObjectProfile(
+    { collection_profile: form.collection_profile ?? object?.collection_profile ?? null },
+    museum,
+  )
+  const profileOptions = activeProfiles(museum)
+
+  const f = (key: ProfileFieldKey, fallback: string) => fieldLabel(profile, key, fallback)
+  const ph = (key: ProfileFieldKey, fallback?: string) => fieldPlaceholder(profile, key, fallback)
+  const shown = (key: ProfileFieldKey) => fieldVisible(profile, key)
+  const vocab = (key: 'objectTypes' | 'mediums' | 'cultures' | 'emojis', fallback: readonly string[]) =>
+    profile.vocab[key] ?? [...fallback]
+
+  // Condition is derived from the certificate when the profile says a graded
+  // item's grade *is* its condition — see plan §5.5. The stored value stays
+  // canonical, so CONDITION_STYLES and every existing query are unaffected.
+  const conditionDerived = conditionIsDerived(profile.certification, form.cert_authority, form.cert_grade)
+  const gradingAuthority = findAuthority(profile.certification, form.cert_authority)
+
+  /** Fields whose order a profile may control, rendered into a 6-column grid. */
+  function renderField(key: ProfileFieldKey) {
+    if (!shown(key)) return null
+
+    switch (key) {
+      case 'title':
+        return (
+          <div key={key} className="sm:col-span-6">
+            <label className={labelCls} data-learn="objects.title">{f('title', 'Title')} * {publicLabel}</label>
+            <input value={form.title} onChange={e => set('title', e.target.value)}
+              placeholder={ph('title')} className={inputCls} />
           </div>
-        </div>
-      )}
+        )
 
-      {/* Images */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-        <ImageGallery objectId={object.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerObject} currentPrimaryUrl={form.image_url} />
-      </div>
-
-      {/* Icon */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-        <label className={labelCls} data-learn="objects.icon">Icon</label>
-        <div className="flex gap-2 flex-wrap">
-          {/* No icon option */}
-          <button
-            key="none"
-            type="button"
-            onClick={() => set('emoji', null)}
-            className={`w-10 h-10 rounded-lg border text-xs font-mono transition-all ${!form.emoji ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700 text-stone-900 dark:text-white' : 'border-stone-200 dark:border-stone-700 text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
-          >
-            —
-          </button>
-          {EMOJIS.map(e => (
-            <button key={e} type="button" onClick={() => set('emoji', e)}
-              className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700' : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-              {e}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Object Information */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-        <div className={sectionTitle}>Object Information</div>
-
-        {/* Title */}
-        <div>
-          <label className={labelCls} data-learn="objects.title">Title * {publicLabel}</label>
-          <input value={form.title} onChange={e => set('title', e.target.value)} className={inputCls} />
-        </div>
-
-        {/* Artist + Date */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={labelCls} data-learn="objects.artist">Artist / Maker {publicLabel}</label>
-            <input value={form.artist} onChange={e => set('artist', e.target.value)} className={inputCls} />
+      case 'artist':
+        return (
+          <div key={key} className="sm:col-span-2">
+            <label className={labelCls} data-learn="objects.artist">{f('artist', 'Artist / Maker')} {publicLabel}</label>
+            <input value={form.artist} onChange={e => set('artist', e.target.value)}
+              placeholder={ph('artist')} className={inputCls} />
           </div>
-          <div>
-            <label className={labelCls} data-learn="objects.production_date">Date {publicLabel}</label>
-            <input value={form.production_date || ''} onChange={e => set('production_date', e.target.value)} placeholder="e.g. 1850, c.1920–1930" className={inputCls} />
+        )
+
+      case 'production_date':
+        return (
+          <div key={key} className="sm:col-span-2">
+            <label className={labelCls} data-learn="objects.production_date">{f('production_date', 'Date')} {publicLabel}</label>
+            <input value={form.production_date || ''} onChange={e => set('production_date', e.target.value)}
+              placeholder={ph('production_date', 'e.g. 1850, c.1920–1930')} className={inputCls} />
           </div>
-          <div>
-            <label className={labelCls} data-learn="objects.production_date_qualifier">Date Qualifier {publicLabel}</label>
+        )
+
+      case 'production_date_qualifier':
+        return (
+          <div key={key} className="sm:col-span-2">
+            <label className={labelCls} data-learn="objects.production_date_qualifier">{f('production_date_qualifier', 'Date Qualifier')} {publicLabel}</label>
             <select value={form.production_date_qualifier} onChange={e => set('production_date_qualifier', e.target.value)} className={inputCls}>
-              <option value="">{'\u2014'} Select {'\u2014'}</option>
+              <option value="">{'—'} Select {'—'}</option>
               {DATE_QUALIFIERS.map(q => <option key={q} value={q}>{q}</option>)}
             </select>
           </div>
-        </div>
+        )
 
-        {/* Medium + Object Type */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls} data-learn="objects.medium">{fullMode ? 'Medium' : 'Medium / Material'} {publicLabel}</label>
-            {fullMode ? (
+      case 'medium': {
+        // Full mode and any profile supplying a materials vocabulary get an
+        // autocomplete; `general` keeps today's plain input exactly.
+        const list = profile.vocab.mediums
+        const useAutocomplete = fullMode || list != null
+        return (
+          <div key={key} className="sm:col-span-3">
+            <label className={labelCls} data-learn="objects.medium">{f('medium', fullMode ? 'Medium' : 'Medium / Material')} {publicLabel}</label>
+            {useAutocomplete ? (
               <AutocompleteInput
                 value={form.medium}
                 onChange={v => set('medium', v)}
                 museumId={museum.id}
                 field="medium"
-                staticList={MEDIUMS}
-                placeholder="Search or type a medium…"
+                staticList={list ?? MEDIUMS}
+                placeholder={ph('medium', 'Search or type a medium…')}
                 className={inputCls}
               />
             ) : (
               <input
                 value={form.medium || ''}
                 onChange={e => set('medium', e.target.value)}
-                placeholder="e.g. oak, silver, oil on canvas…"
+                placeholder={ph('medium', 'e.g. oak, silver, oil on canvas…')}
                 className={inputCls}
               />
             )}
           </div>
-          <div>
-            <label className={labelCls} data-learn="objects.object_type">Object Type {publicLabel}</label>
+        )
+      }
+
+      case 'object_type':
+        return (
+          <div key={key} className="sm:col-span-3">
+            <label className={labelCls} data-learn="objects.object_type">{f('object_type', 'Object Type')} {publicLabel}</label>
             <AutocompleteInput
               value={form.object_type}
               onChange={v => set('object_type', v)}
               museumId={museum.id}
               field="object_type"
-              staticList={OBJECT_TYPES}
-              placeholder="e.g. Painting, Sculpture…"
+              staticList={vocab('objectTypes', OBJECT_TYPES)}
+              placeholder={ph('object_type', 'e.g. Painting, Sculpture…')}
               className={inputCls}
             />
           </div>
-        </div>
+        )
 
-        {/* Culture/Origin */}
-        <div>
-          <label className={labelCls} data-learn="objects.culture">{fullMode ? 'Culture / Origin' : 'Origin'} {publicLabel}</label>
-          <AutocompleteInput
-            value={form.culture}
-            onChange={v => set('culture', v)}
-            museumId={museum.id}
-            field="culture"
-            staticList={CULTURES}
-            placeholder="e.g. British, French, Japanese…"
-            className={inputCls}
-          />
-        </div>
+      case 'culture':
+        return (
+          <div key={key} className="sm:col-span-6">
+            <label className={labelCls} data-learn="objects.culture">{f('culture', fullMode ? 'Culture / Origin' : 'Origin')} {publicLabel}</label>
+            <AutocompleteInput
+              value={form.culture}
+              onChange={v => set('culture', v)}
+              museumId={museum.id}
+              field="culture"
+              staticList={vocab('cultures', CULTURES)}
+              placeholder={ph('culture', 'e.g. British, French, Japanese…')}
+              className={inputCls}
+            />
+          </div>
+        )
 
-        {/* Map location (pins this object on the collection map) */}
+      case 'rarity':
+        return (
+          <div key={key} className="sm:col-span-2">
+            <label className={labelCls} data-learn="objects.rarity">{f('rarity', 'Edition / Rarity')} {publicLabel}</label>
+            <input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)}
+              placeholder={ph('rarity', 'e.g. 1 of 500, First Edition')} className={inputCls} />
+          </div>
+        )
+
+      case 'number_of_parts':
+        return (
+          <div key={key} className="sm:col-span-2">
+            <label className={labelCls} data-learn="objects.number_of_parts">{f('number_of_parts', 'Number of Parts')} {publicLabel}</label>
+            <input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} />
+          </div>
+        )
+
+      case 'status':
+        return (
+          <div key={key} className="sm:col-span-6">
+            <label className={labelCls} data-learn="objects.status">{f('status', 'Status')}</label>
+            <div className="flex gap-2 flex-wrap">
+              {(fullMode ? STATUSES : SIMPLE_MODE_STATUSES).map(s => (
+                <button key={s} type="button" onClick={() => set('status', s)}
+                  className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+                  {/* Stored value never changes — only the label. Invariant A. */}
+                  {statusLabel(profile, s, fullMode ? s : (SIMPLE_MODE_STATUS_LABELS[s] ?? s))}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+
+      case 'description':
+        return (
+          <div key={key} className="sm:col-span-6">
+            <label className={labelCls} data-learn="objects.description">{f('description', 'Description')} {publicLabel}</label>
+            <textarea value={form.description} onChange={e => set('description', e.target.value)}
+              placeholder={ph('description')} rows={4} className={textareaCls} />
+          </div>
+        )
+
+      case 'inscription':
+        return (
+          <div key={key} className="sm:col-span-6">
+            <label className={labelCls} data-learn="objects.inscription">{f('inscription', 'Marks and Inscriptions')} {publicLabel}</label>
+            <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={3}
+              placeholder={ph('inscription', "Inscriptions, hallmarks, maker's marks, stamps, signatures, labels…")}
+              className={textareaCls} />
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  /**
+   * Blocks that are not profile-orderable but must keep their position
+   * relative to the fields around them. Anchored by field key so full mode
+   * (which uses the default order) lays out exactly as it did before.
+   * Rendered whether or not the anchor field itself is visible.
+   */
+  const anchorsBefore: Partial<Record<ProfileFieldKey, React.ReactNode>> = {
+    rarity: fullMode ? (
+      <div key="accession_no" className="sm:col-span-2">
+        <label className={labelCls} data-learn="objects.accession_no">
+          {form.accession_no ? <>Accession Number {publicLabel}</> : 'Provisional Object Number'}
+        </label>
+        <input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} />
+      </div>
+    ) : null,
+  }
+
+  const anchorsAfter: Partial<Record<ProfileFieldKey, React.ReactNode>> = {
+    // The map pin defaults from Origin and its help text refers to it, so a
+    // profile that hides Origin (a card has no country of origin worth pinning)
+    // should lose the map too. Every other anchor renders regardless of whether
+    // its host field is visible.
+    culture: !shown('culture') ? null : (
+      <div key="origin" className="sm:col-span-6">
         <OriginLocationField
           originFallback={form.culture || ''}
           placeValue={form.origin_place || ''}
@@ -373,28 +469,11 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             for (const [k, v] of Object.entries(patch)) set(k, v)
           }}
         />
+      </div>
+    ),
 
-        {/* Accession No. + Rarity + Number of Parts */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {fullMode && (
-            <div>
-              <label className={labelCls} data-learn="objects.accession_no">
-                {form.accession_no ? <>Accession Number {publicLabel}</> : 'Provisional Object Number'}
-              </label>
-              <input value={form.accession_no} onChange={e => set('accession_no', e.target.value)} className={`${inputCls} font-mono`} />
-            </div>
-          )}
-          <div>
-            <label className={labelCls} data-learn="objects.rarity">Edition / Rarity {publicLabel}</label>
-            <input value={form.rarity || ''} onChange={e => set('rarity', e.target.value)} placeholder="e.g. 1 of 500, First Edition" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls} data-learn="objects.number_of_parts">Number of Parts {publicLabel}</label>
-            <input type="number" min="1" value={form.number_of_parts} onChange={e => set('number_of_parts', e.target.value)} className={inputCls} />
-          </div>
-        </div>
-
-        {/* Accession distinction */}
+    number_of_parts: (
+      <div key="parts-extras" className="sm:col-span-6 space-y-4">
         {fullMode && (
           <div className="space-y-2">
             <label className={labelCls} data-learn="objects.formally_accessioned">Accession Status</label>
@@ -423,34 +502,17 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </div>
         )}
 
-        {/* Object Components (sub-parts) */}
         {parseInt(form.number_of_parts) > 1 && object?.id && (
           <div>
             <label className={labelCls}>Parts and Notes {publicLabel}</label>
             <ObjectComponents objectId={object.id} accessionNo={form.accession_no} canEdit={canEdit} />
           </div>
         )}
+      </div>
+    ),
 
-        {/* Status */}
-        <div>
-          <label className={labelCls} data-learn="objects.status">Status</label>
-          <div className="flex gap-2 flex-wrap">
-            {(fullMode ? STATUSES : SIMPLE_MODE_STATUSES).map(s => (
-              <button key={s} type="button" onClick={() => set('status', s)}
-                className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${form.status === s ? 'bg-stone-900 text-white border-stone-900 dark:bg-white dark:text-stone-900 dark:border-white' : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
-                {fullMode ? s : (SIMPLE_MODE_STATUS_LABELS[s] ?? s)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className={labelCls} data-learn="objects.description">Description {publicLabel}</label>
-          <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} className={textareaCls} />
-        </div>
-
-        {/* Other Names — moved above Historical Context */}
+    description: (
+      <div key="description-extras" className="sm:col-span-6 space-y-4">
         {fullMode && (
           <div>
             <label className={labelCls} data-learn="objects.other_names">Other Names / Also Known As {publicLabel}</label>
@@ -459,21 +521,81 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
               className={inputCls} />
           </div>
         )}
-
-        {/* Historical Context */}
         <div>
           <label className={labelCls} data-learn="objects.historical_context">Historical Context {publicLabel}</label>
           <textarea value={form.historical_context || ''} onChange={e => set('historical_context', e.target.value)} rows={3}
             placeholder="Historical background, significance, or context of the object…"
             className={textareaCls} />
         </div>
+      </div>
+    ),
+  }
 
-        {/* Marks and Inscriptions */}
-        <div>
-          <label className={labelCls} data-learn="objects.inscription">Marks and Inscriptions {publicLabel}</label>
-          <textarea value={form.inscription} onChange={e => set('inscription', e.target.value)} rows={3}
-            placeholder="Inscriptions, hallmarks, maker's marks, stamps, signatures, labels…"
-            className={textareaCls} />
+  return (
+    <>
+      {/* Hazard alert */}
+      {form.hazard_note && (
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-3 flex items-start gap-3">
+          <span className="text-lg shrink-0">⚠️</span>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-amber-700 dark:text-amber-400 font-medium mb-0.5">Hazard Note</div>
+            <div className="text-sm text-amber-800 dark:text-amber-300">{form.hazard_note}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Images */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+        <ImageGallery objectId={object.id} museumId={museum.id} onPrimaryChange={(url: string) => set('image_url', url)} canEdit={canEdit} imageLimit={getPlan(museum.plan).imagesPerObject} currentPrimaryUrl={form.image_url} />
+      </div>
+
+      {/* Which profile dresses this record — only when there's a choice */}
+      <ObjectProfileSelect
+        options={profileOptions}
+        value={form.collection_profile ?? null}
+        onChange={v => set('collection_profile', v)}
+        canEdit={canEdit}
+      />
+
+      {/* Icon */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+        <label className={labelCls} data-learn="objects.icon">Icon</label>
+        <div className="flex gap-2 flex-wrap">
+          {/* No icon option */}
+          <button
+            key="none"
+            type="button"
+            onClick={() => set('emoji', null)}
+            className={`w-10 h-10 rounded-lg border text-xs font-mono transition-all ${!form.emoji ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700 text-stone-900 dark:text-white' : 'border-stone-200 dark:border-stone-700 text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+          >
+            —
+          </button>
+          {vocab('emojis', EMOJIS).map(e => (
+            <button key={e} type="button" onClick={() => set('emoji', e)}
+              className={`w-10 h-10 rounded-lg border text-xl transition-all ${form.emoji === e ? 'border-stone-900 bg-stone-100 dark:border-white dark:bg-stone-700' : 'border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'}`}>
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Object Information */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
+        <div className={sectionTitle}>{fullMode ? 'Object Information' : `${profile.nouns.item} Information`}</div>
+
+        {/*
+          Profile-orderable fields. resolveFieldOrder(undefined) returns the
+          default order, so full mode lays out exactly as it always has, and the
+          6-column grid reproduces the old 3-col and 2-col groupings via spans.
+        */}
+        <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+          {resolveFieldOrder(profile.fieldOrder).map(key => (
+            <Fragment key={key}>
+              {anchorsBefore[key] ?? null}
+              {renderField(key)}
+              {anchorsAfter[key] ?? null}
+            </Fragment>
+          ))}
         </div>
 
         {/* Physical Description — merged colour/shape/surface_treatment */}
@@ -549,18 +671,30 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
         )}
 
         {/* Condition + Location */}
-        {form.condition_grade && (
+        {form.condition_grade && shown('condition_grade') && (
           <div>
-            <label className={labelCls} data-learn="objects.condition_grade">Condition</label>
-            <div className="flex items-center gap-3">
-              <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>{form.condition_grade}</span>
+            <label className={labelCls} data-learn="objects.condition_grade">{f('condition_grade', 'Condition')}</label>
+            <div className="flex items-center gap-3 flex-wrap">
+              {/*
+                The stored value is always one of the canonical five, so
+                CONDITION_STYLES keys correctly whatever the profile calls it.
+              */}
+              <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade] || 'bg-stone-100 text-stone-500'}`}>
+                {conditionLabel(profile, form.condition_grade)}
+              </span>
               {form.condition_date && <span className="text-xs text-stone-400 dark:text-stone-500">Assessed {new Date(form.condition_date).toLocaleDateString('en-GB')}</span>}
-              <button type="button" onClick={() => setActiveTab('condition')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Condition tab {'\u2192'}</button>
+              {conditionDerived ? (
+                <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                  Set from {gradingAuthority?.label ?? form.cert_authority} {form.cert_grade}
+                </span>
+              ) : (
+                <button type="button" onClick={() => setActiveTab('condition')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Condition tab {'\u2192'}</button>
+              )}
             </div>
           </div>
         )}
         <div>
-          <label className={labelCls} data-learn="objects.current_location">Current Location</label>
+          <label className={labelCls} data-learn="objects.current_location">{f('current_location', 'Current Location')}</label>
           <p className="text-sm text-stone-900 dark:text-stone-100 py-2">{form.current_location || <span className="text-stone-400">{'\u2014'}</span>}</p>
           <button type="button" onClick={() => setActiveTab('location')} className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">Update in Location tab {'\u2192'}</button>
         </div>
@@ -726,6 +860,29 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
           </p>
         </div>
       </div>
+
+      {/* Certification — only for profiles where grading or authentication exists */}
+      {profile.certification && (
+        <CertificationCard
+          config={profile.certification}
+          form={form}
+          set={set}
+          canEdit={canEdit}
+          museumId={museum.id}
+          objectId={object.id}
+        />
+      )}
+
+      {/* Profile detail fields, stored in objects.custom_fields */}
+      {(profile.customFields?.length ?? 0) > 0 && (
+        <CustomFieldsCard
+          title={`${profile.nouns.item} Details`}
+          defs={profile.customFields!}
+          values={form.custom_fields ?? {}}
+          onChange={next => set('custom_fields', next)}
+          canEdit={canEdit}
+        />
+      )}
 
       {/* Production & Attribution */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">

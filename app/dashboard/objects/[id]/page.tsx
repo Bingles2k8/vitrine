@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { deriveCertificationForWrite } from '@/lib/collectionProfiles'
 import DashboardShell from '@/components/DashboardShell'
 import { useToast } from '@/components/Toast'
 import { Skeleton, FormSkeleton } from '@/components/Skeleton'
@@ -119,6 +120,12 @@ export default function ObjectDetail() {
     dimension_unit: 'cm', dimension_weight_unit: 'kg', dimension_notes: '',
     show_on_site: true,
     is_featured: false,
+    // Collection profiles — see docs/collection-profiles-plan.md
+    collection_profile: null,
+    cert_authority: null, cert_number: null, cert_grade: null,
+    cert_grade_numeric: null, cert_grade_scale: null, cert_date: null,
+    cert_subgrades: null, cert_notes: null,
+    custom_fields: {},
     acquisition_justification: '', acquisition_documentation_ref: '',
     acquisition_value: '', acquisition_currency: 'GBP',
     estimated_value: '', estimated_value_currency: 'GBP',
@@ -179,6 +186,18 @@ export default function ObjectDetail() {
         status: object.status || 'On Display',
         image_url: object.image_url || '',
         object_type: object.object_type || '',
+        // Collection profiles — null/{} rather than '' so the resolvers and the
+        // custom_fields bag see the shapes they expect.
+        collection_profile: object.collection_profile ?? null,
+        cert_authority: object.cert_authority ?? null,
+        cert_number: object.cert_number ?? null,
+        cert_grade: object.cert_grade ?? null,
+        cert_grade_numeric: object.cert_grade_numeric ?? null,
+        cert_grade_scale: object.cert_grade_scale ?? null,
+        cert_date: object.cert_date ?? null,
+        cert_subgrades: object.cert_subgrades ?? null,
+        cert_notes: object.cert_notes ?? null,
+        custom_fields: object.custom_fields ?? {},
         // Combine inscription and marks into one field for the UI
         inscription: [object.inscription, object.marks].filter(Boolean).join('\n\n') || '',
         marks: '',
@@ -307,8 +326,26 @@ export default function ObjectDetail() {
     setSaving(true)
 
     const { condition_grade, condition_date, condition_assessor, hazard_note, ...formToSave } = form
+
+    // Certification's derived columns describe the certificate, not the UI, so
+    // they resolve the authority registry-wide rather than through the active
+    // profile. Deriving from the active profile looked right but silently
+    // nulled cert_grade_numeric on every graded item once a profile was
+    // deactivated — breaking grade sorting while the grade still displayed.
+    const derived = deriveCertificationForWrite(form.cert_authority, form.cert_grade)
+
+    // Condition is owned by the Condition tab and deliberately not written from
+    // here — with one exception. When the profile says a graded item's grade IS
+    // its condition, the derived value has to persist or the badge resets on
+    // reload. Same helper as the API and the CSV importer, so they can never
+    // disagree. See plan §5.5.
     const { error } = await supabase.from('objects').update({
       ...formToSave,
+      ...(derived.condition_grade ? { condition_grade: derived.condition_grade } : {}),
+      cert_grade_numeric: derived.cert_grade_numeric,
+      cert_grade_scale: derived.cert_grade_scale,
+      cert_date: formToSave.cert_date || null,
+      custom_fields: formToSave.custom_fields ?? {},
       // marks is now merged into inscription in the UI — clear marks to avoid duplication
       marks: '',
       // keep legacy year column in sync with the production_date field

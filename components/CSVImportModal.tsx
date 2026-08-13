@@ -1,26 +1,40 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { GENERAL_PROFILE, type CollectionProfile } from '@/lib/collectionProfiles'
+import { buildCsvAliasMap, templateHeaders, normaliseHeader } from '@/lib/collectionProfiles/csv'
 
 const EXPECTED_COLS = ['title', 'artist', 'year', 'medium', 'dimensions', 'description', 'purchase_price', 'purchase_date', 'acquired_from', 'accession_no', 'acquisition_method', 'acquisition_date', 'acquisition_source', 'status']
 
-function downloadTemplate() {
-  const header = 'title,artist,year,type,medium,dimensions,condition,purchase_price,purchase_date,acquired_from,description,status'
+/**
+ * The template speaks the collection's own language — a card collector gets
+ * "Set / Manufacturer", not "artist". The importer accepts both, so an older
+ * template still works. See docs/collection-profiles-plan.md §7.10.
+ */
+function downloadTemplate(profile: CollectionProfile) {
+  const header = templateHeaders(profile).map(h => `"${h}"`).join(',')
   const rows = [
-    '"Wedgwood blue jasperware vase","Wedgwood",1890,"Ceramics","Glazed stoneware","H: 22cm","Good",85.00,1992-06-01,"Antique market","Blue relief garlands and classical figures.","On Display"',
-    '"Victorian mahogany writing slope","Unknown",1870,"Furniture","Mahogany & brass","W: 45cm x D: 30cm","Fair",120.00,2010-03-15,"eBay","Original key present. Some scratches on lid.","Storage"',
+    '"Wedgwood blue jasperware vase","Wedgwood",1890,"Glazed stoneware","H: 22cm","Good","Blue relief garlands and classical figures.","","85.00","1992-06-01","Antique market","On Display"',
+    '"Victorian mahogany writing slope","Unknown",1870,"Mahogany & brass","W: 45cm x D: 30cm","Fair","Original key present. Some scratches on lid.","","120.00","2010-03-15","eBay","Storage"',
   ]
-  const csv = [header, ...rows].join('\n')
+  const csv = [header, ...(profile.id === 'general' ? rows : [])].join('\n')
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
   a.download = 'vitrine-import-template.csv'
   a.click()
 }
 
-function parseCSV(text: string, titleOnly: boolean): Record<string, string>[] {
+function parseCSV(text: string, titleOnly: boolean): Record<string, unknown>[] {
   const lines = text.split(/\r?\n/).filter(l => l.trim())
   if (lines.length < 2) return []
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase().replace(/\s+/g, '_'))
+  const aliases = buildCsvAliasMap()
+  // Headers resolve through the alias map, so a profile-labelled export and a
+  // canonical-column file both import. Unknown headers are kept under their own
+  // name and simply ignored downstream, rather than failing the whole file.
+  const headers = lines[0]
+    .split(',')
+    .map(h => h.trim().replace(/^"|"$/g, ''))
+    .map(h => aliases.get(normaliseHeader(h)) ?? normaliseHeader(h))
   return lines.slice(1).map(line => {
     // Simple CSV parse (handles quoted fields)
     const values: string[] = []
@@ -32,8 +46,17 @@ function parseCSV(text: string, titleOnly: boolean): Record<string, string>[] {
       cur += c
     }
     values.push(cur)
-    const row: Record<string, string> = {}
-    headers.forEach((h, i) => { row[h] = (values[i] || '').trim() })
+    const row: Record<string, unknown> = {}
+    const custom: Record<string, string> = {}
+    headers.forEach((h, i) => {
+      const value = (values[i] || '').trim()
+      if (h.startsWith('custom:')) {
+        if (value) custom[h.slice('custom:'.length)] = value
+      } else {
+        row[h] = value
+      }
+    })
+    if (Object.keys(custom).length > 0) row.custom_fields = custom
     return row
   }).filter(r => titleOnly ? r.title : (r.title || r.accession_no))
 }
@@ -42,11 +65,13 @@ interface CSVImportModalProps {
   onClose: () => void
   onSuccess: (count: number) => void
   titleOnly?: boolean  // Hobbyist: title is the only required field, accession_no is auto-generated
+  /** Collection-wide profile — decides the template's column headings. */
+  profile?: CollectionProfile
 }
 
-export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }: CSVImportModalProps) {
+export default function CSVImportModal({ onClose, onSuccess, titleOnly = false, profile = GENERAL_PROFILE }: CSVImportModalProps) {
   const [step, setStep] = useState<'upload' | 'preview' | 'done'>('upload')
-  const [rows, setRows] = useState<Record<string, string>[]>([])
+  const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -102,7 +127,7 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
           {step === 'upload' && (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <button onClick={downloadTemplate} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors underline underline-offset-2">
+                <button onClick={() => downloadTemplate(profile)} className="text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors underline underline-offset-2">
                   Download template ↓
                 </button>
               </div>
@@ -141,12 +166,12 @@ export default function CSVImportModal({ onClose, onSuccess, titleOnly = false }
                   <tbody>
                     {rows.slice(0, 20).map((row, i) => (
                       <tr key={i} className="border-b border-stone-100 dark:border-stone-800">
-                        <td className="px-3 py-2 text-stone-700 dark:text-stone-300 max-w-[160px] truncate">{row.title || '—'}</td>
-                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{row.artist || '—'}</td>
-                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{row.year || '—'}</td>
-                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{row.medium || '—'}</td>
-                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{row.status || 'Entry'}</td>
-                        <td className="px-3 py-2 font-mono text-stone-400 dark:text-stone-500">{row.accession_no || '—'}</td>
+                        <td className="px-3 py-2 text-stone-700 dark:text-stone-300 max-w-[160px] truncate">{String(row.title ?? '') || '—'}</td>
+                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{String(row.artist ?? '') || '—'}</td>
+                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{String(row.year ?? '') || '—'}</td>
+                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{String(row.medium ?? '') || '—'}</td>
+                        <td className="px-3 py-2 text-stone-500 dark:text-stone-400">{String(row.status ?? '') || 'Entry'}</td>
+                        <td className="px-3 py-2 font-mono text-stone-400 dark:text-stone-500">{String(row.accession_no ?? '') || '—'}</td>
                       </tr>
                     ))}
                   </tbody>

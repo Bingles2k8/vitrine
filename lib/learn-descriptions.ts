@@ -288,6 +288,27 @@ export const learnDescriptions: Record<string, LearnEntry> = {
     description: 'For prints, multiples, or limited editions — e.g. "1 of 500", "First Edition", "Artist\'s Proof".',
     technical: { column: 'objects.rarity', type: 'text', table: 'objects' },
   },
+  // ── Collection profiles ───────────────────────────────────────────────
+  'objects.collection_profile': {
+    label: 'Type of item',
+    description: 'Which kind of collecting this item belongs to. It decides the field names and wording you see on this record — a card gets "Set / Manufacturer", a bottle gets "Producer / Vineyard". Only appears when you collect more than one kind of thing. Switching it never deletes anything you have already entered.',
+    technical: { column: 'objects.collection_profile', type: 'text (profile id)', table: 'objects', relationships: 'Falls back to the first entry in museums.collection_profiles' },
+  },
+  'objects.cert_authority': {
+    label: 'Grading company',
+    description: 'The organisation that graded, authenticated, or certified this item — PSA, CGC, PCGS, GIA and so on. Choosing one sets which grading scale the Grade list offers, because a PSA 9 and a PCGS MS-65 are not the same measurement.',
+    technical: { column: 'objects.cert_authority', type: 'text', table: 'objects', practice: 'Third-party grading' },
+  },
+  'objects.cert_grade': {
+    label: 'Grade',
+    description: 'The grade awarded by the grading company, on that company\'s own scale. For most profiles this also sets the Condition badge automatically, so you never have to enter the same judgement twice.',
+    technical: { column: 'objects.cert_grade', type: 'text', table: 'objects', relationships: 'Derives objects.cert_grade_numeric for sorting, and objects.condition_grade for display' },
+  },
+  'objects.cert_number': {
+    label: 'Certificate number',
+    description: 'The unique number printed on the slab or certificate. Because these numbers are unique worldwide, Vitrine checks it against the rest of your collection and warns you if you have already logged the same item — the most common mistake when cataloguing graded collections from photographs.',
+    technical: { column: 'objects.cert_number', type: 'text', table: 'objects', relationships: 'Indexed with cert_authority; checked by /api/objects/cert-lookup' },
+  },
   'objects.number_of_parts': {
     label: 'Number of Parts',
     description: 'If the object is multi-part (e.g. a pair of vases, a tea set), enter the count here. When greater than 1, a Parts section appears to catalogue each component.',

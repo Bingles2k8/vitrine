@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
+import {
+  resolveCollectionProfile, deriveCertificationForWrite,
+  allCustomFieldDefs, validateCustomFields,
+} from '@/lib/collectionProfiles'
 import { csvImportRowSchema } from '@/lib/validations'
 import { rateLimit, apiLimiter } from '@/lib/rate-limit'
 
@@ -21,9 +25,10 @@ export async function POST(request: Request) {
   let ownerId: string | null = null
   let plan: string = 'community'
 
+  let collectionProfiles: string[] = []
   const { data: ownedMuseum } = await supabase
     .from('museums')
-    .select('id, owner_id, plan')
+    .select('id, owner_id, plan, collection_profiles')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -31,19 +36,21 @@ export async function POST(request: Request) {
     museumId = ownedMuseum.id
     ownerId = ownedMuseum.owner_id
     plan = ownedMuseum.plan
+    collectionProfiles = (ownedMuseum as { collection_profiles?: string[] }).collection_profiles ?? []
   } else {
     const { data: staffRecord } = await supabase
       .from('staff_members')
-      .select('museum_id, access, museums(owner_id, plan)')
+      .select('museum_id, access, museums(owner_id, plan, collection_profiles)')
       .eq('user_id', user.id)
       .in('access', ['Admin', 'Editor'])
       .maybeSingle()
     if (staffRecord) {
       museumId = staffRecord.museum_id
       // Supabase types the to-one join as an array, but it's a single record at runtime.
-      const m = staffRecord.museums as unknown as { owner_id: string | null; plan: string | null } | null
+      const m = staffRecord.museums as unknown as { owner_id: string | null; plan: string | null; collection_profiles: string[] | null } | null
       ownerId = m?.owner_id ?? null
       plan = m?.plan ?? 'community'
+      collectionProfiles = m?.collection_profiles ?? []
     }
   }
 
@@ -106,7 +113,21 @@ export async function POST(request: Request) {
   // Build insert records — auto-generate accession_no for any row that doesn't have one
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   type CsvImportRow = z.infer<typeof csvImportRowSchema>
-  const insertRows = rows.map((row: CsvImportRow, i: number) => ({
+
+  // Certification and detail fields come in through the same profile registry
+  // the form uses, so a CSV of 400 slabbed cards produces exactly the rows the
+  // form would. See docs/collection-profiles-plan.md §7.10.
+  const importProfile = resolveCollectionProfile({ plan, collection_profiles: collectionProfiles })
+  const customDefs = allCustomFieldDefs()
+  const allCustomKeys = new Set(customDefs.keys())
+
+  const insertRows = rows.map((row: CsvImportRow, i: number) => {
+  const certAuthority = String(row.cert_authority || '').trim() || null
+  const certGrade = String(row.cert_grade || '').trim() || null
+  const derived = deriveCertificationForWrite(certAuthority, certGrade)
+  const custom = validateCustomFields(row.custom_fields ?? {}, customDefs, allCustomKeys).values
+
+  return ({
     museum_id: museumId,
     owner_id: ownerId,
     created_by: user.id,
@@ -122,11 +143,22 @@ export async function POST(request: Request) {
     acquisition_date: String(row.purchase_date || row.acquisition_date || '').trim() || null,
     acquisition_source: String(row.acquired_from || row.acquisition_source || '').trim() || null,
     acquisition_value: row.purchase_price ?? null,
-    condition_grade: String(row.condition || '').trim() || null,
+    // A derived condition wins over the CSV's own column: if the row says
+    // PSA 10, the grade is the condition and the two must not disagree.
+    condition_grade: derived.condition_grade ?? (String(row.condition || '').trim() || null),
     status: row.status && VALID_STATUSES.includes(row.status) ? row.status : 'Entry',
+    collection_profile: importProfile.id === 'general' ? null : importProfile.id,
+    cert_authority: certAuthority,
+    cert_number: String(row.cert_number || '').trim() || null,
+    cert_grade: certGrade,
+    cert_grade_numeric: derived.cert_grade_numeric,
+    cert_grade_scale: derived.cert_grade_scale,
+    cert_date: String(row.cert_date || '').trim() || null,
+    custom_fields: custom,
     show_on_site: false,
     emoji: '🖼️',
-  }))
+  })
+  })
 
   const serviceClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

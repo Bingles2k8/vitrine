@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server'
 import { z, ZodSchema } from 'zod'
+import { allCustomFieldDefs, validateCustomFields } from '@/lib/collectionProfiles'
 
 // --- Schemas ---
+
+/**
+ * objects.custom_fields — user-writable JSONB, so it is validated against the
+ * profile registry rather than accepted as an arbitrary bag.
+ * See docs/collection-profiles-plan.md invariants G and H.
+ *
+ * Keys belonging to a known profile are coerced and range-checked. Keys the
+ * registry has never heard of are dropped. Keys from a known but *inactive*
+ * profile are preserved untouched — deactivating a profile must never strip
+ * its values on the next save (invariant G), which is why `activeKeys` here is
+ * every registered key rather than only the caller's active set.
+ */
+export const customFieldsSchema = z
+  .record(z.string().max(128), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+  .transform(raw => {
+    const index = allCustomFieldDefs()
+    return validateCustomFields(raw, index, new Set(index.keys())).values
+  })
 
 export const checkSlugSchema = z.object({
   slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
@@ -69,6 +88,17 @@ export const objectCreateSchema = z.object({
   origin_place: z.string().max(200).nullable().optional(),
   origin_lat: z.coerce.number().min(-90).max(90).nullable().optional(),
   origin_lng: z.coerce.number().min(-180).max(180).nullable().optional(),
+  // Collection profiles — see docs/collection-profiles-plan.md §5.5 / §5.6.
+  collection_profile: z.string().max(64).nullable().optional(),
+  cert_authority: z.string().max(64).nullable().optional(),
+  cert_number: z.string().max(128).nullable().optional(),
+  cert_grade: z.string().max(64).nullable().optional(),
+  cert_grade_scale: z.string().max(64).nullable().optional(),
+  cert_grade_numeric: z.coerce.number().nullable().optional(),
+  cert_date: z.string().max(32).nullable().optional(),
+  cert_subgrades: z.record(z.string().max(64), z.number()).nullable().optional(),
+  cert_notes: z.string().max(2000).nullable().optional(),
+  custom_fields: customFieldsSchema.optional(),
 })
 
 export const csvImportRowSchema = z.object({
@@ -87,6 +117,14 @@ export const csvImportRowSchema = z.object({
   acquired_from: z.string().max(500).optional(),
   condition: z.string().max(100).optional(),
   purchase_date: z.string().max(50).optional(),
+  // Collection profiles — the importer maps these from profile-labelled
+  // headers and derives cert_grade_numeric / condition_grade from them using
+  // the same helpers the form uses.
+  cert_authority: z.string().max(64).optional(),
+  cert_number: z.string().max(128).optional(),
+  cert_grade: z.string().max(64).optional(),
+  cert_date: z.string().max(32).optional(),
+  custom_fields: customFieldsSchema.optional(),
 })
 
 const VALID_DOC_RELATED_TYPES = [

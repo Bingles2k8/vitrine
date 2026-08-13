@@ -156,7 +156,7 @@ export default function DashboardShell({
           {children}
         </DashboardProvider>
       </main>
-      <CommandPalette museumId={museum?.id ?? null} />
+      <CommandPalette museumId={museum?.id ?? null} museum={museum ?? null} />
       <KeyboardShortcutsHelp />
     </div>
   )

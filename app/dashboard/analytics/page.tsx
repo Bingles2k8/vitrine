@@ -10,6 +10,13 @@ import { CardGridSkeleton } from '@/components/Skeleton'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 import { getCollectionValue, formatCollectionValue } from '@/lib/collectionValue'
 import { SIMPLE_MODE_STATUS_LABELS } from '@/components/tabs/shared'
+import {
+  resolveCollectionProfile, resolveAppNouns, statusLabel,
+  allCustomFieldDefs, readCustomField, formatCustomFieldValue,
+} from '@/lib/collectionProfiles'
+
+// Cycled through profile breakdowns so multiple cards don't all render indigo.
+const BREAKDOWN_COLORS = ['#4338ca', '#0f766e', '#b45309', '#9333ea']
 
 interface Museum {
   id: string
@@ -43,6 +50,17 @@ interface ObjectItem {
   estimated_value: number | null
   estimated_value_currency: string | null
   acquisition_currency: string | null
+  // Collection profiles — breakdowns may key off any of these.
+  object_type: string | null
+  culture: string | null
+  production_date: string | null
+  cert_authority: string | null
+  cert_grade: string | null
+  cert_grade_numeric: number | null
+  cert_number: string | null
+  custom_fields: Record<string, string | number | boolean | null> | null
+  // Breakdown fields are resolved by name at runtime from the profile registry.
+  [key: string]: unknown
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -202,7 +220,7 @@ export default function AnalyticsPage() {
       const { museum, isOwner, staffAccess } = result
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
       const [{ data: objects }, { data: views }, { count: trashed }, { data: valuationRows }] = await Promise.all([
-        supabase.from('objects').select('id, title, artist, medium, status, emoji, created_at, acquisition_value, acquisition_currency, insured_value, estimated_value, estimated_value_currency').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
+        supabase.from('objects').select('id, title, artist, medium, object_type, culture, production_date, status, emoji, created_at, acquisition_value, acquisition_currency, insured_value, estimated_value, estimated_value_currency, cert_authority, cert_grade, cert_grade_numeric, cert_number, custom_fields').eq('museum_id', museum.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('page_views').select('page_type, object_id, viewed_at').eq('museum_id', museum.id).gte('viewed_at', thirtyDaysAgo).order('viewed_at', { ascending: false }),
         supabase.from('objects').select('id', { count: 'exact', head: true }).eq('museum_id', museum.id).not('deleted_at', 'is', null),
         supabase.from('valuations').select('object_id, value, currency, valuation_date').eq('museum_id', museum.id),
@@ -235,11 +253,42 @@ export default function AnalyticsPage() {
     return Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0])).slice(-6)
   }, [objects])
 
-  const byArtist = useMemo(() => {
-    const counts: Record<string, number> = {}
-    objects.forEach(a => { if (a.artist) counts[a.artist] = (counts[a.artist] || 0) + 1 })
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [objects])
+  // Collection-wide profile drives which breakdowns appear. Defaults to the
+  // old hardcoded "By Artist / Maker". See docs/collection-profiles-plan.md §7.7.
+  const analyticsProfile = useMemo(() => resolveCollectionProfile(museum), [museum])
+  const customDefs = useMemo(() => allCustomFieldDefs(), [])
+
+  const breakdowns = useMemo(() => {
+    const specs = analyticsProfile.breakdowns
+      ?? [{ field: 'artist' as const, title: 'By Artist / Maker' }]
+
+    return specs.map(spec => {
+      const counts: Record<string, number> = {}
+      for (const obj of objects) {
+        let value: unknown
+        if (spec.field.startsWith('custom:')) {
+          const key = spec.field.slice('custom:'.length)
+          value = formatCustomFieldValue(customDefs.get(key), readCustomField(obj.custom_fields, key))
+        } else {
+          value = (obj as Record<string, unknown>)[spec.field]
+        }
+        const label = value === null || value === undefined || value === '' ? null : String(value)
+        if (label) counts[label] = (counts[label] || 0) + 1
+      }
+      return {
+        title: spec.title,
+        data: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8),
+      }
+    }).filter(b => b.data.length > 0)
+  }, [objects, analyticsProfile, customDefs])
+
+  // Graded vs raw — only meaningful when the profile actually grades.
+  const gradedSplit = useMemo(() => {
+    if (!analyticsProfile.certification) return null
+    const graded = objects.filter(o => o.cert_number).length
+    if (graded === 0) return null
+    return { graded, raw: objects.length - graded }
+  }, [objects, analyticsProfile])
 
   const collectionValue = useMemo(() => getCollectionValue(objects, valuations), [objects, valuations])
   const totalValue = collectionValue.total
@@ -392,7 +441,7 @@ export default function AnalyticsPage() {
                 {byStatus.map(([label, value]) => (
                   <div key={label} className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[label] || '#a8a29e' }} />
-                    <div className="flex-1 text-xs text-stone-500 dark:text-stone-400">{plan.fullMode ? label : (SIMPLE_MODE_STATUS_LABELS[label] ?? label)}</div>
+                    <div className="flex-1 text-xs text-stone-500 dark:text-stone-400">{statusLabel(analyticsProfile, label, plan.fullMode ? label : (SIMPLE_MODE_STATUS_LABELS[label] ?? label))}</div>
                     <div className="flex-1 bg-stone-100 dark:bg-stone-800 rounded-full h-2 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((value / objects.length) * 100)}%`, background: STATUS_COLORS[label] || '#a8a29e' }} />
                     </div>
@@ -404,13 +453,29 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {byArtist.length > 0 && (
-              <BreakdownCard title="By Artist / Maker" data={byArtist} color="#4338ca" />
+            {gradedSplit && (
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Certified vs Not Certified</div>
+                <div className="flex items-center gap-6">
+                  <div>
+                    <div className="font-serif text-4xl text-stone-900 dark:text-stone-100">{gradedSplit.graded}</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Certified</div>
+                  </div>
+                  <div>
+                    <div className="font-serif text-4xl text-stone-400 dark:text-stone-500">{gradedSplit.raw}</div>
+                    <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">Not certified</div>
+                  </div>
+                </div>
+              </div>
             )}
+
+            {breakdowns.map((b, i) => (
+              <BreakdownCard key={b.title} title={b.title} data={b.data} color={BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length]} />
+            ))}
 
             {topByValue.length > 0 && (
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6">
-                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Top Objects by Value</div>
+                <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-5">Top {resolveAppNouns(museum).itemPlural} by Value</div>
                 <div className="space-y-3">
                   {topByValue.map((a, i) => (
                     <div key={a.id} className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity" onClick={() => router.push(`/dashboard/objects/${a.id}`)}>

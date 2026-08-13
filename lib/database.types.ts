@@ -254,6 +254,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cancellation_events: {
+        Row: {
+          actor_email: string | null
+          actor_user_id: string | null
+          cooling_off_active: boolean
+          created_at: string
+          currency: string | null
+          customer_email: string | null
+          effective_at: string | null
+          event: string
+          id: string
+          initiated_by: string
+          museum_id: string
+          note: string | null
+          refund_amount: number | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_user_id?: string | null
+          cooling_off_active?: boolean
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          effective_at?: string | null
+          event: string
+          id?: string
+          initiated_by: string
+          museum_id: string
+          note?: string | null
+          refund_amount?: number | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_user_id?: string | null
+          cooling_off_active?: boolean
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          effective_at?: string | null
+          event?: string
+          id?: string
+          initiated_by?: string
+          museum_id?: string
+          note?: string | null
+          refund_amount?: number | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
       collection_reviews: {
         Row: {
           created_at: string
@@ -677,6 +728,7 @@ export type Database = {
           description: string
           discovered_by: string
           discovered_date: string
+          emergency_event_id: string | null
           id: string
           incident_date: string
           insurance_claim_outcome: string | null
@@ -705,6 +757,7 @@ export type Database = {
           description: string
           discovered_by: string
           discovered_date: string
+          emergency_event_id?: string | null
           id?: string
           incident_date: string
           insurance_claim_outcome?: string | null
@@ -733,6 +786,7 @@ export type Database = {
           description?: string
           discovered_by?: string
           discovered_date?: string
+          emergency_event_id?: string | null
           id?: string
           incident_date?: string
           insurance_claim_outcome?: string | null
@@ -754,6 +808,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "damage_reports_emergency_event_id_fkey"
+            columns: ["emergency_event_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "damage_reports_museum_id_fkey"
             columns: ["museum_id"]
@@ -1222,6 +1283,7 @@ export type Database = {
           notes: string | null
           plan_id: string | null
           response_taken: string | null
+          risk_id: string | null
           status: string
         }
         Insert: {
@@ -1237,6 +1299,7 @@ export type Database = {
           notes?: string | null
           plan_id?: string | null
           response_taken?: string | null
+          risk_id?: string | null
           status?: string
         }
         Update: {
@@ -1252,6 +1315,7 @@ export type Database = {
           notes?: string | null
           plan_id?: string | null
           response_taken?: string | null
+          risk_id?: string | null
           status?: string
         }
         Relationships: [
@@ -1267,6 +1331,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "emergency_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_events_risk_id_fkey"
+            columns: ["risk_id"]
+            isOneToOne: false
+            referencedRelation: "risk_register"
             referencedColumns: ["id"]
           },
         ]
@@ -2249,6 +2320,7 @@ export type Database = {
           collecting_since: string | null
           collection_category: string | null
           collection_label: string | null
+          collection_profiles: string[]
           collector_bio: string | null
           contact_email: string | null
           contact_phone: string | null
@@ -2285,11 +2357,13 @@ export type Database = {
           pending_downgrade_plan: string | null
           plan: string | null
           primary_color: string | null
+          read_only_until: string | null
           reengage_a3_sent_at: string | null
           reengage_a30_sent_at: string | null
           reengage_a7_sent_at: string | null
           reengage_b180_sent_at: string | null
           reengage_b30_sent_at: string | null
+          reengage_opt_out: boolean
           scheduled_deletion_at: string | null
           seo_description: string | null
           show_collection_value: boolean | null
@@ -2308,6 +2382,7 @@ export type Database = {
           template: string | null
           trial_used_at: string | null
           ui_mode: string
+          upgrade_checklist_seen_at: string | null
         }
         Insert: {
           about_text?: string | null
@@ -2320,6 +2395,7 @@ export type Database = {
           collecting_since?: string | null
           collection_category?: string | null
           collection_label?: string | null
+          collection_profiles?: string[]
           collector_bio?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -2356,11 +2432,13 @@ export type Database = {
           pending_downgrade_plan?: string | null
           plan?: string | null
           primary_color?: string | null
+          read_only_until?: string | null
           reengage_a3_sent_at?: string | null
           reengage_a30_sent_at?: string | null
           reengage_a7_sent_at?: string | null
           reengage_b180_sent_at?: string | null
           reengage_b30_sent_at?: string | null
+          reengage_opt_out?: boolean
           scheduled_deletion_at?: string | null
           seo_description?: string | null
           show_collection_value?: boolean | null
@@ -2379,6 +2457,7 @@ export type Database = {
           template?: string | null
           trial_used_at?: string | null
           ui_mode?: string
+          upgrade_checklist_seen_at?: string | null
         }
         Update: {
           about_text?: string | null
@@ -2391,6 +2470,7 @@ export type Database = {
           collecting_since?: string | null
           collection_category?: string | null
           collection_label?: string | null
+          collection_profiles?: string[]
           collector_bio?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -2427,11 +2507,13 @@ export type Database = {
           pending_downgrade_plan?: string | null
           plan?: string | null
           primary_color?: string | null
+          read_only_until?: string | null
           reengage_a3_sent_at?: string | null
           reengage_a30_sent_at?: string | null
           reengage_a7_sent_at?: string | null
           reengage_b180_sent_at?: string | null
           reengage_b30_sent_at?: string | null
+          reengage_opt_out?: boolean
           scheduled_deletion_at?: string | null
           seo_description?: string | null
           show_collection_value?: boolean | null
@@ -2450,6 +2532,7 @@ export type Database = {
           template?: string | null
           trial_used_at?: string | null
           ui_mode?: string
+          upgrade_checklist_seen_at?: string | null
         }
         Relationships: []
       }
@@ -2637,6 +2720,8 @@ export type Database = {
           packing_notes: string | null
           recipient_contact: string | null
           recipient_name: string
+          related_disposal_id: string | null
+          related_entry_id: string | null
           related_loan_id: string | null
           returned_condition: string | null
           returned_date: string | null
@@ -2661,6 +2746,8 @@ export type Database = {
           packing_notes?: string | null
           recipient_contact?: string | null
           recipient_name: string
+          related_disposal_id?: string | null
+          related_entry_id?: string | null
           related_loan_id?: string | null
           returned_condition?: string | null
           returned_date?: string | null
@@ -2685,6 +2772,8 @@ export type Database = {
           packing_notes?: string | null
           recipient_contact?: string | null
           recipient_name?: string
+          related_disposal_id?: string | null
+          related_entry_id?: string | null
           related_loan_id?: string | null
           returned_condition?: string | null
           returned_date?: string | null
@@ -2705,6 +2794,20 @@ export type Database = {
             columns: ["object_id"]
             isOneToOne: false
             referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "object_exits_related_disposal_id_fkey"
+            columns: ["related_disposal_id"]
+            isOneToOne: false
+            referencedRelation: "disposal_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "object_exits_related_entry_id_fkey"
+            columns: ["related_entry_id"]
+            isOneToOne: false
+            referencedRelation: "entry_records"
             referencedColumns: ["id"]
           },
           {
@@ -2853,6 +2956,15 @@ export type Database = {
           attribution_notes: string | null
           barcode: string | null
           category: string | null
+          cert_authority: string | null
+          cert_date: string | null
+          cert_grade: string | null
+          cert_grade_numeric: number | null
+          cert_grade_scale: string | null
+          cert_notes: string | null
+          cert_number: string | null
+          cert_subgrades: Json | null
+          collection_profile: string | null
           colour: string | null
           condition_assessor: string | null
           condition_date: string | null
@@ -2864,6 +2976,7 @@ export type Database = {
           credit_line: string | null
           culture: string | null
           current_location: string | null
+          custom_fields: Json
           deaccession_protected: boolean | null
           deleted_at: string | null
           description: string | null
@@ -2979,6 +3092,15 @@ export type Database = {
           attribution_notes?: string | null
           barcode?: string | null
           category?: string | null
+          cert_authority?: string | null
+          cert_date?: string | null
+          cert_grade?: string | null
+          cert_grade_numeric?: number | null
+          cert_grade_scale?: string | null
+          cert_notes?: string | null
+          cert_number?: string | null
+          cert_subgrades?: Json | null
+          collection_profile?: string | null
           colour?: string | null
           condition_assessor?: string | null
           condition_date?: string | null
@@ -2990,6 +3112,7 @@ export type Database = {
           credit_line?: string | null
           culture?: string | null
           current_location?: string | null
+          custom_fields?: Json
           deaccession_protected?: boolean | null
           deleted_at?: string | null
           description?: string | null
@@ -3105,6 +3228,15 @@ export type Database = {
           attribution_notes?: string | null
           barcode?: string | null
           category?: string | null
+          cert_authority?: string | null
+          cert_date?: string | null
+          cert_grade?: string | null
+          cert_grade_numeric?: number | null
+          cert_grade_scale?: string | null
+          cert_notes?: string | null
+          cert_number?: string | null
+          cert_subgrades?: Json | null
+          collection_profile?: string | null
           colour?: string | null
           condition_assessor?: string | null
           condition_date?: string | null
@@ -3116,6 +3248,7 @@ export type Database = {
           credit_line?: string | null
           culture?: string | null
           current_location?: string | null
+          custom_fields?: Json
           deaccession_protected?: boolean | null
           deleted_at?: string | null
           description?: string | null
@@ -3307,6 +3440,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      refunds: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          error: string | null
+          event: string
+          id: string
+          idempotency_key: string | null
+          museum_id: string
+          reason: string | null
+          refund_mode: string | null
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error?: string | null
+          event: string
+          id?: string
+          idempotency_key?: string | null
+          museum_id: string
+          reason?: string | null
+          refund_mode?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error?: string | null
+          event?: string
+          id?: string
+          idempotency_key?: string | null
+          museum_id?: string
+          reason?: string | null
+          refund_mode?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
       }
       reproduction_requests: {
         Row: {
@@ -3605,6 +3789,176 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_members_museum_id_fkey"
+            columns: ["museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          api_version: string | null
+          error: string | null
+          id: string
+          livemode: boolean | null
+          payload: Json | null
+          processed_at: string | null
+          received_at: string
+          status: string
+          stripe_created_at: string | null
+          type: string
+        }
+        Insert: {
+          api_version?: string | null
+          error?: string | null
+          id: string
+          livemode?: boolean | null
+          payload?: Json | null
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          stripe_created_at?: string | null
+          type: string
+        }
+        Update: {
+          api_version?: string | null
+          error?: string | null
+          id?: string
+          livemode?: boolean | null
+          payload?: Json | null
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          stripe_created_at?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      subscription_notices: {
+        Row: {
+          content_hash: string | null
+          content_version: string | null
+          created_at: string
+          error: string | null
+          id: string
+          museum_id: string
+          notice_type: string
+          provider_message_id: string | null
+          recipient_email: string | null
+          scheduled_at: string | null
+          sent_at: string | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          content_hash?: string | null
+          content_version?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          museum_id: string
+          notice_type: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          content_hash?: string | null
+          content_version?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          museum_id?: string
+          notice_type?: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          billing_interval: string | null
+          billing_interval_count: number | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          cooling_off_ends_at: string | null
+          cooling_off_reason: string | null
+          cooling_off_started_at: string | null
+          created_at: string
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          id: string
+          museum_id: string
+          plan: string | null
+          status: string | null
+          stripe_customer_id: string
+          stripe_price_id: string | null
+          stripe_subscription_id: string
+          trial_end: string | null
+          trial_start: string | null
+          unit_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          billing_interval?: string | null
+          billing_interval_count?: number | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          cooling_off_ends_at?: string | null
+          cooling_off_reason?: string | null
+          cooling_off_started_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string
+          museum_id: string
+          plan?: string | null
+          status?: string | null
+          stripe_customer_id: string
+          stripe_price_id?: string | null
+          stripe_subscription_id: string
+          trial_end?: string | null
+          trial_start?: string | null
+          unit_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          billing_interval?: string | null
+          billing_interval_count?: number | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          cooling_off_ends_at?: string | null
+          cooling_off_reason?: string | null
+          cooling_off_started_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string
+          museum_id?: string
+          plan?: string | null
+          status?: string | null
+          stripe_customer_id?: string
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          unit_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_museum_id_fkey"
             columns: ["museum_id"]
             isOneToOne: false
             referencedRelation: "museums"
@@ -3939,6 +4293,15 @@ export type Database = {
           attribution_notes: string | null
           barcode: string | null
           category: string | null
+          cert_authority: string | null
+          cert_date: string | null
+          cert_grade: string | null
+          cert_grade_numeric: number | null
+          cert_grade_scale: string | null
+          cert_notes: string | null
+          cert_number: string | null
+          cert_subgrades: Json | null
+          collection_profile: string | null
           colour: string | null
           condition_assessor: string | null
           condition_date: string | null
@@ -3950,6 +4313,7 @@ export type Database = {
           credit_line: string | null
           culture: string | null
           current_location: string | null
+          custom_fields: Json
           deaccession_protected: boolean | null
           deleted_at: string | null
           description: string | null
@@ -4077,6 +4441,14 @@ export type Database = {
         Args: { p_museum_id: string }
         Returns: boolean
       }
+      purge_expired_billing_evidence: {
+        Args: never
+        Returns: {
+          rows_deleted: number
+          table_name: string
+        }[]
+      }
+      vitrine_custom_fields_ok: { Args: { v: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
