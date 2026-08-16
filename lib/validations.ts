@@ -126,6 +126,9 @@ export const csvImportRowSchema = z.object({
   cert_number: z.string().max(128).optional(),
   cert_grade: z.string().max(64).optional(),
   cert_date: z.string().max(32).optional(),
+  object_type: z.string().max(100).optional(),
+  culture: z.string().max(200).optional(),
+  rarity: z.string().max(200).optional(),
   custom_fields: customFieldsSchema.optional(),
 })
 

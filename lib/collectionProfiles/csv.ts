@@ -30,6 +30,9 @@ export const CSV_COLUMNS: { column: string; label: string }[] = [
   { column: 'purchase_date', label: 'Purchase Date' },
   { column: 'acquired_from', label: 'Acquired From' },
   { column: 'status', label: 'Status' },
+  { column: 'object_type', label: 'Object Type' },
+  { column: 'culture', label: 'Culture' },
+  { column: 'rarity', label: 'Edition / Rarity' },
   { column: 'cert_authority', label: 'Grading Company' },
   { column: 'cert_number', label: 'Cert Number' },
   { column: 'cert_grade', label: 'Grade' },
@@ -37,12 +40,15 @@ export const CSV_COLUMNS: { column: string; label: string }[] = [
 ]
 
 /** Which profile field a CSV column maps to, for relabelling the template. */
-const COLUMN_TO_FIELD: Record<string, 'artist' | 'medium' | 'title' | 'condition_grade' | 'description'> = {
+const COLUMN_TO_FIELD: Record<string, 'artist' | 'medium' | 'title' | 'condition_grade' | 'description' | 'object_type' | 'culture' | 'rarity'> = {
   artist: 'artist',
   medium: 'medium',
   title: 'title',
   condition: 'condition_grade',
   description: 'description',
+  object_type: 'object_type',
+  culture: 'culture',
+  rarity: 'rarity',
 }
 
 /**

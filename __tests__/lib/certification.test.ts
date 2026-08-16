@@ -389,3 +389,32 @@ describe('deriveCertificationForWrite', () => {
     expect(coin.cert_grade_numeric).toBe(65)
   })
 })
+
+describe('CSV export/import symmetry', () => {
+  // Regression: `rarity` was added to the export without being added to the
+  // importer, so the column round-tripped out and silently vanished on the way
+  // back in. Any profile-labelled column the export writes must be readable.
+  const map = buildCsvAliasMap()
+
+  it('accepts every profile label for the columns it maps', () => {
+    for (const profile of COLLECTION_PROFILES) {
+      for (const { column } of CSV_COLUMNS) {
+        const field = ({
+          artist: 'artist', medium: 'medium', title: 'title',
+          condition: 'condition_grade', description: 'description',
+          object_type: 'object_type', culture: 'culture', rarity: 'rarity',
+        } as Record<string, string>)[column]
+        const label = field ? (profile.fields as Record<string, { label?: string }>)[field]?.label : undefined
+        if (!label) continue
+        expect(map.get(normaliseHeader(label)), `${profile.id}: ${label}`).toBeDefined()
+      }
+    }
+  })
+
+  it('maps the columns the export writes for cataloguing fields', () => {
+    for (const col of ['title', 'artist', 'medium', 'object_type', 'culture', 'rarity',
+                       'cert_authority', 'cert_grade', 'cert_number', 'cert_date']) {
+      expect(map.get(normaliseHeader(col)), col).toBe(col)
+    }
+  })
+})
