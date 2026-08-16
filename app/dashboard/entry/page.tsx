@@ -9,7 +9,13 @@ import { getMuseumForUser } from '@/lib/get-museum'
 import { useToast } from '@/components/Toast'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
 import SearchFilterBar, { FilterState, EMPTY_FILTERS, SortBy } from '@/components/SearchFilterBar'
-import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES } from '@/components/tabs/shared'
+import { inputCls, labelCls, ENTRY_REASONS, CONDITION_GRADES, CURRENCIES } from '@/components/tabs/shared'
+import {
+  resolveCollectionProfile, resolveAppNouns, fieldLabel, fieldPlaceholder,
+  fieldVisible, conditionLabel, gradesForAuthority,
+} from '@/lib/collectionProfiles'
+import { compressImage } from '@/lib/image-compression'
+import { uploadToR2 } from '@/lib/r2-upload'
 import CSVImportModal from '@/components/CSVImportModal'
 import BarcodeScannerModal from '@/components/BarcodeScannerModal'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
@@ -98,8 +104,25 @@ export default function EntryRegisterPage() {
     entry_method: '',
     accession_no: '',
     condition_grade: '',
+    // Everything below is optional and lives behind "More details". None of it
+    // is required — the required set is exactly what it was before.
+    artist: '',
+    production_date: '',
+    object_type: '',
+    medium: '',
+    rarity: '',
+    cert_authority: '',
+    cert_grade: '',
+    cert_number: '',
+    cert_date: '',
+    purchase_price: '',
+    purchase_currency: 'GBP',
+    purchase_date: '',
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
+  const [entryPhoto, setEntryPhoto] = useState<File | null>(null)
+  const [entryPhotoUrl, setEntryPhotoUrl] = useState<string | null>(null)
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [lookupSource, setLookupSource] = useState<string | null>(null)
@@ -143,6 +166,35 @@ export default function EntryRegisterPage() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  function clearEntryPhoto() {
+    if (entryPhotoUrl) URL.revokeObjectURL(entryPhotoUrl)
+    setEntryPhoto(null)
+    setEntryPhotoUrl(null)
+  }
+
+  /**
+   * Uploads the staged photo once the object exists — the storage path is keyed
+   * on the object id, so this can't happen before creation. Failure is not
+   * fatal: the object is already saved, so we keep it and let the user retry
+   * from the object's own gallery.
+   */
+  async function uploadEntryPhoto(objectId: string): Promise<void> {
+    if (!entryPhoto || !museum) return
+    try {
+      const compressed = await compressImage(entryPhoto)
+      const ext = compressed.type === 'image/webp' ? 'webp' : (compressed.name.split('.').pop() || 'jpg')
+      const filename = `${museum.id}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const publicUrl = await uploadToR2('object-images', filename, compressed)
+      await fetch(`/api/objects/${objectId}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: publicUrl, is_primary: true, sort_order: 0, phash: null }),
+      })
+    } catch {
+      toast('Saved, but the photo could not be uploaded. Add it from the item page.', 'error')
+    }
   }
 
   async function generateAccessionNo(): Promise<string> {
@@ -313,11 +365,29 @@ export default function EntryRegisterPage() {
         emoji: '🖼️',
         condition_grade: newEntry.condition_grade || null,
         barcode: scannedBarcode || null,
+        // Everything from "More details". Optional, but whatever was typed has
+        // to land on the object — otherwise the user types it twice.
+        artist: newEntry.artist || null,
+        production_date: newEntry.production_date || null,
+        year: newEntry.production_date || null,
+        object_type: newEntry.object_type || null,
+        medium: newEntry.medium || null,
+        rarity: newEntry.rarity || null,
+        cert_authority: newEntry.cert_authority || null,
+        cert_grade: newEntry.cert_grade || null,
+        cert_number: newEntry.cert_number || null,
+        cert_date: newEntry.cert_date || null,
+        acquisition_value: newEntry.purchase_price === '' ? null : Number(newEntry.purchase_price),
+        acquisition_currency: newEntry.purchase_currency || null,
+        acquisition_date: newEntry.purchase_date || newEntry.entry_date || null,
+        // cert_grade_numeric / cert_grade_scale / derived condition are the
+        // server's job — see /api/objects and invariant G2.
       }),
     })
     const payload = await res.json().catch(() => ({}))
     if (!res.ok) { toast(payload.error || 'Failed to create object', 'error'); setSubmitting(false); return }
     const newObject = payload.object
+    await uploadEntryPhoto(newObject.id)
     if (created) {
       await supabase.from('entry_records').update({ object_id: newObject.id }).eq('id', created.id)
     }
@@ -349,6 +419,8 @@ export default function EntryRegisterPage() {
         }, ...entries])
       }
       setNewEntry(defaultEntry())
+      clearEntryPhoto()
+      setShowMoreDetails(false)
       setShowForm(false)
       setSubmitting(false)
       setScannedBarcode(null)
@@ -376,6 +448,17 @@ export default function EntryRegisterPage() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
   const fullMode = getPlan(museum?.plan ?? '').fullMode
+
+  // Collection-wide profile, so the entry form speaks the same language as the
+  // object form and the nav. Full mode resolves to the museum vocabulary and a
+  // mixed collection resolves to neutral — see plan §6.3.
+  const entryProfile = resolveCollectionProfile(museum)
+  const nouns = resolveAppNouns(museum)
+  const ef = (key: Parameters<typeof fieldLabel>[1], fallback: string) => fieldLabel(entryProfile, key, fallback)
+  const eph = (key: Parameters<typeof fieldPlaceholder>[1], fallback?: string) => fieldPlaceholder(entryProfile, key, fallback)
+  const eshown = (key: Parameters<typeof fieldVisible>[1]) => fieldVisible(entryProfile, key)
+  const certConfig = entryProfile.certification
+  const certGrades = gradesForAuthority(certConfig, newEntry.cert_authority || null)
   const trackDepositor = getPlan(museum?.plan ?? '').depositorTracking
   const pending = entries.filter(e => e.outcome === 'Pending').length
 
@@ -426,7 +509,7 @@ export default function EntryRegisterPage() {
   return (
     <DashboardShell museum={museum} activePath="/dashboard/entry" onSignOut={handleSignOut} isOwner={isOwner} staffAccess={staffAccess}>
         <DashboardTopBar
-          title="Object Entry Register"
+          title={fullMode ? 'Object Entry Register' : nouns.addItem}
           actions={canEdit && (
             <>
               {getPlan(museum?.plan ?? '').analytics && (
@@ -435,7 +518,7 @@ export default function EntryRegisterPage() {
                 </TopBarButton>
               )}
               <TopBarButton variant="primary" onClick={() => setShowForm(v => !v)}>
-                {showForm ? 'Cancel' : '+ New Entry'}
+                {showForm ? 'Cancel' : (fullMode ? '+ New Entry' : `+ ${nouns.addItem}`)}
               </TopBarButton>
             </>
           )}
@@ -446,13 +529,14 @@ export default function EntryRegisterPage() {
               sortBy={sortBy} onSortChange={setSortBy}
               isFullMode={fullMode}
               mediumOptions={mediumOptions} objectTypeOptions={objectTypeOptions} artistOptions={artistOptions}
-              placeholder="Search entries…"
+              placeholder={fullMode ? 'Search entries…' : `Search your ${nouns.collection.toLowerCase()}…`}
             />
           }
         />
 
         <div className="p-6 md:p-10 space-y-6">
-          {/* Stats */}
+          {/* Stats — entry-record counts only mean something in full mode */}
+          {fullMode && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Entries', value: entries.length },
@@ -468,6 +552,7 @@ export default function EntryRegisterPage() {
               </div>
             ))}
           </div>
+          )}
 
           {/* Object usage bar */}
           {(() => {
@@ -503,14 +588,16 @@ export default function EntryRegisterPage() {
 
 
           {/* Info banner */}
-          <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">
-            <p className="text-xs text-stone-500 dark:text-stone-400">Entry details are edited on each object&apos;s page. Click an entry below to open it, or create a new object to begin.</p>
-          </div>
+          {fullMode && (
+            <div className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-5 py-3">
+              <p className="text-xs text-stone-500 dark:text-stone-400">Entry details are edited on each object&apos;s page. Click an entry below to open it, or create a new object to begin.</p>
+            </div>
+          )}
 
           {/* New Entry Form */}
           {showForm && (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-6 space-y-4">
-              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">New Entry Record</div>
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">{fullMode ? 'New Entry Record' : nouns.addItem}</div>
 
               {(() => {
                 const clearBarcode = () => { setScannedBarcode(null); setLookupSource(null); setLookupStatus('idle') }
@@ -569,8 +656,8 @@ export default function EntryRegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
-                  <label className={labelCls}>Object Title <span className="text-red-400">*</span></label>
-                  <input type="text" className={inputCls} placeholder="Name or title of the object" value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
+                  <label className={labelCls}>{ef('title', 'Object Title')} <span className="text-red-400">*</span></label>
+                  <input type="text" className={inputCls} placeholder={eph('title', 'Name or title of the object')} value={newEntry.object_title} onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))} />
                 </div>
                 <div>
                   <label className={labelCls}>Entry Date <span className="text-red-400">*</span></label>
@@ -643,17 +730,17 @@ export default function EntryRegisterPage() {
                   </div>
                 )}
                 <div className="md:col-span-2">
-                  <label className={labelCls}>Object Description <span className="text-red-400">*</span></label>
-                  <textarea className={inputCls} rows={2} placeholder="Brief description of the object(s)" value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
+                  <label className={labelCls}>{ef('description', fullMode ? 'Object Description' : 'Description')} <span className="text-red-400">*</span></label>
+                  <textarea className={inputCls} rows={2} placeholder={eph('description', fullMode ? 'Brief description of the object(s)' : `Brief description of the ${nouns.item.toLowerCase()}`)} value={newEntry.object_description} onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>
-                    <label className={labelCls}>Object Count</label>
+                    <label className={labelCls}>{fullMode ? 'Object Count' : `Number of ${nouns.itemPlural}`}</label>
                     <input type="number" min={1} className={inputCls} value={newEntry.object_count} onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
                   </div>
                   <div>
                     <label className={labelCls + ' flex items-center gap-1.5'}>
-                      Object Number {fullMode && <span className="text-red-400">*</span>}
+                      {fullMode ? 'Object Number' : `${nouns.item} Number`} {fullMode && <span className="text-red-400">*</span>}
                       {!fullMode && (
                         <span className="relative group/tip inline-flex items-center">
                           <span className="cursor-help text-stone-400 dark:text-stone-500 text-[10px] border border-stone-300 dark:border-stone-600 rounded-full w-3.5 h-3.5 flex items-center justify-center">?</span>
@@ -666,21 +753,180 @@ export default function EntryRegisterPage() {
                     <input type="text" className={inputCls} placeholder={fullMode ? 'e.g. 2026.001' : 'Auto — leave blank to generate'} value={newEntry.accession_no} onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
                   </div>
                   <div>
-                    <label className={labelCls}>Condition Grade</label>
+                    <label className={labelCls}>{ef('condition_grade', 'Condition Grade')}</label>
                     <select className={inputCls} value={newEntry.condition_grade} onChange={e => setNewEntry(v => ({ ...v, condition_grade: e.target.value }))}>
                       <option value="">— Select —</option>
-                      {CONDITION_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                      {/* Stored value stays canonical; only the label changes. */}
+                      {CONDITION_GRADES.map(g => <option key={g} value={g}>{conditionLabel(entryProfile, g)}</option>)}
                     </select>
                   </div>
                 </div>
               </div>
+
+              {/*
+                Optional cataloguing detail. Collapsed by default so the quick
+                path — title, description, done — stays quick for someone adding
+                forty things in a row. Nothing in here is required.
+              */}
+              <div className="border-t border-stone-200 dark:border-stone-700 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMoreDetails(v => !v)}
+                  className="flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                >
+                  <span className={`inline-block transition-transform ${showMoreDetails ? 'rotate-90' : ''}`}>›</span>
+                  {showMoreDetails ? 'Hide extra details' : 'More details — optional'}
+                </button>
+
+                {showMoreDetails && (
+                  <div className="mt-4 space-y-5">
+                    {/* Cataloguing basics, in the collection's own words */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {eshown('artist') && (
+                        <div>
+                          <label className={labelCls}>{ef('artist', 'Artist / Maker')}</label>
+                          <input type="text" className={inputCls} placeholder={eph('artist')}
+                            value={newEntry.artist} onChange={e => setNewEntry(v => ({ ...v, artist: e.target.value }))} />
+                        </div>
+                      )}
+                      {eshown('production_date') && (
+                        <div>
+                          <label className={labelCls}>{ef('production_date', 'Date')}</label>
+                          <input type="text" className={inputCls} placeholder={eph('production_date', 'e.g. 1850, c.1920–1930')}
+                            value={newEntry.production_date} onChange={e => setNewEntry(v => ({ ...v, production_date: e.target.value }))} />
+                        </div>
+                      )}
+                      {eshown('object_type') && (
+                        <div>
+                          <label className={labelCls}>{ef('object_type', 'Object Type')}</label>
+                          <input type="text" className={inputCls} placeholder={eph('object_type', 'e.g. Painting, Sculpture…')}
+                            value={newEntry.object_type} onChange={e => setNewEntry(v => ({ ...v, object_type: e.target.value }))} />
+                        </div>
+                      )}
+                      {eshown('medium') && (
+                        <div>
+                          <label className={labelCls}>{ef('medium', 'Medium / Material')}</label>
+                          <input type="text" className={inputCls} placeholder={eph('medium', 'e.g. oak, silver, oil on canvas…')}
+                            value={newEntry.medium} onChange={e => setNewEntry(v => ({ ...v, medium: e.target.value }))} />
+                        </div>
+                      )}
+                      {eshown('rarity') && (
+                        <div>
+                          <label className={labelCls}>{ef('rarity', 'Edition / Rarity')}</label>
+                          <input type="text" className={inputCls} placeholder={eph('rarity', 'e.g. 1 of 500, First Edition')}
+                            value={newEntry.rarity} onChange={e => setNewEntry(v => ({ ...v, rarity: e.target.value }))} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Grading — only for collections where it's a thing. The
+                        slab is in the user's hand at this moment, so this is
+                        the cheapest time to capture it. */}
+                    {certConfig && (
+                      <div>
+                        <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">{certConfig.title}</div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <label className={labelCls}>{certConfig.labels?.authority ?? 'Grading Company'}</label>
+                            <select className={inputCls} value={newEntry.cert_authority}
+                              onChange={e => {
+                                const next = e.target.value
+                                // A PSA 9 is not a PCGS grade — drop an incompatible one.
+                                const keep = gradesForAuthority(certConfig, next || null).includes(newEntry.cert_grade)
+                                setNewEntry(v => ({ ...v, cert_authority: next, cert_grade: keep ? v.cert_grade : '' }))
+                              }}>
+                              <option value="">— Not recorded —</option>
+                              {certConfig.authorities.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls}>{certConfig.labels?.grade ?? 'Grade'}</label>
+                            <select className={inputCls} value={newEntry.cert_grade} disabled={certGrades.length === 0}
+                              onChange={e => setNewEntry(v => ({ ...v, cert_grade: e.target.value }))}>
+                              <option value="">{certGrades.length === 0 ? '— Not applicable —' : '— Select —'}</option>
+                              {certGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls}>{certConfig.labels?.number ?? 'Cert Number'}</label>
+                            <input type="text" className={`${inputCls} font-mono`} disabled={!newEntry.cert_authority}
+                              placeholder={newEntry.cert_authority ? 'As printed on the label' : 'Choose a company first'}
+                              value={newEntry.cert_number} onChange={e => setNewEntry(v => ({ ...v, cert_number: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label className={labelCls}>{certConfig.labels?.date ?? 'Graded'}</label>
+                            <input type="date" className={inputCls} disabled={!newEntry.cert_authority}
+                              value={newEntry.cert_date} onChange={e => setNewEntry(v => ({ ...v, cert_date: e.target.value }))} />
+                          </div>
+                        </div>
+                        {certConfig.derivesCondition && newEntry.cert_grade && (
+                          <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">
+                            Condition will be set from the grade automatically.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* What you paid */}
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">What you paid</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className={labelCls}>Price</label>
+                          <input type="number" step="0.01" min="0" className={inputCls} placeholder="0.00"
+                            value={newEntry.purchase_price} onChange={e => setNewEntry(v => ({ ...v, purchase_price: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Currency</label>
+                          <select className={inputCls} value={newEntry.purchase_currency}
+                            onChange={e => setNewEntry(v => ({ ...v, purchase_currency: e.target.value }))}>
+                            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Date bought</label>
+                          <input type="date" className={inputCls}
+                            value={newEntry.purchase_date} onChange={e => setNewEntry(v => ({ ...v, purchase_date: e.target.value }))} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Photo — uploaded after the object exists, since the
+                        storage path is keyed on the object id. */}
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Photo</div>
+                      {entryPhotoUrl ? (
+                        <div className="flex items-center gap-4">
+                          <img src={entryPhotoUrl} alt="" className="w-24 h-24 object-cover rounded border border-stone-200 dark:border-stone-700" />
+                          <button type="button" onClick={clearEntryPhoto}
+                            className="text-xs font-mono underline text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 border border-dashed border-stone-300 dark:border-stone-600 rounded px-4 py-3 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                          <input type="file" accept="image/*" className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              setEntryPhoto(file)
+                              setEntryPhotoUrl(URL.createObjectURL(file))
+                            }} />
+                          + Add a photo
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => handleCreateEntry('stay')}
                   disabled={submitting}
                   className="text-sm font-mono border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? 'Recording…' : 'Record Entry'}
+                  {submitting ? 'Saving…' : (fullMode ? 'Record Entry' : `Save ${nouns.item}`)}
                 </button>
                 {!getPlan(museum?.plan ?? '').fullMode && (
                   <button
@@ -688,17 +934,47 @@ export default function EntryRegisterPage() {
                     disabled={submitting}
                     className="text-sm font-mono bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors disabled:opacity-50"
                   >
-                    {submitting ? 'Recording…' : 'Record & Add Details →'}
+                    {submitting ? 'Saving…' : `Save & open ${nouns.item.toLowerCase()} →`}
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* Table */}
-          {entries.length === 0 ? (
+          {/*
+            The entry register is the Spectrum Object Entry procedure and only
+            compliance plans write to it, so a simple-mode collection with no
+            legacy entries has nothing to show here — an empty compliance
+            register under a screen titled "Add Card" is just confusing. Their
+            items live in the collection list instead.
+          */}
+          {entries.length === 0 && !fullMode ? (
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-20 text-center">
+              <div className="text-5xl mb-4">{'\u{1F5C2}'}</div>
+              <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">
+                Add to your {nouns.collection.toLowerCase()}
+              </div>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">
+                Everything you add appears in {nouns.collection.toLowerCase()} overview.
+              </p>
+              {canEdit && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="text-sm font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+                >
+                  + {nouns.addItem}
+                </button>
+              )}
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="mt-4 text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 underline underline-offset-2 transition-colors"
+              >
+                View {nouns.collection.toLowerCase()} {'\u2192'}
+              </button>
+            </div>
+          ) : entries.length === 0 ? (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg flex flex-col items-center justify-center py-24 text-center">
-              <div className="text-5xl mb-4">🗂</div>
+              <div className="text-5xl mb-4">{'\u{1F5C2}'}</div>
               <div className="font-serif text-2xl italic text-stone-900 dark:text-stone-100 mb-2">No entry records yet</div>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">Record every object that comes into your care, before any decision is made.</p>
               {canEdit && (
@@ -804,6 +1080,7 @@ export default function EntryRegisterPage() {
         </div>
       {showImport && museum && (
         <CSVImportModal
+          profile={entryProfile}
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); window.location.reload() }}
           titleOnly={!getPlan(museum?.plan ?? '').fullMode}

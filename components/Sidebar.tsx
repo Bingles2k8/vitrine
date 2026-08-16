@@ -8,6 +8,7 @@ import { fetchAll } from '@/lib/fetchAll'
 import { useLearnMode } from '@/components/LearnModeProvider'
 import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import CollectionProfileModal from '@/components/CollectionProfileModal'
+import AcceptMessagesToggle, { useAcceptMessagesSync } from '@/components/AcceptMessagesToggle'
 import { profilesEnabled, getProfile, resolveAppNouns } from '@/lib/collectionProfiles'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { latestWhatsNewId } from '@/lib/whatsNew'
@@ -78,7 +79,10 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   const [profileUsage, setProfileUsage] = useState<Record<string, number>>({})
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [hideMoneyValues, setHideMoneyValues] = useState(false)
-  const [acceptMessages, setAcceptMessages] = useState(true)
+  const [acceptMessages, setAcceptMessages] = useAcceptMessagesSync(
+    museum?.id ?? null,
+    museum?.accept_messages ?? true,
+  )
   const [unreadCount, setUnreadCount] = useState(0)
   const settingsRef = useRef<HTMLDivElement>(null)
   const { learnMode, setLearnMode } = useLearnMode()
@@ -89,7 +93,6 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     setCollectionCategory(museum?.collection_category ?? '')
     setCollectionProfiles(museum?.collection_profiles ?? [])
     setHideMoneyValues(museum?.hide_money_values ?? false)
-    setAcceptMessages(museum?.accept_messages ?? true)
   }, [museum?.discoverable, museum?.collection_category, museum?.collection_profiles, museum?.hide_money_values, museum?.accept_messages])
 
   const selectedProfiles = collectionProfiles
@@ -249,13 +252,6 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         return copy
       })
     }
-  }
-
-  async function toggleAcceptMessages() {
-    if (!museum) return
-    const next = !acceptMessages
-    setAcceptMessages(next)
-    await supabase.from('museums').update({ accept_messages: next }).eq('id', museum.id)
   }
 
   async function toggleHideMoneyValues() {
@@ -649,24 +645,20 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
                 </div>
               )}
 
-              {/* Messaging (Professional and above, owners and admins) */}
-              {museum && !communityLocked && (isOwner || staffAccess === 'Admin') && (
+              {/* Messaging — every tier. /api/messages has no plan gate, so a
+                  Community or Hobbyist collection can be messaged; hiding this
+                  from them left them receiving enquiries with no way to decline.
+                  Mirrored on the Inbox page and kept in sync (see the toggle). */}
+              {museum && (isOwner || staffAccess === 'Admin') && (
                 <div>
                   <div className="text-xs tracking-widest uppercase text-stone-400 dark:text-stone-500 mb-1">Messaging</div>
                   <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Let people start a conversation about your collection. You can always start and reply to conversations either way.</p>
-                  <button
-                    onClick={toggleAcceptMessages}
-                    className={`flex items-center gap-2 w-full text-left text-xs font-mono transition-colors ${
-                      acceptMessages
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-                    }`}
-                  >
-                    <span className={`relative w-7 h-3.5 rounded-full transition-colors flex-shrink-0 ${acceptMessages ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'}`}>
-                      <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${acceptMessages ? 'left-3.5' : 'left-0.5'}`} />
-                    </span>
-                    {acceptMessages ? 'Accepting new messages' : 'Not accepting new messages'}
-                  </button>
+                  <AcceptMessagesToggle
+                    museumId={museum.id}
+                    value={acceptMessages}
+                    onChange={setAcceptMessages}
+                    canManage={isOwner || staffAccess === 'Admin'}
+                  />
                 </div>
               )}
 

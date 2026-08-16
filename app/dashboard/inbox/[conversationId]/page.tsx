@@ -153,7 +153,7 @@ export default function ThreadPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/inbox" onSignOut={onSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         <button onClick={() => router.push('/dashboard/inbox')} className="text-xs font-mono text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200 mb-6">
           ← Back to inbox
         </button>
@@ -209,7 +209,7 @@ export default function ThreadPage() {
             <div className="space-y-4">
               {messages.map(m => (
                 <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                  <div className={`max-w-[72%] rounded-lg px-4 py-3 ${
                     m.mine
                       ? 'bg-amber-600 text-white'
                       : 'bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100'

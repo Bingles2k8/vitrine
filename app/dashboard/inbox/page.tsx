@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { getMuseumForUser } from '@/lib/get-museum'
 import DashboardShell from '@/components/DashboardShell'
 import { TableSkeleton } from '@/components/Skeleton'
+import AcceptMessagesToggle, { useAcceptMessagesSync } from '@/components/AcceptMessagesToggle'
 
 interface ConversationRow {
   id: string
@@ -41,6 +42,12 @@ export default function InboxPage() {
   const [staffAccess, setStaffAccess] = useState<string | null>(null)
   const [conversations, setConversations] = useState<ConversationRow[]>([])
   const [loading, setLoading] = useState(true)
+  // Shared with the settings panel, which is on screen at the same time.
+  const [acceptMessages, setAcceptMessages] = useAcceptMessagesSync(
+    museum?.id ?? null,
+    museum?.accept_messages ?? true,
+  )
+  const canManageMessaging = isOwner || staffAccess === 'Admin'
 
   useEffect(() => {
     (async () => {
@@ -62,13 +69,25 @@ export default function InboxPage() {
 
   return (
     <DashboardShell museum={museum} activePath="/dashboard/inbox" onSignOut={onSignOut} isOwner={isOwner} staffAccess={staffAccess}>
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="mb-8">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="mb-6">
           <h1 className="text-2xl font-serif italic text-stone-900 dark:text-stone-100">Inbox</h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-            Enquiries about your collection, and conversations you've started.
+            Enquiries about your collection, and conversations you&rsquo;ve started.
           </p>
         </div>
+
+        {museum && (
+          <div className="mb-8">
+            <AcceptMessagesToggle
+              museumId={museum.id}
+              value={acceptMessages}
+              onChange={setAcceptMessages}
+              canManage={canManageMessaging}
+              variant="panel"
+            />
+          </div>
+        )}
 
         {loading ? (
           <TableSkeleton />

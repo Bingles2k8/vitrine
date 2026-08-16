@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment } from 'react'
 import { inputCls, labelCls, sectionTitle, CONDITION_GRADES, CONDITION_STYLES } from '@/components/tabs/shared'
+import { resolveObjectProfile, conditionLabel, conditionIsDerived, findAuthority } from '@/lib/collectionProfiles'
 import { getPlan } from '@/lib/plans'
 import { useToast } from '@/components/Toast'
 import DocumentAttachments from '@/components/DocumentAttachments'
@@ -58,6 +59,20 @@ const OTHER_REASON_SUGGESTIONS = ['Pest inspection', 'Environmental check', 'Pre
 const today = new Date().toISOString().split('T')[0]
 
 export default function ConditionTab({ form, set, canEdit, object, museum, supabase, logActivity }: ConditionTabProps) {
+  // Grades are stored canonically but must read the same here as they do on the
+  // Overview tab — a card collector seeing "Mint / Gem Mint" there and
+  // "Excellent" here would reasonably think they were different things.
+  const conditionProfile = resolveObjectProfile(
+    { collection_profile: (form.collection_profile as string | null) ?? null },
+    museum,
+  )
+  const gradeIsDerived = conditionIsDerived(
+    conditionProfile.certification,
+    form.cert_authority as string | null,
+    form.cert_grade as string | null,
+  )
+  const gradingAuthority = findAuthority(conditionProfile.certification, form.cert_authority as string | null)
+
   const [conditionHistory, setConditionHistory] = useState<ConditionAssessment[]>([])
   const [conditionLoaded, setConditionLoaded] = useState(false)
   const [conditionForm, setConditionForm] = useState({ grade: '', assessed_at: today, assessor: '', notes: '', reason_for_check: '', other_reason: '', long_description: '', hazard_note: '', recommendations: '', next_check_date: '', location_on_object: '', priority: '' })
@@ -238,7 +253,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
               disabled={!canEdit}
             >
               <option value="">— Select grade —</option>
-              {CONDITION_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+              {CONDITION_GRADES.map(g => <option key={g} value={g}>{conditionLabel(conditionProfile, g)}</option>)}
             </select>
           </div>
           <div>
@@ -359,8 +374,13 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
           <div className={sectionTitle}>Current Condition</div>
           <div className="flex items-center gap-3">
             <span className={`text-xs font-mono px-2 py-1 rounded-full ${CONDITION_STYLES[form.condition_grade as string] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
-              {form.condition_grade}
+              {conditionLabel(conditionProfile, form.condition_grade as string)}
             </span>
+            {gradeIsDerived && (
+              <span className="text-xs font-mono text-stone-400 dark:text-stone-500">
+                Set from {gradingAuthority?.label ?? form.cert_authority} {form.cert_grade}
+              </span>
+            )}
             {form.condition_date && (
               <span className="text-xs text-stone-400 dark:text-stone-500">
                 Assessed {new Date(form.condition_date as string).toLocaleDateString('en-GB')}
@@ -399,7 +419,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                       </td>
                       <td className="py-2 pr-4">
                         <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${CONDITION_STYLES[h.grade] || 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>
-                          {h.grade}
+                          {conditionLabel(conditionProfile, h.grade)}
                         </span>
                       </td>
                       <td className="py-2 pr-4 text-stone-500 dark:text-stone-400">{h.assessor}</td>
@@ -443,7 +463,7 @@ export default function ConditionTab({ form, set, canEdit, object, museum, supab
                                 <label className={labelCls}>Condition Grade <span className="text-red-400">*</span></label>
                                 <select value={editForm.grade} onChange={e => setEditForm(f => ({ ...f, grade: e.target.value }))} className={inputCls}>
                                   <option value="">— Select grade —</option>
-                                  {CONDITION_GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                                  {CONDITION_GRADES.map(g => <option key={g} value={g}>{conditionLabel(conditionProfile, g)}</option>)}
                                 </select>
                               </div>
                               <div>

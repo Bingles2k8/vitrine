@@ -83,6 +83,8 @@ export const objectCreateSchema = z.object({
   acquisition_object_count: z.number().int().min(1).max(100000).nullable().optional(),
   acquisition_value: z.coerce.number().nullable().optional(),
   number_of_parts: z.number().int().min(1).max(100000).nullable().optional(),
+  rarity: z.string().max(200).nullable().optional(),
+  acquisition_currency: z.string().max(8).nullable().optional(),
   barcode: z.string().max(64).nullable().optional(),
   origin_country: z.string().max(4).nullable().optional(),
   origin_place: z.string().max(200).nullable().optional(),

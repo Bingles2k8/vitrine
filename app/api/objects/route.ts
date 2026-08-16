@@ -3,6 +3,7 @@ import { createBearerClient, createServerSideClient } from '@/lib/supabase-serve
 import { createClient } from '@supabase/supabase-js'
 import { getPlan } from '@/lib/plans'
 import { objectCreateSchema } from '@/lib/validations'
+import { deriveCertificationForWrite } from '@/lib/collectionProfiles'
 import { rateLimit, apiLimiter } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
@@ -65,12 +66,28 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Certification's derived columns are computed here, never sent by the
+  // client — the object form, the CSV importer and VitrineCapture all rely on
+  // the server owning this so there is exactly one implementation of the
+  // mapping. See docs/collection-profiles-plan.md §5.5 and invariant G2.
+  const derivedCert = deriveCertificationForWrite(
+    parsed.data.cert_authority, parsed.data.cert_grade,
+  )
+  const objectData = {
+    ...parsed.data,
+    cert_grade_numeric: derivedCert.cert_grade_numeric,
+    cert_grade_scale: derivedCert.cert_grade_scale,
+    ...(derivedCert.condition_grade
+      ? { condition_grade: derivedCert.condition_grade }
+      : {}),
+  }
+
   const { data, error } = await service.rpc('insert_object_if_quota_ok', {
     p_museum_id: museumId,
     p_owner_id: ownerId,
     p_created_by: user.id,
     p_limit: planInfo.objects,
-    p_object_data: parsed.data,
+    p_object_data: objectData,
   })
 
   if (error) {

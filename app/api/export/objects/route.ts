@@ -4,6 +4,10 @@ import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { getPlan } from '@/lib/plans'
 import { formatDimensions } from '@/lib/formatDimensions'
 import { fetchAll } from '@/lib/fetchAll'
+import {
+  resolveCollectionProfile, activeProfiles, fieldLabel,
+  readCustomField, formatCustomFieldValue,
+} from '@/lib/collectionProfiles'
 
 export async function GET(request: Request) {
   const supabase = await createServerSideClient()
@@ -37,7 +41,7 @@ export async function GET(request: Request) {
   if (!museumId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // Check plan — CSV export is Hobbyist+ (analytics flag)
-  const { data: museum } = await supabase.from('museums').select('plan').eq('id', museumId).maybeSingle()
+  const { data: museum } = await supabase.from('museums').select('plan, collection_profiles').eq('id', museumId).maybeSingle()
   if (!museum || !getPlan(museum.plan).analytics) {
     return NextResponse.json({ error: 'CSV export requires a Hobbyist plan or above.' }, { status: 403 })
   }
@@ -65,6 +69,9 @@ export async function GET(request: Request) {
         'provenance', 'inscription', 'description',
         'dimension_height', 'dimension_width', 'dimension_depth', 'dimension_unit',
         'dimension_weight', 'dimension_weight_unit', 'dimension_notes', 'dimensions',
+        // Collection profiles — an export that drops these isn't a backup.
+        'rarity', 'cert_authority', 'cert_grade', 'cert_number', 'cert_date',
+        'custom_fields',
       ].join(', '))
       .eq('museum_id', museumId)
       .order('accession_no')
@@ -96,8 +103,20 @@ export async function GET(request: Request) {
   // A full export must not stop at PostgREST's 1,000-row cap (audit N5).
   const { data: objects } = await fetchAll(r => buildQuery(r))
 
+  // Headers speak the collection's own language, matching what the importer
+  // accepts (lib/collectionProfiles/csv.ts), so an export round-trips.
+  const exportProfile = resolveCollectionProfile(museum)
+  const exportCustomFields = activeProfiles(museum).flatMap(p => p.customFields ?? [])
+  const certLabels = exportProfile.certification?.labels ?? {}
+
   const HEADERS = [
-    'Accession No', 'Title', 'Artist', 'Year', 'Medium', 'Culture', 'Object Type',
+    'Accession No',
+    fieldLabel(exportProfile, 'title', 'Title'),
+    fieldLabel(exportProfile, 'artist', 'Artist'),
+    'Year',
+    fieldLabel(exportProfile, 'medium', 'Medium'),
+    fieldLabel(exportProfile, 'culture', 'Culture'),
+    fieldLabel(exportProfile, 'object_type', 'Object Type'),
     'Status', 'Current Location', 'Acquisition Date', 'Acquisition Method',
     'Acquisition Source', 'Acquisition Authorised By', 'Accession Register Confirmed',
     'Maker', 'Maker Role', 'Production Place', 'Technique', 'School / Style / Period', 'Subject Depicted',
@@ -105,6 +124,12 @@ export async function GET(request: Request) {
     'Last Inventoried', 'Inventoried By',
     'Copyright Status', 'Rights Holder',
     'Provenance', 'Inscription', 'Dimensions', 'Description',
+    fieldLabel(exportProfile, 'rarity', 'Edition / Rarity'),
+    certLabels.authority ?? 'Grading Company',
+    certLabels.grade ?? 'Grade',
+    certLabels.number ?? 'Cert Number',
+    certLabels.date ?? 'Graded Date',
+    ...exportCustomFields.map(d => d.label),
   ]
 
   // 'dimensions' is computed from the structured dimension_* columns (the
@@ -119,15 +144,25 @@ export async function GET(request: Request) {
     'last_inventoried', 'inventoried_by',
     'copyright_status', 'rights_holder',
     'provenance', 'inscription', 'dimensions', 'description',
+    'rarity', 'cert_authority', 'cert_grade', 'cert_number', 'cert_date',
+    ...exportCustomFields.map(d => `custom:${d.key}`),
   ]
 
   const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
 
+  const customDefsByKey = new Map(exportCustomFields.map(d => [d.key, d]))
+
   const rows = (objects || []).map(a => {
     const rec = a as unknown as Record<string, unknown>
-    return FIELDS.map(f =>
-      escape(f === 'dimensions' ? formatDimensions(rec) : rec[f])
-    ).join(',')
+    return FIELDS.map(f => {
+      if (f === 'dimensions') return escape(formatDimensions(rec))
+      if (f.startsWith('custom:')) {
+        const key = f.slice('custom:'.length)
+        const bag = rec.custom_fields as Record<string, string | number | boolean | null> | null
+        return escape(formatCustomFieldValue(customDefsByKey.get(key), readCustomField(bag, key)))
+      }
+      return escape(rec[f])
+    }).join(',')
   })
 
   const csv = [HEADERS.map(h => `"${h}"`).join(','), ...rows].join('\n')
