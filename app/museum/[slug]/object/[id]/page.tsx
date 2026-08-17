@@ -11,6 +11,7 @@ import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
 import { objectLabels, publicCertification, publicCustomFields } from '@/lib/publicProfile'
 import CertificationPanel from '@/components/collection/CertificationPanel'
+import { GALLERY_PRESET, OBJECT_LAYOUTS, type ObjectTheme } from '@/components/collection/object-layouts'
 import type { Metadata } from 'next'
 
 function toFiniteNumber(v: unknown): number | null {
@@ -143,7 +144,10 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
       ? [{ url: object.image_url, caption: null }]
       : []
 
-  const { accent, content, headingStyle, chrome } = getMuseumStyles(museum)
+  const {
+    tmpl, accent, content, headingStyle, chrome, objectVariant, objectOptions,
+  } = getMuseumStyles(museum)
+  const radius = museum.card_radius ?? tmpl.card_radius
 
   // This object's own vocabulary — resolved per object, so a collection running
   // two profiles still labels each item in its own language. Full-mode plans
@@ -187,7 +191,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     { label: 'Associated Person', value: object.associated_person },
     { label: 'Associated Organisation', value: object.associated_organisation },
     { label: 'Associated Place', value: object.associated_place },
-  ].filter(a => !!a.value)
+  ].filter((a): a is { label: string; value: string } => !!a.value)
 
   const objectUrl = `${SITE_URL}/museum/${slug}/object/${id}`
   const museumUrl = `${SITE_URL}/museum/${slug}`
@@ -214,150 +218,141 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     ],
   }
 
+  // ── Blocks ────────────────────────────────────────────────────────────────
+  // Assembled once here; the template's layout decides only where they sit.
+
+  const theme: ObjectTheme = {
+    accent,
+    heading: content.heading,
+    body: content.body,
+    muted: content.muted,
+    border: content.border,
+    cardBg: content.cardBg,
+    headingStyle,
+    chrome,
+    radius,
+    options: objectOptions,
+  }
+
+  const preset = GALLERY_PRESET[objectVariant] ?? GALLERY_PRESET.standard
+
+  const gallery = (
+    <PublicImageGallery
+      images={allImages}
+      title={object.title}
+      emoji={object.emoji}
+      cardBg={content.cardBg}
+      border={content.border}
+      accent={accent}
+      radius={radius}
+      frame={preset.frame}
+      aspect={preset.aspect}
+      fit={preset.fit}
+    />
+  )
+
+  const back = (
+    <Link
+      href={`/museum/${slug}`}
+      className="text-xs font-mono transition-opacity hover:opacity-70 mb-10 inline-block"
+      style={{ color: content.muted }}
+    >
+      ← Back to {labels.collection.toLowerCase()}
+    </Link>
+  )
+
+  const actions = museum.accept_messages ? (
+    <ContactMuseumButton
+      recipientMuseumId={museum.id}
+      recipientMuseumName={museum.name}
+      objectId={object.id}
+      objectTitle={object.title}
+      accent={accent}
+    />
+  ) : null
+
+  const mapLat = toFiniteNumber(object.origin_lat)
+  const mapLng = toFiniteNumber(object.origin_lng)
+  const showMap = object.origin_map_public && mapLat !== null && mapLng !== null
+
+  const extras = (showMap || (isFullMode && associations.length > 0)) ? (
+    <>
+      {showMap && (
+        <div className="mb-6">
+          <div className="text-[11px] uppercase tracking-[0.18em] mb-2 font-mono" style={{ color: content.muted }}>
+            Location
+          </div>
+          <PublicObjectMap
+            lat={mapLat!}
+            lng={mapLng!}
+            label={object.origin_place || null}
+            accent={accent}
+            borderColor={content.border}
+          />
+        </div>
+      )}
+      {isFullMode && associations.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[11px] uppercase tracking-[0.18em] mb-2 font-mono" style={{ color: content.muted }}>
+            Associations
+          </div>
+          <div className="space-y-1">
+            {associations.map(a => (
+              <div key={a.label} className="text-sm" style={{ color: content.body }}>
+                <span className="font-mono text-xs" style={{ color: content.muted }}>{a.label}: </span>{a.value}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  ) : null
+
+  const footer = getPlan(museum.plan).visitInfo ? (
+    <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
+      <Link
+        href={`/museum/${slug}/visit`}
+        className="inline-block text-sm font-mono px-6 py-3 text-white transition-opacity hover:opacity-90"
+        style={{ background: accent, borderRadius: chrome === 'hard' ? 0 : 6 }}
+      >
+        Plan your visit to see this {labels.item.toLowerCase()}
+      </Link>
+    </div>
+  ) : null
+
+  const Layout = OBJECT_LAYOUTS[objectVariant] ?? OBJECT_LAYOUTS.standard
+
   return (
-    <div className="max-w-5xl mx-auto px-6 pt-6 pb-16 md:py-16">
+    <>
       <JsonLd data={visualArtworkSchema} />
       <JsonLd data={breadcrumbSchema} />
       <PageViewTracker museumId={museum.id} pageType="object" objectId={object.id} />
-      <Link
-        href={`/museum/${slug}`}
-        className="text-xs font-mono transition-colors mb-10 inline-block"
-        style={{ color: content.muted }}
-      >
-        ← Back to collection
-      </Link>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
-
-        <div className="md:sticky md:top-24">
-          <PublicImageGallery
-            images={allImages}
-            title={object.title}
-            emoji={object.emoji}
-            cardBg={content.cardBg}
+      <Layout
+        theme={theme}
+        back={back}
+        gallery={gallery}
+        eyebrow={labels.hidden.culture ? null : (object.culture || null)}
+        title={object.title}
+        maker={object.artist || null}
+        rarity={object.rarity && !labels.hidden.rarity ? { label: labels.rarity, value: object.rarity } : null}
+        certification={certification ? (
+          <CertificationPanel
+            cert={certification}
+            accent={accent}
+            heading={content.heading}
+            muted={content.muted}
             border={content.border}
+            cardBg={content.cardBg}
+            square={chrome === 'hard'}
           />
-        </div>
-
-        <div>
-          <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>
-            {labels.hidden.culture ? '' : object.culture}
-          </div>
-          <h1 className="text-4xl font-normal leading-tight mb-2" style={{ ...headingStyle, color: content.heading }}>
-            {object.title}
-          </h1>
-          {object.artist && (
-            <p className={`text-xl ${object.rarity ? 'mb-1' : 'mb-8'}`} style={{ ...headingStyle, color: content.muted }}>
-              {object.artist}
-            </p>
-          )}
-          {/* Labelled, because "445,500 struck" only reads as a mintage once
-              the profile's word for it is attached. */}
-          {object.rarity && !labels.hidden.rarity && (
-            <p className="text-sm font-mono mb-8" style={{ color: accent }}>
-              <span style={{ color: content.muted }}>{labels.rarity}: </span>
-              {object.rarity}
-            </p>
-          )}
-
-          {certification && (
-            <CertificationPanel
-              cert={certification}
-              accent={accent}
-              heading={content.heading}
-              muted={content.muted}
-              border={content.border}
-              cardBg={content.cardBg}
-              square={chrome === 'hard'}
-            />
-          )}
-
-          {museum.accept_messages && (
-            <div className="mb-8">
-              <ContactMuseumButton
-                recipientMuseumId={museum.id}
-                recipientMuseumName={museum.name}
-                objectId={object.id}
-                objectTitle={object.title}
-                accent={accent}
-              />
-            </div>
-          )}
-
-          {metaRows.length > 0 && (
-            <div
-              className="grid grid-cols-2 border overflow-hidden mb-8"
-              style={{ borderColor: content.border, borderRadius: chrome === 'hard' ? 0 : 8 }}
-            >
-              {metaRows.map((row, i) => (
-                <div
-                  key={row.label}
-                  className={'p-4 ' + (i % 2 === 0 ? 'border-r ' : '') + 'border-b last:border-b-0'}
-                  style={{ borderColor: content.border }}
-                >
-                  <div className="text-xs uppercase tracking-widest mb-1 font-mono" style={{ color: content.muted }}>{row.label}</div>
-                  <div className="text-sm" style={{ color: content.heading }}>{row.value}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {object.description && (
-            <p className="leading-relaxed font-light text-sm mb-8" style={{ color: content.body }}>{object.description}</p>
-          )}
-
-          {proseSections.map(section => (
-            <div key={section.label} className="mb-6">
-              <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>{section.label}</div>
-              <p className="leading-relaxed font-light text-sm" style={{ color: content.body }}>{section.value}</p>
-            </div>
-          ))}
-
-          {(() => {
-            const mapLat = toFiniteNumber(object.origin_lat)
-            const mapLng = toFiniteNumber(object.origin_lng)
-            if (!object.origin_map_public || mapLat === null || mapLng === null) return null
-            return (
-              <div className="mb-6">
-                <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Location</div>
-                <PublicObjectMap
-                  lat={mapLat}
-                  lng={mapLng}
-                  label={object.origin_place || null}
-                  accent={accent}
-                  borderColor={content.border}
-                />
-              </div>
-            )
-          })()}
-
-          {isFullMode && associations.length > 0 && (
-            <div className="mb-6">
-              <div className="text-xs uppercase tracking-widest mb-2 font-mono" style={{ color: content.muted }}>Associations</div>
-              <div className="space-y-1">
-                {associations.map(a => (
-                  <div key={a.label} className="text-sm" style={{ color: content.body }}>
-                    <span className="font-mono text-xs" style={{ color: content.muted }}>{a.label}: </span>{a.value}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {getPlan(museum.plan).visitInfo && (
-            <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
-              <Link
-                href={`/museum/${slug}/visit`}
-                className="inline-block text-sm font-mono px-6 py-3 rounded text-white transition-colors"
-                style={{ background: accent }}
-              >
-                Plan your visit to see this work
-              </Link>
-            </div>
-          )}
-        </div>
-
-      </div>
-    </div>
+        ) : null}
+        actions={actions}
+        meta={metaRows}
+        description={object.description || null}
+        prose={proseSections}
+        extras={extras}
+        footer={footer}
+      />
+    </>
   )
 }

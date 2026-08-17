@@ -1,4 +1,8 @@
-import { getTemplate, type ChromeStyle, type GridOptions, type GridVariant } from './templates'
+import {
+  getTemplate,
+  type ChromeStyle, type GridOptions, type GridVariant,
+  type ObjectOptions, type ObjectVariant,
+} from './templates'
 
 export const FONT_MAP: Record<string, { google: string; css: string }> = {
   playfair:   { google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                  css: "'Playfair Display', serif" },
@@ -126,6 +130,8 @@ export function getMuseumStyles(museum: MuseumStyleInput) {
     bodyStyle: { fontFamily: bodyFont.css } as React.CSSProperties,
     gridVariant: tmpl.grid_variant as GridVariant,
     gridOptions: (tmpl.grid_options ?? {}) as GridOptions,
+    objectVariant: tmpl.object_variant as ObjectVariant,
+    objectOptions: (tmpl.object_options ?? {}) as ObjectOptions,
     chrome: tmpl.chrome as ChromeStyle,
     pageBg:   (useDark ? PAGE_BG_DARK[tmpl.id] : null) ?? PAGE_BG[tmpl.id] ?? '#fafaf9',
     content:  (useDark ? CONTENT_COLORS_DARK[tmpl.id] : null) ?? CONTENT_COLORS[tmpl.id] ?? CONTENT_COLORS.minimal,

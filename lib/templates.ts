@@ -15,6 +15,30 @@ export type GridVariant =
   | 'editorial'  // alternating large figure / text rows
   | 'stack'      // one wide band per item, revealed on scroll
 
+/**
+ * How a single item's page is arranged.
+ *
+ * The collection page gained a layout per template before this; the object
+ * page stayed a single two-column arrangement for all nine, so following a
+ * work through from a salon hang or a magazine spread landed on the same
+ * page every time.
+ */
+export type ObjectVariant =
+  | 'standard'   // two columns, sticky gallery, boxed metadata — the fallback
+  | 'plate'      // white-cube: large plate, then a wall label beneath it
+  | 'catalogue'  // formal record: ruled masthead and a definition list
+  | 'cinematic'  // wide image up top, then prose against a metadata sidebar
+  | 'editorial'  // magazine spread: heavy rules, oversized title, columns
+  | 'essay'      // narrow reading measure, image as a figure, details last
+  | 'panel'      // symmetrical, framed and matted, bordered metadata panel
+
+export interface ObjectOptions {
+  /** `cinematic`: title sits over the image rather than beneath it. */
+  overlayTitle?: boolean
+  /** `editorial`: kicker carries a catalogue number. */
+  numbered?: boolean
+}
+
 /** Styling of the search box and filter chips above the collection. */
 export type ChromeStyle =
   | 'soft'  // rounded input, pill chips
@@ -52,6 +76,8 @@ export interface Template {
   layout_variant: 'standard' | 'cover' | 'text-forward' | 'magazine' | 'sidebar' | 'minimal' | 'dramatic' | 'archival'
   grid_variant: GridVariant
   grid_options?: GridOptions
+  object_variant: ObjectVariant
+  object_options?: ObjectOptions
   chrome: ChromeStyle
   supports_header_image: boolean
 }
@@ -78,6 +104,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'minimal',
     grid_variant: 'plate',
     chrome: 'rule',
+    object_variant: 'plate',
     supports_header_image: false,
   },
   {
@@ -101,6 +128,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'dramatic',
     grid_variant: 'spotlight',
     chrome: 'rule',
+    object_variant: 'cinematic',
     supports_header_image: true,
   },
   {
@@ -124,6 +152,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'archival',
     grid_variant: 'catalogue',
     chrome: 'rule',
+    object_variant: 'catalogue',
     grid_options: { numbered: true },
     supports_header_image: false,
   },
@@ -148,6 +177,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'standard',
     grid_variant: 'editorial',
     chrome: 'hard',
+    object_variant: 'editorial',
     supports_header_image: true,
   },
   {
@@ -171,6 +201,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'standard',
     grid_variant: 'plate',
     chrome: 'soft',
+    object_variant: 'panel',
     grid_options: { frame: true },
     supports_header_image: true,
   },
@@ -195,6 +226,8 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'cover',
     grid_variant: 'stack',
     chrome: 'rule',
+    object_variant: 'cinematic',
+    object_options: { overlayTitle: true },
     supports_header_image: true,
   },
   {
@@ -218,6 +251,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'text-forward',
     grid_variant: 'catalogue',
     chrome: 'rule',
+    object_variant: 'essay',
     grid_options: { lead: true },
     supports_header_image: false,
   },
@@ -242,6 +276,8 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'magazine',
     grid_variant: 'mosaic',
     chrome: 'hard',
+    object_variant: 'editorial',
+    object_options: { numbered: true },
     supports_header_image: false,
   },
   {
@@ -265,6 +301,7 @@ export const TEMPLATES: Template[] = [
     layout_variant: 'sidebar',
     grid_variant: 'salon',
     chrome: 'soft',
+    object_variant: 'standard',
     supports_header_image: false,
   },
 ]
