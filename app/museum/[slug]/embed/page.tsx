@@ -1,7 +1,9 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import CollectionSearch from '@/components/CollectionSearch'
-import { getMuseumStyles } from '@/lib/museum-styles'
+import { getMuseumStyles, googleFontsHref } from '@/lib/museum-styles'
+import { collectionLabels } from '@/lib/publicProfile'
+import { toGridObject } from '@/components/collection/types'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -28,7 +30,10 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  const { tmpl, accent } = getMuseumStyles(museum)
+  const {
+    tmpl, accent, font, bodyFont, bodyStyle, headingStyle,
+    content, pageBg, gridVariant, gridOptions, chrome,
+  } = getMuseumStyles(museum)
 
   const styleSettings = {
     template: tmpl.id,
@@ -38,13 +43,25 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
     image_ratio: museum.image_ratio || tmpl.image_ratio,
     card_padding: museum.card_padding || tmpl.card_padding,
     card_metadata: museum.card_metadata || tmpl.card_metadata,
+    gridVariant,
+    gridOptions,
+    chrome,
+    content,
+    headingStyle,
+    labels: collectionLabels(museum),
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', background: 'white', minHeight: '100%' }}>
+    // The embed follows the collection's own ground rather than a fixed white.
+    // It used to force white while the grid drew the template's colours on top,
+    // so a dark template embedded as dark cards floating on a white page.
+    <div style={{ ...bodyStyle, background: pageBg, minHeight: '100%' }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link rel="stylesheet" href={googleFontsHref(font, bodyFont)} />
       <div className="px-4 py-4">
         <CollectionSearch
-          objects={objects || []}
+          objects={(objects || []).map(toGridObject)}
           slug={slug}
           settings={styleSettings}
         />
@@ -54,7 +71,8 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
           href={`/museum/${slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-mono text-stone-400 hover:text-stone-600 transition-colors"
+          className="text-xs font-mono transition-opacity hover:opacity-70"
+          style={{ color: content.muted }}
         >
           View full collection on Vitrine →
         </a>

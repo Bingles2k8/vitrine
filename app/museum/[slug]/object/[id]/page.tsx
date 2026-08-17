@@ -9,6 +9,8 @@ import PublicObjectMap from '@/components/PublicObjectMap'
 import ContactMuseumButton from '@/components/ContactMuseumButton'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
+import { objectLabels, publicCertification, publicCustomFields } from '@/lib/publicProfile'
+import CertificationPanel from '@/components/collection/CertificationPanel'
 import type { Metadata } from 'next'
 
 function toFiniteNumber(v: unknown): number | null {
@@ -141,30 +143,45 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
       ? [{ url: object.image_url, caption: null }]
       : []
 
-  const { accent, content, headingStyle } = getMuseumStyles(museum)
+  const { accent, content, headingStyle, chrome } = getMuseumStyles(museum)
+
+  // This object's own vocabulary — resolved per object, so a collection running
+  // two profiles still labels each item in its own language. Full-mode plans
+  // resolve to the museum wording they already had.
+  const labels = objectLabels(object, museum)
+  const certification = publicCertification(object)
+  const customFields = publicCustomFields(object, museum)
 
   const isFullMode = getPlan(museum.plan).fullMode
   const metaRows = [
-    { label: 'Date', value: formatDate(object) },
-    { label: 'Object Type', value: object.object_type },
-    { label: isFullMode ? 'Medium' : 'Medium / Material', value: object.medium },
-    { label: isFullMode ? 'Culture' : 'Origin', value: object.culture },
+    { label: labels.date, value: formatDate(object) },
+    { label: labels.type, value: object.object_type },
+    labels.hidden.medium ? null : { label: labels.medium, value: object.medium },
+    labels.hidden.culture ? null : { label: labels.origin, value: object.culture },
     { label: 'Production Place', value: object.production_place },
     isFullMode ? { label: 'Accession', value: object.accession_no } : null,
     { label: 'Dimensions', value: formatDimensions(object) },
-    parseInt(object.number_of_parts) > 1 ? { label: 'No. of Parts', value: String(object.number_of_parts) } : null,
-    isFullMode ? { label: 'Status', value: object.status } : null,
-    isFullMode ? { label: 'Location', value: object.status === 'Storage' ? 'In Storage' : object.current_location } : null,
-    object.condition_grade ? { label: 'Condition', value: object.condition_grade } : null,
+    !labels.hidden.number_of_parts && parseInt(object.number_of_parts) > 1
+      ? { label: 'No. of Parts', value: String(object.number_of_parts) }
+      : null,
+    isFullMode ? { label: 'Status', value: labels.statusLabels[object.status] ?? object.status } : null,
+    isFullMode ? { label: labels.location, value: object.status === 'Storage' ? 'In Storage' : object.current_location } : null,
+    // A derived grade is already stated in full on the certification panel.
+    object.condition_grade && !certification
+      ? { label: labels.condition, value: labels.conditionLabels[object.condition_grade] ?? object.condition_grade }
+      : null,
+    // Profile detail fields — sizes, pressings, calibres, whatever this hobby
+    // records that the shared object columns have no room for.
+    ...customFields.map(f => ({ label: f.label, value: f.value })),
   ].filter((row): row is { label: string; value: string } => !!row && !!row.value)
 
   const proseSections = [
     { label: 'Historical Context', value: object.historical_context },
-    { label: 'Marks and Inscriptions', value: object.inscription },
+    labels.hidden.inscription ? null : { label: labels.inscription, value: object.inscription },
     { label: 'Materials & Techniques', value: object.physical_materials },
     { label: 'Provenance', value: object.provenance },
     { label: 'Credit Line', value: object.credit_line },
-  ].filter(s => !!s.value)
+  ].filter((s): s is { label: string; value: string } => !!s && !!s.value)
 
   const associations = [
     { label: 'Associated Person', value: object.associated_person },
@@ -223,13 +240,36 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>{object.culture}</div>
+          <div className="text-xs uppercase tracking-widest mb-3 font-mono" style={{ color: content.muted }}>
+            {labels.hidden.culture ? '' : object.culture}
+          </div>
           <h1 className="text-4xl font-normal leading-tight mb-2" style={{ ...headingStyle, color: content.heading }}>
             {object.title}
           </h1>
-          <p className={`text-xl ${object.rarity ? 'mb-1' : 'mb-8'}`} style={{ ...headingStyle, color: content.muted }}>{object.artist}</p>
-          {object.rarity && (
-            <p className="text-sm font-mono mb-8" style={{ color: accent }}>{object.rarity}</p>
+          {object.artist && (
+            <p className={`text-xl ${object.rarity ? 'mb-1' : 'mb-8'}`} style={{ ...headingStyle, color: content.muted }}>
+              {object.artist}
+            </p>
+          )}
+          {/* Labelled, because "445,500 struck" only reads as a mintage once
+              the profile's word for it is attached. */}
+          {object.rarity && !labels.hidden.rarity && (
+            <p className="text-sm font-mono mb-8" style={{ color: accent }}>
+              <span style={{ color: content.muted }}>{labels.rarity}: </span>
+              {object.rarity}
+            </p>
+          )}
+
+          {certification && (
+            <CertificationPanel
+              cert={certification}
+              accent={accent}
+              heading={content.heading}
+              muted={content.muted}
+              border={content.border}
+              cardBg={content.cardBg}
+              square={chrome === 'hard'}
+            />
           )}
 
           {museum.accept_messages && (
@@ -245,7 +285,10 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
           )}
 
           {metaRows.length > 0 && (
-            <div className="grid grid-cols-2 border rounded-lg overflow-hidden mb-8" style={{ borderColor: content.border }}>
+            <div
+              className="grid grid-cols-2 border overflow-hidden mb-8"
+              style={{ borderColor: content.border, borderRadius: chrome === 'hard' ? 0 : 8 }}
+            >
               {metaRows.map((row, i) => (
                 <div
                   key={row.label}

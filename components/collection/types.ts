@@ -1,0 +1,107 @@
+import type { CSSProperties } from 'react'
+import type { GridOptions } from '@/lib/templates'
+import type { PublicLabels } from '@/lib/publicProfile'
+
+/** The object fields the public grid renders. */
+export interface GridObject {
+  id: string
+  title: string
+  artist: string
+  year: string
+  medium: string
+  culture: string
+  status: string
+  emoji: string
+  image_url: string | null
+  condition_grade?: string | null
+  rarity?: string | null
+  description?: string | null
+}
+
+/**
+ * Everything a grid variant needs to draw itself.
+ *
+ * Colours arrive as resolved values rather than Tailwind class maps. The maps
+ * were duplicated per template inside the grid and had to be extended by hand
+ * for every new template and for dark mode; `getMuseumStyles` already resolves
+ * exactly these values once, correctly, including dark mode.
+ */
+export interface GridTheme {
+  accent: string
+  heading: string
+  body: string
+  muted: string
+  border: string
+  cardBg: string
+  imageBg: string
+  /** Font family/style for work titles. */
+  headingStyle: CSSProperties
+  radius: number
+  /** Tailwind aspect-ratio class, e.g. `aspect-square`. */
+  imageAspect: string
+  columns: number
+  /** Tailwind padding class for card interiors. */
+  padding: string
+  /** none | title | title+artist | full */
+  metadata: string
+  options: GridOptions
+  labels: PublicLabels
+}
+
+export interface GridProps {
+  items: GridObject[]
+  slug: string
+  theme: GridTheme
+}
+
+/**
+ * Narrow an object row to the fields the public grid renders.
+ *
+ * The grid is a client component, so whatever is handed to it is serialised
+ * into the page payload and readable by any visitor. Rows arrive from
+ * `select('*')`, which carries purchase prices, valuations and internal notes
+ * that are never displayed — those must not cross the boundary.
+ */
+export function toGridObject(o: Record<string, unknown>): GridObject {
+  const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+  const orNull = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null)
+
+  return {
+    id: String(o.id),
+    title: str(o.title),
+    artist: str(o.artist),
+    year: str(o.year),
+    medium: str(o.medium),
+    culture: str(o.culture),
+    status: str(o.status),
+    emoji: str(o.emoji),
+    image_url: orNull(o.image_url),
+    condition_grade: orNull(o.condition_grade),
+    rarity: orNull(o.rarity),
+    description: orNull(o.description),
+  }
+}
+
+export function objectHref(slug: string, id: string): string {
+  return `/museum/${slug}/object/${id}`
+}
+
+/** This hobby's word for a canonical status, e.g. "Sold / Traded". */
+export function statusText(theme: GridTheme, status: string): string {
+  return theme.labels.statusLabels[status] ?? status
+}
+
+/** This hobby's word for a canonical condition grade, e.g. "Uncirculated". */
+export function conditionText(theme: GridTheme, grade: string): string {
+  return theme.labels.conditionLabels[grade] ?? grade
+}
+
+/** The caption line beneath a work: maker, then date, as available. */
+export function captionParts(item: GridObject, theme: GridTheme): string[] {
+  const parts: string[] = []
+  if (theme.metadata === 'title+artist' || theme.metadata === 'full') {
+    if (item.artist) parts.push(item.artist)
+  }
+  if (theme.metadata === 'full' && item.year) parts.push(item.year)
+  return parts
+}

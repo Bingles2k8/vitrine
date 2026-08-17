@@ -10,6 +10,8 @@ import PageViewTracker from '@/components/PageViewTracker'
 import { JsonLd } from '@/components/JsonLd'
 import { SITE_URL } from '@/lib/seo'
 import { getCollectionValue } from '@/lib/collectionValue'
+import { collectionLabels } from '@/lib/publicProfile'
+import { toGridObject } from '@/components/collection/types'
 
 export const revalidate = 3600
 
@@ -59,8 +61,12 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     .order('created_at', { ascending: false })
     .limit(6) : { data: [] }
 
-  const { tmpl, accent, primary, headingStyle, content } = getMuseumStyles(museum)
+  const { tmpl, accent, primary, headingStyle, content, gridVariant, gridOptions, chrome } = getMuseumStyles(museum)
   const layoutVariant = getLayoutVariant(museum)
+  const labels = collectionLabels(museum)
+  // "coins" / "cards" / "objects" — this hobby's word, used wherever the page
+  // used to hardcode "works" or "pieces".
+  const itemsWord = labels.itemPlural.toLowerCase()
 
   const styleSettings = {
     template: tmpl.id,
@@ -70,7 +76,12 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     image_ratio: museum.image_ratio || tmpl.image_ratio,
     card_padding: museum.card_padding || tmpl.card_padding,
     card_metadata: museum.card_metadata || tmpl.card_metadata,
-    darkMode: museum.dark_mode === true,
+    gridVariant,
+    gridOptions,
+    chrome,
+    content,
+    headingStyle,
+    labels,
   }
 
   const formattedValue = showValueBadge
@@ -81,7 +92,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     <div className="max-w-6xl mx-auto px-6 pt-8 flex flex-wrap items-center gap-4">
       <p className="text-xs font-mono" style={{ color: 'rgba(128,128,128,0.5)' }}>
         {[
-          `${allObjects.length} pieces`,
+          `${allObjects.length} ${itemsWord}`,
           distinctCategories > 1 ? `${distinctCategories} categories` : null,
           distinctOrigins > 1 ? `${distinctOrigins} origins` : null,
           museum.collecting_since ? `Since ${museum.collecting_since}` : null,
@@ -96,9 +107,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   )
 
   const emptyState = (
-    <div className="text-center py-32" style={{ color: 'rgba(128,128,128,0.5)' }}>
+    <div className="text-center py-32" style={{ color: content.muted }}>
       <div className="text-6xl mb-4">🏛️</div>
-      <div className="font-serif text-2xl italic">Collection coming soon</div>
+      <div className="text-2xl" style={{ ...headingStyle, color: content.muted }}>
+        {labels.collection} coming soon
+      </div>
     </div>
   )
 
@@ -115,7 +128,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
       {contactBlock}
       {allObjects.length === 0
         ? emptyState
-        : <CollectionSearch objects={allObjects} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />}
+        : <CollectionSearch objects={allObjects.map(toGridObject)} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />}
     </>
   )
 
@@ -136,7 +149,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           {/* Giant title */}
           <h1
             className="font-normal leading-none mb-8"
-            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(3.5rem, 8vw, 7rem)' }}
+            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 8vw, 7rem)', overflowWrap: 'break-word' }}
           >
             {museum.tagline || 'The Collection'}
           </h1>
@@ -145,7 +158,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           <div className="flex items-center gap-6 mb-6">
             <div className="h-px flex-1" style={{ background: content.border }} />
             <span className="text-xs font-mono shrink-0" style={{ color: content.muted }}>
-              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} works`}
+              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} ${itemsWord}`}
               {distinctCategories > 1 ? ` · ${distinctCategories} categories` : ''}
               {museum.collecting_since ? ` · Since ${museum.collecting_since}` : ''}
             </span>
@@ -231,7 +244,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
                 <h1
                   className="font-normal leading-none"
-                  style={{ ...headingStyle, color: '#ffffff', fontSize: 'clamp(2.5rem, 6vw, 5.5rem)' }}
+                  style={{ ...headingStyle, color: '#ffffff', fontSize: 'clamp(2rem, 6vw, 5.5rem)', overflowWrap: 'break-word' }}
                 >
                   {museum.tagline || 'The Collection'}
                 </h1>
@@ -240,7 +253,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           ) : (
             <h1
               className="font-normal leading-none mb-10"
-              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(3rem, 8vw, 7.5rem)' }}
+              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 8vw, 7.5rem)', overflowWrap: 'break-word' }}
             >
               {museum.tagline || 'The Collection'}
             </h1>
@@ -252,7 +265,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           {/* Stats row */}
           <div className="flex flex-wrap items-center gap-6">
             <span className="text-xs font-mono" style={{ color: content.muted }}>
-              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} works`}
+              {isFullMode ? `${onDisplay} on display` : `${allObjects.length} ${itemsWord}`}
             </span>
             {distinctCategories > 1 && (
               <span className="text-xs font-mono" style={{ color: content.muted }}>{distinctCategories} categories</span>
@@ -277,7 +290,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         {featuredObjects && featuredObjects.length > 0 && (
           <div className="max-w-6xl mx-auto px-6 pb-4">
             <div className="flex items-center gap-4 mb-6">
-              <div className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>Featured Works</div>
+              <div className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>Featured {labels.itemPlural}</div>
               <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
             <div className={`grid gap-3 ${featuredObjects.length === 1 ? 'grid-cols-1 max-w-sm' : featuredObjects.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -324,7 +337,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             </div>
             <h1
               className="font-normal leading-tight mb-4"
-              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
+              style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)', overflowWrap: 'break-word' }}
             >
               {museum.tagline || collectionLabel}
             </h1>
@@ -336,7 +349,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
             </div>
             <div className="text-xs font-mono" style={{ color: content.muted }}>
               {[
-                isFullMode ? `${onDisplay} works on display` : `${allObjects.length} works`,
+                isFullMode ? `${onDisplay} ${itemsWord} on display` : `${allObjects.length} ${itemsWord}`,
                 distinctCategories > 1 ? `${distinctCategories} media` : null,
                 distinctOrigins > 1 ? `${distinctOrigins} origins` : null,
                 museum.collecting_since ? `Est. ${museum.collecting_since}` : null,
@@ -364,7 +377,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               )}
               {featuredObjects && featuredObjects.length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-widest font-mono mb-4" style={{ color: accent }}>Featured Works</div>
+                  <div className="text-xs uppercase tracking-widest font-mono mb-4" style={{ color: accent }}>Featured {labels.itemPlural}</div>
                   <div className="flex flex-col gap-3">
                     {featuredObjects.slice(0, 3).map(obj => (
                       <Link key={obj.id} href={`/museum/${slug}/object/${obj.id}`}
@@ -439,13 +452,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
               </div>
               <h1
                 className="font-normal leading-tight mb-6"
-                style={{ ...headingStyle, color: '#ffffff', fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}
+                style={{ ...headingStyle, color: '#ffffff', fontSize: 'clamp(2rem, 6vw, 5rem)', overflowWrap: 'break-word' }}
               >
                 {museum.tagline || 'Explore the collection'}
               </h1>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-light" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                  {isFullMode ? `${onDisplay} works on display` : `${allObjects.length} in collection`}
+                  {isFullMode ? `${onDisplay} ${itemsWord} on display` : `${allObjects.length} in collection`}
                 </span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12l7 7 7-7"/>
@@ -472,7 +485,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         {featuredObjects && featuredObjects.length > 0 && (
           <div className="max-w-6xl mx-auto px-6 pt-10 pb-2">
             <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>Featured Works</h2>
+              <h2 className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>Featured {labels.itemPlural}</h2>
               <div className="h-px flex-1" style={{ background: 'rgba(128,128,128,0.12)' }} />
             </div>
             <div className={`grid gap-4 ${featuredObjects.length === 1 ? 'grid-cols-1 max-w-sm' : featuredObjects.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -517,7 +530,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           </div>
           <h1
             className="font-normal leading-tight mb-6"
-            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2.5rem, 5vw, 4rem)' }}
+            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 4rem)', overflowWrap: 'break-word' }}
           >
             {museum.tagline || 'Explore the collection'}
           </h1>
@@ -529,7 +542,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           <div className="mt-8 flex items-center justify-center gap-3">
             <div className="h-px w-16" style={{ background: content.border }} />
             <span className="text-xs font-mono uppercase tracking-widest" style={{ color: content.muted }}>
-              {allObjects.length} works
+              {allObjects.length} {itemsWord}
               {distinctCategories > 1 ? ` · ${distinctCategories} categories` : ''}
               {museum.collecting_since ? ` · Since ${museum.collecting_since}` : ''}
             </span>
@@ -565,7 +578,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         <div className="max-w-6xl mx-auto px-6 pt-8 pb-4 flex flex-wrap items-end justify-between gap-3 border-b-2 border-black">
           <h1
             className="leading-none min-w-0"
-            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}
+            style={{ ...headingStyle, color: content.heading, fontSize: 'clamp(2rem, 5vw, 3.5rem)', overflowWrap: 'break-word', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}
           >
             {museum.tagline || museum.name}
           </h1>
@@ -666,7 +679,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
           {allObjects.length > 0 && (
             <p className="text-xs font-mono" style={{ color: content.muted }}>
               {[
-                `${allObjects.length} pieces`,
+                `${allObjects.length} ${itemsWord}`,
                 distinctCategories > 1 ? `${distinctCategories} categories` : null,
                 isFullMode ? (onDisplay > 0 ? `${onDisplay} on display` : null) : `${allObjects.length} in collection`,
               ].filter(Boolean).join(' · ')}
@@ -742,12 +755,12 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 <div className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: heroAccent }}>
                   {museum.name} — {collectionLabel}
                 </div>
-                <h1 className="leading-none mb-6" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(3rem, 8vw, 7rem)' }}>
+                <h1 className="leading-none mb-6" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(2rem, 8vw, 7rem)', overflowWrap: 'break-word' }}>
                   {museum.tagline || 'The Collection'}
                 </h1>
                 <div className="flex items-center gap-6">
                   <div className="h-px flex-1 bg-black" />
-                  <span className="font-mono text-sm" style={{ color: heroSubText }}>{isFullMode ? `${onDisplay} works on display` : `${allObjects.length} in collection`}</span>
+                  <span className="font-mono text-sm" style={{ color: heroSubText }}>{isFullMode ? `${onDisplay} ${itemsWord} on display` : `${allObjects.length} in collection`}</span>
                 </div>
               </>
             ) : (
@@ -755,11 +768,11 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
                 <div className="text-xs uppercase tracking-widest mb-4 font-mono" style={{ color: heroAccent }}>
                   {museum.name}
                 </div>
-                <h1 className="font-normal leading-tight mb-4" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
+                <h1 className="font-normal leading-tight mb-4" style={{ ...headingStyle, color: heroText, fontSize: 'clamp(2rem, 5vw, 4.5rem)', overflowWrap: 'break-word' }}>
                   {museum.tagline || 'Explore the collection'}
                 </h1>
                 <p className="text-lg font-light" style={{ color: heroSubText }}>
-                  {isFullMode ? `${onDisplay} works currently on display` : `${allObjects.length} in collection`}
+                  {isFullMode ? `${onDisplay} ${itemsWord} currently on display` : `${allObjects.length} in collection`}
                 </p>
               </>
             )}
@@ -785,7 +798,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
         <div className="max-w-6xl mx-auto px-6 pt-10 pb-2">
           <div className="flex items-center gap-4 mb-6">
             <h2 className="text-xs uppercase tracking-widest font-mono" style={{ color: accent }}>
-              Featured Works
+              Featured {labels.itemPlural}
             </h2>
             <div className="h-px flex-1" style={{ background: 'rgba(128,128,128,0.12)' }} />
           </div>

@@ -1,20 +1,23 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import type { CSSProperties } from 'react'
+import type { ChromeStyle, GridOptions, GridVariant } from '@/lib/templates'
+import type { PublicLabels } from '@/lib/publicProfile'
+import type { GridObject, GridTheme } from './collection/types'
+import {
+  CatalogueList, EditorialGrid, MosaicGrid, PlateGrid,
+  SalonGrid, SpotlightGrid, StackGrid, UniformGrid,
+} from './collection/grids'
 
-interface ObjectItem {
-  id: string
-  title: string
-  artist: string
-  year: string
-  medium: string
-  culture: string
-  status: string
-  emoji: string
-  image_url: string | null
-  condition_grade?: string | null
-  rarity?: string | null
+interface ContentColors {
+  heading: string
+  body: string
+  muted: string
+  border: string
+  cardBg: string
+  inputBg: string
+  imageBg: string
 }
 
 interface StyleSettings {
@@ -25,14 +28,43 @@ interface StyleSettings {
   image_ratio: string
   card_padding: string
   card_metadata: string
-  darkMode?: boolean
+  gridVariant: GridVariant
+  gridOptions: GridOptions
+  chrome: ChromeStyle
+  /** Resolved by getMuseumStyles — already accounts for dark mode. */
+  content: ContentColors
+  headingStyle: CSSProperties
+  labels: PublicLabels
 }
 
 interface Props {
-  objects: ObjectItem[]
+  objects: GridObject[]
   slug: string
   settings: StyleSettings
   showStatusFilter?: boolean
+}
+
+const RATIO_CLASS: Record<string, string> = {
+  square: 'aspect-square',
+  portrait: 'aspect-[3/4]',
+  landscape: 'aspect-[16/9]',
+}
+
+const PAD_CLASS: Record<string, string> = {
+  tight: 'p-2',
+  normal: 'p-4',
+  generous: 'p-6',
+}
+
+const GRIDS: Record<GridVariant, (p: { items: GridObject[]; slug: string; theme: GridTheme }) => React.ReactElement> = {
+  uniform: UniformGrid,
+  plate: PlateGrid,
+  catalogue: CatalogueList,
+  spotlight: SpotlightGrid,
+  mosaic: MosaicGrid,
+  salon: SalonGrid,
+  editorial: EditorialGrid,
+  stack: StackGrid,
 }
 
 export default function CollectionSearch({ objects, slug, settings, showStatusFilter = true }: Props) {
@@ -40,9 +72,10 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
   const [activeMedium, setActiveMedium] = useState('All')
   const [activeStatus, setActiveStatus] = useState('All')
 
-  const { template, accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata, darkMode } = settings
-  const DARK_TEMPLATES = new Set(['dramatic', 'classic', 'cover'])
-  const useDark = darkMode === true && !DARK_TEMPLATES.has(template)
+  const {
+    accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata,
+    gridVariant, gridOptions, chrome, content, headingStyle, labels,
+  } = settings
 
   const mediums = useMemo(() => {
     const all = objects.map(a => a.medium).filter(Boolean)
@@ -68,154 +101,95 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
     setActiveStatus('All')
   }
 
-  const titleClassLight: Record<string, string> = {
-    minimal: 'font-serif text-stone-900',
-    dramatic: 'font-serif italic text-white',
-    archival: 'font-serif italic text-stone-800',
-    editorial: 'font-sans font-bold text-black uppercase tracking-tight text-sm',
-    classic: 'font-serif italic text-amber-100',
-    curator: 'font-serif text-stone-900',
-    magazine: 'font-sans font-bold text-black uppercase tracking-tight text-sm',
-    salon: 'font-serif text-stone-900',
-  }
-  const titleClassDark: Record<string, string> = {
-    minimal: 'font-serif text-stone-100',
-    editorial: 'font-sans font-bold text-white uppercase tracking-tight text-sm',
-    archival: 'font-serif italic text-stone-200',
-    curator: 'font-serif text-stone-100',
-    magazine: 'font-sans font-bold text-white uppercase tracking-tight text-sm',
-    salon: 'font-serif text-stone-100',
-  }
-  const titleClass = (useDark ? titleClassDark[template] : titleClassLight[template]) ?? titleClassLight.minimal
-
-  const artistClassLight: Record<string, string> = {
-    minimal: 'text-stone-400 italic',
-    dramatic: 'text-white/40 italic',
-    archival: 'text-stone-500 italic',
-    editorial: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
-    classic: 'text-amber-300/60 italic',
-    curator: 'text-stone-400 italic',
-    magazine: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
-    salon: 'text-stone-400 italic',
-  }
-  const artistClassDark: Record<string, string> = {
-    minimal: 'text-stone-500 italic',
-    editorial: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
-    archival: 'text-stone-500 italic',
-    curator: 'text-stone-500 italic',
-    magazine: 'text-stone-500 font-mono uppercase tracking-widest not-italic',
-    salon: 'text-stone-500 italic',
-  }
-  const artistClass = (useDark ? artistClassDark[template] : artistClassLight[template]) ?? artistClassLight.minimal
-
-  const metaClassLight: Record<string, string> = {
-    minimal: 'font-mono text-stone-400',
-    dramatic: 'font-mono text-white/30',
-    archival: 'font-mono text-stone-400',
-    editorial: 'font-mono text-stone-500',
-    classic: 'font-mono text-amber-300/40',
-    curator: 'font-mono text-stone-400',
-    magazine: 'font-mono text-stone-500',
-    salon: 'font-mono text-stone-400',
-  }
-  const metaClassDark: Record<string, string> = {
-    minimal: 'font-mono text-stone-600',
-    editorial: 'font-mono text-stone-600',
-    archival: 'font-mono text-stone-600',
-    curator: 'font-mono text-stone-600',
-    magazine: 'font-mono text-stone-600',
-    salon: 'font-mono text-stone-600',
-  }
-  const metaClass = (useDark ? metaClassDark[template] : metaClassLight[template]) ?? metaClassLight.minimal
-
-  const cardBgLight: Record<string, string> = {
-    minimal: 'bg-white border border-stone-200 hover:shadow-md',
-    dramatic: 'bg-stone-900 border border-white/8 hover:bg-stone-800',
-    archival: 'bg-amber-50/50 border border-amber-200/50 hover:bg-amber-50',
-    editorial: 'bg-white border-2 border-black hover:bg-stone-50',
-    classic: 'bg-stone-800 border border-white/10 hover:bg-stone-700',
-    curator: 'bg-white border border-stone-200 hover:shadow-md',
-    magazine: 'bg-white border-2 border-black hover:bg-stone-50',
-    salon: 'bg-white border border-stone-200 hover:shadow-md',
-  }
-  const cardBgDark: Record<string, string> = {
-    minimal: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
-    editorial: 'bg-neutral-950 border-2 border-neutral-800 hover:bg-neutral-900',
-    archival: 'bg-stone-900 border border-stone-700/40 hover:bg-stone-800',
-    curator: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
-    magazine: 'bg-neutral-950 border-2 border-neutral-800 hover:bg-neutral-900',
-    salon: 'bg-stone-900 border border-stone-800 hover:bg-stone-800',
-  }
-  const cardBg = (useDark ? cardBgDark[template] : cardBgLight[template]) ?? cardBgLight.minimal
-
-  const imageBgLight: Record<string, string> = {
-    minimal: 'bg-stone-50',
-    dramatic: 'bg-stone-800',
-    archival: 'bg-amber-100/50',
-    editorial: 'bg-stone-100',
-    classic: 'bg-stone-700',
-    curator: 'bg-stone-50',
-    magazine: 'bg-stone-100',
-    salon: 'bg-stone-50',
-  }
-  const imageBgDark: Record<string, string> = {
-    minimal: 'bg-stone-800',
-    editorial: 'bg-neutral-900',
-    archival: 'bg-stone-800',
-    curator: 'bg-stone-800',
-    magazine: 'bg-neutral-900',
-    salon: 'bg-stone-800',
-  }
-  const imageBg = (useDark ? imageBgDark[template] : imageBgLight[template]) ?? imageBgLight.minimal
-
-  const searchInputClassLight: Record<string, string> = {
-    minimal: 'bg-white border-stone-200 text-stone-900',
-    dramatic: 'bg-stone-900 border-white/10 text-white placeholder:text-white/30',
-    archival: 'bg-amber-50 border-amber-200 text-stone-800',
-    editorial: 'bg-white border-2 border-black text-black rounded-none',
-    classic: 'bg-stone-800 border-white/10 text-amber-100 placeholder:text-amber-100/30',
-    curator: 'bg-white border-stone-200 text-stone-900',
-    magazine: 'bg-white border-2 border-black text-black rounded-none',
-    salon: 'bg-white border-stone-200 text-stone-900',
-  }
-  const searchInputClassDark: Record<string, string> = {
-    minimal: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
-    editorial: 'bg-neutral-950 border-2 border-neutral-700 text-white rounded-none placeholder:text-neutral-600',
-    archival: 'bg-stone-900 border-stone-700 text-stone-200 placeholder:text-stone-600',
-    curator: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
-    magazine: 'bg-neutral-950 border-2 border-neutral-700 text-white rounded-none placeholder:text-neutral-600',
-    salon: 'bg-stone-900 border-stone-700 text-stone-100 placeholder:text-stone-600',
-  }
-  const searchInputClass = (useDark ? searchInputClassDark[template] : searchInputClassLight[template]) ?? searchInputClassLight.minimal
-
-  const padMap: Record<string, string> = { tight: 'p-2', normal: 'p-4', generous: 'p-6' }
-  const ratioClass: Record<string, string> = { square: 'aspect-square', portrait: 'aspect-[3/4]', landscape: 'aspect-[16/9]' }
-  const colClass: Record<number, string> = {
-    2: 'grid-cols-2',
-    3: 'grid-cols-2 md:grid-cols-3',
-    4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-    5: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
+  const theme: GridTheme = {
+    accent: accentColor,
+    heading: content.heading,
+    body: content.body,
+    muted: content.muted,
+    border: content.border,
+    cardBg: content.cardBg,
+    imageBg: content.imageBg,
+    headingStyle,
+    radius: card_radius,
+    imageAspect: RATIO_CLASS[image_ratio] || 'aspect-square',
+    columns: grid_columns,
+    padding: PAD_CLASS[card_padding] || 'p-4',
+    metadata: card_metadata,
+    options: gridOptions,
+    labels,
   }
 
-  const cardPad = padMap[card_padding] || 'p-4'
-  const imageAspect = ratioClass[image_ratio] || 'aspect-square'
-  const gridCols = colClass[grid_columns] || 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-  const radius = `${card_radius}px`
+  const Grid = GRIDS[gridVariant] ?? UniformGrid
+
+  // ── Chrome ────────────────────────────────────────────────────────────────
+  // The search box and filters used to be identical on every template, which
+  // is a large share of why every site read the same below the masthead.
+
+  const hard = chrome === 'hard'
+  const rule = chrome === 'rule'
+
+  const inputClass = hard
+    ? 'w-full pl-11 pr-10 py-3 text-sm outline-none border-2 rounded-none'
+    : rule
+      ? 'w-full pl-9 pr-10 py-3 text-sm outline-none bg-transparent border-0 border-b rounded-none'
+      : 'w-full pl-11 pr-10 py-3.5 text-sm outline-none border rounded-xl shadow-sm'
+
+  const inputStyle: CSSProperties = {
+    background: rule ? 'transparent' : content.inputBg,
+    borderColor: hard ? content.heading : content.border,
+    color: content.heading,
+  }
+
+  function chipStyle(active: boolean): CSSProperties {
+    if (hard) {
+      return active
+        ? { background: content.heading, color: content.cardBg, border: `2px solid ${content.heading}` }
+        : { background: 'transparent', color: content.muted, border: `2px solid ${content.border}` }
+    }
+    if (rule) {
+      return active
+        ? { color: content.heading, borderBottom: `1px solid ${accentColor}` }
+        : { color: content.muted, borderBottom: '1px solid transparent' }
+    }
+    return active
+      ? { background: content.heading, color: content.cardBg, border: `1px solid ${content.heading}` }
+      : { background: 'transparent', color: content.muted, border: `1px solid ${content.border}` }
+  }
+
+  const chipClass = hard
+    ? 'px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-all'
+    : rule
+      ? 'px-1 py-1 text-xs font-mono transition-all'
+      : 'px-3 py-1.5 rounded-lg text-xs font-mono transition-all'
+
+  const itemsWord = labels.itemPlural.toLowerCase()
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
+      {/* Search */}
       <div className="relative mb-6">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8}>
+        <div className={`absolute inset-y-0 ${rule ? 'left-1' : 'left-4'} flex items-center pointer-events-none`}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20" stroke={content.muted} strokeWidth={1.8}>
             <circle cx="9" cy="9" r="5.5" />
             <path d="M13.5 13.5 17 17" strokeLinecap="round" />
           </svg>
         </div>
-        <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-          placeholder="Search by title, artist, medium, culture…"
-          className={`w-full pl-11 pr-10 py-3.5 border rounded-xl text-sm outline-none transition-colors shadow-sm ${searchInputClass}`} />
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={labels.searchPlaceholder}
+          aria-label={`Search this ${labels.collection.toLowerCase()}`}
+          className={inputClass}
+          style={inputStyle}
+        />
         {query && (
-          <button onClick={() => setQuery('')} className="absolute inset-y-0 right-4 flex items-center text-stone-300 hover:text-stone-600 transition-colors">
+          <button
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+            className="absolute inset-y-0 right-2 flex items-center transition-opacity hover:opacity-60"
+            style={{ color: content.muted }}
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
               <path d="M3 3 13 13M13 3 3 13" strokeLinecap="round" />
             </svg>
@@ -223,41 +197,57 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
         )}
       </div>
 
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
         {showStatusFilter && (
-          <div className={`flex items-center gap-1.5 rounded-lg p-1 border ${useDark ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-200'}`}>
+          <div className={`flex items-center gap-1.5 ${rule ? '' : 'p-1 rounded-lg border'}`}
+            style={rule ? undefined : { background: content.cardBg, borderColor: content.border }}>
             {['All', 'On Display', 'On Loan'].map(s => (
-              <button key={s} onClick={() => setActiveStatus(s)}
-                className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
-                  activeStatus === s
-                    ? useDark ? 'bg-stone-100 text-stone-900' : 'bg-stone-900 text-white'
-                    : useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-500 hover:text-stone-900'
-                }`}>
-                {s}
+              <button
+                key={s}
+                onClick={() => setActiveStatus(s)}
+                className={chipClass}
+                style={chipStyle(activeStatus === s)}
+              >
+                {s === 'All' ? 'All' : (labels.statusLabels[s] ?? s)}
               </button>
             ))}
           </div>
         )}
+
+        {/* Without the segmented box that soft/hard chrome draws, the status
+            and medium filters read as one undifferentiated row. */}
+        {showStatusFilter && rule && (
+          <span aria-hidden className="h-4 w-px" style={{ background: content.border }} />
+        )}
+
         <div className="flex items-center gap-1.5 flex-wrap">
           {mediums.map(m => (
-            <button key={m} onClick={() => setActiveMedium(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
-                activeMedium === m
-                  ? useDark ? 'bg-stone-100 text-stone-900 border-stone-100' : 'bg-stone-900 text-white border-stone-900'
-                  : useDark ? 'border-stone-700 text-stone-500 hover:bg-stone-800' : 'border-stone-200 text-stone-500 hover:bg-stone-50'
-              }`}>
-              {m}
+            <button
+              key={m}
+              onClick={() => setActiveMedium(m)}
+              className={chipClass}
+              style={chipStyle(activeMedium === m)}
+            >
+              {/* The profile's own medium label ("Metal / Composition") is too
+                  long to head a chip row; the collection noun reads better. */}
+              {m === 'All' ? `All ${itemsWord}` : m}
             </button>
           ))}
         </div>
+
         <div className="ml-auto flex items-center gap-4">
           {hasActiveFilters && (
-            <button onClick={clearAll} className={`text-xs font-mono transition-colors underline underline-offset-2 ${useDark ? 'text-stone-500 hover:text-stone-200' : 'text-stone-400 hover:text-stone-900'}`}>
+            <button
+              onClick={clearAll}
+              className="text-xs font-mono transition-opacity hover:opacity-70 underline underline-offset-2"
+              style={{ color: content.muted }}
+            >
               Clear filters
             </button>
           )}
-          <span className={`text-xs font-mono ${useDark ? 'text-stone-500' : 'text-stone-400'}`}>
-            <span className={`font-medium ${useDark ? 'text-stone-200' : 'text-stone-900'}`}>{filtered.length}</span> of {objects.length} works
+          <span className="text-xs font-mono" style={{ color: content.muted }}>
+            <span style={{ color: content.heading }}>{filtered.length}</span> of {objects.length} {itemsWord}
           </span>
         </div>
       </div>
@@ -265,63 +255,21 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
       {filtered.length === 0 ? (
         <div className="text-center py-32">
           <div className="text-5xl mb-4">🔍</div>
-          <div className={`font-serif text-2xl italic mb-2 ${useDark ? 'text-stone-600' : 'text-stone-400'}`}>No works found</div>
-          <p className={`text-sm mb-5 ${useDark ? 'text-stone-600' : 'text-stone-400'}`}>
+          <div className="text-2xl mb-2" style={{ ...headingStyle, color: content.muted }}>
+            No {itemsWord} found
+          </div>
+          <p className="text-sm mb-5" style={{ color: content.muted }}>
             Try a different search term or{' '}
-            <button onClick={clearAll} className={`underline underline-offset-2 transition-colors ${useDark ? 'hover:text-stone-200' : 'hover:text-stone-900'}`}>clear all filters</button>
+            <button
+              onClick={clearAll}
+              className="underline underline-offset-2 transition-opacity hover:opacity-70"
+            >
+              clear all filters
+            </button>
           </p>
         </div>
       ) : (
-        <div className={`grid ${gridCols} gap-6`}>
-          {filtered.map(a => (
-            <Link key={a.id} href={`/museum/${slug}/object/${a.id}`}
-              className={`group overflow-hidden transition-all duration-200 hover:-translate-y-1 ${cardBg}`}
-              style={{ borderRadius: radius }}>
-              <div className={`${imageAspect} ${imageBg} relative flex items-center justify-center overflow-hidden`}>
-                {a.image_url ? (
-                  <img src={a.image_url} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                ) : (
-                  <span className="text-5xl group-hover:scale-105 transition-transform duration-300">{a.emoji}</span>
-                )}
-                {a.status === 'On Loan' && (
-                  <div className="absolute top-2 right-2">
-                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-sm">
-                      On Loan
-                    </span>
-                  </div>
-                )}
-                {a.condition_grade && (
-                  <div className="absolute bottom-2 left-2">
-                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-black/50 text-white backdrop-blur-sm">
-                      {a.condition_grade}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {card_metadata !== 'none' && (
-                <div className={cardPad}>
-                  <div className={`text-base leading-snug mb-1 ${titleClass}`}>{a.title}</div>
-                  {(card_metadata === 'title+artist' || card_metadata === 'full') && (
-                    <div className={`text-xs mb-1 ${artistClass}`}>{a.artist}</div>
-                  )}
-                  {(card_metadata === 'title+artist' || card_metadata === 'full') && a.rarity && (
-                    <div className={`text-xs font-mono mb-1 ${metaClass}`}>{a.rarity}</div>
-                  )}
-                  {card_metadata === 'full' && (
-                    <div className="flex items-center justify-between">
-                      <div className={`text-xs ${metaClass}`}>{a.year}</div>
-                      {a.status === 'On Loan' && (
-                        <span className="text-xs font-mono px-2 py-0.5 rounded-full" style={{ background: `${accentColor}18`, color: accentColor }}>
-                          On Loan
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Link>
-          ))}
-        </div>
+        <Grid items={filtered} slug={slug} theme={theme} />
       )}
     </div>
   )

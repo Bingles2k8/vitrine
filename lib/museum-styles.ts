@@ -1,4 +1,4 @@
-import { getTemplate } from './templates'
+import { getTemplate, type ChromeStyle, type GridOptions, type GridVariant } from './templates'
 
 export const FONT_MAP: Record<string, { google: string; css: string }> = {
   playfair:   { google: 'Playfair+Display:ital,wght@0,400;0,700;1,400',                  css: "'Playfair Display', serif" },
@@ -6,6 +6,23 @@ export const FONT_MAP: Record<string, { google: string; css: string }> = {
   'dm-serif': { google: 'DM+Serif+Display:ital@0;1',                                     css: "'DM Serif Display', serif" },
   libre:      { google: 'Libre+Baskerville:ital,wght@0,400;0,700;1,400',                css: "'Libre Baskerville', serif" },
   'dm-sans':  { google: 'DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,700;1,9..40,300',  css: "'DM Sans', sans-serif" },
+}
+
+/**
+ * Body faces, paired to a template rather than chosen by the collector.
+ *
+ * Every template used to render body copy in the same default system sans, so
+ * the heading font was carrying the whole identity on its own. Pairing is what
+ * actually distinguishes a catalogue from a magazine.
+ */
+export const BODY_FONT_MAP: Record<string, { google: string; css: string }> = {
+  inter:          { google: 'Inter:wght@300;400;500;600',                                    css: "'Inter', system-ui, sans-serif" },
+  'work-sans':    { google: 'Work+Sans:ital,wght@0,300;0,400;0,600;1,400',                   css: "'Work Sans', system-ui, sans-serif" },
+  'ibm-plex':     { google: 'IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,400',               css: "'IBM Plex Sans', system-ui, sans-serif" },
+  karla:          { google: 'Karla:ital,wght@0,300;0,400;0,600;1,400',                       css: "'Karla', system-ui, sans-serif" },
+  lora:           { google: 'Lora:ital,wght@0,400;0,600;1,400',                              css: "'Lora', Georgia, serif" },
+  'eb-garamond':  { google: 'EB+Garamond:ital,wght@0,400;0,600;1,400',                       css: "'EB Garamond', Georgia, serif" },
+  'source-serif': { google: 'Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400', css: "'Source Serif 4', Georgia, serif" },
 }
 
 export const PAGE_BG: Record<string, string> = {
@@ -26,25 +43,28 @@ export const CONTENT_COLORS: Record<string, {
   border: string
   cardBg: string
   inputBg: string
+  /** Ground a work sits on before its image loads, and the mat behind a
+   *  `contain`-fitted plate. */
+  imageBg: string
 }> = {
-  minimal:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff',              inputBg: '#ffffff' },
-  editorial: { heading: '#000000', body: '#57534e', muted: '#a8a29e', border: '#000000', cardBg: '#ffffff',              inputBg: '#ffffff' },
-  archival:  { heading: '#292524', body: '#78716c', muted: '#a8a29e', border: '#d4c5a0', cardBg: 'rgba(255,255,255,0.5)', inputBg: '#fffbf0' },
-  dramatic:  { heading: '#ffffff', body: 'rgba(255,255,255,0.6)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)' },
-  classic:   { heading: '#fef3c7', body: 'rgba(254,243,199,0.6)',  muted: 'rgba(254,243,199,0.35)',  border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)' },
-  cover:     { heading: '#ffffff', body: 'rgba(255,255,255,0.65)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.06)', inputBg: 'rgba(255,255,255,0.08)' },
-  curator:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff' },
-  magazine:  { heading: '#000000', body: '#44403c', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#f5f5f4' },
-  salon:     { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff' },
+  minimal:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff',              inputBg: '#ffffff', imageBg: '#fafaf9' },
+  editorial: { heading: '#000000', body: '#57534e', muted: '#a8a29e', border: '#000000', cardBg: '#ffffff',              inputBg: '#ffffff', imageBg: '#f5f5f4' },
+  archival:  { heading: '#292524', body: '#78716c', muted: '#a8a29e', border: '#d4c5a0', cardBg: 'rgba(255,255,255,0.5)', inputBg: '#fffbf0', imageBg: 'rgba(254,243,199,0.45)' },
+  dramatic:  { heading: '#ffffff', body: 'rgba(255,255,255,0.6)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)', imageBg: '#292524' },
+  classic:   { heading: '#fef3c7', body: 'rgba(254,243,199,0.6)',  muted: 'rgba(254,243,199,0.35)',  border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.08)', imageBg: '#44403c' },
+  cover:     { heading: '#ffffff', body: 'rgba(255,255,255,0.65)', muted: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', cardBg: 'rgba(255,255,255,0.06)', inputBg: 'rgba(255,255,255,0.08)', imageBg: 'rgba(255,255,255,0.06)' },
+  curator:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff', imageBg: '#fafaf9' },
+  magazine:  { heading: '#000000', body: '#44403c', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#f5f5f4', imageBg: '#f5f5f4' },
+  salon:     { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff', imageBg: '#fafaf9' },
 }
 
 const CONTENT_COLORS_DARK: Record<string, typeof CONTENT_COLORS[string]> = {
-  minimal:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
-  editorial: { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#3a3a3a', cardBg: '#141414', inputBg: '#141414' },
-  archival:  { heading: '#ede8dc', body: '#a09070', muted: '#6b5e47', border: '#3d3020', cardBg: 'rgba(255,255,255,0.05)', inputBg: '#231c0f' },
-  curator:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
-  magazine:  { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#141414', inputBg: '#1a1a1a' },
-  salon:     { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917' },
+  minimal:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917', imageBg: '#292524' },
+  editorial: { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#3a3a3a', cardBg: '#141414', inputBg: '#141414', imageBg: '#171717' },
+  archival:  { heading: '#ede8dc', body: '#a09070', muted: '#6b5e47', border: '#3d3020', cardBg: 'rgba(255,255,255,0.05)', inputBg: '#231c0f', imageBg: '#292524' },
+  curator:   { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917', imageBg: '#292524' },
+  magazine:  { heading: '#ffffff', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#141414', inputBg: '#1a1a1a', imageBg: '#171717' },
+  salon:     { heading: '#f5f4f3', body: '#a8a29e', muted: '#57534e', border: '#292524', cardBg: '#1c1917', inputBg: '#1c1917', imageBg: '#292524' },
 }
 
 export const NAV_STYLES: Record<string, { nav: string; text: string; link: string }> = {
@@ -92,6 +112,8 @@ export function getMuseumStyles(museum: MuseumStyleInput) {
     ? { fontFamily: font.css, fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em' }
     : { fontFamily: font.css, fontStyle: 'italic' }
 
+  const bodyFont = BODY_FONT_MAP[tmpl.body_font] || BODY_FONT_MAP.inter
+
   const useDark = museum.dark_mode === true && !DARK_TEMPLATES.has(tmpl.id)
 
   return {
@@ -99,9 +121,22 @@ export function getMuseumStyles(museum: MuseumStyleInput) {
     accent,
     primary,
     font,
+    bodyFont,
     headingStyle,
+    bodyStyle: { fontFamily: bodyFont.css } as React.CSSProperties,
+    gridVariant: tmpl.grid_variant as GridVariant,
+    gridOptions: (tmpl.grid_options ?? {}) as GridOptions,
+    chrome: tmpl.chrome as ChromeStyle,
     pageBg:   (useDark ? PAGE_BG_DARK[tmpl.id] : null) ?? PAGE_BG[tmpl.id] ?? '#fafaf9',
     content:  (useDark ? CONTENT_COLORS_DARK[tmpl.id] : null) ?? CONTENT_COLORS[tmpl.id] ?? CONTENT_COLORS.minimal,
     navStyle: (useDark ? NAV_STYLES_DARK[tmpl.id] : null) ?? NAV_STYLES[tmpl.id] ?? NAV_STYLES.minimal,
   }
+}
+
+/** Stylesheet href loading the template's heading and body faces together. */
+export function googleFontsHref(
+  font: { google: string },
+  bodyFont: { google: string },
+): string {
+  return `https://fonts.googleapis.com/css2?family=${font.google}&family=${bodyFont.google}&display=swap`
 }

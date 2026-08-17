@@ -1,6 +1,6 @@
 import { createServerSideClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
-import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
+import { getMuseumStyles, getLayoutVariant, googleFontsHref } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import MuseumNav from '@/components/MuseumNav'
 import MuseumSidebar from '@/components/MuseumSidebar'
@@ -72,7 +72,7 @@ export default async function MuseumLayout({
   const canHideBranding = getPlan(museum.plan).hideVitrineBranding
   const showBranding = !(canHideBranding && museum.hide_vitrine_branding === true)
 
-  const { pageBg, font, navStyle, accent, headingStyle, content } = getMuseumStyles(museum)
+  const { pageBg, font, bodyFont, bodyStyle, navStyle, accent, headingStyle, content } = getMuseumStyles(museum)
   const layoutVariant = getLayoutVariant(museum)
 
   const socialLinks = isPaid ? [
@@ -105,7 +105,9 @@ export default async function MuseumLayout({
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.google}&display=swap`} />
+      {/* Heading and body faces in one request — the pairing is what gives each
+          template its voice, so neither is optional. */}
+      <link rel="stylesheet" href={googleFontsHref(font, bodyFont)} />
     </>
   )
 
@@ -137,7 +139,7 @@ export default async function MuseumLayout({
 
   if (layoutVariant === 'sidebar') {
     return (
-      <div className="min-h-screen flex" style={{ background: pageBg }}>
+      <div className="min-h-screen flex" style={{ background: pageBg, ...bodyStyle }}>
         {fonts}
         <MuseumSidebar
           slug={slug}
@@ -176,7 +178,7 @@ export default async function MuseumLayout({
   }
 
   return (
-    <div className="min-h-screen relative" style={{ background: pageBg }}>
+    <div className="min-h-screen relative" style={{ background: pageBg, ...bodyStyle }}>
       {fonts}
 
       <MuseumNav
