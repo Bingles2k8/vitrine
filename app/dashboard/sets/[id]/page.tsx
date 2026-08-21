@@ -194,6 +194,42 @@ export default function SetEditor() {
     toast('Saved')
   }
 
+  /** Save whatever is on screen and take it live in one go. */
+  async function handlePublish() {
+    if (!form || !canEdit || saving) return
+    setForm({ ...form, status: 'published' })
+    setSaving(true)
+    const res = await fetch(`/api/collection-groups/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: form.title,
+        subtitle: form.subtitle,
+        description: form.description,
+        status: 'published',
+        membership: form.membership,
+        rule,
+        sort_by: form.sort_by,
+        nav_style: form.nav_style,
+        show_as_section: form.show_as_section,
+        show_as_chip: form.show_as_chip,
+        date_start: form.date_start,
+        date_end: form.date_end,
+        cover_object_id: form.cover_object_id,
+      }),
+    })
+    setSaving(false)
+    if (!res.ok) {
+      setForm(f => f ? { ...f, status: 'draft' } : f)
+      toast('Could not publish', 'error')
+      return
+    }
+    setDirty(false)
+    toast(members.length === 0
+      ? `Published — but it has no ${labels?.itemPlural.toLowerCase() ?? 'items'} in it yet, so it stays hidden until it does`
+      : `${nouns.singular} is live on your site`)
+  }
+
   async function handleDelete() {
     if (!canEdit || !form) return
     if (!confirm(`Delete “${form.title}”?\n\nThe ${labels?.itemPlural.toLowerCase() ?? 'items'} in it are not affected.`)) return
@@ -235,14 +271,28 @@ export default function SetEditor() {
         title={form.title || `Untitled ${nouns.singular.toLowerCase()}`}
         actions={canEdit && (
           <div className="flex items-center gap-2">
+            {/* A draft is invisible on the public site — no page, no nav item,
+                no homepage band. That is deliberate, but it needs saying here
+                rather than only as a checkbox further down the page. */}
+            {form.status === 'draft' && (
+              <span className="hidden sm:inline text-xs font-mono text-stone-400 dark:text-stone-500">
+                Not on your site yet
+              </span>
+            )}
             {form.status === 'published' && museum?.slug && (
               <TopBarButton as="a" href={`/museum/${museum.slug}/sets/${form.slug}`} variant="ghost">
                 View ↗
               </TopBarButton>
             )}
-            <TopBarButton variant="primary" onClick={handleSave} disabled={saving || !dirty}>
-              {saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-            </TopBarButton>
+            {form.status === 'draft' ? (
+              <TopBarButton variant="primary" onClick={handlePublish} disabled={saving}>
+                {saving ? 'Publishing…' : 'Publish'}
+              </TopBarButton>
+            ) : (
+              <TopBarButton variant="primary" onClick={handleSave} disabled={saving || !dirty}>
+                {saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+              </TopBarButton>
+            )}
           </div>
         )}
       />

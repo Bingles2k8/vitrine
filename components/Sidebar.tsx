@@ -25,7 +25,7 @@ interface SidebarProps {
   onNavigate?: () => void
 }
 
-type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; shareLinks: boolean; name: string; logo_emoji: string; plan: string; collection_profiles: string[] }
+type NavCache = { simple: boolean; wishlist: boolean; ticketing: boolean; fullMode: boolean; shareLinks: boolean; name: string; logo_emoji: string; plan: string; collection_profiles: string[]; collection_category: string | null }
 
 export default function Sidebar({ museum, activePath, onSignOut, isOwner = true, staffAccess = null, onNavigate }: SidebarProps) {
   const router = useRouter()
@@ -54,21 +54,22 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       plan: museum.plan,
       // Cached too, so nav wording doesn't flash from "Items" to "Cards" on load
       collection_profiles: museum.collection_profiles ?? [],
+      collection_category: museum.collection_category ?? null,
     }
     setNavCache(next)
     localStorage.setItem('vitrine_nav', JSON.stringify(next))
-  }, [museum?.id, museum?.ui_mode, museum?.plan, museum?.collection_profiles])
+  }, [museum?.id, museum?.ui_mode, museum?.plan, museum?.collection_profiles, museum?.collection_category])
 
   // Resolved nav values: use live data once available, fall back to cache, else hide
   const nav = museum && planInfo
-    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan, collection_profiles: museum.collection_profiles ?? [] }
+    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan, collection_profiles: museum.collection_profiles ?? [], collection_category: museum.collection_category ?? null }
     : navCache
 
   // App terminology. A single active profile earns its own nouns; a mixed
   // collection falls back to neutral, because "Add Card" while adding a watch
   // reads as a bug. See docs/collection-profiles-plan.md §6.2.
   const nouns = resolveAppNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : null)
-  const setNouns = groupNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : {})
+  const setNouns = groupNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles, collection_category: nav.collection_category } : {})
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)

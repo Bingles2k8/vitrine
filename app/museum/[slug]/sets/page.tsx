@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const supabase = createPublicClient()
   const { data: museum } = await supabase
     .from('museums')
-    .select('name, plan, collection_profiles, locked_at')
+    .select('name, plan, collection_profiles, collection_category, locked_at')
     .eq('slug', slug)
     .single()
   if (!museum || museum.locked_at) return {}

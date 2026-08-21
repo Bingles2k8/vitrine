@@ -1,15 +1,19 @@
+import { activeProfiles, profilesEnabled, type ProfileMuseumLike } from '@/lib/collectionProfiles'
 import {
-  resolveCollectionProfile,
-  type ProfileMuseumLike,
-} from '@/lib/collectionProfiles'
-import { groupNounsForProfile, type GroupNouns } from './vocab'
+  DEFAULT_GROUP_NOUNS, MUSEUM_GROUP_NOUNS,
+  groupNounsForCategory, groupNounsForProfile, type GroupNouns,
+} from './vocab'
 import type { CollectionGroupRow } from './types'
 
 export * from './types'
 export * from './fields'
 export * from './rules'
 export * from './presentation'
-export { groupNounsForProfile, DEFAULT_GROUP_NOUNS, MUSEUM_GROUP_NOUNS } from './vocab'
+export {
+  groupNounsForProfile, groupNounsForCategory,
+  DEFAULT_GROUP_NOUNS, MUSEUM_GROUP_NOUNS,
+  GROUP_NOUNS_BY_PROFILE, GROUP_NOUNS_BY_CATEGORY,
+} from './vocab'
 export type { GroupNouns } from './vocab'
 
 /**
@@ -25,11 +29,34 @@ export function groupsEnabled(plan: string | null | undefined): boolean {
   return true
 }
 
-/** The set vocabulary for a collection: "Sets", "Exhibitions", "Runs". */
-export function groupNouns(
-  museum: ProfileMuseumLike & { plan?: string | null },
-): GroupNouns {
-  return groupNounsForProfile(resolveCollectionProfile(museum).id)
+export interface GroupNounMuseumLike extends ProfileMuseumLike {
+  plan?: string | null
+  collection_category?: string | null
+}
+
+/**
+ * The set vocabulary for a collection: "Sets", "Exhibitions", "Runs", "Suites".
+ *
+ * Two signals, in order of confidence. The profile is the stronger one but
+ * plenty of collectors never pick one, so `collection_category` — which they do
+ * set, because it drives Discover — carries the fallback rather than dumping
+ * everyone on a generic word.
+ *
+ * Full mode (Professional and above) always reads "Exhibition": a museum's
+ * word does not vary by what it holds.
+ */
+export function groupNouns(museum: GroupNounMuseumLike): GroupNouns {
+  if (!profilesEnabled(museum?.plan)) return MUSEUM_GROUP_NOUNS
+
+  // Only a single active profile earns its own noun — the same rule
+  // resolveAppNouns uses. Two profiles and the collection has no one word.
+  const active = activeProfiles(museum)
+  if (active.length === 1) {
+    const fromProfile = groupNounsForProfile(active[0].id)
+    if (fromProfile) return fromProfile
+  }
+
+  return groupNounsForCategory(museum?.collection_category) ?? DEFAULT_GROUP_NOUNS
 }
 
 // ── Slugs ────────────────────────────────────────────────────────────────

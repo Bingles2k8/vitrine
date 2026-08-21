@@ -9,7 +9,9 @@ import {
 } from '@/lib/collectionGroups/presentation'
 import {
   formatGroupDates, groupNouns, groupPhase, slugifyGroupTitle, uniqueGroupSlug,
+  GROUP_NOUNS_BY_PROFILE,
 } from '@/lib/collectionGroups'
+import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import { SET_NAV_STYLES } from '@/lib/collectionGroups/types'
 import { TEMPLATES, type GridVariant } from '@/lib/templates'
 import type { GridObject, GridTheme } from '@/components/collection/types'
@@ -197,18 +199,75 @@ describe('nav styles', () => {
 })
 
 describe('vocabulary', () => {
-  it('gives a museum "Exhibitions" and a card collector "Sets"', () => {
+  it('gives every paid museum "Exhibitions" regardless of what it holds', () => {
     expect(groupNouns({ plan: 'professional', collection_profiles: [] }).plural).toBe('Exhibitions')
-    expect(groupNouns({ plan: 'hobbyist', collection_profiles: ['trading-cards'] }).plural).toBe('Sets')
+    expect(groupNouns({
+      plan: 'institution', collection_profiles: ['comics'], collection_category: 'Comics & Graphic Novels',
+    }).plural).toBe('Exhibitions')
   })
 
-  it('gives a comics collection "Runs"', () => {
+  it('prefers a single active profile', () => {
     expect(groupNouns({ plan: 'hobbyist', collection_profiles: ['comics'] }).singular).toBe('Run')
+    expect(groupNouns({ plan: 'hobbyist', collection_profiles: ['militaria'] }).singular).toBe('Grouping')
+    expect(groupNouns({ plan: 'hobbyist', collection_profiles: ['wine-spirits'] }).singular).toBe('Vertical')
   })
 
-  it('falls back safely for a mixed collection', () => {
-    const nouns = groupNouns({ plan: 'hobbyist', collection_profiles: ['comics', 'stamps'] })
-    expect(nouns.singular).toBeTruthy()
+  it('falls back to the Discover category when no profile is set', () => {
+    expect(groupNouns({
+      plan: 'hobbyist', collection_profiles: [], collection_category: 'Coins & Medals',
+    }).singular).toBe('Series')
+    expect(groupNouns({
+      plan: 'hobbyist', collection_profiles: [], collection_category: 'Jewellery',
+    }).singular).toBe('Suite')
+    expect(groupNouns({
+      plan: 'community', collection_profiles: [], collection_category: 'LEGO & Building Sets',
+    }).singular).toBe('Theme')
+  })
+
+  it('uses the category for a mixed collection, since no one profile wins', () => {
+    expect(groupNouns({
+      plan: 'hobbyist',
+      collection_profiles: ['comics', 'stamps'],
+      collection_category: 'Art & Paintings',
+    }).singular).toBe('Series')
+  })
+
+  it('lands on "Set" when it knows nothing', () => {
+    expect(groupNouns({ plan: 'hobbyist', collection_profiles: [] }).singular).toBe('Set')
+    expect(groupNouns({}).singular).toBe('Set')
+    expect(groupNouns({
+      plan: 'hobbyist', collection_profiles: [], collection_category: 'Kitchenalia & Domestic',
+    }).singular).toBe('Set')
+  })
+
+  /**
+   * The public masthead already has a "Collection" link. A set noun of
+   * "Collection" put `Collection | Collections` in the nav, one letter apart.
+   * Nothing may resolve to it again.
+   */
+  it('never returns "Collection", which collides with the nav item', () => {
+    const cases: Parameters<typeof groupNouns>[0][] = [
+      {}, { plan: 'community', collection_profiles: [] },
+      ...Object.keys(GROUP_NOUNS_BY_PROFILE)
+        .filter(id => id !== 'museum-fixed')
+        .map(id => ({ plan: 'hobbyist', collection_profiles: [id] })),
+      ...COLLECTION_CATEGORIES.map(c => ({ plan: 'hobbyist', collection_profiles: [], collection_category: c })),
+    ]
+    for (const museum of cases) {
+      const { singular, plural } = groupNouns(museum)
+      expect([singular, plural].join('|')).not.toMatch(/collection/i)
+    }
+  })
+
+  it('resolves a real noun for every category and every profile', () => {
+    for (const category of COLLECTION_CATEGORIES) {
+      const nouns = groupNouns({ plan: 'hobbyist', collection_profiles: [], collection_category: category })
+      expect(nouns.singular, category).toBeTruthy()
+      expect(nouns.plural, category).toBeTruthy()
+    }
+    for (const id of Object.keys(GROUP_NOUNS_BY_PROFILE)) {
+      expect(GROUP_NOUNS_BY_PROFILE[id].singular, id).toBeTruthy()
+    }
   })
 })
 
