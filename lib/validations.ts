@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z, ZodSchema } from 'zod'
 import { allCustomFieldDefs, validateCustomFields } from '@/lib/collectionProfiles'
+import {
+  GROUP_MEMBERSHIP_MODES, GROUP_SORTS, GROUP_STATUSES, MAX_RULE_CONDITIONS,
+  RULE_MATCH_MODES, RULE_OPS, SET_NAV_STYLES,
+} from '@/lib/collectionGroups/types'
+import { isRuleField, opAllowed } from '@/lib/collectionGroups/fields'
 
 // --- Schemas ---
 
@@ -141,7 +146,9 @@ const VALID_DOC_RELATED_TYPES = [
 export const trackViewSchema = z.object({
   museum_id: z.string().uuid(),
   object_id: z.string().uuid().nullable().optional(),
-  page_type: z.enum(['home', 'object', 'events', 'visit', 'embed']),
+  // Mirrors the page_views CHECK constraint. Widening one without the other
+  // means views are dropped at whichever layer is narrower.
+  page_type: z.enum(['home', 'object', 'events', 'visit', 'embed', 'sets', 'group']),
 })
 
 export const STORAGE_BUCKETS = ['object-documents', 'object-images', 'museum-assets'] as const
@@ -167,6 +174,61 @@ export const wantedItemSchema = z.object({
   medium: z.string().max(500).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
   priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+})
+
+// --- Collection groups ("sets") ---
+// See docs/collection-groups-plan.md.
+
+/**
+ * A rule condition, validated against RULE_FIELDS rather than accepted as a
+ * free-form field name — invariant P. This is the security boundary: the
+ * picker only ever offers public-safe fields, but the picker is not what
+ * stops a hand-rolled request building a set on `estimated_value`.
+ */
+export const groupRuleSchema = z.object({
+  match: z.enum(RULE_MATCH_MODES),
+  conditions: z.array(
+    z.object({
+      field: z.string().max(64),
+      op: z.enum(RULE_OPS),
+      value: z.string().max(200),
+    })
+      .refine(c => isRuleField(c.field), { message: 'Unknown or non-public field' })
+      .refine(c => opAllowed(c.field, c.op), { message: 'Operator not valid for this field' }),
+  ).max(MAX_RULE_CONDITIONS),
+})
+
+export const collectionGroupSchema = z.object({
+  title: z.string().min(1).max(200),
+  subtitle: z.string().max(300).nullable().optional(),
+  description: z.string().max(5000).nullable().optional(),
+  cover_image_url: z.string().url().max(1000).nullable().optional(),
+  cover_object_id: z.string().uuid().nullable().optional(),
+  status: z.enum(GROUP_STATUSES).optional(),
+  membership: z.enum(GROUP_MEMBERSHIP_MODES).optional(),
+  rule: groupRuleSchema.optional(),
+  sort_by: z.enum(GROUP_SORTS).optional(),
+  nav_style: z.enum(SET_NAV_STYLES).optional(),
+  show_as_section: z.boolean().optional(),
+  show_as_chip: z.boolean().optional(),
+  display_order: z.number().int().min(0).max(10000).nullable().optional(),
+  date_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  date_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+})
+
+export const updateCollectionGroupSchema = collectionGroupSchema.partial()
+
+export const groupItemsSchema = z.object({
+  add: z.array(z.string().uuid()).max(500).optional(),
+  remove: z.array(z.string().uuid()).max(500).optional(),
+  exclude: z.array(z.string().uuid()).max(500).optional(),
+  /** Full ordering for a manual set, in the order given. */
+  order: z.array(z.string().uuid()).max(2000).optional(),
+  notes: z.record(z.string().uuid(), z.string().max(500).nullable()).optional(),
+})
+
+export const reorderGroupsSchema = z.object({
+  ids: z.array(z.string().uuid()).max(500),
 })
 
 export const objectComponentSchema = z.object({

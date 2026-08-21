@@ -12,6 +12,10 @@ import { SITE_URL } from '@/lib/seo'
 import { getCollectionValue } from '@/lib/collectionValue'
 import { collectionLabels } from '@/lib/publicProfile'
 import { toGridObject } from '@/components/collection/types'
+import type { GridTheme } from '@/components/collection/types'
+import { groupNouns, MAX_HOMEPAGE_SECTIONS } from '@/lib/collectionGroups'
+import { loadPublicSets, setsByObject } from '@/lib/collectionGroups/publicSets'
+import GroupSection from '@/components/collection/GroupSection'
 
 export const revalidate = 3600
 
@@ -68,6 +72,13 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   // used to hardcode "works" or "pieces".
   const itemsWord = labels.itemPlural.toLowerCase()
 
+  // Published sets, resolved from the objects already in memory.
+  const publicSets = await loadPublicSets(supabase, museum.id, allObjects)
+  const setNouns = groupNouns(museum)
+  const sectionSets = publicSets.filter(s => s.group.show_as_section).slice(0, MAX_HOMEPAGE_SECTIONS)
+  const chipSets = publicSets.filter(s => s.group.show_as_chip)
+  const membershipByObject = setsByObject(publicSets)
+
   const styleSettings = {
     template: tmpl.id,
     accentColor: accent,
@@ -82,6 +93,9 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     content,
     headingStyle,
     labels,
+    setChips: chipSets.map(s => ({ id: s.group.id, slug: s.group.slug, title: s.group.title })),
+    setsBase: `/museum/${slug}/sets`,
+    setNoun: setNouns.singular,
   }
 
   const formattedValue = showValueBadge
@@ -123,12 +137,92 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     </div>
   ) : null
 
+  const sectionTheme: GridTheme = {
+    accent,
+    heading: content.heading,
+    body: content.body,
+    muted: content.muted,
+    border: content.border,
+    cardBg: content.cardBg,
+    imageBg: content.imageBg,
+    headingStyle,
+    radius: museum.card_radius ?? tmpl.card_radius,
+    imageAspect: styleSettings.image_ratio === 'portrait' ? 'aspect-[3/4]'
+      : styleSettings.image_ratio === 'landscape' ? 'aspect-[16/9]' : 'aspect-square',
+    columns: museum.grid_columns ?? tmpl.grid_columns,
+    padding: styleSettings.card_padding === 'tight' ? 'p-2'
+      : styleSettings.card_padding === 'generous' ? 'p-6' : 'p-4',
+    metadata: styleSettings.card_metadata,
+    options: gridOptions,
+    labels,
+  }
+
+  // Sets as homepage bands, folded into the shared collection block so they
+  // appear once across all eight layout variants — same reasoning as contactBlock.
+  const setSections = sectionSets.length > 0 && (
+    <>
+      {sectionSets.map(s => (
+        <GroupSection
+          key={s.group.id}
+          title={s.group.title}
+          subtitle={s.group.subtitle}
+          dateLabel={s.dateLabel}
+          href={`/museum/${slug}/sets/${s.group.slug}`}
+          members={s.members}
+          total={s.count}
+          slug={slug}
+          setSlug={s.group.slug}
+          theme={sectionTheme}
+          gridVariant={gridVariant}
+          itemPlural={labels.itemPlural}
+        />
+      ))}
+      {publicSets.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6 pt-10">
+          <Link
+            href={`/museum/${slug}/sets`}
+            className="text-sm font-mono transition-opacity hover:opacity-70"
+            style={{ color: accent }}
+          >
+            Browse all {publicSets.length} {publicSets.length === 1
+              ? setNouns.singular.toLowerCase()
+              : setNouns.plural.toLowerCase()} →
+          </Link>
+        </div>
+      )}
+    </>
+  )
+
+  // A set with no section of its own still reaches the homepage as a link,
+  // so nothing published is unreachable from the front page.
+  const setsLink = !setSections && publicSets.length > 0 && (
+    <div className="max-w-6xl mx-auto px-6 pt-10">
+      <Link
+        href={`/museum/${slug}/sets`}
+        className="text-sm font-mono transition-opacity hover:opacity-70"
+        style={{ color: accent }}
+      >
+        Browse {publicSets.length} {publicSets.length === 1
+          ? setNouns.singular.toLowerCase()
+          : setNouns.plural.toLowerCase()} →
+      </Link>
+    </div>
+  )
+
+  const gridObjects = allObjects.map(o => {
+    const grid = toGridObject(o)
+    const memberships = membershipByObject.get(grid.id)
+    return memberships ? { ...grid, groupIds: memberships.map(m => m.group.id) } : grid
+  })
+
   const collectionGrid = (
     <>
       {contactBlock}
+      {setSections}
+      {setsLink}
       {allObjects.length === 0
         ? emptyState
-        : <CollectionSearch objects={allObjects.map(toGridObject)} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />}
+        : <CollectionSearch objects={gridObjects} slug={slug} settings={styleSettings} showStatusFilter={getPlan(museum.plan).fullMode} />}
     </>
   )
 

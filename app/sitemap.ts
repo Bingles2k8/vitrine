@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let museumEntries: MetadataRoute.Sitemap = []
   let objectEntries: MetadataRoute.Sitemap = []
+  let setEntries: MetadataRoute.Sitemap = []
   try {
     // Public client: the cookie-bound server client has no session here, so
     // RLS returned no rows and museums silently vanished from the sitemap.
@@ -53,6 +54,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'monthly' as const,
           priority: 0.6,
         }))
+      }
+
+      // Published sets, plus one index per museum that has any. The index
+      // outranks the individual sets: it is the page that links the rest.
+      const { data: sets } = await supabase
+        .from('collection_groups')
+        .select('slug, museum_id, updated_at')
+        .in('museum_id', museumIds)
+        .eq('status', 'published')
+
+      if (sets && sets.length > 0) {
+        const slugById = Object.fromEntries(museums.map((m) => [m.id, m.slug]))
+        const withSets = new Set(sets.map((g) => g.museum_id))
+
+        setEntries = [
+          ...Array.from(withSets).map((museumId) => ({
+            url: `${BASE}/museum/${slugById[museumId]}/sets`,
+            changeFrequency: 'weekly' as const,
+            priority: 0.7,
+          })),
+          ...sets.map((g) => ({
+            url: `${BASE}/museum/${slugById[g.museum_id]}/sets/${g.slug}`,
+            lastModified: g.updated_at ? new Date(g.updated_at) : undefined,
+            changeFrequency: 'weekly' as const,
+            priority: 0.65,
+          })),
+        ]
       }
     }
   } catch {
@@ -182,6 +210,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     ...museumEntries,
+    ...setEntries,
     ...objectEntries,
   ];
 }

@@ -10,6 +10,7 @@ import { COLLECTION_CATEGORIES } from '@/lib/categories'
 import CollectionProfileModal from '@/components/CollectionProfileModal'
 import AcceptMessagesToggle, { useAcceptMessagesSync } from '@/components/AcceptMessagesToggle'
 import { profilesEnabled, getProfile, resolveAppNouns } from '@/lib/collectionProfiles'
+import { groupNouns } from '@/lib/collectionGroups'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { latestWhatsNewId } from '@/lib/whatsNew'
 
@@ -67,6 +68,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   // collection falls back to neutral, because "Add Card" while adding a watch
   // reads as a bug. See docs/collection-profiles-plan.md §6.2.
   const nouns = resolveAppNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : null)
+  const setNouns = groupNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : {})
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)
@@ -403,6 +405,8 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         {nav && (<>
         <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2">Collections</div>
         {navItem('/dashboard', '⬡', `${nouns.collection} Overview`, 'nav.objects')}
+        {/* Sets — every tier, unlimited (decision D2), so no nav.* gate here. */}
+        {navItem('/dashboard/sets', '▤', setNouns.plural, 'nav.sets')}
         {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
 
         {/* Inbox — all tiers, all staff can read */}

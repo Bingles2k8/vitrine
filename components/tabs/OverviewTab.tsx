@@ -18,6 +18,8 @@ import {
   type ProfileFieldKey,
 } from '@/lib/collectionProfiles'
 import { getPlan } from '@/lib/plans'
+import ObjectSetsField from '@/components/groups/ObjectSetsField'
+import { groupNouns } from '@/lib/collectionGroups'
 import { createClient } from '@/lib/supabase'
 import { formatSize } from '@/lib/formatSize'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
@@ -839,6 +841,16 @@ export default function OverviewTab({ form, set, canEdit, saving, object, museum
             </button>
           )}
         </div>
+
+        {/* Sets this item belongs to. Every tier — sets are ungated (D2). */}
+        {object?.id && (
+          <ObjectSetsField
+            museumId={museum.id}
+            object={{ ...form, id: object.id }}
+            nouns={groupNouns(museum)}
+            canEdit={canEdit}
+          />
+        )}
 
         {/* Discovery Category — moved to bottom */}
         <div>

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 interface PageViewTrackerProps {
   museumId: string
-  pageType: 'home' | 'object' | 'events' | 'visit' | 'embed'
+  pageType: 'home' | 'object' | 'events' | 'visit' | 'embed' | 'sets' | 'group'
   objectId?: string
 }
 

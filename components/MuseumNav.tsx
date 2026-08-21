@@ -18,18 +18,22 @@ interface MuseumNavProps {
   hasEvents: boolean
   hasVisitInfo: boolean
   hasWanted: boolean
+  hasSets: boolean
+  /** This hobby's word for a set — "Sets", "Exhibitions", "Runs". */
+  setsLabel: string
 }
 
 export default function MuseumNav({
   slug, museumName, logoEmoji, logoImageUrl,
   navClass, navTextClass, navLinkClass, navBg,
-  accent, headingStyle, hasEvents, hasVisitInfo, hasWanted,
+  accent, headingStyle, hasEvents, hasVisitInfo, hasWanted, hasSets, setsLabel,
 }: MuseumNavProps) {
   const pathname = usePathname()
   const isCollection = pathname === `/museum/${slug}`
   const isEvents = pathname.startsWith(`/museum/${slug}/events`)
   const isVisit = pathname === `/museum/${slug}/visit`
   const isWanted = pathname === `/museum/${slug}/wanted`
+  const isSets = pathname.startsWith(`/museum/${slug}/sets`)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function linkClass(active: boolean) {
@@ -48,6 +52,16 @@ export default function MuseumNav({
       >
         Collection
       </Link>
+      {hasSets && (
+        <Link
+          href={`/museum/${slug}/sets`}
+          className={linkClass(isSets)}
+          style={isSets ? { borderColor: accent } : {}}
+          onClick={() => setMobileOpen(false)}
+        >
+          {setsLabel}
+        </Link>
+      )}
       {hasEvents && (
         <Link
           href={`/museum/${slug}/events`}
@@ -132,6 +146,16 @@ export default function MuseumNav({
             >
               Collection
             </Link>
+            {hasSets && (
+              <Link
+                href={`/museum/${slug}/sets`}
+                className={`py-3 text-sm border-b ${isSets ? navTextClass : navLinkClass}`}
+                style={{ borderColor: 'rgba(128,128,128,0.1)' }}
+                onClick={() => setMobileOpen(false)}
+              >
+                {setsLabel}
+              </Link>
+            )}
             {hasEvents && (
               <Link
                 href={`/museum/${slug}/events`}

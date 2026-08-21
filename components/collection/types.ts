@@ -16,6 +16,12 @@ export interface GridObject {
   condition_grade?: string | null
   rarity?: string | null
   description?: string | null
+  /** Production date, for the timeline nav style. */
+  production_date?: string | null
+  /** The curator's note on this item *within the set being rendered*. */
+  note?: string | null
+  /** Published sets this item belongs to — drives the collection filter chips. */
+  groupIds?: string[]
 }
 
 /**
@@ -52,6 +58,8 @@ export interface GridProps {
   items: GridObject[]
   slug: string
   theme: GridTheme
+  /** Set the items were reached through, carried into every item link. */
+  setSlug?: string | null
 }
 
 /**
@@ -79,11 +87,20 @@ export function toGridObject(o: Record<string, unknown>): GridObject {
     condition_grade: orNull(o.condition_grade),
     rarity: orNull(o.rarity),
     description: orNull(o.description),
+    production_date: orNull(o.production_date),
   }
 }
 
-export function objectHref(slug: string, id: string): string {
-  return `/museum/${slug}/object/${id}`
+/**
+ * Link to an object, optionally carrying the set it was reached through.
+ *
+ * Every grid variant routes its links through here, so threading set context
+ * into all eight is this one parameter. The object page validates the slug
+ * against real membership before rendering anything set-shaped — invariant W.
+ */
+export function objectHref(slug: string, id: string, setSlug?: string | null): string {
+  const base = `/museum/${slug}/object/${id}`
+  return setSlug ? `${base}?set=${encodeURIComponent(setSlug)}` : base
 }
 
 /** This hobby's word for a canonical status, e.g. "Sold / Traded". */

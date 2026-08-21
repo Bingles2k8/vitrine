@@ -91,6 +91,14 @@ function Caption({ item, theme, align = 'left' }: { item: GridObject; theme: Gri
           {item.rarity}
         </div>
       )}
+      {/* The curator's note on this item within a set. Present only on set
+          pages, and only where there is room for it — the overlay-caption
+          variants (spotlight, mosaic) skip it deliberately. */}
+      {item.note && (
+        <div className="text-xs mt-1.5 leading-relaxed italic" style={{ color: theme.body }}>
+          {item.note}
+        </div>
+      )}
     </div>
   )
 }
@@ -99,13 +107,13 @@ function Caption({ item, theme, align = 'left' }: { item: GridObject; theme: Gri
 // The original card grid, kept as the fallback for any template without a
 // variant of its own.
 
-export function UniformGrid({ items, slug, theme }: GridProps) {
+export function UniformGrid({ items, slug, theme, setSlug }: GridProps) {
   return (
     <div className={`grid ${colClass(theme.columns)} gap-6`}>
       {items.map(item => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className="group overflow-hidden transition-all duration-200 hover:-translate-y-1 border"
           style={{ borderRadius: theme.radius, background: theme.cardBg, borderColor: theme.border }}
         >
@@ -129,12 +137,12 @@ export function UniformGrid({ items, slug, theme }: GridProps) {
 // generous margin and captioned beneath, the way a hang label sits under a
 // picture. `frame` adds an accent rule for the formal templates.
 
-export function PlateGrid({ items, slug, theme }: GridProps) {
+export function PlateGrid({ items, slug, theme, setSlug }: GridProps) {
   const framed = theme.options.frame === true
   return (
     <div className={`grid ${colClass(theme.columns)} gap-x-8 gap-y-14 md:gap-x-12`}>
       {items.map(item => (
-        <Link key={item.id} href={objectHref(slug, item.id)} className="group block">
+        <Link key={item.id} href={objectHref(slug, item.id, setSlug)} className="group block">
           <div
             className={`${theme.imageAspect} relative overflow-hidden mb-4`}
             style={{
@@ -165,14 +173,14 @@ export function PlateGrid({ items, slug, theme }: GridProps) {
 // with its catalogue number; `lead` carries an excerpt of the description for
 // text-forward templates.
 
-export function CatalogueList({ items, slug, theme }: GridProps) {
+export function CatalogueList({ items, slug, theme, setSlug }: GridProps) {
   const { numbered, lead } = theme.options
   return (
     <div style={{ borderTop: `1px solid ${theme.border}` }}>
       {items.map((item, i) => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className="group flex items-start gap-5 py-5 px-2 -mx-2 transition-colors"
           style={{ borderBottom: `1px solid ${theme.border}` }}
         >
@@ -207,11 +215,15 @@ export function CatalogueList({ items, slug, theme }: GridProps) {
                 item.status === 'On Loan' ? statusText(theme, 'On Loan') : null,
               ].filter(Boolean).join('  ·  ')}
             </div>
-            {lead && item.description && (
+            {item.note ? (
+              <p className="text-sm mt-2.5 leading-relaxed max-w-2xl italic" style={{ color: theme.body }}>
+                {item.note}
+              </p>
+            ) : lead && item.description ? (
               <p className="text-sm mt-2.5 leading-relaxed max-w-2xl line-clamp-2" style={{ color: theme.body }}>
                 {item.description}
               </p>
-            )}
+            ) : null}
           </div>
 
           <div className="text-xs font-mono shrink-0 pt-1 text-right hidden sm:block" style={{ color: theme.muted }}>
@@ -228,13 +240,13 @@ export function CatalogueList({ items, slug, theme }: GridProps) {
 // held back until hover. Built for the dark templates, where a border around
 // every work fights the atmosphere.
 
-export function SpotlightGrid({ items, slug, theme }: GridProps) {
+export function SpotlightGrid({ items, slug, theme, setSlug }: GridProps) {
   return (
     <div className={`grid ${colClass(theme.columns)} gap-px`} style={{ background: theme.border }}>
       {items.map(item => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className={`group relative overflow-hidden ${theme.imageAspect}`}
           style={{ background: theme.imageBg }}
         >
@@ -283,13 +295,13 @@ const MOSAIC_RHYTHM = [
   'md:col-span-1 md:row-span-1',
 ]
 
-export function MosaicGrid({ items, slug, theme }: GridProps) {
+export function MosaicGrid({ items, slug, theme, setSlug }: GridProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[minmax(150px,auto)] md:auto-rows-[190px] gap-2">
       {items.map((item, i) => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className={`group relative overflow-hidden ${MOSAIC_RHYTHM[i % MOSAIC_RHYTHM.length]}`}
           style={{ background: theme.imageBg, borderRadius: theme.radius }}
         >
@@ -321,7 +333,7 @@ export function MosaicGrid({ items, slug, theme }: GridProps) {
 // Salon hang. CSS columns keep every work at its natural aspect ratio, so the
 // wall has the uneven rhythm of a densely hung room rather than a grid.
 
-export function SalonGrid({ items, slug, theme }: GridProps) {
+export function SalonGrid({ items, slug, theme, setSlug }: GridProps) {
   const columnClass = theme.columns >= 4
     ? 'columns-2 md:columns-3 lg:columns-4'
     : theme.columns === 3
@@ -333,7 +345,7 @@ export function SalonGrid({ items, slug, theme }: GridProps) {
       {items.map(item => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className="group block mb-5 break-inside-avoid"
         >
           <div
@@ -367,7 +379,7 @@ export function SalonGrid({ items, slug, theme }: GridProps) {
 // Alternating figure/text rows under heavy rules. Each work gets a spread of
 // its own rather than a cell in a grid.
 
-export function EditorialGrid({ items, slug, theme }: GridProps) {
+export function EditorialGrid({ items, slug, theme, setSlug }: GridProps) {
   return (
     <div className="flex flex-col">
       {items.map((item, i) => {
@@ -375,7 +387,7 @@ export function EditorialGrid({ items, slug, theme }: GridProps) {
         return (
           <Link
             key={item.id}
-            href={objectHref(slug, item.id)}
+            href={objectHref(slug, item.id, setSlug)}
             className="group grid grid-cols-1 md:grid-cols-5 gap-5 md:gap-8 py-8 items-center"
             style={{ borderTop: `2px solid ${theme.heading}` }}
           >
@@ -421,13 +433,13 @@ export function EditorialGrid({ items, slug, theme }: GridProps) {
 // One wide band per work, captioned over the image. Pairs with the Cover
 // template, whose whole idea is that the collection reveals as you scroll.
 
-export function StackGrid({ items, slug, theme }: GridProps) {
+export function StackGrid({ items, slug, theme, setSlug }: GridProps) {
   return (
     <div className="flex flex-col gap-4">
       {items.map((item, i) => (
         <Link
           key={item.id}
-          href={objectHref(slug, item.id)}
+          href={objectHref(slug, item.id, setSlug)}
           className="group relative block overflow-hidden aspect-[16/10] sm:aspect-[16/7]"
           style={{ background: theme.imageBg, borderRadius: theme.radius }}
         >

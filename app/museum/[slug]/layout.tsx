@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getMuseumStyles, getLayoutVariant, googleFontsHref } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import MuseumNav from '@/components/MuseumNav'
+import { groupNouns } from '@/lib/collectionGroups'
 import MuseumSidebar from '@/components/MuseumSidebar'
 import type { Metadata } from 'next'
 
@@ -65,7 +66,17 @@ export default async function MuseumLayout({
     .eq('museum_id', museum.id)
     .eq('status', 'published')
 
+  // A museum with no published sets gets no nav item, and /sets 404s — an
+  // empty index is worse than no index (invariant U).
+  const { count: setCount } = await supabase
+    .from('collection_groups')
+    .select('id', { count: 'exact', head: true })
+    .eq('museum_id', museum.id)
+    .eq('status', 'published')
+
   const hasEvents = (eventCount ?? 0) > 0
+  const hasSets = (setCount ?? 0) > 0
+  const setNouns = groupNouns(museum)
   const hasVisitInfo = getPlan(museum.plan).visitInfo
   const hasWanted = museum.show_wanted === true
   const isPaid = getPlan(museum.plan).advancedCustomisation
@@ -195,6 +206,8 @@ export default async function MuseumLayout({
         hasEvents={hasEvents}
         hasVisitInfo={hasVisitInfo}
         hasWanted={hasWanted}
+        hasSets={hasSets}
+        setsLabel={setNouns.plural}
       />
 
       {children}

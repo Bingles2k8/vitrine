@@ -12,6 +12,9 @@ import { JsonLd } from '@/components/JsonLd'
 import { objectLabels, publicCertification, publicCustomFields } from '@/lib/publicProfile'
 import CertificationPanel from '@/components/collection/CertificationPanel'
 import { GALLERY_PRESET, OBJECT_LAYOUTS, type ObjectTheme } from '@/components/collection/object-layouts'
+import { SetBreadcrumb, SetChips, SetPager } from '@/components/collection/SetContext'
+import { groupNouns } from '@/lib/collectionGroups'
+import { loadObjectSets, loadSetWalk } from '@/lib/collectionGroups/publicSets'
 import type { Metadata } from 'next'
 
 function toFiniteNumber(v: unknown): number | null {
@@ -106,8 +109,15 @@ function formatDimensions(object: any): string | null {
   return parts.length > 0 ? parts.join(' · ') : (object.dimensions || null)
 }
 
-export default async function PublicObject({ params }: { params: Promise<{ slug: string, id: string }> }) {
+export default async function PublicObject({
+  params, searchParams,
+}: {
+  params: Promise<{ slug: string, id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { slug, id } = await params
+  const query = await searchParams
+  const requestedSet = typeof query.set === 'string' ? query.set : null
   const supabase = await createServerSideClient()
 
   const { data: museum } = await supabase
@@ -251,7 +261,36 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     />
   )
 
-  const back = (
+  // Set context. `walk` is only loaded when the visitor actually arrived
+  // through a set, and returns null when the object is not in it — a crafted
+  // ?set= must render nothing (invariant W).
+  const setNouns = groupNouns(museum)
+  const [objectSets, setWalk] = await Promise.all([
+    loadObjectSets(supabase, museum.id, object),
+    requestedSet ? loadSetWalk(supabase, museum.id, requestedSet, object.id) : Promise.resolve(null),
+  ])
+
+  const setColors = {
+    heading: content.heading,
+    body: content.body,
+    muted: content.muted,
+    border: content.border,
+    cardBg: content.cardBg,
+    accent,
+    headingStyle,
+    radius,
+  }
+
+  const back = setWalk ? (
+    <SetBreadcrumb
+      slug={slug}
+      setSlug={setWalk.group.slug}
+      setTitle={setWalk.group.title}
+      collectionLabel={labels.collection}
+      setsLabel={setNouns.plural}
+      colors={setColors}
+    />
+  ) : (
     <Link
       href={`/museum/${slug}`}
       className="text-xs font-mono transition-opacity hover:opacity-70 mb-10 inline-block"
@@ -308,7 +347,7 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
     </>
   ) : null
 
-  const footer = getPlan(museum.plan).visitInfo ? (
+  const visitBlock = getPlan(museum.plan).visitInfo ? (
     <div className="mt-10 pt-8 border-t" style={{ borderColor: content.border }}>
       <Link
         href={`/museum/${slug}/visit`}
@@ -319,6 +358,48 @@ export default async function PublicObject({ params }: { params: Promise<{ slug:
       </Link>
     </div>
   ) : null
+
+  const footer = (
+    <>
+      {/* The curator's note on this item *within the set the visitor came
+          through* — it belongs to the pairing, not to the object. */}
+      {setWalk?.note && (
+        <div
+          className="mt-8 pl-4 text-sm leading-relaxed italic"
+          style={{ borderLeft: `2px solid ${accent}`, color: content.body }}
+        >
+          {setWalk.note}
+          <div className="text-[10px] font-mono uppercase tracking-widest mt-2 not-italic" style={{ color: content.muted }}>
+            On {setWalk.group.title}
+          </div>
+        </div>
+      )}
+
+      {/* Every published set this item is in, however the visitor got here. */}
+      <SetChips
+        slug={slug}
+        sets={objectSets.map(g => ({ id: g.id, slug: g.slug, title: g.title }))}
+        label={objectSets.length === 1 ? `In this ${setNouns.singular.toLowerCase()}` : `In these ${setNouns.plural.toLowerCase()}`}
+        colors={setColors}
+        square={chrome === 'hard'}
+      />
+
+      {setWalk && setWalk.members.length > 1 && (
+        <SetPager
+          slug={slug}
+          setSlug={setWalk.group.slug}
+          setTitle={setWalk.group.title}
+          previous={setWalk.previous}
+          next={setWalk.next}
+          index={setWalk.index}
+          total={setWalk.members.length}
+          colors={setColors}
+        />
+      )}
+
+      {visitBlock}
+    </>
+  )
 
   const Layout = OBJECT_LAYOUTS[objectVariant] ?? OBJECT_LAYOUTS.standard
 

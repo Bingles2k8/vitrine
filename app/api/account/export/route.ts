@@ -18,6 +18,8 @@ const EXPORT_TABLES = [
   'activity_log',
   'audit_exercises',
   'audit_records',
+  'collection_group_items',
+  'collection_groups',
   'collection_reviews',
   'collection_use_records',
   'condition_assessments',

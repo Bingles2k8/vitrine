@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
+import AddToSetModal from '@/components/groups/AddToSetModal'
+import { groupNouns } from '@/lib/collectionGroups'
+import type { CollectionGroupRow } from '@/lib/collectionGroups/types'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
 import { CardGridSkeleton, TableSkeleton } from '@/components/Skeleton'
@@ -50,6 +53,8 @@ export default function Dashboard() {
   const [bannerDismissed, setBannerDismissed] = useState(true) // true until localStorage checked
   const [showUpgradeChecklist, setShowUpgradeChecklist] = useState(false)
   const [bulkStatus, setBulkStatus] = useState('')
+  const [addToSetOpen, setAddToSetOpen] = useState(false)
+  const [sets, setSets] = useState<CollectionGroupRow[]>([])
   const [bulking, setBulking] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [duplicateObjectIds, setDuplicateObjectIds] = useState<Set<string>>(new Set())
@@ -162,6 +167,7 @@ export default function Dashboard() {
         setMuseum(museum)
         setIsOwner(isOwner)
         setStaffAccess(staffAccess)
+        void loadSets(museum.id)
         setDiscoverable(museum.discoverable ?? false)
         setShowUpgradeChecklist(!museum.upgrade_checklist_seen_at)
         setCollectionCategory(museum.collection_category || '')
@@ -242,7 +248,16 @@ export default function Dashboard() {
     ? Math.floor((new Date(today).getTime() - new Date(loan.loan_end_date).getTime()) / 86400000)
     : 0
 
+  async function loadSets(museumId: string) {
+    const { data } = await supabase
+      .from('collection_groups').select('*').eq('museum_id', museumId)
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true })
+    setSets((data ?? []) as CollectionGroupRow[])
+  }
+
   const fullMode = getPlan(museum?.plan).fullMode
+  const setNouns = groupNouns(museum ?? {})
 
   // Collection-wide profile: a single active profile dresses the list, a mixed
   // collection stays neutral. See docs/collection-profiles-plan.md §6.3.
@@ -362,6 +377,18 @@ export default function Dashboard() {
             titleOnly={!fullMode}
           />
         )}
+
+        <AddToSetModal
+          open={addToSetOpen}
+          objectIds={Array.from(selectedIds)}
+          sets={sets}
+          nouns={setNouns}
+          onClose={() => setAddToSetOpen(false)}
+          onDone={() => {
+            setSelectedIds(new Set())
+            if (museum) void loadSets(museum.id)
+          }}
+        />
         <DashboardTopBar
           title="Collection"
           actions={canEdit && canImport && (
@@ -618,11 +645,18 @@ export default function Dashboard() {
                 </div>
               )}
               {/* Bulk action bar */}
-              {canEdit && fullMode && selectedIds.size > 0 && (
+              {canEdit && selectedIds.size > 0 && (
                 <div className="px-4 py-2.5 border-b border-stone-200 dark:border-stone-700 bg-stone-900 dark:bg-white flex items-center gap-3 flex-wrap">
                   <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{selectedIds.size} selected</span>
                   <span className="text-stone-600 dark:text-stone-400">|</span>
-                  <select
+                  <button
+                    onClick={() => setAddToSetOpen(true)}
+                    disabled={bulking}
+                    className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50"
+                  >
+                    Add to {setNouns.singular.toLowerCase()}
+                  </button>
+                  {fullMode && <select
                     value={bulkStatus}
                     onChange={e => { if (e.target.value) { bulkUpdateStatus(e.target.value); setBulkStatus('') } }}
                     disabled={bulking}
@@ -630,17 +664,17 @@ export default function Dashboard() {
                   >
                     <option value="">Change status…</option>
                     {['Entry', 'On Display', 'Storage', 'On Loan', 'Restoration'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </select>}
                   <button onClick={() => bulkSetVisibility(true)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Show on site</button>
                   <button onClick={() => bulkSetVisibility(false)} disabled={bulking} className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">Hide from site</button>
-                  <button onClick={bulkDelete} disabled={bulking} className="text-xs font-mono text-red-400 hover:text-red-300 dark:hover:text-red-600 transition-colors disabled:opacity-50">Move to bin</button>
+                  {fullMode && <button onClick={bulkDelete} disabled={bulking} className="text-xs font-mono text-red-400 hover:text-red-300 dark:hover:text-red-600 transition-colors disabled:opacity-50">Move to bin</button>}
                   <button onClick={() => setSelectedIds(new Set())} className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-300 dark:hover:text-stone-600 transition-colors ml-auto">Clear ×</button>
                 </div>
               )}
               <table className="w-full">
                 <thead>
                   <tr className="bg-stone-100/70 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
-                    {canEdit && fullMode && (
+                    {canEdit && (
                       <th className="px-4 py-4 w-10">
                         <input
                           type="checkbox"
@@ -673,7 +707,7 @@ export default function Dashboard() {
                       className={`border-b border-stone-100 dark:border-stone-800 hover:bg-stone-50/80 dark:hover:bg-stone-800/60 cursor-pointer transition-colors ${a.status === 'Deaccessioned' ? 'opacity-50' : ''} ${selectedIds.has(a.id) ? 'bg-stone-50 dark:bg-stone-800' : ''}`}
                       onClick={() => router.push(`/dashboard/objects/${a.id}`)}
                     >
-                      {canEdit && fullMode && (
+                      {canEdit && (
                         <td className="px-4 py-4 w-10" onClick={e => { e.stopPropagation(); toggleSelect(a.id) }}>
                           <input
                             type="checkbox"

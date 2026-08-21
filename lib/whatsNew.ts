@@ -18,6 +18,14 @@ export interface WhatsNewEntry {
  */
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: 'collection-sets',
+    date: '2026-08-21',
+    emoji: '🗂️',
+    title: 'Group your collection into sets',
+    body: 'Gather part of your collection under a name — a set, a series, a run, an exhibition — and it gets its own page on your public site, with an introduction, a cover and its own place in your site’s navigation. Pick the items yourself, or save a filter and let the set keep itself up to date as you add more. Then choose how visitors move through it: a cover flow that swings between items, a filmstrip, shelves, a contact sheet, a timeline, or a full-screen reel. Available on every plan, with no limit on how many you make.',
+    link: { href: '/dashboard/sets', label: 'Create a set' },
+  },
+  {
     id: 'collection-profiles',
     date: '2026-08-13',
     emoji: '🃏',

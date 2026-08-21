@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import type { ChromeStyle, GridOptions, GridVariant } from '@/lib/templates'
 import type { PublicLabels } from '@/lib/publicProfile'
+import Link from 'next/link'
 import type { GridObject, GridTheme } from './collection/types'
 import {
   CatalogueList, EditorialGrid, MosaicGrid, PlateGrid,
@@ -35,6 +36,11 @@ interface StyleSettings {
   content: ContentColors
   headingStyle: CSSProperties
   labels: PublicLabels
+  /** Published sets the owner chose to surface as filter chips. */
+  setChips?: { id: string; slug: string; title: string }[]
+  setsBase?: string
+  /** This hobby's word for a set — "set", "exhibition", "run". */
+  setNoun?: string
 }
 
 interface Props {
@@ -71,10 +77,12 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
   const [query, setQuery] = useState('')
   const [activeMedium, setActiveMedium] = useState('All')
   const [activeStatus, setActiveStatus] = useState('All')
+  const [activeSet, setActiveSet] = useState<string | null>(null)
 
   const {
     accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata,
     gridVariant, gridOptions, chrome, content, headingStyle, labels,
+    setChips = [], setsBase, setNoun = 'set',
   } = settings
 
   const mediums = useMemo(() => {
@@ -89,16 +97,18 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
         .some(field => field?.toLowerCase().includes(q))
       const matchesMedium = activeMedium === 'All' || a.medium === activeMedium
       const matchesStatus = activeStatus === 'All' || a.status === activeStatus
-      return matchesQuery && matchesMedium && matchesStatus
+      const matchesSet = !activeSet || (a.groupIds?.includes(activeSet) ?? false)
+      return matchesQuery && matchesMedium && matchesStatus && matchesSet
     })
-  }, [objects, query, activeMedium, activeStatus])
+  }, [objects, query, activeMedium, activeStatus, activeSet])
 
-  const hasActiveFilters = query || activeMedium !== 'All' || activeStatus !== 'All'
+  const hasActiveFilters = query || activeMedium !== 'All' || activeStatus !== 'All' || activeSet
 
   function clearAll() {
     setQuery('')
     setActiveMedium('All')
     setActiveStatus('All')
+    setActiveSet(null)
   }
 
   const theme: GridTheme = {
@@ -236,6 +246,27 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
           ))}
         </div>
 
+        {/* Set chips sit with the other filters and filter in place, exactly as
+            the medium chips do — a chip that navigated away would read as a
+            different kind of control. The banner below carries the link. */}
+        {setChips.length > 0 && (
+          <>
+            <span aria-hidden className="h-4 w-px" style={{ background: content.border }} />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {setChips.map(set => (
+                <button
+                  key={set.id}
+                  onClick={() => setActiveSet(activeSet === set.id ? null : set.id)}
+                  className={chipClass}
+                  style={chipStyle(activeSet === set.id)}
+                >
+                  {set.title}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="ml-auto flex items-center gap-4">
           {hasActiveFilters && (
             <button
@@ -251,6 +282,34 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
           </span>
         </div>
       </div>
+
+      {/* An active set filter surfaces the set's own page. Without this the
+          title, cover, description and per-item notes an owner wrote would be
+          authored and then shown to nobody. */}
+      {activeSet && setsBase && (() => {
+        const set = setChips.find(s => s.id === activeSet)
+        if (!set) return null
+        return (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 mb-8 px-4 py-3"
+            style={{ background: `${accentColor}0f`, borderLeft: `2px solid ${accentColor}`, borderRadius: card_radius }}
+          >
+            <span className="text-sm" style={{ color: content.heading }}>
+              <span style={headingStyle}>{set.title}</span>
+              <span className="text-xs font-mono ml-2" style={{ color: content.muted }}>
+                {filtered.length} {itemsWord}
+              </span>
+            </span>
+            <Link
+              href={`${setsBase}/${set.slug}`}
+              className="text-xs font-mono transition-opacity hover:opacity-70 whitespace-nowrap"
+              style={{ color: accentColor }}
+            >
+              Open this {setNoun.toLowerCase()} →
+            </Link>
+          </div>
+        )
+      })()}
 
       {filtered.length === 0 ? (
         <div className="text-center py-32">
