@@ -1,5 +1,6 @@
 import {
   getTemplate,
+  templateOptions,
   type ChromeStyle, type GridOptions, type GridVariant,
   type ObjectOptions, type ObjectVariant,
 } from './templates'
@@ -27,11 +28,18 @@ export const BODY_FONT_MAP: Record<string, { google: string; css: string }> = {
   lora:           { google: 'Lora:ital,wght@0,400;0,600;1,400',                              css: "'Lora', Georgia, serif" },
   'eb-garamond':  { google: 'EB+Garamond:ital,wght@0,400;0,600;1,400',                       css: "'EB Garamond', Georgia, serif" },
   'source-serif': { google: 'Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400', css: "'Source Serif 4', Georgia, serif" },
+  // ── paired with the object-led templates ──
+  archivo:        { google: 'Archivo:wght@400;500;600;700',                                   css: "'Archivo', system-ui, sans-serif" },
+  manrope:        { google: 'Manrope:wght@300;400;500;700',                                   css: "'Manrope', system-ui, sans-serif" },
+  jost:           { google: 'Jost:wght@300;400;500',                                          css: "'Jost', system-ui, sans-serif" },
+  chivo:          { google: 'Chivo:wght@300;400;700;900',                                     css: "'Chivo', system-ui, sans-serif" },
 }
 
 export const PAGE_BG: Record<string, string> = {
   minimal: '#fafaf9', dramatic: '#0c0a09', archival: '#f5f0e8', editorial: '#ffffff', classic: '#111827',
   cover: '#0d0b08', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9',
+  // object-led, all dark by design
+  flip: '#08070a', foil: '#0a0812', northlight: '#101216', verso: '#0c0b0a', viewfinder: '#0b0c0d',
 }
 
 const PAGE_BG_DARK: Record<string, string> = {
@@ -60,6 +68,14 @@ export const CONTENT_COLORS: Record<string, {
   curator:   { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff', imageBg: '#fafaf9' },
   magazine:  { heading: '#000000', body: '#44403c', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#f5f5f4', imageBg: '#f5f5f4' },
   salon:     { heading: '#1c1917', body: '#57534e', muted: '#a8a29e', border: '#e7e5e4', cardBg: '#ffffff', inputBg: '#ffffff', imageBg: '#fafaf9' },
+  // ── object-led ──
+  // imageBg is the fallback surround for a picture with no sampled matte, so
+  // it has to sit quietly against the page rather than read as a card.
+  flip:       { heading: '#f2f0ea', body: '#b5b0a8', muted: '#6f6b64', border: 'rgba(242,240,234,0.16)', cardBg: 'rgba(242,240,234,0.05)', inputBg: 'rgba(242,240,234,0.06)', imageBg: '#14120f' },
+  foil:       { heading: '#efe9f5', body: '#b8b0c4', muted: '#7a7288', border: 'rgba(239,233,245,0.16)', cardBg: 'rgba(239,233,245,0.05)', inputBg: 'rgba(239,233,245,0.06)', imageBg: '#161020' },
+  northlight: { heading: '#eef1f4', body: '#a9b3bf', muted: '#6f7885', border: 'rgba(238,241,244,0.16)', cardBg: '#15181d',               inputBg: 'rgba(238,241,244,0.06)', imageBg: '#171a1f' },
+  verso:      { heading: '#ece7dc', body: '#b6ab93', muted: '#7d766a', border: 'rgba(236,231,220,0.16)', cardBg: 'rgba(236,231,220,0.05)', inputBg: 'rgba(236,231,220,0.06)', imageBg: '#14120f' },
+  viewfinder: { heading: '#eceff1', body: '#a3aab0', muted: '#6b7176', border: 'rgba(236,239,241,0.16)', cardBg: '#22282c',               inputBg: 'rgba(236,239,241,0.06)', imageBg: '#14181a' },
 }
 
 const CONTENT_COLORS_DARK: Record<string, typeof CONTENT_COLORS[string]> = {
@@ -81,6 +97,11 @@ export const NAV_STYLES: Record<string, { nav: string; text: string; link: strin
   curator:   { nav: 'bg-stone-50 border-b border-stone-100',   text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
   magazine:  { nav: 'bg-white border-b-2 border-black',        text: 'text-black font-bold', link: 'text-stone-400 hover:text-black' },
   salon:     { nav: 'bg-white border-b border-stone-100',      text: 'text-stone-900',  link: 'text-stone-400 hover:text-stone-900' },
+  flip:       { nav: 'bg-stone-950 border-b border-white/10',  text: 'text-stone-100', link: 'text-stone-500 hover:text-stone-100' },
+  foil:       { nav: 'bg-[#0a0812] border-b border-white/10',  text: 'text-stone-100', link: 'text-stone-500 hover:text-stone-100' },
+  northlight: { nav: 'bg-[#101216] border-b border-white/10',  text: 'text-stone-100', link: 'text-stone-500 hover:text-stone-100' },
+  verso:      { nav: 'bg-[#0c0b0a] border-b border-white/10',  text: 'text-stone-100', link: 'text-stone-500 hover:text-stone-100' },
+  viewfinder: { nav: 'bg-[#0b0c0d] border-b border-white/10',  text: 'text-stone-100', link: 'text-stone-500 hover:text-stone-100' },
 }
 
 const NAV_STYLES_DARK: Record<string, typeof NAV_STYLES[string]> = {
@@ -96,6 +117,8 @@ const DARK_TEMPLATES = new Set(['dramatic', 'classic', 'cover'])
 
 export type MuseumStyleInput = {
   template?: string | null
+  /** Per-template levers, keyed by template id. */
+  template_options?: Record<string, Record<string, unknown>> | null
   accent_color?: string | null
   primary_color?: string | null
   heading_font?: string | null
@@ -133,6 +156,9 @@ export function getMuseumStyles(museum: MuseumStyleInput) {
     objectVariant: tmpl.object_variant as ObjectVariant,
     objectOptions: (tmpl.object_options ?? {}) as ObjectOptions,
     chrome: tmpl.chrome as ChromeStyle,
+    /** Resolved levers for the chosen template, defaults filled in. Only the
+     *  object-led variants read these; the other eight ignore them. */
+    templateOptions: templateOptions(tmpl, museum.template_options),
     pageBg:   (useDark ? PAGE_BG_DARK[tmpl.id] : null) ?? PAGE_BG[tmpl.id] ?? '#fafaf9',
     content:  (useDark ? CONTENT_COLORS_DARK[tmpl.id] : null) ?? CONTENT_COLORS[tmpl.id] ?? CONTENT_COLORS.minimal,
     navStyle: (useDark ? NAV_STYLES_DARK[tmpl.id] : null) ?? NAV_STYLES[tmpl.id] ?? NAV_STYLES.minimal,
