@@ -7,6 +7,8 @@ import ContactMuseumButton from '@/components/ContactMuseumButton'
 import { getMuseumStyles, getLayoutVariant } from '@/lib/museum-styles'
 import { getPlan } from '@/lib/plans'
 import PageViewTracker from '@/components/PageViewTracker'
+import { decodePreview, applyPreview } from '@/lib/previewSettings'
+import { createReadOnlyServerClient } from '@/lib/supabase-server'
 import { JsonLd } from '@/components/JsonLd'
 import { SITE_URL } from '@/lib/seo'
 import { getCollectionValue } from '@/lib/collectionValue'
@@ -19,17 +21,44 @@ import GroupSection from '@/components/collection/GroupSection'
 
 export const revalidate = 3600
 
-export default async function PublicMuseum({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PublicMuseum({
+  params, searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { slug } = await params
   const supabase = createPublicClient()
 
-  const { data: museum } = await supabase
+  const { data: savedMuseum } = await supabase
     .from('museums')
     .select('*')
     .eq('slug', slug)
     .single()
 
-  if (!museum) notFound()
+  if (!savedMuseum) notFound()
+
+  // ── Live preview ────────────────────────────────────────────────────────
+  // The site editor renders this page in an iframe and passes the unsaved form
+  // in the URL, so a collector sees the real template rather than a drawing of
+  // it. Only the owner gets it: the payload is presentation-only and cannot
+  // reveal anything, but a shared link could otherwise misrepresent a museum.
+  const sp = searchParams ? await searchParams : {}
+  const rawPreview = typeof sp.preview === 'string' ? sp.preview : undefined
+  let museum = savedMuseum
+  let isPreview = false
+
+  if (rawPreview) {
+    const settings = decodePreview(rawPreview)
+    if (settings) {
+      const authed = await createReadOnlyServerClient()
+      const { data: { user } } = await authed.auth.getUser()
+      if (user && user.id === savedMuseum.owner_id) {
+        museum = applyPreview(savedMuseum, settings)
+        isPreview = true
+      }
+    }
+  }
 
   const { data: objects } = await supabase
     .from('objects')
@@ -65,7 +94,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
     .order('created_at', { ascending: false })
     .limit(6) : { data: [] }
 
-  const { tmpl, accent, primary, headingStyle, content, gridVariant, gridOptions, chrome } = getMuseumStyles(museum)
+  const { tmpl, accent, primary, headingStyle, content, templateOptions, gridVariant, gridOptions, chrome } = getMuseumStyles(museum)
   const layoutVariant = getLayoutVariant(museum)
   const labels = collectionLabels(museum)
   // "coins" / "cards" / "objects" — this hobby's word, used wherever the page
@@ -232,7 +261,7 @@ export default async function PublicMuseum({ params }: { params: Promise<{ slug:
   if (layoutVariant === 'minimal') {
     return (
       <>
-        <PageViewTracker museumId={museum.id} pageType="home" />
+        {!isPreview && <PageViewTracker museumId={museum.id} pageType="home" />}
 
         <div className="max-w-6xl mx-auto px-6 pt-20 pb-10">
           {/* Eyebrow */}

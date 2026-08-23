@@ -78,7 +78,7 @@ export default async function PublicSetPage({ params }: { params: Params }) {
   // it has no page, same as it has no card (invariant U).
   if (!current) notFound()
 
-  const { tmpl, accent, content, headingStyle, gridVariant, gridOptions, chrome, bodyFont } = getMuseumStyles(museum)
+  const { tmpl, accent, content, headingStyle, templateOptions, gridVariant, gridOptions, chrome, bodyFont } = getMuseumStyles(museum)
   const labels = collectionLabels(museum)
   const nouns = groupNouns(museum)
   const treatment = setTreatment(gridVariant)
@@ -99,6 +99,7 @@ export default async function PublicSetPage({ params }: { params: Params }) {
     metadata: museum.card_metadata || tmpl.card_metadata,
     options: gridOptions,
     labels,
+    templateOptions,
   }
 
   const { group: set, members, count, dateLabel } = current
