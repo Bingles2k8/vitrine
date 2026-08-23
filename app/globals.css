@@ -129,3 +129,34 @@ body {
   outline: 1px dashed rgba(16,185,129,0.25);
   outline-offset: 2px;
 }
+
+/* ── Foil, for the object-led card templates ───────────────────────────────
+   The shine is drawn rather than photographed: two stacked sweeps that travel
+   across the card as the pointer crosses it. A scan of a holo is a flat image;
+   this is the only way the surface reads as foil on a screen. */
+.ol-foil {
+  border-radius: inherit;
+  opacity: 0.5;
+  background-image: linear-gradient(
+    115deg,
+    transparent 26%,
+    rgba(255, 90, 180, 0.45) 38%,
+    rgba(255, 232, 90, 0.45) 47%,
+    rgba(90, 255, 214, 0.45) 57%,
+    rgba(150, 110, 255, 0.45) 69%,
+    transparent 80%
+  );
+  background-size: 260% 260%;
+  background-position: 12% 50%;
+  mix-blend-mode: color-dodge;
+  transition: background-position 620ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ol-foil-card:hover .ol-foil,
+.ol-foil-card:focus-visible .ol-foil,
+*:hover > .ol-foil {
+  background-position: 92% 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ol-foil { transition: none; }
+}

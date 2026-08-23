@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { GRIDS } from '@/components/collection/registry'
 import {
   CatalogueList, EditorialGrid, MosaicGrid, PlateGrid,
   SalonGrid, SpotlightGrid, StackGrid, UniformGrid,
@@ -7,17 +8,9 @@ import {
 import type { GridObject, GridTheme } from '@/components/collection/types'
 import { TEMPLATES, type GridVariant } from '@/lib/templates'
 import { collectionLabels } from '@/lib/publicProfile'
+import { PAGE_BG, CONTENT_COLORS, NAV_STYLES, BODY_FONT_MAP } from '@/lib/museum-styles'
 
-const RENDERERS: Record<GridVariant, (p: { items: GridObject[]; slug: string; theme: GridTheme }) => React.ReactElement> = {
-  uniform: UniformGrid,
-  plate: PlateGrid,
-  catalogue: CatalogueList,
-  spotlight: SpotlightGrid,
-  mosaic: MosaicGrid,
-  salon: SalonGrid,
-  editorial: EditorialGrid,
-  stack: StackGrid,
-}
+const RENDERERS = GRIDS
 
 const items: GridObject[] = [
   {
@@ -121,5 +114,33 @@ describe('collection grid variants', () => {
       <UniformGrid items={items} slug="demo" theme={theme({ metadata: 'none' })} />,
     )
     expect(html).not.toContain('Lewis Pingo')
+  })
+})
+
+describe('object-led templates are fully wired', () => {
+  it('every template has a page background, content colours and a nav style', () => {
+    for (const t of TEMPLATES) {
+      expect(PAGE_BG[t.id], `${t.id} page background`).toBeTypeOf('string')
+      expect(CONTENT_COLORS[t.id], `${t.id} content colours`).toBeTruthy()
+      expect(NAV_STYLES[t.id], `${t.id} nav style`).toBeTruthy()
+    }
+  })
+
+  it('every template declares controls, and object-led ones drop the grid controls', () => {
+    for (const t of TEMPLATES) {
+      expect(Array.isArray(t.controls), `${t.id} controls`).toBe(true)
+      expect(t.controls.length, `${t.id} controls`).toBeGreaterThan(0)
+      if (t.minPlan) {
+        for (const dead of ['gridColumns', 'imageRatio', 'cardPadding'] as const) {
+          expect(t.controls, `${t.id} should not read ${dead}`).not.toContain(dead)
+        }
+      }
+    }
+  })
+
+  it('every body font a template names exists', () => {
+    for (const t of TEMPLATES) {
+      expect(BODY_FONT_MAP[t.body_font], `${t.id} → ${t.body_font}`).toBeTruthy()
+    }
   })
 })
