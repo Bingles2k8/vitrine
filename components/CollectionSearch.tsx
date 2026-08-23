@@ -6,10 +6,7 @@ import type { ChromeStyle, GridOptions, GridVariant } from '@/lib/templates'
 import type { PublicLabels } from '@/lib/publicProfile'
 import Link from 'next/link'
 import type { GridObject, GridTheme } from './collection/types'
-import {
-  CatalogueList, EditorialGrid, MosaicGrid, PlateGrid,
-  SalonGrid, SpotlightGrid, StackGrid, UniformGrid,
-} from './collection/grids'
+import { gridFor } from './collection/registry'
 
 interface ContentColors {
   heading: string
@@ -30,6 +27,7 @@ interface StyleSettings {
   card_padding: string
   card_metadata: string
   gridVariant: GridVariant
+  templateOptions?: Record<string, string | boolean>
   gridOptions: GridOptions
   chrome: ChromeStyle
   /** Resolved by getMuseumStyles — already accounts for dark mode. */
@@ -62,17 +60,6 @@ const PAD_CLASS: Record<string, string> = {
   generous: 'p-6',
 }
 
-const GRIDS: Record<GridVariant, (p: { items: GridObject[]; slug: string; theme: GridTheme }) => React.ReactElement> = {
-  uniform: UniformGrid,
-  plate: PlateGrid,
-  catalogue: CatalogueList,
-  spotlight: SpotlightGrid,
-  mosaic: MosaicGrid,
-  salon: SalonGrid,
-  editorial: EditorialGrid,
-  stack: StackGrid,
-}
-
 export default function CollectionSearch({ objects, slug, settings, showStatusFilter = true }: Props) {
   const [query, setQuery] = useState('')
   const [activeMedium, setActiveMedium] = useState('All')
@@ -81,7 +68,7 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
 
   const {
     accentColor, card_radius, grid_columns, image_ratio, card_padding, card_metadata,
-    gridVariant, gridOptions, chrome, content, headingStyle, labels,
+    gridVariant, gridOptions, chrome, content, headingStyle, labels, templateOptions,
     setChips = [], setsBase, setNoun = 'set',
   } = settings
 
@@ -127,9 +114,10 @@ export default function CollectionSearch({ objects, slug, settings, showStatusFi
     metadata: card_metadata,
     options: gridOptions,
     labels,
+    templateOptions,
   }
 
-  const Grid = GRIDS[gridVariant] ?? UniformGrid
+  const Grid = gridFor(gridVariant)
 
   // ── Chrome ────────────────────────────────────────────────────────────────
   // The search box and filters used to be identical on every template, which
