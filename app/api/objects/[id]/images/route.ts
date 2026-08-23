@@ -69,8 +69,12 @@ export async function POST(
 
   // Insert the image record
   const body = await request.json()
-  const { url, is_primary, sort_order, caption, phash } = body
+  const { url, is_primary, sort_order, caption, phash, matte, aspect } = body
   const phashValid = typeof phash === 'string' && /^[01]{64}$/.test(phash)
+  // Both are computed in the browser and are worth nothing if wrong, so they
+  // are dropped rather than rejected — never fail an upload over decoration.
+  const matteValid = typeof matte === 'string' && /^#[0-9a-f]{6}$/i.test(matte)
+  const aspectValid = typeof aspect === 'number' && Number.isFinite(aspect) && aspect > 0 && aspect < 20
 
   const { data: newImage, error } = await supabase
     .from('object_images')
@@ -82,15 +86,22 @@ export async function POST(
       sort_order: sort_order ?? 0,
       ...(caption ? { caption } : {}),
       ...(phashValid ? { phash } : {}),
+      ...(matteValid ? { matte: matte.toLowerCase() } : {}),
+      ...(aspectValid ? { aspect } : {}),
     })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // If primary, update objects.image_url
+  // If primary, denormalise onto the object. image_url has always been mirrored
+  // here; the matte and aspect follow it so the public render path reads one row.
   if (is_primary) {
-    await supabase.from('objects').update({ image_url: url }).eq('id', objectId)
+    await supabase.from('objects').update({
+      image_url: url,
+      image_matte: matteValid ? matte.toLowerCase() : null,
+      image_aspect: aspectValid ? aspect : null,
+    }).eq('id', objectId)
   }
 
   return NextResponse.json(newImage)

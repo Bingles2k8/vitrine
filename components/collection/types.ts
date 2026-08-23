@@ -22,6 +22,16 @@ export interface GridObject {
   note?: string | null
   /** Published sets this item belongs to — drives the collection filter chips. */
   groupIds?: string[]
+  /** Modal colour of the picture's own border, sampled at upload. Null when the
+   *  border is too busy to sample, which is common for objects shot in situ.
+   *  The object-led templates use it as the surround so a photograph sits in a
+   *  fixed frame without cropping and without a hard seam. */
+  matte?: string | null
+  /** Natural width / height, so a frame can be sized before the image loads. */
+  aspect?: number | null
+  /** condition_grade mapped onto the canonical scale, where a mapping exists.
+   *  Display always uses condition_grade; this is only for ranking. */
+  conditionCanonical?: string | null
 }
 
 /**
@@ -52,6 +62,9 @@ export interface GridTheme {
   metadata: string
   options: GridOptions
   labels: PublicLabels
+  /** Resolved per-template levers from `museums.template_options`, defaults
+   *  filled in. Only the object-led variants read these. */
+  templateOptions?: Record<string, string | boolean>
 }
 
 export interface GridProps {
@@ -88,6 +101,9 @@ export function toGridObject(o: Record<string, unknown>): GridObject {
     rarity: orNull(o.rarity),
     description: orNull(o.description),
     production_date: orNull(o.production_date),
+    matte: orNull(o.image_matte),
+    aspect: typeof o.image_aspect === 'number' ? o.image_aspect : null,
+    conditionCanonical: orNull(o.condition_canonical),
   }
 }
 
