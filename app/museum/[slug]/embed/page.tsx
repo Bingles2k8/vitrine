@@ -32,7 +32,7 @@ export default async function EmbedCollectionPage({ params }: { params: Promise<
 
   const {
     tmpl, accent, font, bodyFont, bodyStyle, headingStyle,
-    content, pageBg, gridVariant, gridOptions, chrome,
+    content, pageBg, templateOptions, gridVariant, gridOptions, chrome,
   } = getMuseumStyles(museum)
 
   const styleSettings = {

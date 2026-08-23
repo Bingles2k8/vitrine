@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { TEMPLATES } from '@/lib/templates'
+import { TEMPLATES, getTemplate, isTemplateLocked, templateOptions } from '@/lib/templates'
+import type { ControlId, TemplateOption } from '@/lib/templates'
 import DashboardShell from '@/components/DashboardShell'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getMuseumForUser } from '@/lib/get-museum'
+import { encodePreview } from '@/lib/previewSettings'
 import { compressImage, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { getPlan, FREE_TIER_TEMPLATES } from '@/lib/plans'
+
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
@@ -122,6 +125,7 @@ export default function SiteBuilder() {
     facilities: '',
     maps_embed_url: '',
     template: 'minimal',
+    template_options: {} as Record<string, Record<string, unknown>>,
     card_radius: 8,
     hero_height: 'medium',
     grid_columns: 4,
@@ -155,6 +159,7 @@ export default function SiteBuilder() {
       setStaffAccess(staffAccess)
       setSlugInput(museum.slug || '')
       setForm({
+        template_options: (museum.template_options as Record<string, Record<string, unknown>>) || {},
         name: museum.name || '',
         tagline: museum.tagline || '',
         logo_emoji: museum.logo_emoji || '🏛️',
@@ -260,6 +265,20 @@ export default function SiteBuilder() {
     }))
   }
 
+  // The preview is the real page. The unsaved form travels to it in the URL,
+  // debounced so it reloads once you stop typing rather than on every keystroke.
+  const [previewSrc, setPreviewSrc] = useState('')
+  const [previewStale, setPreviewStale] = useState(false)
+  useEffect(() => {
+    if (!museum?.slug) return
+    setPreviewStale(true)
+    const t = setTimeout(() => {
+      setPreviewSrc(`/museum/${museum.slug}?preview=${encodePreview(form)}`)
+      setPreviewStale(false)
+    }, 450)
+    return () => clearTimeout(t)
+  }, [form, museum?.slug])
+
   async function handleSave() {
     if (!museum) return
     setSaving(true)
@@ -310,53 +329,26 @@ export default function SiteBuilder() {
   )
 
   const selectedTemplate = TEMPLATES.find(t => t.id === form.template) || TEMPLATES[0]
-  const layoutVariant = selectedTemplate.layout_variant
-  const isLightTemplate = form.template === 'minimal' || form.template === 'editorial' || form.template === 'curator' || form.template === 'magazine' || form.template === 'salon'
-  const previewHeroBg = isLightTemplate ? '#ffffff' : form.primary_color
-  const previewHeroText = isLightTemplate ? '#111111' : '#ffffff'
+  // The chosen template decides which controls the panel shows, whether dark
+  // mode is available, and which per-template levers exist. Nothing about that
+  // is a special case any more.
+  const tmpl = getTemplate(form.template)
+  const shows = (c: ControlId) => tmpl.controls.includes(c)
+  const opts = templateOptions(tmpl, form.template_options)
+  const setOpt = (id: string, value: string | boolean) =>
+    setForm(f => ({
+      ...f,
+      template_options: { ...f.template_options, [tmpl.id]: { ...(f.template_options?.[tmpl.id] ?? {}), [id]: value } },
+    }))
 
-  const previewNavBg: Record<string, string> = {
-    minimal: '#ffffff', dramatic: '#0c0a09', archival: '#fdf6e3', editorial: '#ffffff', classic: '#1e293b',
-    cover: 'transparent', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9',
-  }
-  const previewNavText: Record<string, string> = {
-    minimal: '#111111', dramatic: '#ffffff', archival: '#3a2e1e', editorial: '#000000', classic: '#f0ead8',
-    cover: '#ffffff', curator: '#1c1917', magazine: '#000000', salon: '#1c1917',
-  }
 
-  const navBg = previewNavBg[form.template] || '#ffffff'
-  const navText = previewNavText[form.template] || '#111111'
 
-  const pvDark = form.dark_mode === true && !['dramatic', 'classic', 'cover'].includes(form.template)
-  const pvPageBg = pvDark ? ({ minimal: '#111110', editorial: '#0a0a0a', archival: '#1a1610', curator: '#111110', magazine: '#0a0a0a', salon: '#111110' } as Record<string,string>)[form.template] ?? '#111110' : (({ minimal: '#fafaf9', editorial: '#ffffff', archival: '#f5f0e8', curator: '#faf8f5', magazine: '#ffffff', salon: '#fafaf9' } as Record<string,string>)[form.template] ?? '#ffffff')
-  const pvNavBg   = pvDark ? ({ minimal: '#111110', editorial: '#0a0a0a', archival: '#1c1814', curator: '#111110', magazine: '#0a0a0a', salon: '#111110' } as Record<string,string>)[form.template] ?? '#111110' : navBg
-  const pvNavText = pvDark ? ({ minimal: '#f5f4f3', editorial: '#ffffff',  archival: '#ede8dc', curator: '#f5f4f3', magazine: '#ffffff',  salon: '#f5f4f3' } as Record<string,string>)[form.template] ?? '#f5f4f3' : navText
-  const pvCardBg  = pvDark ? ({ minimal: '#1c1917', editorial: '#141414',  archival: 'rgba(255,255,255,0.05)', curator: '#1c1917', magazine: '#141414', salon: '#1c1917' } as Record<string,string>)[form.template] ?? '#1c1917' : '#ffffff'
-  const pvBorder  = pvDark ? ({ minimal: '#292524', editorial: '#3a3a3a',  archival: '#3d3020', curator: '#292524', magazine: '#292524', salon: '#292524' } as Record<string,string>)[form.template] ?? '#292524' : '#e7e5e4'
-  const pvHeading = pvDark ? ({ minimal: '#f5f4f3', editorial: '#ffffff',  archival: '#ede8dc', curator: '#f5f4f3', magazine: '#ffffff',  salon: '#f5f4f3' } as Record<string,string>)[form.template] ?? '#f5f4f3' : '#1c1917'
-  const pvMuted   = pvDark ? ({ minimal: '#57534e', editorial: '#57534e',  archival: '#6b5e47', curator: '#57534e', magazine: '#57534e',  salon: '#57534e' } as Record<string,string>)[form.template] ?? '#57534e' : '#a8a29e'
-  const pvImgBg   = pvDark ? ({ minimal: '#292524', editorial: '#1a1a1a',  archival: '#2a2018', curator: '#292524', magazine: '#1a1a1a',  salon: '#292524' } as Record<string,string>)[form.template] ?? '#292524' : '#f5f5f4'
 
-  const selectedFont = FONTS.find(f => f.id === form.heading_font) || FONTS[0]
-  const previewHeadingStyle = form.template === 'editorial'
-    ? { fontFamily: selectedFont.css, fontStyle: 'normal', fontWeight: 700, textTransform: 'uppercase' as const }
-    : { fontFamily: selectedFont.css, fontStyle: 'italic' }
 
-  const heroPy: Record<string, string> = {
-    none: 'py-0', compact: 'py-4', medium: 'py-8', tall: 'py-14', fullscreen: 'py-20',
-  }
 
-  const imageRatioPb: Record<string, string> = {
-    square: 'pb-[100%]', portrait: 'pb-[133%]', landscape: 'pb-[60%]',
-  }
 
-  const cardPadMap: Record<string, string> = {
-    tight: 'p-1.5', normal: 'p-2', generous: 'p-3',
-  }
 
-  const previewGridCols = form.grid_columns
-  const previewColClass = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5'][previewGridCols]
-  const sampleEmojis = ['🏺','🖼️','💎','📜','🗿','🌿','🎭','🔮','🌸','🗽']
+
 
   return (
     <DashboardShell
@@ -401,10 +393,12 @@ export default function SiteBuilder() {
             {/* Template & Colour */}
             <CollapsibleSection title="Template & Colour">
               <div>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point — everything below can be customised.</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">Choose a starting point. Everything below can be customised.</p>
                 <div className="grid grid-cols-3 gap-3">
-                  {TEMPLATES.map(t => {
-                    const isLocked = (museum?.plan ?? '') === 'community' && !FREE_TIER_TEMPLATES.includes(t.id)
+                  {TEMPLATES.filter(t => !t.minPlan).map(t => {
+                    const plan = museum?.plan ?? 'community'
+                    const isLocked = isTemplateLocked(t, plan)
+                      || (plan === 'community' && !FREE_TIER_TEMPLATES.includes(t.id))
                     return (
                     <button key={t.id} onClick={() => !isLocked && selectTemplate(t.id)}
                       className={`text-left rounded-lg border-2 overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-default' : ''} ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 ' + (!isLocked ? 'hover:border-stone-400 dark:hover:border-stone-500' : '')}`}>
@@ -549,6 +543,52 @@ export default function SiteBuilder() {
                       </div>
                     </button>
                   )})}
+                </div>
+
+                <div className="mt-7 mb-2 flex items-baseline justify-between gap-3">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Object-led</div>
+                  <div className="text-[11px] text-stone-400 dark:text-stone-500">Professional and above</div>
+                </div>
+                <p className="text-xs text-stone-400 dark:text-stone-500 mb-4">
+                  These hold one object at a time and size every frame from the photograph itself.
+                  Suited to a collection you want people to move through rather than scan.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {TEMPLATES.filter(t => t.minPlan).map(t => {
+                    const isLocked = isTemplateLocked(t, museum?.plan ?? 'community')
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => !isLocked && selectTemplate(t.id)}
+                        disabled={isLocked}
+                        title={isLocked ? `${t.name} is available on Professional and above` : t.description}
+                        className={`text-left rounded-lg border-2 overflow-hidden transition-all ${isLocked ? 'opacity-50 cursor-default' : ''} ${form.template === t.id ? 'border-stone-900 dark:border-white shadow-md' : 'border-stone-200 dark:border-stone-700 ' + (!isLocked ? 'hover:border-stone-400 dark:hover:border-stone-500' : '')}`}
+                      >
+                        <div className="h-20 relative overflow-hidden flex items-center justify-center" style={{ background: t.previewBg }}>
+                          <div className="flex items-end gap-1" aria-hidden="true">
+                            <div className="w-3 h-8 rounded-[1px]" style={{ background: t.previewText + '30' }} />
+                            <div className="w-6 h-12 rounded-[1px]" style={{ background: t.previewText + 'cc', boxShadow: `0 0 0 1px ${t.previewAccent}` }} />
+                            <div className="w-3 h-8 rounded-[1px]" style={{ background: t.previewText + '30' }} />
+                          </div>
+                          {isLocked && (
+                            <span className="absolute top-1 left-1 z-10 text-[9px] font-mono uppercase tracking-wide px-1 py-0.5 rounded" style={{ background: t.previewAccent, color: t.previewBg }}>Pro</span>
+                          )}
+                          {form.template === t.id && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center z-10">
+                              <span className="text-stone-900 text-xs leading-none">✓</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-2 py-1.5 bg-white dark:bg-stone-800 border-t border-stone-100 dark:border-stone-700">
+                          <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{t.name}</div>
+                          <div className="text-xs text-stone-400 dark:text-stone-500 truncate mt-0.5" style={{ fontSize: '10px' }}>
+                            {t.minItems ? `Best from ${t.minItems} items` : t.description}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -771,6 +811,13 @@ export default function SiteBuilder() {
 
             {/* Layout & Style */}
             <CollapsibleSection title="Layout & Style">
+              {tmpl.controls.length < 4 && (
+                <p className="text-xs text-stone-500 dark:text-stone-400 -mt-1 mb-1 leading-relaxed">
+                  {tmpl.name} sets its own spacing and sizes every frame from the photograph, so it
+                  shows fewer settings than the grid templates.
+                </p>
+              )}
+              {shows('headingFont') && (
               <div>
                 <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Heading Font</div>
                 <div className="space-y-2">
@@ -783,9 +830,11 @@ export default function SiteBuilder() {
                   ))}
                 </div>
               </div>
+              )}
 
-              <RadiusSlider value={form.card_radius} onChange={v => set('card_radius', v)} />
+              {shows('cardRadius') && <RadiusSlider value={form.card_radius} onChange={v => set('card_radius', v)} />}
 
+              {shows('heroHeight') && (
               <OptionToggle
                 label="Hero Height"
                 value={form.hero_height}
@@ -798,7 +847,9 @@ export default function SiteBuilder() {
                   { value: 'fullscreen', label: 'Full' },
                 ]}
               />
+              )}
 
+              {shows('gridColumns') && (
               <OptionToggle
                 label="Grid Columns"
                 value={String(form.grid_columns)}
@@ -810,7 +861,9 @@ export default function SiteBuilder() {
                   { value: '5', label: '5 col' },
                 ]}
               />
+              )}
 
+              {shows('imageRatio') && (
               <OptionToggle
                 label="Image Shape"
                 value={form.image_ratio}
@@ -821,7 +874,9 @@ export default function SiteBuilder() {
                   { value: 'landscape', label: 'Landscape' },
                 ]}
               />
+              )}
 
+              {shows('cardPadding') && (
               <OptionToggle
                 label="Card Padding"
                 value={form.card_padding}
@@ -832,7 +887,9 @@ export default function SiteBuilder() {
                   { value: 'generous', label: 'Generous' },
                 ]}
               />
+              )}
 
+              {shows('cardMetadata') && (
               <OptionToggle
                 label="Card Info"
                 value={form.card_metadata}
@@ -844,10 +901,48 @@ export default function SiteBuilder() {
                   { value: 'full', label: 'Full' },
                 ]}
               />
+              )}
 
+              {(tmpl.options ?? []).length > 0 && (
+                <div className="pt-1">
+                  <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">{tmpl.name} settings</div>
+                  <div className="space-y-4">
+                    {(tmpl.options ?? []).map((o: TemplateOption) => (
+                      <div key={o.id}>
+                        {o.type === 'boolean' ? (
+                          <button
+                            type="button"
+                            onClick={() => setOpt(o.id, !(opts[o.id] as boolean))}
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono transition-all ${
+                              opts[o.id]
+                                ? 'bg-stone-900 border-stone-700 text-stone-100 dark:bg-stone-800 dark:border-stone-600'
+                                : 'bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500'
+                            }`}
+                          >
+                            <span className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${opts[o.id] ? 'bg-stone-600' : 'bg-stone-300 dark:bg-stone-600'}`}>
+                              <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${opts[o.id] ? 'left-4' : 'left-0.5'}`} />
+                            </span>
+                            {o.label}
+                          </button>
+                        ) : (
+                          <OptionToggle
+                            label={o.label}
+                            value={String(opts[o.id])}
+                            onChange={v => setOpt(o.id, v)}
+                            options={(o.choices ?? []).map(c => ({ value: c.value, label: c.label }))}
+                          />
+                        )}
+                        {o.help && <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">{o.help}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {shows('darkMode') && (
               <div>
                 <div className="text-xs uppercase tracking-widest text-stone-400 mb-3">Colour Scheme</div>
-                {['dramatic', 'classic', 'cover'].includes(form.template) ? (
+                {tmpl.forcesDark ? (
                   <div className="flex items-center gap-3 px-4 py-2.5 rounded border text-xs font-mono opacity-40 cursor-not-allowed bg-stone-50 border-stone-200 text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-500">
                     <span className="relative w-8 h-4 rounded-full bg-stone-900 dark:bg-stone-100 flex-shrink-0">
                       <span className="absolute top-0.5 left-4 w-3 h-3 rounded-full bg-white dark:bg-stone-900" />
@@ -871,11 +966,12 @@ export default function SiteBuilder() {
                   </button>
                 )}
                 <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">
-                  {['dramatic', 'classic', 'cover'].includes(form.template)
+                  {tmpl.forcesDark
                     ? 'This template is always dark — switch to a light template to enable dark mode toggle.'
                     : form.dark_mode ? 'Your site displays in dark tones for all visitors.' : 'Enable to display your site in dark tones for all visitors.'}
                 </p>
               </div>
+              )}
             </CollapsibleSection>
 
             {/* Visit Information — Professional+ */}
@@ -1197,449 +1293,47 @@ export default function SiteBuilder() {
 
           </div>
 
-          {/* Right — live preview */}
-          <div className="overflow-y-auto p-6 md:p-10">
-            <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Preview</div>
-            <div className="border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden shadow-sm">
-
-              {/* Browser chrome */}
-              <div className="bg-stone-100 dark:bg-stone-800 px-3 py-2 flex items-center gap-2 border-b border-stone-200 dark:border-stone-700">
+          {/* Right — the real site, in an iframe */}
+          <div className="overflow-hidden p-6 md:p-10 flex flex-col">
+            <div className="flex items-baseline justify-between gap-3 mb-3">
+              <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Preview</div>
+              <a
+                href={museum?.slug ? `/museum/${museum.slug}` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-mono text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+              >
+                Open the live site
+              </a>
+            </div>
+            <div className="flex-1 min-h-0 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden shadow-sm flex flex-col">
+              <div className="bg-stone-100 dark:bg-stone-800 px-3 py-2 flex items-center gap-2 border-b border-stone-200 dark:border-stone-700 flex-shrink-0">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
                   <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
                   <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-600" />
                 </div>
-                <div className="flex-1 bg-white dark:bg-stone-900 rounded px-3 py-1 text-xs font-mono text-stone-400 dark:text-stone-500 text-center">
-                  vitrine.app/museum/{museum.slug}
+                <div className="flex-1 bg-white dark:bg-stone-900 rounded px-2 py-0.5 text-[10px] font-mono text-stone-400 truncate">
+                  {museum?.slug ? `/museum/${museum.slug}` : ''}
                 </div>
+                {previewStale && <span className="text-[10px] font-mono text-stone-400">updating…</span>}
               </div>
-
-              {/* ── COVER preview ──────────────────────────────────────── */}
-              {layoutVariant === 'cover' && (() => {
-                const heroBg = form.hero_image_url ? undefined : form.primary_color
-                return (
-                  <>
-                    {/* Full-bleed hero with nav overlaid */}
-                    <div className="relative" style={{
-                      height: '160px',
-                      backgroundColor: heroBg || '#1a1a1a',
-                      backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
-                      backgroundSize: form.hero_image_url && (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
-                      backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
-                    }}>
-                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)' }} />
-                      {/* Floating nav */}
-                      <div className="absolute top-0 left-0 right-0 px-4 h-9 flex items-center justify-between">
-                        <div className="text-xs flex items-center gap-1" style={{ ...previewHeadingStyle, color: '#ffffff' }}>
-                          {form.logo_emoji} {form.name || 'Your Museum'}
-                        </div>
-                        <div className="flex gap-3">
-                          <span className="text-xs border-b border-white/60 text-white/90">Collection</span>
-                        </div>
-                      </div>
-                      {/* Name + tagline at bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
-                        <div className="text-xs font-mono mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>{form.name || 'Your Museum'}</div>
-                        <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '24px' }}>
-                          {form.tagline || 'Explore the collection'}
-                        </div>
-                      </div>
-                    </div>
-                    {/* Cards below */}
-                    <div className="p-3" style={{ background: '#0d0b08' }}>
-                      <div className={`grid ${previewColClass} gap-2`}>
-                        {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                          <div key={i} className="overflow-hidden" style={{ borderRadius: `${form.card_radius}px`, background: 'rgba(255,255,255,0.06)' }}>
-                            <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: 'rgba(255,255,255,0.1)' }}>
-                              <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                            </div>
-                            {form.card_metadata !== 'none' && (
-                              <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                                <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: 'rgba(255,255,255,0.3)' }} />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )
-              })()}
-
-              {/* ── CURATOR (text-forward) preview ─────────────────────── */}
-              {layoutVariant === 'text-forward' && (
-                <>
-                  {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
-                    <div className="text-xs flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
-                      {form.logo_emoji} {form.name || 'Your Museum'}
-                    </div>
-                    <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
-                  </div>
-                  {/* Large centred text intro */}
-                  <div className="flex flex-col items-center justify-center text-center px-6 py-8" style={{ background: pvPageBg }}>
-                    <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: form.accent_color }}>{form.name || 'Your Museum'}</div>
-                    <div className="mb-3" style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '28px' }}>
-                      {form.tagline || 'Explore the collection'}
-                    </div>
-                    <div className="w-10 h-px mb-3" style={{ background: pvBorder }} />
-                    <div className="text-xs leading-relaxed max-w-xs" style={{ color: pvMuted }}>
-                      A carefully curated collection…
-                    </div>
-                  </div>
-                  {/* Thin rule */}
-                  <div className="mx-4 mb-3 h-px" style={{ background: pvBorder }} />
-                  {/* Cards */}
-                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: pvMuted + '50' }} />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
+              {previewSrc ? (
+                <iframe
+                  key={museum?.slug}
+                  src={previewSrc}
+                  title="Preview of your public site"
+                  className="flex-1 w-full bg-white dark:bg-stone-900"
+                  sandbox="allow-same-origin allow-scripts"
+                />
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-xs text-stone-400">Loading…</div>
               )}
-
-              {/* ── MAGAZINE preview ───────────────────────────────────── */}
-              {layoutVariant === 'magazine' && (
-                <>
-                  {/* Nav — bold border */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b-2" style={{ background: pvNavBg, borderColor: pvNavText }}>
-                    <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: pvNavText }}>
-                      {form.logo_emoji} {form.name || 'Your Museum'}
-                    </div>
-                    <span className="text-xs border-b font-bold" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
-                  </div>
-                  {/* Masthead bar */}
-                  <div className="px-3 py-2 flex items-end justify-between border-b-2" style={{ background: pvPageBg, borderColor: pvNavText }}>
-                    <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '26px', fontStyle: 'normal', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.03em' }}>
-                      {form.tagline || form.name || 'The Collection'}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-mono" style={{ color: form.accent_color }}>{form.name}</div>
-                    </div>
-                  </div>
-                  {/* Asymmetric hero grid */}
-                  <div className="p-2" style={{ background: pvPageBg }}>
-                    <div className="grid grid-cols-3 gap-1" style={{ height: '110px' }}>
-                      <div className="col-span-2 flex items-center justify-center text-2xl rounded-sm overflow-hidden relative" style={{ background: pvImgBg }}>
-                        {sampleEmojis[0]}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-1">
-                          <div className="h-1.5 bg-white/60 rounded w-3/4" />
-                        </div>
-                      </div>
-                      <div className="col-span-1 flex flex-col gap-1">
-                        {[1, 2].map(i => (
-                          <div key={i} className="flex-1 flex items-center justify-center text-lg rounded-sm overflow-hidden relative" style={{ background: pvImgBg }}>
-                            {sampleEmojis[i]}
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
-                              <div className="h-1 bg-white/60 rounded w-3/4" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Rule + small grid */}
-                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
-                    <div className="h-px mb-2" style={{ background: pvBorder }} />
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(3, 3 + previewGridCols).map((e, i) => (
-                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center">{e}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* ── SALON (sidebar) preview ────────────────────────────── */}
-              {layoutVariant === 'sidebar' && (
-                <div className="flex" style={{ background: pvPageBg, minHeight: '280px' }}>
-                  {/* Sidebar */}
-                  <div className="flex flex-col pt-4 px-3 gap-3 border-r" style={{ width: '72px', borderColor: pvBorder }}>
-                    <div className="flex flex-col items-start gap-1">
-                      <div className="text-lg">{form.logo_emoji}</div>
-                      <div className="text-xs leading-tight" style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '9px', maxWidth: '56px' }}>
-                        {form.name || 'Your Museum'}
-                      </div>
-                    </div>
-                    <div className="w-8 h-px" style={{ background: pvBorder }} />
-                    <div className="flex flex-col gap-2">
-                      <div className="text-xs font-mono" style={{ color: form.accent_color, fontSize: '8px', borderLeft: `2px solid ${form.accent_color}`, paddingLeft: '4px' }}>Collection</div>
-                      <div className="text-xs font-mono" style={{ color: pvMuted, fontSize: '8px', paddingLeft: '6px' }}>Events</div>
-                      <div className="text-xs font-mono" style={{ color: pvMuted, fontSize: '8px', paddingLeft: '6px' }}>Visit</div>
-                    </div>
-                  </div>
-                  {/* Main content */}
-                  <div className="flex-1 p-3">
-                    <div className="text-xs font-mono mb-2" style={{ color: pvMuted, fontSize: '9px' }}>Collection · 42 pieces</div>
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-lg">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-1.5 rounded w-3/4" style={{ background: pvMuted + '50' }} />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── MINIMAL preview ────────────────────────────────────── */}
-              {layoutVariant === 'minimal' && (
-                <>
-                  {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
-                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
-                      {form.logo_emoji} {form.name || 'Your Museum'}
-                    </div>
-                    <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
-                  </div>
-                  {/* Giant title block */}
-                  <div className="px-5 pt-7 pb-4" style={{ background: pvPageBg }}>
-                    <div className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: pvMuted }}>
-                      {form.name || 'Your Museum'}
-                    </div>
-                    <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '30px', lineHeight: 1 }}>
-                      {form.tagline || 'The Collection'}
-                    </div>
-                    <div className="flex items-center gap-3 mt-4">
-                      <div className="h-px flex-1" style={{ background: pvBorder }} />
-                      <div className="text-xs font-mono" style={{ color: pvMuted }}>42 works</div>
-                    </div>
-                  </div>
-                  {/* Cards */}
-                  <div className="px-3 pb-3" style={{ background: pvPageBg }}>
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
-                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                                <div className="h-1.5 rounded w-1/2" style={{ background: pvMuted + '50' }} />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* ── DRAMATIC preview ───────────────────────────────────── */}
-              {layoutVariant === 'dramatic' && (
-                <>
-                  {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: '#0c0a09', borderColor: 'rgba(255,255,255,0.07)' }}>
-                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: '#ffffff' }}>
-                      {form.logo_emoji} {form.name || 'Your Museum'}
-                    </div>
-                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Collection</span>
-                  </div>
-                  {/* Hero image (if set) or title block */}
-                  {form.hero_image_url ? (
-                    <div className="relative overflow-hidden" style={{
-                      height: '100px',
-                      backgroundImage: `url(${form.hero_image_url})`,
-                      backgroundSize: (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
-                      backgroundPosition: form.hero_image_position || '50% 50%',
-                    }}>
-                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(12,10,9,0.9) 100%)' }} />
-                      <div className="absolute bottom-0 left-0 right-0 px-4 pb-2">
-                        <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '22px', lineHeight: 1 }}>
-                          {form.tagline || 'The Collection'}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                  <div className="px-5 pt-7 pb-4" style={{ background: '#0c0a09' }}>
-                    <div className="text-xs font-mono uppercase tracking-widest mb-5" style={{ color: form.accent_color }}>
-                      {form.name || 'Your Museum'} &nbsp;/&nbsp; Collection
-                    </div>
-                    <div style={{ ...previewHeadingStyle, color: '#ffffff', fontSize: '30px', lineHeight: 1 }}>
-                      {form.tagline || 'The Collection'}
-                    </div>
-                    <div className="h-px w-full my-4" style={{ background: form.accent_color }} />
-                    <div className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.35)' }}>42 works &nbsp;·&nbsp; 3 categories</div>
-                  </div>
-                  )}
-                  {/* Cards */}
-                  <div className="px-3 pb-3" style={{ background: '#0c0a09' }}>
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden" style={{ borderRadius: `${form.card_radius}px`, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: 'rgba(255,255,255,0.08)' }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-1.5 rounded w-3/4 mb-1" style={{ background: 'rgba(255,255,255,0.3)' }} />
-                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                                <div className="h-1 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.15)' }} />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* ── ARCHIVAL preview ───────────────────────────────────── */}
-              {layoutVariant === 'archival' && (
-                <>
-                  {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b" style={{ background: pvNavBg, borderColor: pvBorder }}>
-                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
-                      {form.logo_emoji} {form.name || 'Your Museum'}
-                    </div>
-                    <span className="text-xs" style={{ color: pvMuted }}>Collection</span>
-                  </div>
-                  {/* Double-border centred masthead */}
-                  <div className="px-4 pt-5 pb-3" style={{ background: pvPageBg }}>
-                    <div className="text-center py-5 px-4" style={{ border: `1px solid ${pvBorder}`, outline: `3px solid ${pvBorder}`, outlineOffset: '-6px' }}>
-                      <div className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: pvMuted }}>
-                        {form.name || 'Your Museum'}
-                      </div>
-                      <div style={{ ...previewHeadingStyle, color: pvHeading, fontSize: '20px' }}>
-                        {form.tagline || 'The Collection'}
-                      </div>
-                      {/* Ornamental rule */}
-                      <div className="flex items-center justify-center gap-2 my-2">
-                        <div className="h-px w-8" style={{ background: form.accent_color }} />
-                        <div className="w-1 h-1 rotate-45" style={{ background: form.accent_color }} />
-                        <div className="h-px w-8" style={{ background: form.accent_color }} />
-                      </div>
-                      <div className="text-xs font-mono" style={{ color: pvMuted }}>42 works · 3 media</div>
-                    </div>
-                  </div>
-                  {/* Rule + cards */}
-                  <div className="px-4 pb-3" style={{ background: pvPageBg }}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="h-px flex-1" style={{ background: pvBorder }} />
-                      <div className="text-xs font-mono uppercase tracking-widest" style={{ color: pvMuted }}>Collection</div>
-                      <div className="h-px flex-1" style={{ background: pvBorder }} />
-                    </div>
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border" style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
-                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                                <div className="h-1.5 rounded w-1/2" style={{ background: pvMuted + '50' }} />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* ── STANDARD preview (all original templates) ──────────── */}
-              {layoutVariant === 'standard' && (
-                <>
-                  {/* Nav */}
-                  <div className="px-4 h-10 flex items-center justify-between border-b"
-                    style={{ background: pvNavBg, borderColor: pvNavText + '15' }}>
-                    <div className="text-sm flex items-center gap-1.5" style={{ ...previewHeadingStyle, color: pvNavText }}>
-                      {form.logo_image_url
-                        ? <img src={form.logo_image_url} alt="Logo" className="w-5 h-5 rounded object-cover" />
-                        : form.logo_emoji
-                      }
-                      {form.name || 'Your Museum'}
-                    </div>
-                    <div className="flex gap-4">
-                      <span className="text-xs border-b" style={{ color: pvNavText, borderColor: form.accent_color }}>Collection</span>
-                      <span className="text-xs opacity-40" style={{ color: pvNavText }}>Visit</span>
-                    </div>
-                  </div>
-
-                  {/* Hero */}
-                  {form.hero_height !== 'none' && (
-                    <div className={`px-6 ${heroPy[form.hero_height] || 'py-8'} relative`} style={{
-                      backgroundColor: form.hero_image_url ? undefined : (pvDark ? pvPageBg : previewHeroBg),
-                      backgroundImage: form.hero_image_url ? `url(${form.hero_image_url})` : undefined,
-                      backgroundSize: form.hero_image_url && (form.header_image_zoom ?? 1) > 1 ? `${(form.header_image_zoom ?? 1) * 100}%` : 'cover',
-                      backgroundPosition: form.hero_image_url ? form.hero_image_position : 'center',
-                    }}>
-                      {form.hero_image_url && <div className="absolute inset-0 bg-black/40" />}
-                      <div className="relative z-10">
-                        <div className="text-xs uppercase tracking-widest mb-1.5 font-mono" style={{ color: form.hero_image_url ? '#fff' : form.accent_color }}>
-                          {form.name || 'Your Museum'}
-                        </div>
-                        <div style={{
-                          ...previewHeadingStyle,
-                          color: form.hero_image_url ? '#fff' : pvHeading,
-                          fontSize: form.hero_height === 'fullscreen' ? '32px' : form.hero_height === 'tall' ? '26px' : '22px'
-                        }}>
-                          {form.tagline || 'Explore the collection'}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cards */}
-                  <div className="p-3" style={{ background: pvPageBg }}>
-                    {form.card_metadata !== 'none' && (
-                      <div className="text-xs font-mono mb-2" style={{ color: pvMuted }}>On Display</div>
-                    )}
-                    <div className={`grid ${previewColClass} gap-2`}>
-                      {sampleEmojis.slice(0, previewGridCols * 2).map((e, i) => (
-                        <div key={i} className="overflow-hidden border"
-                          style={{ borderRadius: `${form.card_radius}px`, background: pvCardBg, borderColor: pvBorder }}>
-                          <div className={`relative w-full ${imageRatioPb[form.image_ratio] || 'pb-[100%]'}`} style={{ background: pvImgBg }}>
-                            <div className="absolute inset-0 flex items-center justify-center text-xl">{e}</div>
-                          </div>
-                          {form.card_metadata !== 'none' && (
-                            <div className={cardPadMap[form.card_padding] || 'p-2'}>
-                              <div className="h-2 rounded w-3/4 mb-1" style={{ background: pvHeading + '40' }} />
-                              {(form.card_metadata === 'title+artist' || form.card_metadata === 'full') && (
-                                <div className="h-1.5 rounded w-1/2 mb-1" style={{ background: pvMuted + '50' }} />
-                              )}
-                              {form.card_metadata === 'full' && (
-                                <div className="h-1.5 rounded w-1/3" style={{ background: pvMuted + '50' }} />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
             </div>
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-3 leading-relaxed">
+              This is your actual site, drawn with the settings above. Changes appear a moment after you stop typing,
+              and are not saved until you press Save changes.
+            </p>
           </div>
 
         </div>

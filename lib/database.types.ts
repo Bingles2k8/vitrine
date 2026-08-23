@@ -2310,6 +2310,7 @@ export type Database = {
       }
       museums: {
         Row: {
+          template_options: Json
           about_text: string | null
           accent_color: string | null
           accept_messages: boolean
@@ -2385,6 +2386,7 @@ export type Database = {
           upgrade_checklist_seen_at: string | null
         }
         Insert: {
+          template_options?: Json
           about_text?: string | null
           accent_color?: string | null
           accept_messages?: boolean
@@ -2460,6 +2462,7 @@ export type Database = {
           upgrade_checklist_seen_at?: string | null
         }
         Update: {
+          template_options?: Json
           about_text?: string | null
           accent_color?: string | null
           accept_messages?: boolean
@@ -2821,6 +2824,8 @@ export type Database = {
       }
       object_images: {
         Row: {
+          matte: string | null
+          aspect: number | null
           caption: string | null
           created_at: string
           id: string
@@ -2832,6 +2837,8 @@ export type Database = {
           url: string
         }
         Insert: {
+          matte?: string | null
+          aspect?: number | null
           caption?: string | null
           created_at?: string
           id?: string
@@ -2843,6 +2850,8 @@ export type Database = {
           url: string
         }
         Update: {
+          matte?: string | null
+          aspect?: number | null
           caption?: string | null
           created_at?: string
           id?: string
@@ -2928,6 +2937,9 @@ export type Database = {
       }
       objects: {
         Row: {
+          condition_canonical: string | null
+          image_matte: string | null
+          image_aspect: number | null
           accession_date: string | null
           accession_no: string | null
           accession_register_confirmed: boolean | null
@@ -3064,6 +3076,9 @@ export type Database = {
           year: string | null
         }
         Insert: {
+          condition_canonical?: string | null
+          image_matte?: string | null
+          image_aspect?: number | null
           accession_date?: string | null
           accession_no?: string | null
           accession_register_confirmed?: boolean | null
@@ -3200,6 +3215,9 @@ export type Database = {
           year?: string | null
         }
         Update: {
+          condition_canonical?: string | null
+          image_matte?: string | null
+          image_aspect?: number | null
           accession_date?: string | null
           accession_no?: string | null
           accession_register_confirmed?: boolean | null

@@ -30,6 +30,14 @@ export const SET_TREATMENT: Record<GridVariant, SetTreatment> = {
   salon:     'feature',
   editorial: 'feature',
   stack:     'feature',
+  // Object-led variants hold one thing at a time, so a set index of them wants
+  // the quietest treatment: plates let the set covers speak without competing
+  // with the layout the visitor is about to land in.
+  flip:       'plates',
+  foil:       'plates',
+  northlight: 'plates',
+  verso:      'plates',
+  viewfinder: 'plates',
 }
 
 export function setTreatment(variant: GridVariant | null | undefined): SetTreatment {

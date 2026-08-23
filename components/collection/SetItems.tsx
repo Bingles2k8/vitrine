@@ -3,10 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SetNavStyle } from '@/lib/collectionGroups/types'
-import {
-  CatalogueList, EditorialGrid, MosaicGrid, PlateGrid,
-  SalonGrid, SpotlightGrid, StackGrid, UniformGrid,
-} from './grids'
+import { gridFor } from './registry'
 import type { GridObject, GridTheme } from './types'
 import { objectHref } from './types'
 import type { GridVariant } from '@/lib/templates'
@@ -32,17 +29,6 @@ interface Props {
   theme: GridTheme
   navStyle: SetNavStyle
   gridVariant: GridVariant
-}
-
-const GRIDS: Record<GridVariant, typeof UniformGrid> = {
-  uniform: UniformGrid,
-  plate: PlateGrid,
-  catalogue: CatalogueList,
-  spotlight: SpotlightGrid,
-  mosaic: MosaicGrid,
-  salon: SalonGrid,
-  editorial: EditorialGrid,
-  stack: StackGrid,
 }
 
 // ── Shared ───────────────────────────────────────────────────────────────
@@ -614,7 +600,7 @@ export default function SetItems({ items, slug, setSlug, theme, navStyle, gridVa
     case 'reel':          return <Reel {...inner} />
     case 'grid':
     default: {
-      const Grid = GRIDS[gridVariant] ?? UniformGrid
+      const Grid = gridFor(gridVariant)
       // A short set at four columns reads as broken, so the grid narrows to fit.
       const narrowed: GridTheme = { ...theme, columns: Math.min(theme.columns, Math.max(items.length, 2)) }
       return <Grid items={items} slug={slug} theme={narrowed} setSlug={setSlug} />

@@ -14,6 +14,15 @@ export type GridVariant =
   | 'salon'      // salon hang: masonry columns at natural aspect ratio
   | 'editorial'  // alternating large figure / text rows
   | 'stack'      // one wide band per item, revealed on scroll
+  // ── object-led. These do not arrange images in a rhythm; they treat the
+  //    object as a thing you handle. Each sizes its frames from the picture's
+  //    own aspect and fills the surround from its matte, so none of them reads
+  //    the grid controls (columns, image shape, card padding).
+  | 'flip'       // cover-flow rack: one plate square on, the rest raked away
+  | 'foil'       // a fanned hand of cards, and one held up in its mount
+  | 'northlight' // a lit case: shelves, spotlights, one piece brought forward
+  | 'verso'      // object on one card face, its catalogue record on the other
+  | 'viewfinder' // the collection seen through a finder, one frame at a time
 
 /**
  * How a single item's page is arranged.
@@ -44,6 +53,45 @@ export type ChromeStyle =
   | 'soft'  // rounded input, pill chips
   | 'rule'  // borderless input over a hairline, filters as text links
   | 'hard'  // square borders, bold uppercase chips
+
+/**
+ * A control in the site editor's Layout & Style panel.
+ *
+ * Every template declares which of these it actually reads. The panel renders
+ * that list and nothing else, so a collector is never shown a slider that does
+ * nothing — the grid controls are meaningless to a rack or a card flip.
+ */
+export type ControlId =
+  | 'headingFont'
+  | 'cardRadius'
+  | 'heroHeight'
+  | 'gridColumns'
+  | 'imageRatio'
+  | 'cardPadding'
+  | 'cardMetadata'
+  | 'darkMode'
+
+/** Everything the nine original templates read, which is all of it. */
+export const ALL_CONTROLS: ControlId[] = [
+  'headingFont', 'cardRadius', 'heroHeight', 'gridColumns',
+  'imageRatio', 'cardPadding', 'cardMetadata', 'darkMode',
+]
+
+/**
+ * A lever belonging to one template, stored in `museums.template_options`
+ * under that template's id. Deliberately limited: a template is a decision,
+ * and three switches is the point at which it stops being one.
+ */
+export interface TemplateOption {
+  id: string
+  label: string
+  /** Shown under the control. Say what it changes, not how it works. */
+  help?: string
+  type: 'boolean' | 'enum'
+  default: string | boolean
+  /** enum only. */
+  choices?: { value: string; label: string }[]
+}
 
 export interface GridOptions {
   /** `plate`: draws a matted frame around each work. */
@@ -80,6 +128,19 @@ export interface Template {
   object_options?: ObjectOptions
   chrome: ChromeStyle
   supports_header_image: boolean
+  /** Lowest plan that may select this template. Undefined means every paid
+   *  plan, which is what the original nine have always been. */
+  minPlan?: 'community' | 'hobbyist' | 'professional' | 'institution' | 'enterprise'
+  /** The template has no light rendering, so the dark-mode toggle is disabled
+   *  and explained. Replaces two hardcoded id lists in the site editor. */
+  forcesDark?: boolean
+  /** Which Layout & Style controls this template reads. */
+  controls: ControlId[]
+  /** Per-template levers, stored under `museums.template_options[template.id]`. */
+  options?: TemplateOption[]
+  /** Below this many published items the template does not read as itself —
+   *  a rack of three is not a rack. Surfaced in the picker, never enforced. */
+  minItems?: number
 }
 
 export const TEMPLATES: Template[] = [
@@ -106,6 +167,7 @@ export const TEMPLATES: Template[] = [
     chrome: 'rule',
     object_variant: 'plate',
     supports_header_image: false,
+    controls: ALL_CONTROLS,
   },
   {
     id: 'dramatic',
@@ -130,6 +192,8 @@ export const TEMPLATES: Template[] = [
     chrome: 'rule',
     object_variant: 'cinematic',
     supports_header_image: true,
+    controls: ALL_CONTROLS,
+    forcesDark: true,
   },
   {
     id: 'archival',
@@ -155,6 +219,7 @@ export const TEMPLATES: Template[] = [
     object_variant: 'catalogue',
     grid_options: { numbered: true },
     supports_header_image: false,
+    controls: ALL_CONTROLS,
   },
   {
     id: 'editorial',
@@ -179,6 +244,7 @@ export const TEMPLATES: Template[] = [
     chrome: 'hard',
     object_variant: 'editorial',
     supports_header_image: true,
+    controls: ALL_CONTROLS,
   },
   {
     id: 'classic',
@@ -204,6 +270,8 @@ export const TEMPLATES: Template[] = [
     object_variant: 'panel',
     grid_options: { frame: true },
     supports_header_image: true,
+    controls: ALL_CONTROLS,
+    forcesDark: true,
   },
   {
     id: 'cover',
@@ -229,6 +297,8 @@ export const TEMPLATES: Template[] = [
     object_variant: 'cinematic',
     object_options: { overlayTitle: true },
     supports_header_image: true,
+    controls: ALL_CONTROLS,
+    forcesDark: true,
   },
   {
     id: 'curator',
@@ -254,6 +324,7 @@ export const TEMPLATES: Template[] = [
     object_variant: 'essay',
     grid_options: { lead: true },
     supports_header_image: false,
+    controls: ALL_CONTROLS,
   },
   {
     id: 'magazine',
@@ -279,6 +350,7 @@ export const TEMPLATES: Template[] = [
     object_variant: 'editorial',
     object_options: { numbered: true },
     supports_header_image: false,
+    controls: ALL_CONTROLS,
   },
   {
     id: 'salon',
@@ -303,9 +375,273 @@ export const TEMPLATES: Template[] = [
     chrome: 'soft',
     object_variant: 'standard',
     supports_header_image: false,
+    controls: ALL_CONTROLS,
+  },
+  // ── Object-led. Premium tier. ────────────────────────────────────────────
+  // These treat the object as a thing you handle rather than an image in a
+  // rhythm, so they read almost none of the grid controls. Each sizes its
+  // frames from the picture's own aspect and fills the surround from its
+  // matte, which is what lets inconsistent photography still line up.
+  {
+    id: 'flip',
+    name: 'Flip',
+    description: 'Covers face out in a rack, one square on and the rest raked away. Arrow through them, or click one to bring it forward.',
+    primary_color: '#08070a',
+    accent_color: '#c8a260',
+    headingFont: 'font-sans',
+    bodyFont: 'font-sans',
+    body_font: 'archivo',
+    previewBg: '#08070a',
+    previewText: '#f2f0ea',
+    previewAccent: '#c8a260',
+    card_radius: 0,
+    hero_height: 'compact',
+    grid_columns: 4,
+    image_ratio: 'square',
+    card_padding: 'normal',
+    card_metadata: 'title+artist',
+    layout_variant: 'standard',
+    grid_variant: 'flip',
+    chrome: 'rule',
+    object_variant: 'plate',
+    supports_header_image: false,
+    controls: ['headingFont', 'cardMetadata'],
+    minPlan: 'professional',
+    forcesDark: true,
+    minItems: 8,
+    options: [
+      {
+        id: 'rake',
+        label: 'Rake angle',
+        help: 'How sharply the covers either side turn away from the reader.',
+        type: 'enum',
+        default: '60',
+        choices: [
+          { value: '46', label: 'Shallow' },
+          { value: '60', label: 'Standard' },
+          { value: '72', label: 'Steep' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'foil',
+    name: 'Foil',
+    description: 'A fanned hand of cards with one held up in its mount. The foil catches the light as you move across it.',
+    primary_color: '#0a0812',
+    accent_color: '#d84fa8',
+    headingFont: 'font-sans',
+    bodyFont: 'font-sans',
+    body_font: 'manrope',
+    previewBg: '#0a0812',
+    previewText: '#efe9f5',
+    previewAccent: '#d84fa8',
+    card_radius: 6,
+    hero_height: 'compact',
+    grid_columns: 4,
+    image_ratio: 'portrait',
+    card_padding: 'normal',
+    card_metadata: 'title+artist',
+    layout_variant: 'standard',
+    grid_variant: 'foil',
+    chrome: 'soft',
+    object_variant: 'plate',
+    supports_header_image: false,
+    controls: ['headingFont', 'cardMetadata'],
+    minPlan: 'professional',
+    forcesDark: true,
+    minItems: 5,
+    options: [
+      {
+        id: 'shine',
+        label: 'Foil shine',
+        help: 'A moving highlight across each card. Turn it off for a matte collection.',
+        type: 'boolean',
+        default: true,
+      },
+      {
+        id: 'holder',
+        label: 'Show cards',
+        help: 'Mounted draws a holder around the featured card, with its grade on the label.',
+        type: 'enum',
+        default: 'mounted',
+        choices: [
+          { value: 'mounted', label: 'Mounted' },
+          { value: 'loose', label: 'Loose' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'northlight',
+    name: 'Northlight',
+    description: 'A lit case. Pieces stand on glass shelves under spotlights; pick one and it steps out onto a plinth.',
+    primary_color: '#101216',
+    accent_color: '#c8a86a',
+    headingFont: 'font-serif',
+    bodyFont: 'font-sans',
+    body_font: 'jost',
+    previewBg: '#101216',
+    previewText: '#eef1f4',
+    previewAccent: '#c8a86a',
+    card_radius: 0,
+    hero_height: 'compact',
+    grid_columns: 5,
+    image_ratio: 'square',
+    card_padding: 'normal',
+    card_metadata: 'title',
+    layout_variant: 'standard',
+    grid_variant: 'northlight',
+    chrome: 'rule',
+    object_variant: 'panel',
+    supports_header_image: false,
+    controls: ['headingFont', 'cardMetadata'],
+    minPlan: 'professional',
+    forcesDark: true,
+    minItems: 6,
+    options: [
+      {
+        id: 'lighting',
+        label: 'Lighting',
+        help: 'After hours drops the room to a cold blue and lifts the spotlights.',
+        type: 'enum',
+        default: 'gallery',
+        choices: [
+          { value: 'gallery', label: 'Gallery' },
+          { value: 'night', label: 'After hours' },
+        ],
+      },
+      {
+        id: 'perShelf',
+        label: 'Pieces per shelf',
+        type: 'enum',
+        default: '5',
+        choices: [
+          { value: '3', label: 'Three' },
+          { value: '4', label: 'Four' },
+          { value: '5', label: 'Five' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'verso',
+    name: 'Verso',
+    description: 'The object on one card face and its catalogue entry on the other. Turn a single card, or turn the whole tray at once.',
+    primary_color: '#0c0b0a',
+    accent_color: '#c9a75c',
+    headingFont: 'font-serif',
+    bodyFont: 'font-sans',
+    body_font: 'karla',
+    previewBg: '#0c0b0a',
+    previewText: '#ece7dc',
+    previewAccent: '#c9a75c',
+    card_radius: 2,
+    hero_height: 'compact',
+    grid_columns: 5,
+    image_ratio: 'square',
+    card_padding: 'normal',
+    card_metadata: 'title+artist',
+    layout_variant: 'standard',
+    grid_variant: 'verso',
+    chrome: 'rule',
+    object_variant: 'catalogue',
+    supports_header_image: false,
+    controls: ['headingFont', 'cardMetadata'],
+    minPlan: 'professional',
+    forcesDark: true,
+    minItems: 4,
+    options: [
+      {
+        id: 'face',
+        label: 'Opens showing',
+        help: 'Which side of the tray a visitor sees first.',
+        type: 'enum',
+        default: 'object',
+        choices: [
+          { value: 'object', label: 'The objects' },
+          { value: 'record', label: 'The records' },
+        ],
+      },
+      {
+        id: 'paper',
+        label: 'Record card',
+        type: 'enum',
+        default: 'bone',
+        choices: [
+          { value: 'bone', label: 'Bone' },
+          { value: 'slate', label: 'Slate' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'viewfinder',
+    name: 'Viewfinder',
+    description: 'The collection seen through a finder, one frame at a time. Wind the lever for the next object.',
+    primary_color: '#0b0c0d',
+    accent_color: '#ff6b3d',
+    headingFont: 'font-sans',
+    bodyFont: 'font-sans',
+    body_font: 'chivo',
+    previewBg: '#0b0c0d',
+    previewText: '#eceff1',
+    previewAccent: '#ff6b3d',
+    card_radius: 0,
+    hero_height: 'compact',
+    grid_columns: 4,
+    image_ratio: 'landscape',
+    card_padding: 'tight',
+    card_metadata: 'title+artist',
+    layout_variant: 'standard',
+    grid_variant: 'viewfinder',
+    chrome: 'hard',
+    object_variant: 'plate',
+    supports_header_image: false,
+    controls: ['headingFont', 'cardMetadata'],
+    minPlan: 'professional',
+    forcesDark: true,
+    minItems: 4,
+    options: [
+      {
+        id: 'meter',
+        label: 'Condition meter',
+        help: 'A needle reading recorded condition. Hide it if your collection is not graded.',
+        type: 'boolean',
+        default: true,
+      },
+    ],
   },
 ]
 
 export function getTemplate(id: string): Template {
   return TEMPLATES.find(t => t.id === id) || TEMPLATES[0]
+}
+/** Templates a plan may select. */
+export function templatesForPlan(plan: string): Template[] {
+  const order = ['community', 'hobbyist', 'professional', 'institution', 'enterprise']
+  const at = order.indexOf(plan)
+  return TEMPLATES.filter(t => !t.minPlan || (at >= 0 && at >= order.indexOf(t.minPlan)))
+}
+
+/** Whether one template is locked to this plan. */
+export function isTemplateLocked(t: Template, plan: string): boolean {
+  if (!t.minPlan) return false
+  const order = ['community', 'hobbyist', 'professional', 'institution', 'enterprise']
+  const at = order.indexOf(plan)
+  return at < 0 || at < order.indexOf(t.minPlan)
+}
+
+/** Resolved options for a template, defaults filled in. */
+export function templateOptions(
+  t: Template,
+  stored: Record<string, Record<string, unknown>> | null | undefined,
+): Record<string, string | boolean> {
+  const saved = (stored ?? {})[t.id] ?? {}
+  const out: Record<string, string | boolean> = {}
+  for (const o of t.options ?? []) {
+    const v = saved[o.id]
+    out[o.id] = (typeof v === 'string' || typeof v === 'boolean') ? v : o.default
+  }
+  return out
 }

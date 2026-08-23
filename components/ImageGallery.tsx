@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { compressImage, ALLOWED_IMAGE_TYPES, ALLOWED_IMAGE_ACCEPT } from '@/lib/image-compression'
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-upload'
-import { computeDHash } from '@/lib/phash'
+import { computeImageMeta, type ImageMeta } from '@/lib/phash'
 import SimilarImagesWarning, { type SimilarMatch } from '@/components/SimilarImagesWarning'
 
 const PLAN_LIMIT_ERROR = 'Image limit reached for your plan'
@@ -18,6 +18,8 @@ type ObjectImage = {
   id: string
   url: string
   is_primary: boolean
+  matte?: string | null
+  aspect?: number | null
 }
 
 interface Props {
@@ -65,9 +67,12 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     }))
     setPendingImages(prev => [...prev, ...newPending])
 
-    // Pre-flight: compute phash for the first file and check for near-duplicates.
-    // If matches exist in other objects, let the user bail before we upload.
-    const firstPhash = await computeDHash(filesToUpload[0]).catch(() => null)
+    // Pre-flight: read the first file once. The hash checks for near-duplicates
+    // before we upload anything; the matte and aspect ride along for the
+    // object-led templates, which frame a picture from its own proportions.
+    const EMPTY_META: ImageMeta = { hash: null, matte: null, aspect: null }
+    const firstMeta = await computeImageMeta(filesToUpload[0]).catch(() => EMPTY_META)
+    const firstPhash = firstMeta.hash
     if (firstPhash) {
       try {
         const res = await fetch('/api/objects/similar-by-phash', {
@@ -111,8 +116,9 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       const ext = compressed.type === 'image/webp' ? 'webp' : compressed.name.split('.').pop()
       const filename = `${museumId}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-      // Reuse first file's phash; compute for subsequent files.
-      const phash = i === 0 ? firstPhash : await computeDHash(file).catch(() => null)
+      // Reuse the first file's read; compute for subsequent files.
+      const meta = i === 0 ? firstMeta : await computeImageMeta(file).catch(() => EMPTY_META)
+      const { hash: phash, matte, aspect } = meta
 
       let publicUrl: string
       try {
@@ -129,7 +135,7 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
       const res = await fetch(`/api/objects/${objectId}/images`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length, phash }),
+        body: JSON.stringify({ url: publicUrl, is_primary: isPrimary, sort_order: currentImages.length, phash, matte, aspect }),
       })
 
       URL.revokeObjectURL(pending.localUrl)
@@ -158,7 +164,11 @@ export default function ImageGallery({ objectId, museumId, onPrimaryChange, canE
     if (e1) return
     const { error: e2 } = await supabase.from('object_images').update({ is_primary: true }).eq('id', image.id)
     if (e2) return
-    await supabase.from('objects').update({ image_url: image.url }).eq('id', objectId)
+    await supabase.from('objects').update({
+      image_url: image.url,
+      image_matte: image.matte ?? null,
+      image_aspect: image.aspect ?? null,
+    }).eq('id', objectId)
     setImages(imgs => imgs.map(i => ({ ...i, is_primary: i.id === image.id })))
     onPrimaryChange(image.url)
   }
