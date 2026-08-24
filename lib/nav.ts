@@ -40,6 +40,12 @@ export interface NavItem {
   icon: string
   label: string
   learnKey?: string
+  /**
+   * Marks a destination this plan cannot use. The item still renders — the
+   * upgrade screen behind it is a good pitch — but the tag means nobody walks
+   * into it expecting the feature.
+   */
+  upsell?: string
   /** Renders a count bubble. Only 'unread' is wired up, on the inbox. */
   badge?: NavBadge
   /** Highlight for any path beneath href, not only an exact match. */
@@ -192,7 +198,12 @@ export function buildSidebarNav(ctx: NavContext): NavGroup[] {
 
   // ── Data ───────────────────────────────────────────────────────────────
   const data: NavItem[] = [
-    { href: '/dashboard/analytics', icon: '▦', label: 'Analytics', learnKey: 'nav.analytics' },
+    {
+      href: '/dashboard/analytics', icon: '▦', label: 'Analytics', learnKey: 'nav.analytics',
+      // Community hits a paid-feature screen here. Say so in the nav rather
+      // than after the click.
+      ...(plan.analytics ? {} : { upsell: 'Hobbyist' }),
+    },
   ]
   if (!simple) data.push({ href: '/dashboard/trash', icon: '🗑', label: 'Deleted Objects', learnKey: 'nav.trash' })
   groups.push({ id: 'data', label: 'Data', items: data })

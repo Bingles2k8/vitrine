@@ -296,6 +296,11 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       >
         <span className="text-base leading-none">{item.icon}</span>
         <span>{item.label}</span>
+        {item.upsell && (
+          <span className="ml-auto text-[10px] font-mono uppercase tracking-wide text-amber-700 dark:text-amber-500 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded px-1.5 py-0.5">
+            {item.upsell}
+          </span>
+        )}
         {item.badge === 'unread' && unreadCount > 0 && (
           <span className="ml-auto min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-bold leading-none">
             {unreadCount > 9 ? '9+' : unreadCount}

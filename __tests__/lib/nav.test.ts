@@ -151,6 +151,18 @@ describe('the extraction preserved the nav exactly', () => {
     ])
   })
 
+  it('tags Analytics as paid on the plan that cannot use it, and only there', () => {
+    // Community's upgrade screen is fine; walking into it with no warning is
+    // not. The tag is the warning.
+    const upsells = (p: PlanId) =>
+      buildSidebarNav(ctxFor(p)).flatMap(g => g.items).filter(i => i.upsell).map(i => i.href)
+
+    expect(upsells('community')).toEqual(['/dashboard/analytics'])
+    for (const planId of PLAN_ORDER.filter(p => p !== 'community')) {
+      expect(upsells(planId), `${planId} can use analytics and needs no tag`).toEqual([])
+    }
+  })
+
   it('the inbox is the only prefix-matched entry, and the only badged one', () => {
     const items = buildSidebarNav(ctxFor('hobbyist')).flatMap(g => g.items)
     expect(items.filter(i => i.matchPrefix).map(i => i.href)).toEqual(['/dashboard/inbox'])

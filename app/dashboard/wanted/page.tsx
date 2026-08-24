@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { getMuseumForUser } from '@/lib/get-museum'
 import { getPlan } from '@/lib/plans'
+import { priorityLabel } from '@/lib/simpleCopy'
 import { useToast } from '@/components/Toast'
 import { TableSkeleton } from '@/components/Skeleton'
 import WantedItemModal from '@/components/WantedItemModal'
@@ -79,9 +80,9 @@ export default function WantedPage() {
     setAcquiring(item.id)
     try {
       const res = await fetch(`/api/wanted/${item.id}/acquire`, { method: 'POST' })
-      if (!res.ok) { toast('Failed to mark as acquired', 'error'); return }
+      if (!res.ok) { toast('Could not add it to your records — try again', 'error'); return }
       const { objectId } = await res.json()
-      toast('Item marked as acquired — opening new object…')
+      toast('Added to your records — opening it now…')
       await loadItems(museum.id)
       router.push(`/dashboard/objects/${objectId}`)
     } catch {
@@ -140,7 +141,7 @@ export default function WantedPage() {
         title="Wishlist"
         actions={canEdit && (
           <TopBarButton variant="primary" onClick={openAdd}>
-            + Add item
+            + Add something
           </TopBarButton>
         )}
         subRow={
@@ -163,7 +164,7 @@ export default function WantedPage() {
                       : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
                   }`}
                 >
-                  {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                  {p === 'all' ? 'Everything' : priorityLabel(p)}
                 </button>
               ))}
             </div>
@@ -175,7 +176,7 @@ export default function WantedPage() {
                   : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
               }`}
             >
-              {showAcquired ? '✓ Showing acquired' : 'Show acquired'}
+              {showAcquired ? '✓ Showing ones you\'ve got' : 'Also show ones you\'ve got'}
             </button>
           </div>
         }
@@ -205,7 +206,7 @@ export default function WantedPage() {
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-12 text-center">
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">
               {items.length === 0
-                ? 'Your wishlist is empty. Add items you\'re actively hunting for.'
+                ? 'Nothing on your wishlist yet. Add the things you\'re hunting for.'
                 : 'No items match your filters.'}
             </p>
             {items.length === 0 && canEdit && (
@@ -213,7 +214,7 @@ export default function WantedPage() {
                 onClick={openAdd}
                 className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-4 py-2 rounded"
               >
-                Add your first wishlist item →
+                Add the first thing you're after →
               </button>
             )}
           </div>
@@ -228,11 +229,11 @@ export default function WantedPage() {
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{item.title}</span>
                     <span className={`text-xs font-mono px-2 py-0.5 rounded ${PRIORITY_STYLES[item.priority] || PRIORITY_STYLES.medium}`}>
-                      {item.priority}
+                      {priorityLabel(item.priority)}
                     </span>
                     {item.acquired_at && (
                       <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-                        acquired
+                        You&rsquo;ve got this one
                       </span>
                     )}
                   </div>
@@ -248,7 +249,7 @@ export default function WantedPage() {
                       onClick={() => router.push(`/dashboard/objects/${item.converted_object_id}`)}
                       className="text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 mt-1 transition-colors"
                     >
-                      View object →
+                      See it in your records →
                     </button>
                   )}
                 </div>
@@ -259,7 +260,7 @@ export default function WantedPage() {
                       disabled={!!acquiring}
                       className="text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors disabled:opacity-50"
                     >
-                      {acquiring === item.id ? 'Marking…' : 'Mark as acquired'}
+                      {acquiring === item.id ? 'Adding…' : 'Got it — add to my records'}
                     </button>
                     <button
                       onClick={() => openEdit(item)}

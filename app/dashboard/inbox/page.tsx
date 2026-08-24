@@ -73,7 +73,7 @@ export default function InboxPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-serif italic text-stone-900 dark:text-stone-100">Inbox</h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-            Enquiries about your collection, and conversations you&rsquo;ve started.
+            Enquiries about your collection, and conversations you&rsquo;ve started. Other collections see your public page, never your private records.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function InboxPage() {
           <div className="text-center py-24 text-stone-400 dark:text-stone-500">
             <div className="text-5xl mb-4">✉️</div>
             <p className="text-sm">No messages yet.</p>
-            <p className="text-xs mt-1">When someone contacts you about an object, it will appear here.</p>
+            <p className="text-xs mt-1">When another collection asks you about something, it lands here.</p>
           </div>
         ) : (
           <div className="border border-stone-200 dark:border-stone-800 rounded-lg overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
@@ -123,7 +123,7 @@ export default function InboxPage() {
                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400'
                         : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                     }`}>
-                      {c.direction === 'incoming' ? 'received' : 'sent'}
+                      {c.direction === 'incoming' ? 'Received' : 'You sent'}
                     </span>
                     <span className="ml-auto text-[11px] text-stone-400 flex-shrink-0">{relativeTime(c.lastMessageAt)}</span>
                   </div>

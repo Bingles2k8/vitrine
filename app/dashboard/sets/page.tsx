@@ -170,22 +170,22 @@ export default function SetsPage() {
                       <span className="text-sm font-medium text-stone-900 dark:text-stone-100">{set.title}</span>
                       {set.status === 'draft' && (
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-                          Draft
+                          Not published
                         </span>
                       )}
                       {set.membership === 'rule' && (
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400">
-                          Automatic
+                          Keeps itself updated
                         </span>
                       )}
                     </div>
                     <div className="text-xs font-mono text-stone-400 dark:text-stone-500 mt-1">
                       {[
-                        set.membership === 'rule' ? 'Filter-based' : `${counts[set.id] ?? 0} items`,
+                        set.membership === 'rule' ? `${counts[set.id] ?? 0} right now, chosen by a filter` : `${counts[set.id] ?? 0} you picked`,
                         dates,
                         nav.id === 'grid' ? null : nav.label,
-                        set.show_as_section ? 'On homepage' : null,
-                        set.show_as_chip ? 'Filter chip' : null,
+                        set.show_as_section ? 'On your homepage' : null,
+                        set.show_as_chip ? 'A filter button on your page' : null,
                       ].filter(Boolean).join('  ·  ')}
                     </div>
                   </Link>

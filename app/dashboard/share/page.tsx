@@ -148,7 +148,7 @@ export default function SharePage() {
           <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">Link created</p>
+                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">Your link is ready — copy it now</p>
                 <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">{justCreated.passcodeHint}</p>
               </div>
               <button
@@ -163,7 +163,7 @@ export default function SharePage() {
                 {shareUrl(justCreated.id)}
               </code>
               <button
-                onClick={() => copy(shareUrl(justCreated.id), 'Link copied')}
+                onClick={() => copy(shareUrl(justCreated.id), 'Copied — send it with the passcode')}
                 className="text-xs font-mono text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100"
               >
                 Copy
@@ -181,21 +181,21 @@ export default function SharePage() {
                 : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
             }`}
           >
-            {showRevoked ? '✓ Showing revoked & expired' : 'Show revoked & expired'}
+            {showRevoked ? '✓ Showing ones that no longer work' : 'Also show ones that no longer work'}
           </button>
         </div>
 
         {filtered.length === 0 ? (
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-12 text-center">
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">
-              {links.length === 0 ? 'No share links yet.' : 'No active share links.'}
+              {links.length === 0 ? 'No private links yet.' : 'None of your links are working right now.'}
             </p>
             {canEdit && (
               <button
                 onClick={() => setModalOpen(true)}
                 className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-4 py-2 rounded"
               >
-                Create your first share link →
+                Make your first private link →
               </button>
             )}
           </div>
@@ -232,7 +232,7 @@ export default function SharePage() {
                     {!link.revoked_at && (
                       <div className="flex items-center gap-3 shrink-0">
                         <button
-                          onClick={() => copy(url, 'Link copied')}
+                          onClick={() => copy(url, 'Copied — send it with the passcode')}
                           className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                         >
                           Copy link
@@ -243,7 +243,7 @@ export default function SharePage() {
                             disabled={!!working}
                             className="text-xs font-mono text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
                           >
-                            {working === link.id ? 'Revoking…' : 'Revoke'}
+                            {working === link.id ? 'Turning off…' : 'Turn it off'}
                           </button>
                         )}
                       </div>

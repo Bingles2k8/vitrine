@@ -142,17 +142,17 @@ export default function OnLoanPage() {
       staffAccess={staffAccess}
     >
       <DashboardTopBar
-        title="On Loan"
+        title="Lent out"
         actions={canEdit && (
           <TopBarButton variant="primary" onClick={openAdd}>
-            + Lend an object
+            + Lend something
           </TopBarButton>
         )}
         subRow={
           <div className="flex flex-wrap gap-3 items-center">
             <input
               type="text"
-              placeholder="Search borrower, object, note…"
+              placeholder="Search by who has it, or what it is…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="border border-stone-200 dark:border-stone-700 rounded px-3 py-1.5 text-sm outline-none focus:border-stone-900 dark:focus:border-stone-400 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-64"
@@ -165,18 +165,38 @@ export default function OnLoanPage() {
                   : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
               }`}
             >
-              {showReturned ? '✓ Showing returned' : 'Show returned'}
+              {showReturned ? '✓ Showing ones that came back' : 'Also show ones that came back'}
             </button>
           </div>
         }
       />
 
       <div className="p-6 md:p-10 space-y-6">
+        {/* The reason anyone opens this page is to find out whether something
+            is late, so it leads rather than sitting as a pill you have to spot
+            partway down the list. */}
+        {(() => {
+          const late = loans.filter(l => !l.returned_on && l.due_back && l.due_back < today)
+          if (late.length === 0) return null
+          const names = late.map(l => l.objects?.title || 'Something').slice(0, 2).join(' and ')
+          return (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400 flex-shrink-0">
+                <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" />
+              </svg>
+              <span className="text-sm text-red-800 dark:text-red-300">
+                {late.length === 1
+                  ? `${names} is past the date it was due back.`
+                  : `${late.length} things are past the date they were due back.`}
+              </span>
+            </div>
+          )
+        })()}
         {filtered.length === 0 ? (
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-12 text-center">
             <p className="text-sm text-stone-400 dark:text-stone-500 mb-4">
               {loans.length === 0
-                ? 'No personal loans yet. Record items you\'ve lent to friends or family.'
+                ? 'Nothing lent out. Record anything you\'ve lent to friends or family so you remember who has it.'
                 : 'No loans match your filters.'}
             </p>
             {loans.length === 0 && canEdit && objects.length > 0 && (
@@ -184,7 +204,7 @@ export default function OnLoanPage() {
                 onClick={openAdd}
                 className="text-xs font-mono text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors border border-stone-200 dark:border-stone-700 px-4 py-2 rounded"
               >
-                Record your first loan →
+                Record something you’ve lent →
               </button>
             )}
           </div>
@@ -214,20 +234,20 @@ export default function OnLoanPage() {
                       </button>
                       {loan.returned_on ? (
                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-                          returned {loan.returned_on}
+                          Came back {loan.returned_on}
                         </span>
                       ) : overdue ? (
                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400">
-                          overdue
+                          Overdue
                         </span>
                       ) : (
                         <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-                          out
+                          Out
                         </span>
                       )}
                     </div>
                     <div className="text-xs text-stone-500 dark:text-stone-400">
-                      Lent to <strong className="text-stone-700 dark:text-stone-300">{loan.borrower_name}</strong>
+                      With <strong className="text-stone-700 dark:text-stone-300">{loan.borrower_name}</strong>
                       {loan.borrower_contact ? ` · ${loan.borrower_contact}` : ''}
                     </div>
                     <div className="flex flex-wrap gap-3 text-xs text-stone-400 dark:text-stone-500 mt-0.5">
@@ -246,7 +266,7 @@ export default function OnLoanPage() {
                           disabled={!!working}
                           className="text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors disabled:opacity-50"
                         >
-                          {working === loan.id ? 'Marking…' : 'Mark returned'}
+                          {working === loan.id ? 'Marking…' : 'It’s back'}
                         </button>
                       )}
                       <button
@@ -269,6 +289,12 @@ export default function OnLoanPage() {
           </div>
         )}
       </div>
+
+      {loans.length > 0 && (
+        <p className="px-6 md:px-10 pb-8 -mt-2 text-xs font-mono text-stone-400 dark:text-stone-500 leading-relaxed max-w-2xl">
+          Anything lent out still counts as yours and still shows on your public page — it is just marked as being elsewhere.
+        </p>
+      )}
 
       {modalOpen && (
         <PersonalLoanModal

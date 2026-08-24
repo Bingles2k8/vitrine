@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { CollectionProfile, ProfileNouns } from '@/lib/collectionProfiles'
+import type { CollectionProfile, ProfileNouns, ListColumnKey } from '@/lib/collectionProfiles'
 import { fieldLabel } from '@/lib/collectionProfiles'
 import StatusPill, { resolveStatusLabel } from '@/components/simple/StatusPill'
 import Thumb from '@/components/simple/Thumb'
@@ -26,7 +26,31 @@ import { useIsMobile } from '@/hooks/useIsMobile'
  * pushing a history entry for every click.
  */
 
-type ObjectRow = Record<string, any>
+/** What the list and pane read off an object. The dashboard selects `*`, so
+ *  the index signature carries the columns only columnValue() needs to see. */
+export interface ObjectRow {
+  id: string
+  title: string
+  status: string
+  emoji?: string | null
+  image_url?: string | null
+  artist?: string | null
+  maker_name?: string | null
+  production_date?: string | null
+  year?: string | number | null
+  show_on_site?: boolean | null
+  accession_no?: string | null
+  current_location?: string | null
+  description?: string | null
+  estimated_value?: string | number | null
+  acquisition_value?: string | number | null
+  [column: string]: unknown
+}
+
+/** Only the fields the overdue pill needs. */
+interface LoanLike {
+  loan_end_date?: string | null
+}
 
 interface CollectionSplitProps {
   objects: ObjectRow[]
@@ -35,15 +59,15 @@ interface CollectionSplitProps {
   canEdit: boolean
   hideMoneyValues: boolean
   /** Formats a profile list column for the row's meta line. */
-  columnValue: (obj: ObjectRow, field: any) => string
-  listColumns: { field: any; label: string }[]
+  columnValue: (obj: ObjectRow, field: ListColumnKey) => string
+  listColumns: { field: ListColumnKey; label: string }[]
   onToggleVisibility: (id: string, current: boolean) => void
   onDelete: (id: string, title: string, e: React.MouseEvent) => void
   selectedIds: Set<string>
   onToggleSelect: (id: string) => void
   selectMode: boolean
-  loanByObject: Record<string, any>
-  overdueDays: (loan: any) => number
+  loanByObject: Record<string, LoanLike>
+  overdueDays: (loan: LoanLike) => number
 }
 
 export default function CollectionSplit({
@@ -111,8 +135,7 @@ export default function CollectionSplit({
                 {a.title}
               </div>
               <div className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5">
-                {[a.artist || a.maker_name, a.production_date || a.year].filter(Boolean).join(' · ') ||
-                  resolveStatusLabel(profile, a.status)}
+                {subtitleOf(a) || resolveStatusLabel(profile, a.status)}
               </div>
             </div>
             {overdue > 0 && (
@@ -161,6 +184,14 @@ export default function CollectionSplit({
   return <SplitPane list={list} detail={detail} hasSelection={false} listWidth={368} stickyTop={80} />
 }
 
+/** "Miles Davis · 1959" — whichever of those the record actually has. */
+function subtitleOf(a: ObjectRow): string {
+  return [a.artist || a.maker_name, a.production_date || a.year]
+    .filter(Boolean)
+    .map(String)
+    .join(' · ')
+}
+
 /** The record itself — what it is, whether it shows publicly, and what you can do to it. */
 function RecordPane({
   object: a, profile, nouns, canEdit, hideMoneyValues, columnValue, listColumns,
@@ -171,8 +202,8 @@ function RecordPane({
   nouns: ProfileNouns
   canEdit: boolean
   hideMoneyValues: boolean
-  columnValue: (obj: ObjectRow, field: any) => string
-  listColumns: { field: any; label: string }[]
+  columnValue: (obj: ObjectRow, field: ListColumnKey) => string
+  listColumns: { field: ListColumnKey; label: string }[]
   onToggleVisibility: (id: string, current: boolean) => void
   onDelete: (id: string, title: string, e: React.MouseEvent) => void
   onBack?: () => void
@@ -208,7 +239,7 @@ function RecordPane({
         <div className="flex-1 min-w-0 pt-0.5">
           <h2 className="font-serif text-2xl text-stone-900 dark:text-stone-100 leading-tight">{a.title}</h2>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1.5">
-            {[a.artist || a.maker_name, a.production_date || a.year].filter(Boolean).join(' · ') || '—'}
+            {subtitleOf(a) || '—'}
           </p>
           <div className="flex items-center gap-2 flex-wrap mt-3">
             <StatusPill status={a.status} profile={profile} />

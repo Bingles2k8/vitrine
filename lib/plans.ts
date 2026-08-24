@@ -63,7 +63,10 @@ export const PLANS: Record<PlanId, {
       { items: [
         'Up to 100 objects',
         'Public collection website',
-        'Per-object pages & QR codes',
+        // QR labels are gated to fullMode on the object page, so Community
+        // cannot reach them. Claiming them here promised something the UI
+        // hides. Per-object public pages are real and stay.
+        'Per-object public pages',
         'Wishlist',
         'Value & condition tracking',
         'Opt in to Vitrine Discover',
