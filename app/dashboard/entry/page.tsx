@@ -18,6 +18,7 @@ import { compressImage } from '@/lib/image-compression'
 import { uploadToR2 } from '@/lib/r2-upload'
 import CSVImportModal from '@/components/CSVImportModal'
 import BarcodeScannerModal from '@/components/BarcodeScannerModal'
+import SimpleSelect from '@/components/simple/Select'
 import DashboardTopBar, { TopBarButton } from '@/components/DashboardTopBar'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -121,6 +122,7 @@ export default function EntryRegisterPage() {
   })
   const [newEntry, setNewEntry] = useState(defaultEntry)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
+  const [addAnother, setAddAnother] = useState(false)
   const [entryPhoto, setEntryPhoto] = useState<File | null>(null)
   const [entryPhotoUrl, setEntryPhotoUrl] = useState<string | null>(null)
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
@@ -295,13 +297,22 @@ export default function EntryRegisterPage() {
     }
   }
 
-  async function handleCreateEntry(mode: 'stay' | 'continue') {
+  async function handleCreateEntry(mode: 'stay' | 'continue' | 'again') {
     const { entry_date, object_title, depositor_name, entry_reason, object_description, received_by, accession_no } = newEntry
     const trackDepositor = getPlan(museum?.plan ?? '').depositorTracking
-    const requiredMissing = !entry_date || !object_title || (fullMode && !entry_reason) || !object_description || (fullMode && !accession_no) ||
-      (trackDepositor && (!depositor_name || !received_by))
+    // Simple mode asks for a title and nothing else. The date is set to today
+    // behind the scenes, the reference number generates itself, and the
+    // description is optional — entry_records (where it is NOT NULL) is only
+    // written on compliance plans, and objects.description is nullable.
+    const requiredMissing = fullMode
+      ? (!entry_date || !object_title || !entry_reason || !object_description || !accession_no ||
+         (trackDepositor && (!depositor_name || !received_by)))
+      : !object_title
     if (requiredMissing) {
-      toast('Please fill in all required fields.', 'error')
+      toast(
+        fullMode ? 'Please fill in all required fields.' : `Give it a name first — everything else can wait.`,
+        'error',
+      )
       return
     }
     // Check plan limits
@@ -421,7 +432,9 @@ export default function EntryRegisterPage() {
       setNewEntry(defaultEntry())
       clearEntryPhoto()
       setShowMoreDetails(false)
-      setShowForm(false)
+      // 'again' leaves the form open and empty so a run of additions never
+      // needs a round trip through the list.
+      setShowForm(mode === 'again')
       setSubmitting(false)
       setScannedBarcode(null)
       setLookupSource(null)
@@ -619,9 +632,9 @@ export default function EntryRegisterPage() {
                   lookupStatus === 'nomatch'  ? 'No match found — enter manually' :
                   lookupStatus === 'error'    ? 'Lookup failed — tap to try again' :
                   lookupStatus === 'looking'  ? `Looking up ${scannedBarcode}…` :
-                  'Scan a barcode to auto-fill'
+                  (fullMode ? 'Scan a barcode to auto-fill' : 'Got a barcode? Scan it and we\u2019ll fill the rest in')
                 const subtitle =
-                  lookupStatus === 'idle'     ? 'Books (ISBN), music, or retail items (UPC / EAN)' :
+                  lookupStatus === 'idle'     ? (fullMode ? 'Books (ISBN), music, or retail items (UPC / EAN)' : 'Works for most records, books and games with a barcode on the back') :
                   scannedBarcode              ? `Barcode: ${scannedBarcode}` :
                   null
                 return (
@@ -654,6 +667,38 @@ export default function EntryRegisterPage() {
                 )
               })()}
 
+              {/* Simple mode asks two things. The date is today, the reference
+                  number generates itself, and everything else waits behind
+                  "More details" — which is now a panel you can see, not a text
+                  link. Labels come from the collection profile, so a vinyl
+                  collection reads "Album / Title" and "Artist". */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>{ef('title', 'What is it?')} <span className="text-red-400">*</span></label>
+                  <input
+                    type="text"
+                    className={inputCls}
+                    autoFocus
+                    placeholder={eph('title', `Name of the ${nouns.item.toLowerCase()}`)}
+                    value={newEntry.object_title}
+                    onChange={e => setNewEntry(v => ({ ...v, object_title: e.target.value }))}
+                  />
+                </div>
+                {eshown('artist') && (
+                  <div>
+                    <label className={labelCls}>{ef('artist', 'Who\u2019s it by?')}</label>
+                    <input
+                      type="text"
+                      className={inputCls}
+                      placeholder={eph('artist', 'Leave blank if you\u2019re not sure')}
+                      value={newEntry.artist}
+                      onChange={e => setNewEntry(v => ({ ...v, artist: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {fullMode && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <label className={labelCls}>{ef('title', 'Object Title')} <span className="text-red-400">*</span></label>
@@ -762,27 +807,96 @@ export default function EntryRegisterPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/*
                 Optional cataloguing detail. Collapsed by default so the quick
                 path — title, description, done — stays quick for someone adding
                 forty things in a row. Nothing in here is required.
               */}
-              <div className="border-t border-stone-200 dark:border-stone-700 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowMoreDetails(v => !v)}
-                  className="flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
-                >
-                  <span className={`inline-block transition-transform ${showMoreDetails ? 'rotate-90' : ''}`}>›</span>
-                  {showMoreDetails ? 'Hide extra details' : 'More details — optional'}
-                </button>
+              <div className={fullMode ? 'border-t border-stone-200 dark:border-stone-700 pt-4' : ''}>
+                {fullMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreDetails(v => !v)}
+                    className="flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                  >
+                    <span className={`inline-block transition-transform ${showMoreDetails ? 'rotate-90' : ''}`}>›</span>
+                    {showMoreDetails ? 'Hide extra details' : 'More details — optional'}
+                  </button>
+                ) : (
+                  /* A bordered panel with its own header bar, a chevron that
+                     turns and a Show/Hide word. The old text link read as
+                     decoration, so nobody opened it. */
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreDetails(v => !v)}
+                    aria-expanded={showMoreDetails}
+                    className={`w-full flex items-center gap-2.5 px-4 py-3 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-600 text-left hover:bg-stone-200/70 dark:hover:bg-stone-700/60 transition-colors ${showMoreDetails ? 'rounded-t-md border-b-0' : 'rounded-md'}`}
+                  >
+                    <svg
+                      width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                      className={`text-stone-700 dark:text-stone-300 flex-shrink-0 transition-transform ${showMoreDetails ? '' : '-rotate-90'}`}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                    <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">More details</span>
+                    <span className="text-xs text-stone-500 dark:text-stone-400 hidden sm:inline">
+                      — every one of these is optional
+                    </span>
+                    <span className="ml-auto text-xs font-mono text-stone-500 dark:text-stone-400 flex-shrink-0">
+                      {showMoreDetails ? 'Hide' : 'Show'}
+                    </span>
+                  </button>
+                )}
 
                 {showMoreDetails && (
-                  <div className="mt-4 space-y-5">
+                  <div className={fullMode
+                    ? 'mt-4 space-y-5'
+                    : 'space-y-5 p-4 border border-stone-300 dark:border-stone-600 border-t-0 rounded-b-md bg-white dark:bg-stone-900'}>
+                    {/* The fields simple mode moved out of the main form: what
+                        it is worth remembering, how many, its reference number
+                        and its condition. All optional. */}
+                    {!fullMode && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className={labelCls}>Anything you want to remember</label>
+                          <textarea
+                            className={inputCls} rows={2}
+                            placeholder={eph('description', `Where you found it, what condition it\u2019s really in, why you wanted it\u2026`)}
+                            value={newEntry.object_description}
+                            onChange={e => setNewEntry(v => ({ ...v, object_description: e.target.value }))}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div>
+                            <label className={labelCls}>{ef('condition_grade', 'Condition')}</label>
+                            <SimpleSelect
+                              value={newEntry.condition_grade}
+                              onChange={next => setNewEntry(v => ({ ...v, condition_grade: next }))}
+                              options={CONDITION_GRADES}
+                              labelFor={g => conditionLabel(entryProfile, g)}
+                            />
+                          </div>
+                          <div>
+                            <label className={labelCls}>How many</label>
+                            <input type="number" min={1} className={inputCls} value={newEntry.object_count}
+                              onChange={e => setNewEntry(v => ({ ...v, object_count: parseInt(e.target.value) || 1 }))} />
+                          </div>
+                          <div>
+                            <label className={labelCls}>Reference number</label>
+                            <input type="text" className={inputCls} placeholder="We&rsquo;ll make one up"
+                              value={newEntry.accession_no}
+                              onChange={e => setNewEntry(v => ({ ...v, accession_no: e.target.value }))} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Cataloguing basics, in the collection's own words */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {eshown('artist') && (
+                      {fullMode && eshown('artist') && (
                         <div>
                           <label className={labelCls}>{ef('artist', 'Artist / Maker')}</label>
                           <input type="text" className={inputCls} placeholder={eph('artist')}
@@ -799,8 +913,19 @@ export default function EntryRegisterPage() {
                       {eshown('object_type') && (
                         <div>
                           <label className={labelCls}>{ef('object_type', 'Object Type')}</label>
-                          <input type="text" className={inputCls} placeholder={eph('object_type', 'e.g. Painting, Sculpture…')}
-                            value={newEntry.object_type} onChange={e => setNewEntry(v => ({ ...v, object_type: e.target.value }))} />
+                          {/* A dropdown when the collection profile knows the
+                              options — a vinyl collection picks LP or 7" rather
+                              than typing it. Free text otherwise. */}
+                          {!fullMode && (entryProfile.vocab.objectTypes?.length ?? 0) > 0 ? (
+                            <SimpleSelect
+                              value={newEntry.object_type}
+                              onChange={next => setNewEntry(v => ({ ...v, object_type: next }))}
+                              options={entryProfile.vocab.objectTypes ?? []}
+                            />
+                          ) : (
+                            <input type="text" className={inputCls} placeholder={eph('object_type', 'e.g. Painting, Sculpture…')}
+                              value={newEntry.object_type} onChange={e => setNewEntry(v => ({ ...v, object_type: e.target.value }))} />
+                          )}
                         </div>
                       )}
                       {eshown('medium') && (
@@ -878,10 +1003,19 @@ export default function EntryRegisterPage() {
                         </div>
                         <div>
                           <label className={labelCls}>Currency</label>
-                          <select className={inputCls} value={newEntry.purchase_currency}
-                            onChange={e => setNewEntry(v => ({ ...v, purchase_currency: e.target.value }))}>
-                            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
+                          {fullMode ? (
+                            <select className={inputCls} value={newEntry.purchase_currency}
+                              onChange={e => setNewEntry(v => ({ ...v, purchase_currency: e.target.value }))}>
+                              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          ) : (
+                            <SimpleSelect
+                              value={newEntry.purchase_currency}
+                              onChange={next => setNewEntry(v => ({ ...v, purchase_currency: next }))}
+                              options={CURRENCIES}
+                              placeholder="GBP"
+                            />
+                          )}
                         </div>
                         <div>
                           <label className={labelCls}>Date bought</label>
@@ -920,24 +1054,56 @@ export default function EntryRegisterPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={() => handleCreateEntry('stay')}
-                  disabled={submitting}
-                  className="text-sm font-mono border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Saving…' : (fullMode ? 'Record Entry' : `Save ${nouns.item}`)}
-                </button>
-                {!getPlan(museum?.plan ?? '').fullMode && (
+              {fullMode ? (
+                <div className="flex justify-end gap-3 pt-2">
                   <button
-                    onClick={() => handleCreateEntry('continue')}
+                    onClick={() => handleCreateEntry('stay')}
                     disabled={submitting}
-                    className="text-sm font-mono bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded px-4 py-2 hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors disabled:opacity-50"
+                    className="text-sm font-mono border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
                   >
-                    {submitting ? 'Saving…' : `Save & open ${nouns.item.toLowerCase()} →`}
+                    {submitting ? 'Saving…' : 'Record Entry'}
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* One primary action. The old pair — "Save Record" beside
+                   "Save & open record →" — asked a first-time user to choose
+                   between two things that both looked like saving. Adding
+                   several in a row is now a preference, not a second button. */
+                <div className="flex items-center gap-4 flex-wrap pt-2">
+                  <button
+                    onClick={() => handleCreateEntry(addAnother ? 'again' : 'stay')}
+                    disabled={submitting}
+                    className="text-sm font-mono bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white rounded px-6 py-2.5 font-medium transition-colors disabled:opacity-50"
+                  >
+                    {submitting ? 'Saving…' : `Save ${nouns.item.toLowerCase()}`}
+                  </button>
+
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={addAnother}
+                      onChange={e => setAddAnother(e.target.checked)}
+                      className="rounded border-stone-300 dark:border-stone-600 accent-amber-600 w-4 h-4"
+                    />
+                    <span className="text-sm text-stone-700 dark:text-stone-300">Start another one straight after</span>
+                  </label>
+
+                  <button
+                    onClick={() => { setShowForm(false); setNewEntry(defaultEntry()); clearEntryPhoto() }}
+                    disabled={submitting}
+                    className="text-sm font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors ml-auto disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {!fullMode && (
+                <p className="text-xs font-mono text-stone-400 dark:text-stone-500 leading-relaxed pt-1">
+                  Saved {nouns.itemPlural.toLowerCase()} get today&rsquo;s date and a reference number
+                  automatically, and stay private until you choose to show them.
+                </p>
+              )}
             </div>
           )}
 
