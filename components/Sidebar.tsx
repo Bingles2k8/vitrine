@@ -11,6 +11,7 @@ import CollectionProfileModal from '@/components/CollectionProfileModal'
 import AcceptMessagesToggle, { useAcceptMessagesSync } from '@/components/AcceptMessagesToggle'
 import { profilesEnabled, getProfile, resolveAppNouns } from '@/lib/collectionProfiles'
 import { groupNouns } from '@/lib/collectionGroups'
+import { buildSidebarNav, type NavItem } from '@/lib/nav'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { latestWhatsNewId } from '@/lib/whatsNew'
 
@@ -48,7 +49,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
       wishlist: planInfo.wishlist ?? false,
       ticketing: planInfo.ticketing ?? false,
       fullMode: planInfo.fullMode ?? false,
-      shareLinks: (planInfo.shareLinks ?? 0) !== 0,
+      shareLinks: planInfo.shareLinks !== 0,
       name: museum.name,
       logo_emoji: museum.logo_emoji,
       plan: museum.plan,
@@ -62,7 +63,7 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
 
   // Resolved nav values: use live data once available, fall back to cache, else hide
   const nav = museum && planInfo
-    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: (planInfo.shareLinks ?? 0) !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan, collection_profiles: museum.collection_profiles ?? [], collection_category: museum.collection_category ?? null }
+    ? { simple, wishlist: planInfo.wishlist ?? false, ticketing: planInfo.ticketing ?? false, fullMode: planInfo.fullMode ?? false, shareLinks: planInfo.shareLinks !== 0, name: museum.name, logo_emoji: museum.logo_emoji, plan: museum.plan, collection_profiles: museum.collection_profiles ?? [], collection_category: museum.collection_category ?? null }
     : navCache
 
   // App terminology. A single active profile earns its own nouns; a mixed
@@ -70,6 +71,20 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
   // reads as a bug. See docs/collection-profiles-plan.md §6.2.
   const nouns = resolveAppNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles } : null)
   const setNouns = groupNouns(nav ? { plan: nav.plan, collection_profiles: nav.collection_profiles, collection_category: nav.collection_category } : {})
+
+  // The sidebar renders from lib/nav.ts rather than inline JSX, so the DMCCA
+  // easy-exit invariant can be asserted against real data. buildSidebarNav
+  // throws if Plan & Billing ever stops being a top-level entry for an owner.
+  const navGroups = nav
+    ? buildSidebarNav({
+        plan: nav.plan,
+        simple: nav.simple,
+        isOwner,
+        staffAccess,
+        nouns,
+        setNouns,
+      })
+    : []
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)
@@ -264,20 +279,28 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
     await supabase.from('museums').update({ hide_money_values: next }).eq('id', museum.id)
   }
 
-  function navItem(path: string, icon: string, label: string, learnKey?: string) {
-    const active = activePath === path
+  function renderNavItem(item: NavItem) {
+    const active = item.matchPrefix
+      ? activePath.startsWith(item.href)
+      : activePath === item.href
     return (
       <div
-        onClick={() => { router.push(path); onNavigate?.() }}
+        key={item.href}
+        onClick={() => { router.push(item.href); onNavigate?.() }}
         className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm mb-0.5 cursor-pointer transition-colors ${
           active
             ? 'bg-amber-50 text-amber-900 font-medium dark:bg-amber-950/40 dark:text-amber-100'
             : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/60 dark:hover:text-stone-200'
         }`}
-        {...(learnKey ? { 'data-learn': learnKey } : {})}
+        {...(item.learnKey ? { 'data-learn': item.learnKey } : {})}
       >
-        <span className="text-base leading-none">{icon}</span>
-        <span>{label}</span>
+        <span className="text-base leading-none">{item.icon}</span>
+        <span>{item.label}</span>
+        {item.badge === 'unread' && unreadCount > 0 && (
+          <span className="ml-auto min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-bold leading-none">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </div>
     )
   }
@@ -403,95 +426,14 @@ export default function Sidebar({ museum, activePath, onSignOut, isOwner = true,
         </div>
       )}
       <nav className="p-3 flex-1 overflow-y-auto">
-        {nav && (<>
-        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2">Collections</div>
-        {navItem('/dashboard', '⬡', `${nouns.collection} Overview`, 'nav.objects')}
-        {/* Sets — every tier, unlimited (decision D2), so no nav.* gate here. */}
-        {navItem('/dashboard/sets', '▤', setNouns.plural, 'nav.sets')}
-        {nav.wishlist && navItem('/dashboard/wanted', '◇', 'Wishlist', 'nav.wanted')}
-
-        {/* Inbox — all tiers, all staff can read */}
-        <div
-          onClick={() => { router.push('/dashboard/inbox'); onNavigate?.() }}
-          className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm mb-0.5 cursor-pointer transition-colors ${
-            activePath.startsWith('/dashboard/inbox')
-              ? 'bg-amber-50 text-amber-900 font-medium dark:bg-amber-950/40 dark:text-amber-100'
-              : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/60 dark:hover:text-stone-200'
-          }`}
-        >
-          <span className="text-base leading-none">✉️</span>
-          <span>Inbox</span>
-          {unreadCount > 0 && (
-            <span className="ml-auto min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-bold leading-none">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </div>
-
-        {nav.simple ? (
-          <>
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Record</div>
-            {navItem('/dashboard/entry', '🗂', nouns.addItem, 'nav.entry')}
-            {navItem('/dashboard/on-loan', '📤', 'On Loan', 'nav.on-loan')}
-          </>
-        ) : (
-          <>
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Object Lifecycle</div>
-            {navItem('/dashboard/entry', '🗂', 'Object Entry', 'nav.entry')}
-            {navItem('/dashboard/register', '📋', 'Accession Register', 'nav.register')}
-            {navItem('/dashboard/loans', '⇄', 'Loans Register', 'nav.loans')}
-            {navItem('/dashboard/exits', '↗', 'Object Exit', 'nav.exits')}
-            {navItem('/dashboard/disposal', '⊘', 'Disposal', 'nav.disposal')}
-
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Location & Care</div>
-            {navItem('/dashboard/locations', '⌖', 'Location Register', 'nav.locations')}
-            {navItem('/dashboard/conservation', '⚗', 'Conservation', 'nav.conservation')}
-            {navItem('/dashboard/damage', '⚠', 'Damage Reports', 'nav.damage')}
-            {navItem('/dashboard/risk', '⚑', 'Risk Register', 'nav.risk')}
-            {navItem('/dashboard/emergency', '⚡', 'Emergency Plans', 'nav.emergency')}
-
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Value & Rights</div>
-            {navItem('/dashboard/valuation', '◈', 'Valuation Register', 'nav.valuation')}
-            {navItem('/dashboard/insurance', '🛡', 'Insurance', 'nav.insurance')}
-            {navItem('/dashboard/rights', '§', 'Rights Register', 'nav.rights')}
-            {navItem('/dashboard/reproductions', '❐', 'Reproductions', 'nav.reproductions')}
-
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Accountability</div>
-            {navItem('/dashboard/audit', '◎', 'Audit & Inventory', 'nav.audit')}
-            {navItem('/dashboard/collections-use', '⊞', 'Use of Collections', 'nav.collections-use')}
-            {navItem('/dashboard/collections-review', '⊡', 'Collections Review', 'nav.collections-review')}
-            {navItem('/dashboard/docs', '✓', 'Compliance & Documentation', 'nav.docs')}
-          </>
-        )}
-
-        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Website</div>
-        {navItem('/dashboard/site', '◫', 'Site Builder', 'nav.site')}
-        {nav.ticketing && navItem('/dashboard/events', '◎', 'Events', 'nav.events')}
-        {nav.shareLinks && navItem('/dashboard/share', '🔗', 'Private Shares', 'nav.share')}
-
-        {!nav.simple && (isOwner || staffAccess === 'Admin') && (
-          <>
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">People</div>
-            {navItem('/dashboard/staff', '◉', 'Staff & Roles', 'nav.staff')}
-          </>
-        )}
-
-        <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Data</div>
-        {navItem('/dashboard/analytics', '▦', 'Analytics', 'nav.analytics')}
-        {!nav.simple && navItem('/dashboard/trash', '🗑', 'Deleted Objects', 'nav.trash')}
-
-        {/* Billing is a top-level nav item, not tucked inside the settings
-            panel. Cancelling has to be reachable within two clicks of the
-            dashboard: one to here, one to "Cancel subscription" on the plan
-            page. Routing it through the settings panel would make that three.
-            Covered by __tests__/lib/cancelClickDepth.test.ts. */}
-        {isOwner && (
-          <>
-            <div className="text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2 mt-2">Account</div>
-            {navItem('/dashboard/plan', '◱', 'Plan & Billing', 'nav.plan')}
-          </>
-        )}
-        </>)}
+        {navGroups.map((group, gi) => (
+          <div key={group.id}>
+            <div className={`text-xs font-medium tracking-widest uppercase text-stone-400 dark:text-stone-500 px-3 py-2${gi > 0 ? ' mt-2' : ''}`}>
+              {group.label}
+            </div>
+            {group.items.map(renderNavItem)}
+          </div>
+        ))}
       </nav>
 
       {/* Settings footer */}

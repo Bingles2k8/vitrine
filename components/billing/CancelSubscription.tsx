@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatBillingDate, coolingOffDaysRemaining, isWithinCoolingOff } from '@/lib/billing/coolingOff'
+import BalancedChoice from '@/components/billing/BalancedChoice'
 
 /**
  * Cancellation control and confirmation dialogue.
@@ -181,23 +182,15 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
             {/* Equal visual weight, as required. Same padding, same border, same
                 font size, same contrast. Neither is a bare text link, and
                 neither carries language designed to shame the other choice. */}
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setOpen(false)}
-                disabled={submitting}
-                className="flex-1 text-sm py-2.5 rounded border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-              >
-                Keep my subscription
-              </button>
-              <button
-                onClick={submit}
-                disabled={submitting}
-                data-testid="cancel-subscription-confirm"
-                className="flex-1 text-sm py-2.5 rounded border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-              >
-                {submitting ? 'Cancelling…' : 'Cancel subscription'}
-              </button>
-            </div>
+            <BalancedChoice
+              disabled={submitting}
+              keep={{ label: 'Keep my subscription', onClick: () => setOpen(false), testId: 'cancel-subscription-keep' }}
+              proceed={{
+                label: submitting ? 'Cancelling…' : 'Cancel subscription',
+                onClick: submit,
+                testId: 'cancel-subscription-confirm',
+              }}
+            />
           </div>
         </div>
       )}

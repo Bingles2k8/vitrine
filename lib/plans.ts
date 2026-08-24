@@ -52,7 +52,11 @@ export const PLANS: Record<PlanId, {
     wishlist: true,
     changeSlug: false,
     hideVitrineBranding: false,
-    shareLinks: 1,
+    // Private share links are a paid feature from Hobbyist up, which is what
+    // the plan copy has always advertised — Community's feature list never
+    // mentioned them. This was 1, so free collections could create a single
+    // link that the marketing never offered.
+    shareLinks: 0,
     features: ['Up to 100 collection items', 'Public collection website', 'Core site customisation', 'Purchase price & value tracking', 'Wishlist'],
     missingFeatures: ['Document storage', 'Premium templates', 'Analytics'],
     featureGroups: [
@@ -67,6 +71,7 @@ export const PLANS: Record<PlanId, {
       { muted: true, items: [
         'Analytics',
         'CSV import & export',
+        'Private share links',
       ]},
     ],
     featured: false,
