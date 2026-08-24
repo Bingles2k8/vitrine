@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import AddToSetModal from '@/components/groups/AddToSetModal'
+import CollectionSplit from '@/components/simple/CollectionSplit'
 import { groupNouns } from '@/lib/collectionGroups'
 import type { CollectionGroupRow } from '@/lib/collectionGroups/types'
 import { getMuseumForUser } from '@/lib/get-museum'
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<string | null>(null)
   const [trashedCount, setTrashedCount] = useState(0)
   const [showImport, setShowImport] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [discoverable, setDiscoverable] = useState(false)
   const [collectionCategory, setCollectionCategory] = useState('')
@@ -107,8 +109,8 @@ export default function Dashboard() {
     setBulking(false)
   }
 
-  async function toggleShowOnSite(id: string, current: boolean, e: React.MouseEvent) {
-    e.stopPropagation()
+  async function toggleShowOnSite(id: string, current: boolean, e?: React.MouseEvent) {
+    e?.stopPropagation()
     if (!canEdit) return
     const next = !current
     setObjects(prev => prev.map(o => o.id === id ? { ...o, show_on_site: next } : o))
@@ -399,7 +401,29 @@ export default function Dashboard() {
         />
 
         <div className="p-6 md:p-10">
-          <div className={`grid grid-cols-2 ${fullMode ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 mb-8`}>
+          {/* Simple mode replaces the four stat cards with a sentence. A
+              collector with twelve items got a wall of zeroes, and the first
+              card read "Total Objects" above a table headed "Record". */}
+          {!fullMode && (
+            <div className="mb-7">
+              <p className="font-serif text-xl md:text-2xl text-stone-900 dark:text-stone-100 leading-snug">
+                {objects.length === 0
+                  ? `Nothing in your ${nouns.collection.toLowerCase()} yet.`
+                  : [
+                      `${objects.length} ${objects.length === 1 ? nouns.item.toLowerCase() : nouns.itemPlural.toLowerCase()}.`,
+                      onPublicSiteCount > 0 ? `${onPublicSiteCount} on your public page` : 'None on your public page yet',
+                      statusCount('On Loan') > 0 ? `${statusCount('On Loan')} lent out` : null,
+                    ].filter(Boolean).join(' · ')}
+              </p>
+              {!hideMoneyValues && collectionValue > 0 && (
+                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1.5">
+                  Worth about {formatCollectionValue(collectionValue, collectionValueCurrency)}, going by what you paid.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className={`grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 ${fullMode ? '' : 'hidden'}`}>
             {CARDS.map(card => {
               const active = !card.isValue && filter === card.filterKey
               const Element: any = card.isValue ? 'div' : 'button'
@@ -564,7 +588,12 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Search and filter bar */}
-              <div className="mb-3">
+              {/* Sticky in simple mode: the search and filters stay put while
+                  the list moves under them, so you never lose the controls
+                  halfway down a long collection. */}
+              <div className={fullMode
+                ? 'mb-3'
+                : 'mb-3 sticky top-14 z-20 bg-stone-50 dark:bg-stone-950 pt-2 pb-3 -mt-2'}>
                 <SearchFilterBar
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
@@ -619,6 +648,64 @@ export default function Dashboard() {
                   }
                 />
               </div>
+            {!fullMode ? (
+              <>
+                {canEdit && selectedIds.size > 0 && (
+                  <div className="flex items-center gap-4 flex-wrap px-4 py-2.5 mb-3 rounded bg-stone-900 dark:bg-stone-100">
+                    <span className="text-xs font-mono text-stone-400 dark:text-stone-500">{selectedIds.size} selected</span>
+                    <button onClick={() => setAddToSetOpen(true)} disabled={bulking}
+                      className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">
+                      Add to {setNouns.singular.toLowerCase()}
+                    </button>
+                    <button onClick={() => bulkSetVisibility(true)} disabled={bulking}
+                      className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">
+                      Show on my page
+                    </button>
+                    <button onClick={() => bulkSetVisibility(false)} disabled={bulking}
+                      className="text-xs font-mono text-stone-300 dark:text-stone-600 hover:text-white dark:hover:text-stone-900 transition-colors disabled:opacity-50">
+                      Hide from my page
+                    </button>
+                    <button onClick={() => { setSelectedIds(new Set()); setSelectMode(false) }}
+                      className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-300 dark:hover:text-stone-600 transition-colors ml-auto">
+                      Done
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                    {visibleObjects.length === objects.length
+                      ? `${objects.length} ${objects.length === 1 ? nouns.item.toLowerCase() : nouns.itemPlural.toLowerCase()}`
+                      : `${visibleObjects.length} of ${objects.length}`}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()) }}
+                      className="text-xs font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+                    >
+                      {selectMode ? 'Cancel' : 'Select several'}
+                    </button>
+                  )}
+                </div>
+
+                <CollectionSplit
+                  objects={visibleObjects}
+                  profile={listProfile}
+                  nouns={nouns}
+                  canEdit={canEdit}
+                  hideMoneyValues={hideMoneyValues}
+                  columnValue={columnValue}
+                  listColumns={listColumns}
+                  onToggleVisibility={toggleShowOnSite}
+                  onDelete={handleDeleteObject}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  selectMode={selectMode}
+                  loanByObject={loanByObject}
+                  overdueDays={overdueDays}
+                />
+              </>
+            ) : (
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg overflow-x-auto">
               {/* Filter bar */}
               {(filter || showDuplicatesOnly) && selectedIds.size === 0 && (
@@ -828,6 +915,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
+            )}
             </>
           )}
           {activityLog.length > 0 && (
