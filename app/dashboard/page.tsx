@@ -593,7 +593,7 @@ export default function Dashboard() {
                   halfway down a long collection. */}
               <div className={fullMode
                 ? 'mb-3'
-                : 'mb-3 sticky top-14 z-20 bg-stone-50 dark:bg-stone-950 pt-2 pb-3 -mt-2'}>
+                : 'mb-3 sticky top-28 md:top-14 z-20 bg-stone-50 dark:bg-stone-950 pt-2 pb-3 -mt-2'}>
                 <SearchFilterBar
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}

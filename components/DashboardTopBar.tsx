@@ -70,7 +70,9 @@ function variantClasses(variant: Variant): string {
 
 export function TopBarButton(props: TopBarButtonProps) {
   const { variant = 'secondary', disabled, title, children, className = '' } = props
-  const baseCls = 'inline-flex items-center text-xs font-mono rounded flex-shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  // 44px minimum on touch, unchanged on a pointer device. These buttons were
+  // ~32px, which is below every touch-target guideline and awkward on a phone.
+  const baseCls = 'inline-flex items-center justify-center min-h-11 md:min-h-0 text-xs font-mono rounded flex-shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   const cls = `${baseCls} ${variantClasses(variant)} ${className}`.trim()
 
   if (props.as === 'a') {
