@@ -26,6 +26,17 @@ comment on column object_images.matte is
 comment on column object_images.aspect is
   'Natural width / height, so a frame can be sized before the image loads.';
 
+-- The same two values denormalised onto the object, mirroring image_url, which
+-- has always been copied here. The public render path then reads one row rather
+-- than joining object_images for a colour and a ratio.
+alter table objects add column if not exists image_matte  text;
+alter table objects add column if not exists image_aspect numeric;
+
+comment on column objects.image_matte is
+  'matte of the primary image, denormalised alongside image_url.';
+comment on column objects.image_aspect is
+  'aspect of the primary image, denormalised alongside image_url.';
+
 -- ── canonical condition ───────────────────────────────────────────────────
 -- condition_grade stays exactly as the collector typed it and remains what the
 -- public site displays. This column exists so condition can be sorted, filtered
