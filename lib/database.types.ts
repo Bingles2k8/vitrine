@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_emails: {
+        Row: {
+          error: string | null
+          id: string
+          kind: string
+          message_id: string | null
+          museum_id: string | null
+          recipient: string
+          sent_at: string
+          sent_by: string | null
+          subject: string
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          kind: string
+          message_id?: string | null
+          museum_id?: string | null
+          recipient: string
+          sent_at?: string
+          sent_by?: string | null
+          subject: string
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          museum_id?: string | null
+          recipient?: string
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_emails_museum_id_fkey"
+            columns: ["museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_log: {
         Row: {
           action_type: string
