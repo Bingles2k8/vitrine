@@ -10,6 +10,8 @@ import { TestFilterToggle } from './TestFilterToggle'
 import { TestAccountToggle } from './TestAccountToggle'
 import { DeleteToggle } from './DeleteToggle'
 import { ClickableRow } from './ClickableRow'
+import { NudgeButton } from './NudgeButton'
+import { nudgeVariant } from '@/lib/email/nudge'
 
 const PLAN_ORDER = ['community', 'hobbyist', 'professional', 'institution'] as const
 const PLAN_COLOURS: Record<string, string> = {
@@ -23,6 +25,14 @@ const PLAN_MRR: Record<string, number> = {
   hobbyist: 5,
   professional: 79,
   institution: 349,
+}
+
+/** "3 days ago", the only resolution the admin table needs for a send. */
+function daysAgoLabel(iso: string): string {
+  const days = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 86_400_000))
+  if (days === 0) return 'today'
+  if (days === 1) return 'yesterday'
+  return `${days} days ago`
 }
 
 function subStatus(plan: string, stripeSubId: string | null, pastDue: boolean) {
@@ -59,20 +69,30 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: objects },
     { data: activities },
     { data: staff },
+    { data: accountEmails },
   ] = await Promise.all([
     admin
       .from('museums')
-      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id, is_test_account')
+      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id, is_test_account, reengage_opt_out, reengage_a3_sent_at, reengage_a7_sent_at, reengage_a30_sent_at, reengage_b30_sent_at, reengage_b180_sent_at, deletion_warning_30d_sent_at, deletion_warning_7d_sent_at')
       .order('created_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('objects').select('museum_id'),
     admin.from('activity_log').select('museum_id, created_at').order('created_at', { ascending: false }),
     admin.from('staff_members').select('museum_id, user_id'),
+    // Successful sends only: a row carrying a provider error records an attempt,
+    // not an email the owner received. Null if the migration has not been
+    // applied yet, which only costs us the manual sends in "Last emailed".
+    admin
+      .from('account_emails')
+      .select('museum_id, sent_at')
+      .is('error', null)
+      .order('sent_at', { ascending: false }),
   ])
 
   // ── Build lookup maps ──────────────────────────────────────────────
   const emailByOwnerId = new Map(authUsers?.map(u => [u.id, u.email ?? '—']))
   const lastSignInByUserId = new Map((authUsers ?? []).map(u => [u.id, u.last_sign_in_at ?? null]))
+  const authUserById = new Map((authUsers ?? []).map(u => [u.id, u]))
 
   const objCountByMuseum = (objects ?? []).reduce<Record<string, number>>((acc, obj) => {
     if (obj.museum_id) acc[obj.museum_id] = (acc[obj.museum_id] ?? 0) + 1
@@ -85,6 +105,32 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     if (a.museum_id && !lastActivityByMuseum.has(a.museum_id)) {
       lastActivityByMuseum.set(a.museum_id, a.created_at)
     }
+  }
+
+  // Same trick for the email log, which is also already sorted desc.
+  const lastLoggedEmailByMuseum = new Map<string, string>()
+  for (const e of (accountEmails ?? [])) {
+    if (e.museum_id && !lastLoggedEmailByMuseum.has(e.museum_id)) {
+      lastLoggedEmailByMuseum.set(e.museum_id, e.sent_at)
+    }
+  }
+
+  // "Last emailed" has to span both places a send is recorded: the log written
+  // by the nudge button, and the older per-stage flags the reengagement and
+  // deletion crons set on the museum row. Neither alone is the answer.
+  function lastEmailedForMuseum(m: (typeof allRows)[number]): string | null {
+    const stamps = [
+      lastLoggedEmailByMuseum.get(m.id) ?? null,
+      m.reengage_a3_sent_at,
+      m.reengage_a7_sent_at,
+      m.reengage_a30_sent_at,
+      m.reengage_b30_sent_at,
+      m.reengage_b180_sent_at,
+      m.deletion_warning_30d_sent_at,
+      m.deletion_warning_7d_sent_at,
+    ].filter((t): t is string => !!t)
+    if (stamps.length === 0) return null
+    return stamps.reduce((latest, t) => (t > latest ? t : latest))
   }
 
   // Extra (non-owner) users per museum, from the staff_members table
@@ -205,7 +251,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <th className="px-4 py-3">Signed up</th>
                 <th className="px-4 py-3">Last active</th>
                 <th className="px-4 py-3">Last login</th>
+                <th className="px-4 py-3">Last emailed</th>
                 <th className="px-4 py-3 text-center">Discoverable</th>
+                <th className="px-4 py-3 text-right">Nudge</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -217,6 +265,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const lastLogin  = lastLoginForMuseum(m.id, m.owner_id)
                 const status     = subStatus(m.plan, m.stripe_subscription_id, m.payment_past_due)
                 const isTest     = m.is_test_account
+                const owner      = authUserById.get(m.owner_id)
+                const lastEmailed = lastEmailedForMuseum(m)
+                // Which of the two nudges suits them, shown in the confirm
+                // dialog so the send is not a surprise. Recomputed server-side
+                // when the action runs, so this is only ever a preview.
+                const variant    = owner ? nudgeVariant(owner.created_at, owner.last_sign_in_at ?? null) : null
 
                 return (
                   <ClickableRow
@@ -263,7 +317,24 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         ? new Date(lastLogin).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : <span className="text-gray-300">—</span>}
                     </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                      {lastEmailed
+                        ? <span title={new Date(lastEmailed).toLocaleString('en-GB')}>{daysAgoLabel(lastEmailed)}</span>
+                        : <span className="text-gray-300">never</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {m.reengage_opt_out ? (
+                        <span className="text-[10px] text-gray-300" title="Owner unsubscribed from these emails">opted out</span>
+                      ) : owner?.email && variant ? (
+                        <NudgeButton
+                          museumId={m.id}
+                          ownerEmail={owner.email}
+                          variant={variant}
+                          lastEmailedLabel={lastEmailed ? daysAgoLabel(lastEmailed) : null}
+                        />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {showDelete ? (
                         <DeleteUserButton
@@ -279,7 +350,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
+                  <td colSpan={12} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
                 </tr>
               )}
             </tbody>

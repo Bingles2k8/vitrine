@@ -10,6 +10,9 @@ import { r2, r2PathFromUrl, DeleteObjectsCommand, ListObjectsV2Command } from '@
 import { cancelSubscription } from '@/lib/billing/cancel'
 import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
 import { sendComplianceEmail } from '@/lib/email/send'
+import { renderNudgeEmail, nudgeVariant, type NudgeVariant } from '@/lib/email/nudge'
+import { signUnsubscribeToken } from '@/lib/emailTokens'
+import { Resend } from 'resend'
 
 function adminClient() {
   return createClient(
@@ -227,6 +230,117 @@ export async function cancelSubscriptionForCustomer(
   revalidatePath('/admin')
   revalidatePath(`/admin/${museumId}`)
   return result
+}
+
+// ── Nudge email ─────────────────────────────────────────────────────
+
+export type NudgeResult =
+  | { ok: true; variant: NudgeVariant; recipient: string }
+  | { ok: false; error: string }
+
+/**
+ * Send one owner a nudge from the admin table.
+ *
+ * This is the hand-sent counterpart to the reengagement cron, for the case
+ * where someone looked worth chasing and the automated schedule either already
+ * passed them by or has not reached them yet. It reuses that cron's opt-out
+ * flag and unsubscribe token, because a recipient who unsubscribed from
+ * lifecycle email did not consent to a hand-typed version of the same thing.
+ *
+ * Returns errors rather than throwing so the button can show what went wrong
+ * without taking the page down.
+ */
+export async function sendNudgeEmail(museumId: string): Promise<NudgeResult> {
+  const { user } = await assertAdmin()
+  const admin = adminClient()
+
+  const { data: museum } = await admin
+    .from('museums')
+    .select('id, name, owner_id, reengage_opt_out')
+    .eq('id', museumId)
+    .maybeSingle()
+
+  if (!museum) return { ok: false, error: 'Museum not found' }
+  if (museum.reengage_opt_out) {
+    return { ok: false, error: 'This owner has unsubscribed from these emails' }
+  }
+
+  const { data: ownerData } = await admin.auth.admin.getUserById(museum.owner_id)
+  const owner = ownerData?.user
+  const recipient = owner?.email
+  if (!owner || !recipient) return { ok: false, error: 'Owner has no email address' }
+
+  // Accident guard. Nothing legitimately needs two nudges in one day, and the
+  // button sits in a dense table where a stray click is easy. Rows that record
+  // a failed send are excluded, so a Resend outage does not lock out the retry.
+  const dayAgo = new Date(Date.now() - 86_400_000).toISOString()
+  const { data: recent } = await admin
+    .from('account_emails')
+    .select('sent_at')
+    .eq('museum_id', museumId)
+    .is('error', null)
+    .gte('sent_at', dayAgo)
+    .limit(1)
+
+  if (recent && recent.length > 0) {
+    return { ok: false, error: 'Already emailed in the last 24 hours' }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return { ok: false, error: 'RESEND_API_KEY is not set' }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
+  const variant = nudgeVariant(owner.created_at, owner.last_sign_in_at ?? null)
+  const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signUnsubscribeToken(museumId)}`
+
+  const { subject, html, text } = renderNudgeEmail({
+    variant,
+    museumName: museum.name,
+    createdAt: owner.created_at,
+    lastSignInAt: owner.last_sign_in_at ?? null,
+    siteUrl,
+    unsubscribeUrl,
+  })
+
+  let messageId: string | null = null
+  let sendError: string | null = null
+  try {
+    const { data, error } = await new Resend(apiKey).emails.send({
+      from: 'Matt at Vitrine <noreply@contact.vitrinecms.com>',
+      to: recipient,
+      replyTo: 'hello@composition.agency',
+      subject,
+      html,
+      text,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    })
+    messageId = data?.id ?? null
+    sendError = error ? (error.message ?? String(error)) : null
+  } catch (err) {
+    sendError = err instanceof Error ? err.message : String(err)
+  }
+
+  // Logged either way. A failed send is worth seeing in the admin table, and a
+  // row with an error is a clearer record than no row at all.
+  const { error: logError } = await admin.from('account_emails').insert({
+    museum_id: museumId,
+    recipient,
+    kind: variant === 'never_returned' ? 'nudge_never_returned' : 'nudge_dormant',
+    subject,
+    message_id: messageId,
+    error: sendError,
+    sent_by: user?.id ?? null,
+  })
+  if (logError) console.error('[admin sendNudgeEmail] log failed:', logError.message)
+
+  revalidatePath('/admin')
+  revalidatePath(`/admin/${museumId}`)
+
+  if (sendError) return { ok: false, error: sendError }
+  return { ok: true, variant, recipient }
 }
 
 export async function deleteUser(museumId: string) {
