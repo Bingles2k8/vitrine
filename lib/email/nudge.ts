@@ -11,10 +11,16 @@
  * long-standing user why they never got started is worse.
  *
  * The voice is deliberately flat. This is a reminder that an account exists,
- * not an attempt to start a conversation, so it does not ask for a reply and
- * does not editorialise about how much we would love to see them. Two short
- * sentences and a link is the whole of it. Reply-to still points at a real
- * inbox, but that is for the person who chooses to answer, not an invitation.
+ * not an attempt to start a conversation, so it does not ask for a reply, does
+ * not editorialise, and carries no sign-off. Two short sentences and a button
+ * is the whole of it, and the button is the only thing being asked for.
+ *
+ * Styled to the public site rather than to the plain-text house style the older
+ * transactional mail uses: the stone-950 band and amber accent are the same
+ * ones PublicNav renders, and the wordmark is the same serif italic with an
+ * amber full stop. The dark ground is confined to the header band because a
+ * fully dark email is at the mercy of whatever each client does with dark mode,
+ * whereas one dark band over a white body renders the same everywhere.
  */
 
 import { esc } from './send'
@@ -69,6 +75,28 @@ export type NudgeInput = {
   now?: number
 }
 
+/**
+ * Brand tokens, copied from the Tailwind palette the site is built in so the
+ * mail matches it exactly. Email clients get no stylesheet and no CSS
+ * variables, so every one of these has to be inlined as a literal.
+ */
+const C = {
+  ink: '#0c0a09', // stone-950, the site's ground
+  body: '#292524', // stone-800
+  muted: '#78716c', // stone-500
+  faint: '#a8a29e', // stone-400
+  rule: '#e7e5e4', // stone-200
+  page: '#f5f5f4', // stone-100
+  card: '#ffffff',
+  wordmark: '#fafaf9', // stone-50
+  accent: '#f59e0b', // amber-500
+} as const
+
+/** Geist and DM Sans will not load in mail, so fall through to system faces. */
+const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+/** The wordmark is serif italic on the site; Georgia is the closest safe face. */
+const SERIF = "Georgia, 'Times New Roman', Times, serif"
+
 export function renderNudgeEmail(input: NudgeInput): { subject: string; html: string; text: string } {
   const now = input.now ?? Date.now()
   const name = input.museumName?.trim() || null
@@ -79,28 +107,52 @@ export function renderNudgeEmail(input: NudgeInput): { subject: string; html: st
       ? neverReturned(describeGap(daysSince(input.createdAt, now)))
       : dormant(describeGap(daysSince(input.lastSignInAt, now)), name)
 
-  const html = `
-    <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a;font-size:16px;line-height:1.6">
-      <p>Hi,</p>
-      ${paragraphs.map(p => `<p>${p.html}</p>`).join('\n      ')}
-      <p style="margin:24px 0"><a href="${dashboard}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px">${esc(cta)}</a></p>
-      <p style="margin-bottom:0">Matt</p>
-      <p style="margin-top:4px;color:#666">Vitrine</p>
-      <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
-      <p style="font-size:12px;color:#888">
-        You are receiving this because you have a Vitrine account.
-        <a href="${input.unsubscribeUrl}" style="color:#888">Unsubscribe from emails like this one</a>.
-        Billing and security notices are sent separately and are not affected.
-      </p>
-    </div>`
+  const para = (p: Para) =>
+    `<p style="margin:0 0 16px;font-family:${SANS};font-size:16px;line-height:1.6;color:${C.body}">${p.html}</p>`
+
+  // Tables rather than divs: Outlook's rendering engine does not lay divs out
+  // reliably, and this is the one layout that has to survive every client.
+  const html = `<!--[if mso]><style>body,table,td{font-family:Arial,Helvetica,sans-serif !important}</style><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.page};margin:0;padding:24px 12px">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background:${C.card};border-radius:8px;overflow:hidden">
+        <tr>
+          <td style="background:${C.ink};padding:20px 32px">
+            <span style="font-family:${SERIF};font-style:italic;font-size:20px;color:${C.wordmark};letter-spacing:0.2px">Vitrine<span style="color:${C.accent}">.</span></span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 32px 8px">
+            ${para(plain('Hi,'))}
+            ${paragraphs.map(para).join('\n            ')}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px">
+              <tr>
+                <td style="background:${C.accent};border-radius:4px">
+                  <a href="${dashboard}" style="display:inline-block;padding:12px 24px;font-family:${SANS};font-size:15px;font-weight:600;color:${C.ink};text-decoration:none">${esc(cta)}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 28px;border-top:1px solid ${C.rule}">
+            <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.6;color:${C.muted}">
+              You are receiving this because you have a Vitrine account.
+              <a href="${input.unsubscribeUrl}" style="color:${C.muted}">Unsubscribe from emails like this one</a>.
+              Billing and security notices are sent separately and are not affected.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`
 
   const text = [
     'Hi,',
     ...paragraphs.map(p => p.text),
     `${cta}: ${dashboard}`,
-    'Matt',
-    'Vitrine',
-    '',
     `Unsubscribe from emails like this one: ${input.unsubscribeUrl}`,
   ].join('\n\n')
 

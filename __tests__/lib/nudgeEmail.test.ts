@@ -78,8 +78,28 @@ describe('renderNudgeEmail', () => {
       expect(text).not.toMatch(/[—–]/)
       expect(subject).not.toMatch(/[—–]/)
       expect(text).not.toMatch(/<li>|^\s*[-*•]\s/m)
-      expect(text).toContain('Matt')
     }
+  })
+
+  it('carries no sign-off', () => {
+    for (const variant of ['never_returned', 'dormant'] as const) {
+      const { html, text } = renderNudgeEmail({ ...base, variant })
+      expect(text).not.toMatch(/\bMatt\b|Best wishes|Kind regards|Thanks,|Cheers/i)
+      expect(html).not.toMatch(/\bMatt\b/)
+      // The button is the whole of the ask, so it is the last thing in the body.
+      expect(text.trim().split('\n\n').at(-1)).toMatch(/^Unsubscribe/)
+    }
+  })
+
+  it('is styled to the site rather than to a default mail template', () => {
+    const { html } = renderNudgeEmail({ ...base, variant: 'dormant' })
+    expect(html).toContain('#0c0a09') // stone-950 header band
+    expect(html).toContain('#f59e0b') // amber-500 accent and button
+    expect(html).toContain('Vitrine<span style="color:#f59e0b">.</span>')
+    expect(html).toMatch(/font-style:italic/) // serif italic wordmark
+    // Outlook ignores divs often enough that the layout has to be tables.
+    expect(html).toContain('role="presentation"')
+    expect(html).not.toMatch(/Georgia,serif;max-width/) // the old house style
   })
 
   it('stays a nudge rather than asking for a conversation', () => {
