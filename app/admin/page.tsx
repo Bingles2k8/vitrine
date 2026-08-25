@@ -183,8 +183,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const mrr = rows.reduce((sum, m) => sum + (PLAN_MRR[m.plan] ?? 0), 0)
 
   return (
-    <div className="min-h-screen bg-white p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-white p-6 font-sans">
+      <div className="mx-auto w-full max-w-[1800px]">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -243,18 +243,19 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                <th className="px-4 py-3">Museum</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Owner</th>
-                <th className="px-4 py-3 text-right">Objects</th>
-                <th className="px-4 py-3">Signed up</th>
-                <th className="px-4 py-3">Last active</th>
-                <th className="px-4 py-3">Last login</th>
-                <th className="px-4 py-3">Last emailed</th>
-                <th className="px-4 py-3 text-center">Discoverable</th>
-                <th className="px-4 py-3 text-right">Nudge</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-3 py-3">Museum</th>
+                <th className="px-3 py-3">Plan</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Owner</th>
+                <th className="px-3 py-3 text-right">Objects</th>
+                <th className="px-3 py-3">Signed up</th>
+                <th className="px-3 py-3">Last active</th>
+                <th className="px-3 py-3">Last login</th>
+                <th className="px-3 py-3">Last emailed</th>
+                {/* "Listed" is the product's own word for it, per the dashboard toggle. */}
+                <th className="px-3 py-3 text-center" title="Listed in the Vitrine directory">Listed</th>
+                <th className="px-3 py-3 text-right">Nudge</th>
+                <th className="px-3 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -278,7 +279,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     href={`/admin/${m.id}`}
                     className={`transition-colors ${isTest ? 'bg-gray-50/80 hover:bg-gray-100' : isEmpty ? 'opacity-50 hover:opacity-100 hover:bg-gray-50' : 'hover:bg-gray-50'}`}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">
                           {m.name ?? '—'}
@@ -296,34 +297,40 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </div>
                       <div className="text-xs text-gray-400 font-mono">{m.slug}</div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${PLAN_COLOURS[m.plan] ?? 'bg-gray-100 text-gray-600'}`}>
                         {m.plan}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 text-xs ${status.cls}`}>{status.label}</td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">{emailByOwnerId.get(m.owner_id) ?? '—'}</td>
-                    <td className={`px-4 py-3 text-right tabular-nums ${isEmpty ? 'text-gray-400' : 'text-gray-700'}`}>{objCount}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className={`px-3 py-3 text-xs ${status.cls}`}>{status.label}</td>
+                    {/* Capped: an address long enough to widen the whole table
+                        is the one case where truncating beats showing it in full. */}
+                    <td className="px-3 py-3 text-gray-600 text-xs">
+                      <div className="max-w-[190px] truncate" title={emailByOwnerId.get(m.owner_id) ?? '—'}>
+                        {emailByOwnerId.get(m.owner_id) ?? '—'}
+                      </div>
+                    </td>
+                    <td className={`px-3 py-3 text-right tabular-nums ${isEmpty ? 'text-gray-400' : 'text-gray-700'}`}>{objCount}</td>
+                    <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                       {new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                       {lastActive
                         ? new Date(lastActive).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                       {lastLogin
                         ? new Date(lastLogin).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                       {lastEmailed
                         ? <span title={new Date(lastEmailed).toLocaleString('en-GB')}>{daysAgoLabel(lastEmailed)}</span>
                         : <span className="text-gray-300">never</span>}
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <td className="px-3 py-3 text-center text-gray-500">{m.discoverable ? '✓' : ''}</td>
+                    <td className="px-3 py-3 text-right whitespace-nowrap">
                       {m.reengage_opt_out ? (
                         <span className="text-[10px] text-gray-300" title="Owner unsubscribed from these emails">opted out</span>
                       ) : owner?.email && variant ? (
@@ -335,7 +342,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         />
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-3 text-right">
                       {showDelete ? (
                         <DeleteUserButton
                           museumId={m.id}
@@ -350,7 +357,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-8 text-center text-gray-400">No museums yet</td>
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-400">No museums yet</td>
                 </tr>
               )}
             </tbody>
@@ -377,10 +384,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Signed up</th>
-                    <th className="px-4 py-3">Last login</th>
-                    <th className="px-4 py-3 text-center">Email confirmed</th>
+                    <th className="px-3 py-3">Email</th>
+                    <th className="px-3 py-3">Signed up</th>
+                    <th className="px-3 py-3">Last login</th>
+                    <th className="px-3 py-3 text-center">Email confirmed</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -388,16 +395,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     const confirmed = !!u.email_confirmed_at
                     return (
                       <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-600 text-xs">{u.email ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        <td className="px-3 py-3 text-gray-600 text-xs">{u.email ?? '—'}</td>
+                        <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                           {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
-                        <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
                           {u.last_sign_in_at
                             ? new Date(u.last_sign_in_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                             : <span className="text-gray-300">never signed in</span>}
                         </td>
-                        <td className="px-4 py-3 text-center text-xs">
+                        <td className="px-3 py-3 text-center text-xs">
                           {confirmed
                             ? <span className="text-gray-500">✓</span>
                             : <span className="text-amber-600">unconfirmed</span>}
