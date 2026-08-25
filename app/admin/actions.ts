@@ -246,6 +246,8 @@ export type NudgeResult =
  * passed them by or has not reached them yet. It reuses that cron's opt-out
  * flag and unsubscribe token, because a recipient who unsubscribed from
  * lifecycle email did not consent to a hand-typed version of the same thing.
+ * Replies land on the sending address rather than a monitored inbox, which
+ * suits an email whose copy never invites one.
  *
  * Returns errors rather than throwing so the button can show what went wrong
  * without taking the page down.
@@ -306,9 +308,11 @@ export async function sendNudgeEmail(museumId: string): Promise<NudgeResult> {
   let sendError: string | null = null
   try {
     const { data, error } = await new Resend(apiKey).emails.send({
-      from: 'Matt at Vitrine <noreply@contact.vitrinecms.com>',
+      from: 'Vitrine <noreply@contact.vitrinecms.com>',
       to: recipient,
-      replyTo: 'hello@composition.agency',
+      // No replyTo: a reply should go back to the sending address, which is
+      // what Resend does by default. Setting it to the same value would be
+      // noise in the headers.
       subject,
       html,
       text,
