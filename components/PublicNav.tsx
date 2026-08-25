@@ -9,6 +9,7 @@ const navLinks = [
   { label: 'Blog', href: '/blog' },
   { label: 'Features', href: '/#features' },
   { label: 'Pricing', href: '/plans' },
+  { label: 'About', href: '/about' },
 ]
 
 export default function PublicNav({ activePath }: { activePath?: string }) {
