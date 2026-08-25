@@ -143,6 +143,15 @@ export default function CollectionSplit({
                 {overdue}d late
               </span>
             )}
+            {!a.image_url && (
+              <span
+                title="No photo yet — it won't appear in Discover"
+                className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wide text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700 rounded px-1.5 py-0.5 flex-shrink-0"
+              >
+                <NoPhotoIcon />
+                <span className="hidden sm:inline">No photo</span>
+              </span>
+            )}
             {a.show_on_site && (
               <span
                 title="On your public page"
@@ -182,6 +191,18 @@ export default function CollectionSplit({
   )
 
   return <SplitPane list={list} detail={detail} hasSelection={false} listWidth={368} stickyTop={80} />
+}
+
+/** A crossed-through picture frame. Marks a record with no photograph. */
+function NoPhotoIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+      <path d="m2 2 20 20" />
+    </svg>
+  )
 }
 
 /** "Miles Davis · 1959" — whichever of those the record actually has. */
@@ -263,6 +284,18 @@ function RecordPane({
           ) : null}
         </div>
       </div>
+
+      {!a.image_url && (
+        <div className="mx-5 mb-4 px-3.5 py-3 rounded border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40 flex items-start gap-2.5">
+          <span className="text-stone-400 dark:text-stone-500 mt-0.5 flex-shrink-0"><NoPhotoIcon /></span>
+          <div className="min-w-0">
+            <div className="text-sm text-stone-700 dark:text-stone-300">No photo yet</div>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 leading-relaxed">
+              Records without a photograph are left out of the public Discover directory.
+            </p>
+          </div>
+        </div>
+      )}
 
       {canEdit && (
         <div className="mx-5 mb-4 px-3.5 py-3 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">

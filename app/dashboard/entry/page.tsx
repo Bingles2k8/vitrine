@@ -123,8 +123,9 @@ export default function EntryRegisterPage() {
   const [newEntry, setNewEntry] = useState(defaultEntry)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
   const [addAnother, setAddAnother] = useState(false)
-  const [entryPhoto, setEntryPhoto] = useState<File | null>(null)
-  const [entryPhotoUrl, setEntryPhotoUrl] = useState<string | null>(null)
+  // Staged photos, held until the object exists — the storage path is keyed on
+  // its id, so they cannot be uploaded before it is created.
+  const [entryPhotos, setEntryPhotos] = useState<{ file: File; url: string }[]>([])
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [lookupSource, setLookupSource] = useState<string | null>(null)
@@ -138,6 +139,12 @@ export default function EntryRegisterPage() {
       setShowForm(true)
     }
   }, [])
+
+  // Simple mode opens straight into the form: someone who clicked "Add a
+  // record" has already said what they want to do.
+  useEffect(() => {
+    if (museum && !getPlan(museum.plan).fullMode) setShowForm(true)
+  }, [museum])
 
   useEffect(() => {
     async function load() {
@@ -171,9 +178,33 @@ export default function EntryRegisterPage() {
   }
 
   function clearEntryPhoto() {
-    if (entryPhotoUrl) URL.revokeObjectURL(entryPhotoUrl)
-    setEntryPhoto(null)
-    setEntryPhotoUrl(null)
+    entryPhotos.forEach(p => URL.revokeObjectURL(p.url))
+    setEntryPhotos([])
+  }
+
+  /** Stage files, refusing anything past the plan's per-record image limit. */
+  function addEntryPhotos(files: FileList | null) {
+    if (!files || files.length === 0) return
+    const limit = getPlan(museum?.plan ?? '').imagesPerObject
+    setEntryPhotos(prev => {
+      const room = limit - prev.length
+      if (room <= 0) {
+        toast(
+          limit === 1
+            ? 'Your plan allows one photo per item.'
+            : `Your plan allows ${limit} photos per item.`,
+          'error',
+        )
+        return prev
+      }
+      const taken = Array.from(files).slice(0, room)
+      return [...prev, ...taken.map(file => ({ file, url: URL.createObjectURL(file) }))]
+    })
+  }
+
+  function removeEntryPhoto(url: string) {
+    URL.revokeObjectURL(url)
+    setEntryPhotos(prev => prev.filter(p => p.url !== url))
   }
 
   /**
@@ -183,19 +214,35 @@ export default function EntryRegisterPage() {
    * from the object's own gallery.
    */
   async function uploadEntryPhoto(objectId: string): Promise<void> {
-    if (!entryPhoto || !museum) return
-    try {
-      const compressed = await compressImage(entryPhoto)
-      const ext = compressed.type === 'image/webp' ? 'webp' : (compressed.name.split('.').pop() || 'jpg')
-      const filename = `${museum.id}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const publicUrl = await uploadToR2('object-images', filename, compressed)
-      await fetch(`/api/objects/${objectId}/images`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: publicUrl, is_primary: true, sort_order: 0, phash: null }),
-      })
-    } catch {
-      toast('Saved, but the photo could not be uploaded. Add it from the item page.', 'error')
+    if (entryPhotos.length === 0 || !museum) return
+    let failed = 0
+    for (const [i, staged] of entryPhotos.entries()) {
+      try {
+        const compressed = await compressImage(staged.file)
+        const ext = compressed.type === 'image/webp' ? 'webp' : (compressed.name.split('.').pop() || 'jpg')
+        const filename = `${museum.id}/${objectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const publicUrl = await uploadToR2('object-images', filename, compressed)
+        await fetch(`/api/objects/${objectId}/images`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // The first one is primary, which mirrors onto objects.image_url —
+          // the column Discover filters on and the "no photo" flag reads.
+          body: JSON.stringify({ url: publicUrl, is_primary: i === 0, sort_order: i, phash: null }),
+        })
+      } catch {
+        failed++
+      }
+    }
+    if (failed > 0) {
+      // The record is already saved; losing it would be worse than saving it
+      // without its picture. Say plainly that it needs one, since a record with
+      // no photo stays out of Discover.
+      toast(
+        failed === entryPhotos.length
+          ? 'Saved, but the photo did not upload. Add one from its own page — without it, it stays out of Discover.'
+          : `Saved, but ${failed} photo${failed === 1 ? '' : 's'} did not upload. Add them from its own page.`,
+        'error',
+      )
     }
   }
 
@@ -313,6 +360,13 @@ export default function EntryRegisterPage() {
         fullMode ? 'Please fill in all required fields.' : `Give it a name first — everything else can wait.`,
         'error',
       )
+      return
+    }
+    // A photo is required in simple mode. Records without one look empty on a
+    // public page and are kept out of Discover, so the form asks up front
+    // rather than letting someone find out weeks later.
+    if (!fullMode && entryPhotos.length === 0) {
+      toast('Add a photo before saving — records without one stay out of Discover.', 'error')
       return
     }
     // Check plan limits
@@ -461,6 +515,7 @@ export default function EntryRegisterPage() {
   const canEdit = isOwner || staffAccess === 'Admin' || staffAccess === 'Editor'
   const simple = museum?.ui_mode === 'simple'
   const fullMode = getPlan(museum?.plan ?? '').fullMode
+  const photoLimit = getPlan(museum?.plan ?? '').imagesPerObject
 
   // Collection-wide profile, so the entry form speaks the same language as the
   // object form and the nav. Full mode resolves to the museum vocabulary and a
@@ -530,9 +585,11 @@ export default function EntryRegisterPage() {
                   Import CSV
                 </TopBarButton>
               )}
+              {fullMode && (
               <TopBarButton variant="primary" onClick={() => setShowForm(v => !v)}>
-                {showForm ? 'Cancel' : (fullMode ? '+ New Entry' : `+ ${nouns.addItem}`)}
+                {showForm ? 'Cancel' : '+ New Entry'}
               </TopBarButton>
+              )}
             </>
           )}
           subRow={
@@ -666,6 +723,73 @@ export default function EntryRegisterPage() {
                   </div>
                 )
               })()}
+
+              {/* Photos lead the form and are required. A record without one
+                  shows as a grey tile with an emoji in it, and is left out of
+                  the public Discover directory — so the form asks for one
+                  rather than letting people find that out later.
+                  `capture` opens the camera straight away on a phone, which is
+                  where most things get added, with a plain picker beside it. */}
+              <div>
+                <label className={labelCls}>
+                  {entryPhotos.length > 1 ? 'Photos' : 'Photo'} <span className="text-red-400">*</span>
+                </label>
+
+                {entryPhotos.length === 0 ? (
+                  <div className="border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-lg px-5 py-7 flex flex-col items-center gap-3 text-center bg-stone-50 dark:bg-stone-800/40">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-400 dark:text-stone-500">
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
+                      <circle cx="12" cy="13" r="3.5" />
+                    </svg>
+                    <div>
+                      <div className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                        Take a photo of it
+                      </div>
+                      <div className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                        {photoLimit === 1
+                          ? 'One photo per item on your plan'
+                          : `Up to ${photoLimit} per item`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                      <label className="inline-flex items-center justify-center min-h-11 gap-2 text-sm font-mono bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white rounded px-5 cursor-pointer transition-colors">
+                        <input type="file" accept="image/*" capture="environment" multiple={photoLimit > 1} className="hidden"
+                          onChange={e => { addEntryPhotos(e.target.files); e.currentTarget.value = '' }} />
+                        Take a photo
+                      </label>
+                      <label className="inline-flex items-center justify-center min-h-11 text-sm font-mono text-stone-600 dark:text-stone-300 border border-stone-300 dark:border-stone-600 rounded px-4 cursor-pointer hover:bg-white dark:hover:bg-stone-800 transition-colors">
+                        <input type="file" accept="image/*" multiple={photoLimit > 1} className="hidden"
+                          onChange={e => { addEntryPhotos(e.target.files); e.currentTarget.value = '' }} />
+                        Choose an existing one
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {entryPhotos.map(ph => (
+                      <div key={ph.url} className="relative">
+                        <img src={ph.url} alt="" className="w-24 h-24 object-cover rounded border border-stone-200 dark:border-stone-700" />
+                        <button
+                          type="button"
+                          onClick={() => removeEntryPhoto(ph.url)}
+                          aria-label="Remove this photo"
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-stone-900 text-white text-xs flex items-center justify-center shadow hover:bg-stone-700 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {entryPhotos.length < photoLimit && (
+                      <label className="w-24 h-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-stone-300 dark:border-stone-600 rounded text-stone-500 dark:text-stone-400 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <input type="file" accept="image/*" capture="environment" multiple className="hidden"
+                          onChange={e => { addEntryPhotos(e.target.files); e.currentTarget.value = '' }} />
+                        <span className="text-lg leading-none">+</span>
+                        <span className="text-[10px] font-mono">Add another</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Simple mode asks two things. The date is today, the reference
                   number generates itself, and everything else waits behind
@@ -1025,31 +1149,29 @@ export default function EntryRegisterPage() {
                       </div>
                     </div>
 
-                    {/* Photo — uploaded after the object exists, since the
-                        storage path is keyed on the object id. */}
-                    <div>
-                      <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Photo</div>
-                      {entryPhotoUrl ? (
-                        <div className="flex items-center gap-4">
-                          <img src={entryPhotoUrl} alt="" className="w-24 h-24 object-cover rounded border border-stone-200 dark:border-stone-700" />
-                          <button type="button" onClick={clearEntryPhoto}
-                            className="text-xs font-mono underline text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 border border-dashed border-stone-300 dark:border-stone-600 rounded px-4 py-3 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
-                          <input type="file" accept="image/*" className="hidden"
-                            onChange={e => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              setEntryPhoto(file)
-                              setEntryPhotoUrl(URL.createObjectURL(file))
-                            }} />
-                          + Add a photo
-                        </label>
-                      )}
-                    </div>
+                    {/* Full mode keeps its optional photo here. Simple mode's
+                        photos moved to the top of the form, where they are
+                        required — see PhotoField. */}
+                    {fullMode && (
+                      <div>
+                        <div className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Photo</div>
+                        {entryPhotos[0] ? (
+                          <div className="flex items-center gap-4">
+                            <img src={entryPhotos[0].url} alt="" className="w-24 h-24 object-cover rounded border border-stone-200 dark:border-stone-700" />
+                            <button type="button" onClick={clearEntryPhoto}
+                              className="text-xs font-mono underline text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="inline-flex items-center gap-2 text-xs font-mono text-stone-500 dark:text-stone-400 border border-dashed border-stone-300 dark:border-stone-600 rounded px-4 py-3 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={e => addEntryPhotos(e.target.files)} />
+                            + Add a photo
+                          </label>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1072,8 +1194,9 @@ export default function EntryRegisterPage() {
                 <div className="flex items-center gap-4 flex-wrap pt-2">
                   <button
                     onClick={() => handleCreateEntry(addAnother ? 'again' : 'stay')}
-                    disabled={submitting}
-                    className="text-sm font-mono bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white rounded px-6 py-2.5 font-medium transition-colors disabled:opacity-50"
+                    disabled={submitting || entryPhotos.length === 0 || !newEntry.object_title.trim()}
+                    title={entryPhotos.length === 0 ? 'Add a photo first' : undefined}
+                    className="text-sm font-mono bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white rounded px-6 py-2.5 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {submitting ? 'Saving…' : `Save ${nouns.item.toLowerCase()}`}
                   </button>
@@ -1089,11 +1212,11 @@ export default function EntryRegisterPage() {
                   </label>
 
                   <button
-                    onClick={() => { setShowForm(false); setNewEntry(defaultEntry()); clearEntryPhoto() }}
+                    onClick={() => { setNewEntry(defaultEntry()); clearEntryPhoto() }}
                     disabled={submitting}
                     className="text-sm font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors ml-auto disabled:opacity-50"
                   >
-                    Cancel
+                    Clear this form
                   </button>
                 </div>
               )}
@@ -1121,16 +1244,8 @@ export default function EntryRegisterPage() {
                 Add to your {nouns.collection.toLowerCase()}
               </div>
               <p className="text-sm text-stone-400 dark:text-stone-500 mb-6">
-                Everything you add appears in {nouns.collection.toLowerCase()} overview.
+                Everything you add with the form above appears in your {nouns.collection.toLowerCase()}.
               </p>
-              {canEdit && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="text-sm font-mono text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded px-4 py-2 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
-                >
-                  + {nouns.addItem}
-                </button>
-              )}
               <button
                 onClick={() => router.push('/dashboard')}
                 className="mt-4 text-xs font-mono text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 underline underline-offset-2 transition-colors"

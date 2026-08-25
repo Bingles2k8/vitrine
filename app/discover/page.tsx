@@ -53,6 +53,11 @@ export default async function DiscoverPage({
     .select('id, title, description, image_url, category, museum_id, emoji')
     .eq('show_on_site', true)
     .is('deleted_at', null)
+    // Discover is a shop window, and a record with no photograph shows as a
+    // grey tile with an emoji in it. Those make the whole directory look
+    // abandoned, so a record earns its place here by having a picture.
+    // image_url is denormalised from the primary image on upload.
+    .not('image_url', 'is', null)
     .order('created_at', { ascending: false })
     .limit(500)
 
