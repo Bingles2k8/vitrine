@@ -70,6 +70,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     { data: activities },
     { data: staff },
     { data: accountEmails },
+    { data: emailOptOuts },
   ] = await Promise.all([
     admin
       .from('museums')
@@ -84,9 +85,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     // applied yet, which only costs us the manual sends in "Last emailed".
     admin
       .from('account_emails')
-      .select('museum_id, sent_at')
+      .select('museum_id, user_id, sent_at')
       .is('error', null)
       .order('sent_at', { ascending: false }),
+    // The opt-out for people with no museum row to carry the flag. Same
+    // tolerance as above: null before the migration, which only means the
+    // button is offered to someone who has opted out and the action refuses.
+    admin.from('account_email_opt_outs').select('user_id'),
   ])
 
   // ── Build lookup maps ──────────────────────────────────────────────
@@ -107,13 +112,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     }
   }
 
-  // Same trick for the email log, which is also already sorted desc.
+  // Same trick for the email log, which is also already sorted desc. Indexed
+  // both ways: owners are found by museum, and an abandoned signup has no
+  // museum id on its rows, so the user index is the only way to reach it.
   const lastLoggedEmailByMuseum = new Map<string, string>()
+  const lastLoggedEmailByUser = new Map<string, string>()
   for (const e of (accountEmails ?? [])) {
     if (e.museum_id && !lastLoggedEmailByMuseum.has(e.museum_id)) {
       lastLoggedEmailByMuseum.set(e.museum_id, e.sent_at)
     }
+    if (e.user_id && !lastLoggedEmailByUser.has(e.user_id)) {
+      lastLoggedEmailByUser.set(e.user_id, e.sent_at)
+    }
   }
+
+  const optedOutUserIds = new Set((emailOptOuts ?? []).map(o => o.user_id))
 
   // "Last emailed" has to span both places a send is recorded: the log written
   // by the nudge button, and the older per-stage flags the reengagement and
@@ -335,7 +348,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <span className="text-[10px] text-gray-300" title="Owner unsubscribed from these emails">opted out</span>
                       ) : owner?.email && variant ? (
                         <NudgeButton
-                          museumId={m.id}
+                          target={{ kind: 'museum', museumId: m.id }}
                           ownerEmail={owner.email}
                           variant={variant}
                           lastEmailedLabel={lastEmailed ? daysAgoLabel(lastEmailed) : null}
@@ -378,6 +391,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </h2>
             <p className="text-xs text-gray-400 mb-4">
               Accounts that never completed onboarding, so no museum was created. Not shown in the stats above.
+              No automated email reaches these people &mdash; the reengagement cron selects from museums, and they have none &mdash;
+              so &ldquo;last emailed&rdquo; here is only ever a nudge sent from this table.
             </p>
 
             <div className="overflow-x-auto rounded-lg border border-gray-200">
@@ -387,12 +402,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     <th className="px-3 py-3">Email</th>
                     <th className="px-3 py-3">Signed up</th>
                     <th className="px-3 py-3">Last login</th>
+                    <th className="px-3 py-3">Last emailed</th>
                     <th className="px-3 py-3 text-center">Email confirmed</th>
+                    <th className="px-3 py-3 text-right">Nudge</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {orphanUsers.map(u => {
                     const confirmed = !!u.email_confirmed_at
+                    const lastEmailed = lastLoggedEmailByUser.get(u.id) ?? null
                     return (
                       <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-3 py-3 text-gray-600 text-xs">{u.email ?? '—'}</td>
@@ -404,10 +422,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                             ? new Date(u.last_sign_in_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                             : <span className="text-gray-300">never signed in</span>}
                         </td>
+                        <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
+                          {lastEmailed
+                            ? <span title={new Date(lastEmailed).toLocaleString('en-GB')}>{daysAgoLabel(lastEmailed)}</span>
+                            : <span className="text-gray-300">never</span>}
+                        </td>
                         <td className="px-3 py-3 text-center text-xs">
                           {confirmed
                             ? <span className="text-gray-500">✓</span>
                             : <span className="text-amber-600">unconfirmed</span>}
+                        </td>
+                        <td className="px-3 py-3 text-right whitespace-nowrap">
+                          {optedOutUserIds.has(u.id) ? (
+                            <span className="text-[10px] text-gray-300" title="Unsubscribed from these emails">opted out</span>
+                          ) : u.email ? (
+                            <NudgeButton
+                              target={{ kind: 'user', userId: u.id }}
+                              ownerEmail={u.email}
+                              variant="no_museum"
+                              lastEmailedLabel={lastEmailed ? daysAgoLabel(lastEmailed) : null}
+                              unconfirmedEmail={!confirmed}
+                            />
+                          ) : null}
                         </td>
                       </tr>
                     )

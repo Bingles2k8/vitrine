@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { signReminderUnsubscribeToken } from '@/lib/emailTokens'
 
 // Daily cron that emails each museum owner a digest of upcoming/overdue
 // compliance dates (condition checks, valuation reviews, insurance renewals,
@@ -12,6 +13,10 @@ import { Resend } from 'resend'
 // sit in the 8–30 day band on any given day, a roughly monthly cadence emerges
 // naturally as items cross the 7-day threshold. Adding a per-row
 // reminder_sent_at flag (as the loan cron has) is a future improvement.
+//
+// Carries an unsubscribe link and honours museums.reminder_opt_out, shared with
+// the overdue-loan cron. A scheduled digest nobody asked for per-send is not
+// essential account mail, so it may not go out without a way to stop it.
 
 export const dynamic = 'force-dynamic'
 
@@ -149,6 +154,7 @@ export async function GET(request: Request) {
     .from('museums')
     .select('id, name, owner_id')
     .in('id', museumIds)
+    .eq('reminder_opt_out', false)
   const museumMap = new Map((museums ?? []).map(m => [m.id, m]))
 
   const ownerIds = Array.from(new Set((museums ?? []).map(m => m.owner_id).filter(Boolean)))
@@ -159,6 +165,7 @@ export async function GET(request: Request) {
   }
 
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
 
   let museumsSent = 0
   let itemsSent = 0
@@ -172,6 +179,8 @@ export async function GET(request: Request) {
 
       const museumItems = items.filter(i => i.museumId === museumId)
       if (museumItems.length === 0) continue
+
+      const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signReminderUnsubscribeToken(museum.id)}`
 
       // Only email when something is urgent (due within 7 days or overdue),
       // otherwise hold off so digests don't go out every single day.
@@ -220,7 +229,11 @@ export async function GET(request: Request) {
           </table>
           <p style="margin-top:20px"><a href="https://vitrinecms.com/dashboard/collections-review" style="color:#b45309">Open your compliance dashboard →</a></p>
           <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
-          <p style="font-size:12px;color:#888">Vitrine — ${esc(museum.name)}</p>
+          <p style="font-size:12px;color:#888">
+            Vitrine — ${esc(museum.name)}<br>
+            <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from reminder emails</a>.
+            This will not affect billing or security notices.
+          </p>
         </div>
       `
 
@@ -230,6 +243,11 @@ export async function GET(request: Request) {
           to: email,
           subject,
           html,
+          headers: {
+            // Lets mail clients surface a native Unsubscribe control.
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         })
         museumsSent++
         itemsSent += museumItems.length

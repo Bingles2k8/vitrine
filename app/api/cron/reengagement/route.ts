@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-import { signUnsubscribeToken } from '@/lib/emailTokens'
+import { signUnsubscribeToken, signUserUnsubscribeToken } from '@/lib/emailTokens'
+import { dueOrphanStage, ORPHAN_KIND, type OrphanStage } from '@/lib/email/reengagementStages'
 
 // Daily cron: re-engagement emails to museum owners, in two tracks keyed off
 // the owner's auth account.
@@ -12,10 +13,21 @@ import { signUnsubscribeToken } from '@/lib/emailTokens'
 //   Track B — came back at least once, then went quiet:
 //     30 days / 180 days after last sign-in  (b30 / b180), then never again
 //
+//   Track C — signed up but never completed onboarding, so has no museum:
+//     day 3 / day 7 / day 30 after signup   (c3 / c7 / c30)
+//
 // An owner is either "returned" or not, so at most one email is due per run.
 // Idempotency via reengage_*_sent_at flags on museums (see
 // supabase/reengagement-emails.sql). Each stage has a 2-day catch window so a
 // missed cron day still fires; the flag stops a second send within the window.
+//
+// Track C is the same shape but keyed to a person rather than a museum, because
+// its recipients have no museum row — that absence is what selects them. Until
+// it existed they received nothing from us at all, since every query in this
+// file started from `museums` and they are in none of them. Its idempotency
+// comes from the account_emails rows the send writes (kind = 'reengage_c3'),
+// which is the same log the admin nudge button uses, so a hand-sent nudge and
+// the automated track can see each other and neither doubles up on the other.
 //
 // SAFETY: sending is gated behind REENGAGEMENT_ENABLED === 'true'. Without it
 // (or with ?dryRun=1) the cron computes and returns who *would* be emailed but
@@ -27,9 +39,10 @@ export const maxDuration = 300
 const DAY = 86_400_000
 const WINDOW = 2 // days; catch window so a missed cron day still fires
 
-type Stage = 'a3' | 'a7' | 'a30' | 'b30' | 'b180'
+type OwnerStage = 'a3' | 'a7' | 'a30' | 'b30' | 'b180'
+type Stage = OwnerStage | OrphanStage
 
-const FLAG: Record<Stage, string> = {
+const FLAG: Record<OwnerStage, string> = {
   a3: 'reengage_a3_sent_at',
   a7: 'reengage_a7_sent_at',
   a30: 'reengage_a30_sent_at',
@@ -83,6 +96,12 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
   const dashboard = `${siteUrl}${dash}`
   const name = esc(museumName || 'your museum')
 
+  // Track C never created a museum — that is the whole reason they are being
+  // written to — so the footer cannot tell them they did.
+  const reason = stage.startsWith('c')
+    ? 'You are receiving this because you created a Vitrine account.'
+    : 'You are receiving this because you created a museum on Vitrine.'
+
   const shell = (subject: string, headline: string, body: string, ctaHref: string, ctaLabel: string) => ({
     subject,
     html: `
@@ -95,7 +114,7 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
       <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
       <p style="font-size:12px;color:#888">
         Vitrine &middot; <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from these emails</a><br>
-        You are receiving this because you created a museum on Vitrine. This is not
+        ${reason} This is not
         an essential account email &mdash; unsubscribing will not affect billing or
         security notices.
       </p>
@@ -139,6 +158,36 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
         dashboard,
         'Open your museum',
       )
+    // Track C: account exists, museum never created. Nothing here may claim
+    // they have a museum, a collection, or anything waiting for them, because
+    // they can click through and see that they do not.
+    case 'c3':
+      return shell(
+        'Finish setting up your Vitrine account',
+        'You are one step from a museum',
+        `<p>You created a Vitrine account a few days ago but did not finish setting your museum up.</p>
+         <p>It is a short form — a name and what you collect — and nothing you choose is permanent.</p>`,
+        dashboard,
+        'Finish setting up',
+      )
+    case 'c7':
+      return shell(
+        'Your Vitrine account is still waiting',
+        'Still here when you are',
+        `<p>It has been a week since you created your Vitrine account. Setting your museum up is the one step left.</p>
+         <p>It takes a minute, and you can change every part of it afterwards.</p>`,
+        dashboard,
+        'Finish setting up',
+      )
+    case 'c30':
+      return shell(
+        'Your Vitrine account',
+        "We've kept your place",
+        `<p>You created a Vitrine account a month ago and never set a museum up. It is still there if you want it.</p>
+         <p>If now isn't a good time, no problem. This is the last email we'll send about it.</p>`,
+        dashboard,
+        'Finish setting up',
+      )
     case 'b180':
       return shell(
         'Checking in one last time',
@@ -170,7 +219,12 @@ export async function GET(request: Request) {
 
   // Owner auth accounts: id -> { email, created_at, last_sign_in_at }.
   // Paginate listUsers so we don't silently cap at one page.
-  const owners = new Map<string, { email: string | null; created_at: string; last_sign_in_at: string | null }>()
+  const owners = new Map<string, {
+    email: string | null
+    created_at: string
+    last_sign_in_at: string | null
+    email_confirmed: boolean
+  }>()
   for (let page = 1; page <= 50; page++) {
     const { data, error } = await service.auth.admin.listUsers({ page, perPage: 1000 })
     if (error || !data?.users?.length) break
@@ -179,6 +233,7 @@ export async function GET(request: Request) {
         email: u.email ?? null,
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at ?? null,
+        email_confirmed: !!u.email_confirmed_at,
       })
     }
     if (data.users.length < 1000) break
@@ -194,7 +249,7 @@ export async function GET(request: Request) {
     .eq('reengage_opt_out', false)
     .limit(5000)
 
-  const counts: Record<Stage, number> = { a3: 0, a7: 0, a30: 0, b30: 0, b180: 0 }
+  const counts: Record<Stage, number> = { a3: 0, a7: 0, a30: 0, b30: 0, b180: 0, c3: 0, c7: 0, c30: 0 }
   const preview: Array<{ stage: Stage; email: string; museum: string | null }> = []
 
   for (const m of museums ?? []) {
@@ -228,12 +283,129 @@ export async function GET(request: Request) {
       })
       await service
         .from('museums')
-        .update({ [FLAG[stage]]: new Date().toISOString() })
+        .update({ [FLAG[stage as OwnerStage]]: new Date().toISOString() })
         .eq('id', m.id)
       counts[stage]++
     } catch (err) {
       console.error(`[reengagement] ${stage} ${m.id}:`, err instanceof Error ? err.message : err)
     }
+  }
+
+  // ── Track C: signed up, never completed onboarding ──────────────────────
+  //
+  // Membership is decided by the absence of a museum, so it needs the FULL set
+  // of owners and staff — not the filtered `museums` query above, which drops
+  // past-due, test and opted-out museums. Using that set would classify their
+  // owners as having no museum and send them the wrong email entirely.
+  const [{ data: allOwners }, { data: allStaff }] = await Promise.all([
+    service.from('museums').select('owner_id').limit(20000),
+    service.from('staff_members').select('user_id').limit(20000),
+  ])
+  const hasMuseum = new Set<string>()
+  for (const m of allOwners ?? []) if (m.owner_id) hasMuseum.add(m.owner_id)
+  for (const st of allStaff ?? []) if (st.user_id) hasMuseum.add(st.user_id)
+
+  const { data: orphanOptOuts } = await service
+    .from('account_email_opt_outs')
+    .select('user_id')
+    .limit(20000)
+  const orphanOptedOut = new Set((orphanOptOuts ?? []).map(o => o.user_id))
+
+  // Every email already sent to a user, of any kind. Two things are read off
+  // it: which stages they have had, and when they were last written to at all.
+  // The second is what stops the cron piling on top of a nudge an admin sent by
+  // hand, which the stage flags alone cannot see. Failed attempts (error not
+  // null) are excluded so a Resend outage does not permanently skip a stage.
+  const { data: orphanLog } = await service
+    .from('account_emails')
+    .select('user_id, kind, sent_at')
+    .is('error', null)
+    .not('user_id', 'is', null)
+    .order('sent_at', { ascending: false })
+    .limit(20000)
+  const sentStages = new Map<string, Set<string>>()
+  const lastEmailed = new Map<string, string>()
+  const orphanKinds = new Set(Object.values(ORPHAN_KIND))
+  for (const row of orphanLog ?? []) {
+    if (!row.user_id) continue
+    // Rows arrive newest-first, so the first seen per user is the latest.
+    if (!lastEmailed.has(row.user_id)) lastEmailed.set(row.user_id, row.sent_at)
+    if (!orphanKinds.has(row.kind)) continue
+    const set = sentStages.get(row.user_id) ?? new Set<string>()
+    set.add(row.kind)
+    sentStages.set(row.user_id, set)
+  }
+
+  for (const [userId, u] of owners) {
+    if (hasMuseum.has(userId) || orphanOptedOut.has(userId)) continue
+    if (!u.email || !u.created_at) continue
+
+    // Never-confirmed addresses are excluded from the automated track. An
+    // unconfirmed address is one nobody has proved they control, so it may be a
+    // typo of a real address belonging to someone who never signed up — and
+    // sending them a scheduled series is both unsolicited mail and a
+    // deliverability risk we take on every run. Tracks A and B cannot hit this
+    // case, since owning a museum means having confirmed. These accounts are
+    // still reachable by hand from /admin, where the confirm dialog says so.
+    if (!u.email_confirmed) continue
+
+    const stage = dueOrphanStage(
+      u.created_at,
+      sentStages.get(userId) ?? new Set(),
+      lastEmailed.get(userId) ?? null,
+    )
+    if (!stage) continue
+
+    if (dryRun) {
+      counts[stage]++
+      if (preview.length < 100) preview.push({ stage, email: u.email, museum: null })
+      continue
+    }
+
+    if (!resend) continue
+
+    const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signUserUnsubscribeToken(userId)}`
+    const { subject, html } = copy(stage, null, siteUrl, unsubscribeUrl)
+
+    let messageId: string | null = null
+    let sendError: string | null = null
+    try {
+      const { data, error } = await resend.emails.send({
+        from: 'Vitrine <noreply@contact.vitrinecms.com>',
+        to: u.email,
+        subject,
+        html,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      })
+      messageId = data?.id ?? null
+      sendError = error ? (error.message ?? String(error)) : null
+    } catch (err) {
+      sendError = err instanceof Error ? err.message : String(err)
+    }
+
+    // The log row IS the idempotency record for this track, so it is written
+    // whatever happened. A row carrying an error does not count as sent, which
+    // is what lets the stage be retried tomorrow inside its catch window.
+    const { error: logError } = await service.from('account_emails').insert({
+      museum_id: null,
+      user_id: userId,
+      recipient: u.email,
+      kind: ORPHAN_KIND[stage],
+      subject,
+      message_id: messageId,
+      error: sendError,
+      sent_by: null,
+    })
+    if (logError) console.error(`[reengagement] ${stage} log ${userId}:`, logError.message)
+
+    if (sendError) {
+      console.error(`[reengagement] ${stage} ${userId}:`, sendError)
+      continue
+    }
+    counts[stage]++
   }
 
   return NextResponse.json({

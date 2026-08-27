@@ -11,7 +11,7 @@ import { cancelSubscription } from '@/lib/billing/cancel'
 import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
 import { sendComplianceEmail } from '@/lib/email/send'
 import { renderNudgeEmail, nudgeVariant, type NudgeVariant } from '@/lib/email/nudge'
-import { signUnsubscribeToken } from '@/lib/emailTokens'
+import { signUnsubscribeToken, signUserUnsubscribeToken } from '@/lib/emailTokens'
 import { Resend } from 'resend'
 
 function adminClient() {
@@ -331,6 +331,7 @@ export async function sendNudgeEmail(museumId: string): Promise<NudgeResult> {
   // row with an error is a clearer record than no row at all.
   const { error: logError } = await admin.from('account_emails').insert({
     museum_id: museumId,
+    user_id: museum.owner_id,
     recipient,
     kind: variant === 'never_returned' ? 'nudge_never_returned' : 'nudge_dormant',
     subject,
@@ -345,6 +346,116 @@ export async function sendNudgeEmail(museumId: string): Promise<NudgeResult> {
 
   if (sendError) return { ok: false, error: sendError }
   return { ok: true, variant, recipient }
+}
+
+/**
+ * Send a nudge to someone who signed up and never completed onboarding.
+ *
+ * The counterpart to `sendNudgeEmail` for the second admin table. It exists
+ * because every other piece of lifecycle email we send is selected from the
+ * `museums` table — the reengagement cron, both deletion crons, and the nudge
+ * button above all start there — so a person who abandoned onboarding before
+ * the museum row was inserted has, until now, never been contactable at all.
+ *
+ * Keyed by user rather than museum throughout: the recipient, the opt-out, the
+ * 24-hour guard and the log row. That is the whole difference; the send, the
+ * logging and the guards otherwise mirror the owner path deliberately, so the
+ * two cannot drift into behaving differently.
+ */
+export async function sendOrphanNudgeEmail(userId: string): Promise<NudgeResult> {
+  const { user } = await assertAdmin()
+  const admin = adminClient()
+
+  const { data: recipientData } = await admin.auth.admin.getUserById(userId)
+  const recipientUser = recipientData?.user
+  const recipient = recipientUser?.email
+  if (!recipientUser || !recipient) return { ok: false, error: 'No such user, or no email address' }
+
+  // Re-checked server-side rather than trusted from the page that rendered the
+  // button. If a museum exists, this is the wrong copy — it would tell someone
+  // with a collection that they never set one up — and the owner nudge above is
+  // the right call instead.
+  const [{ data: owned }, { data: staffOf }] = await Promise.all([
+    admin.from('museums').select('id').eq('owner_id', userId).limit(1),
+    admin.from('staff_members').select('museum_id').eq('user_id', userId).limit(1),
+  ])
+  if (owned?.length || staffOf?.length) {
+    return { ok: false, error: 'This account has a museum — use the nudge in the table above' }
+  }
+
+  const { data: optOut } = await admin
+    .from('account_email_opt_outs')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (optOut) return { ok: false, error: 'This person has unsubscribed from these emails' }
+
+  // Same accident guard as the owner button, counted over this user's rows.
+  const dayAgo = new Date(Date.now() - 86_400_000).toISOString()
+  const { data: recent } = await admin
+    .from('account_emails')
+    .select('sent_at')
+    .eq('user_id', userId)
+    .is('error', null)
+    .gte('sent_at', dayAgo)
+    .limit(1)
+
+  if (recent && recent.length > 0) {
+    return { ok: false, error: 'Already emailed in the last 24 hours' }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return { ok: false, error: 'RESEND_API_KEY is not set' }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
+  const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signUserUnsubscribeToken(userId)}`
+
+  const { subject, html, text } = renderNudgeEmail({
+    variant: 'no_museum',
+    museumName: null,
+    createdAt: recipientUser.created_at,
+    lastSignInAt: recipientUser.last_sign_in_at ?? null,
+    siteUrl,
+    unsubscribeUrl,
+  })
+
+  let messageId: string | null = null
+  let sendError: string | null = null
+  try {
+    const { data, error } = await new Resend(apiKey).emails.send({
+      from: 'Vitrine <noreply@contact.vitrinecms.com>',
+      to: recipient,
+      subject,
+      html,
+      text,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    })
+    messageId = data?.id ?? null
+    sendError = error ? (error.message ?? String(error)) : null
+  } catch (err) {
+    sendError = err instanceof Error ? err.message : String(err)
+  }
+
+  // museum_id stays null: there is no museum, which is the point of the email.
+  const { error: logError } = await admin.from('account_emails').insert({
+    museum_id: null,
+    user_id: userId,
+    recipient,
+    kind: 'nudge_no_museum',
+    subject,
+    message_id: messageId,
+    error: sendError,
+    sent_by: user?.id ?? null,
+  })
+  if (logError) console.error('[admin sendOrphanNudgeEmail] log failed:', logError.message)
+
+  revalidatePath('/admin')
+
+  if (sendError) return { ok: false, error: sendError }
+  return { ok: true, variant: 'no_museum', recipient }
 }
 
 export async function deleteUser(museumId: string) {

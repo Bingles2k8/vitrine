@@ -5,10 +5,13 @@
  * tested without a Resend key or a database, the same split
  * `lib/billing/cancellationEmail.ts` uses.
  *
- * Two variants, chosen by whether the owner ever came back after signing up.
- * The distinction matters: telling someone their collection is waiting for them
- * when they never added anything reads as a mailmerge failure, and asking a
- * long-standing user why they never got started is worse.
+ * Three variants. Two are chosen by whether the owner ever came back after
+ * signing up; the third is for someone who never completed onboarding and so
+ * has no museum at all. The distinctions matter: telling someone their
+ * collection is waiting for them when they never added anything reads as a
+ * mailmerge failure, asking a long-standing user why they never got started is
+ * worse, and promising a museum to someone who never made one is worst of the
+ * three, because they can check.
  *
  * The voice is deliberately flat. This is a reminder that an account exists,
  * not an attempt to start a conversation, so it does not ask for a reply, does
@@ -25,16 +28,19 @@
 
 import { esc } from './send'
 
-export type NudgeVariant = 'never_returned' | 'dormant'
+export type NudgeVariant = 'never_returned' | 'dormant' | 'no_museum'
 
 /** A same-day session is the signup auto-login, so it is not "coming back". */
 const DAY = 86_400_000
 
 /**
- * Which of the two emails suits this owner.
+ * Which of the two owner emails suits this owner.
  *
  * Matches the `returned` test in the reengagement cron so the manual nudge and
  * the automated track never disagree about who is who.
+ *
+ * Owners only. `no_museum` is not reachable from here because it is decided by
+ * the absence of a museum row, not by any date on the account.
  */
 export function nudgeVariant(createdAt: string, lastSignInAt: string | null): NudgeVariant {
   const createdMs = Date.parse(createdAt)
@@ -65,8 +71,9 @@ function daysSince(iso: string | null, now: number): number {
 
 export type NudgeInput = {
   variant: NudgeVariant
+  /** Null for `no_museum`, where there is no museum to name. */
   museumName: string | null
-  /** Owner's signup date, used by the never-returned variant. */
+  /** Signup date, used by the never-returned and no-museum variants. */
   createdAt: string
   /** Owner's last sign-in, used by the dormant variant. */
   lastSignInAt: string | null
@@ -105,7 +112,9 @@ export function renderNudgeEmail(input: NudgeInput): { subject: string; html: st
   const { subject, paragraphs, cta } =
     input.variant === 'never_returned'
       ? neverReturned(describeGap(daysSince(input.createdAt, now)))
-      : dormant(describeGap(daysSince(input.lastSignInAt, now)), name)
+      : input.variant === 'no_museum'
+        ? noMuseum(describeGap(daysSince(input.createdAt, now)))
+        : dormant(describeGap(daysSince(input.lastSignInAt, now)), name)
 
   const para = (p: Para) =>
     `<p style="margin:0 0 16px;font-family:${SANS};font-size:16px;line-height:1.6;color:${C.body}">${p.html}</p>`
@@ -169,6 +178,27 @@ function neverReturned(gap: string) {
     paragraphs: [
       plain(`You set up a museum on Vitrine ${gap} ago and haven't been back since.`),
       plain("It's still set up. You can log back in whenever you want to."),
+    ] as Para[],
+  }
+}
+
+/**
+ * Signed up, never finished onboarding.
+ *
+ * Names no museum and claims no collection, because there is neither. The link
+ * is still /dashboard rather than /onboarding: dashboard is behind the
+ * middleware auth gate, so a logged-out reader is sent to log in first and is
+ * then forwarded to onboarding by the dashboard itself. /onboarding is not
+ * gated, and a logged-out reader landing there would fill the form in and only
+ * discover at the last step that it could not save.
+ */
+function noMuseum(gap: string) {
+  return {
+    subject: 'Your Vitrine account',
+    cta: 'Finish setting up',
+    paragraphs: [
+      plain(`You created a Vitrine account ${gap} ago but never finished setting your museum up.`),
+      plain('The account is still there. Finishing takes a minute, and nothing you enter is final.'),
     ] as Para[],
   }
 }

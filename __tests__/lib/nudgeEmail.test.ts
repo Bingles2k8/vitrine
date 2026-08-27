@@ -112,3 +112,38 @@ describe('renderNudgeEmail', () => {
     }
   })
 })
+
+describe('renderNudgeEmail, no-museum variant', () => {
+  // Someone who abandoned onboarding can go and look. Every claim the other
+  // two variants make about a museum is false for them, so none may appear.
+  const orphan = { ...base, variant: 'no_museum' as const, museumName: null }
+
+  it('dates the signup and never claims they have a museum or a collection', () => {
+    const { subject, html, text } = renderNudgeEmail(orphan)
+    expect(subject).toBe('Your Vitrine account')
+    expect(html).toContain('about 3 months ago')
+    expect(html).not.toMatch(/your collection/i)
+    expect(html).not.toMatch(/still set up/i)
+    expect(text).not.toMatch(/your museum is/i)
+  })
+
+  it('sends them to the dashboard, which is the gate that routes them onward', () => {
+    // Not /onboarding: that page is not behind the auth gate, so a logged-out
+    // reader would fill the form in before discovering it could not save.
+    const { html, text } = renderNudgeEmail(orphan)
+    expect(html).toContain('https://vitrinecms.com/dashboard"')
+    expect(html).toContain('Finish setting up')
+    expect(text).toContain('Finish setting up: https://vitrinecms.com/dashboard')
+  })
+
+  it('ignores a museum name if one is somehow passed', () => {
+    const { subject, html } = renderNudgeEmail({ ...orphan, museumName: 'Whitby Museum' })
+    expect(subject).toBe('Your Vitrine account')
+    expect(html).not.toContain('Whitby Museum')
+  })
+
+  it('still carries the unsubscribe link', () => {
+    const { html } = renderNudgeEmail(orphan)
+    expect(html).toContain(base.unsubscribeUrl)
+  })
+})
