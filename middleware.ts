@@ -10,6 +10,14 @@ const CSRF_EXEMPT_PATHS = new Set([
   '/api/stripe/webhook',   // Stripe server-to-server, verified via signature
   '/api/track-view',       // Public analytics fire-and-forget
   '/api/ticket-checkout',  // Public unauthenticated checkout
+  // One-click unsubscribe (RFC 8058). Mail providers POST here server-to-
+  // server with no Origin header, exactly like the Stripe webhook, so the
+  // same-origin check would 403 every one of them. Safe to exempt for the
+  // same reason: the signed token in the URL is the authentication, and an
+  // attacker who does not have it cannot unsubscribe anyone. GET already
+  // performs this identical state change with no CSRF check at all, so
+  // exempting POST widens nothing.
+  '/api/reengagement/unsubscribe',
 ])
 
 // Dashboard paths accessible while a museum is locked-out (payment wall).
