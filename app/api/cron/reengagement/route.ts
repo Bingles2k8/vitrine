@@ -110,13 +110,12 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
       <p>Hi,</p>
       ${body}
       <p style="margin:24px 0"><a href="${ctaHref}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px">${ctaLabel}</a></p>
-      <p>— The Vitrine team</p>
+      <p>The Vitrine team</p>
       <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
       <p style="font-size:12px;color:#888">
         Vitrine &middot; <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from these emails</a><br>
-        ${reason} This is not
-        an essential account email &mdash; unsubscribing will not affect billing or
-        security notices.
+        ${reason} This is not an essential account email.
+        Unsubscribing will not affect billing or security notices.
       </p>
     </div>`,
   })
@@ -174,7 +173,7 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
       return shell(
         'What are you collecting?',
         'Tell us what you collect',
-        `<p>It is the only question left, and Vitrine shapes itself around the answer — coins, ceramics, watches, records, or something nobody else has thought to catalogue.</p>
+        `<p>It is the only question left, and Vitrine shapes itself around the answer: coins, ceramics, watches, records, or something nobody else has thought to catalogue.</p>
          <p>Name your museum, say what goes in it, and it is yours.</p>`,
         dashboard,
         'Name your museum',
@@ -183,7 +182,7 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
       return shell(
         'Still worth cataloguing',
         "Whatever you collect, it's worth keeping properly",
-        `<p>You started a Vitrine account a month ago. Whatever is on your shelves is still worth recording properly — what it is, where it came from, what it's worth now.</p>
+        `<p>You started a Vitrine account a month ago. Whatever is on your shelves is still worth a proper record of what it is, where it came from, and what it's worth now.</p>
          <p>Your account is here when you want it. This is the last email we'll send about it.</p>`,
         dashboard,
         'Name your museum',
