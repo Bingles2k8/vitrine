@@ -163,30 +163,30 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
     // they can click through and see that they do not.
     case 'c3':
       return shell(
-        'Finish setting up your Vitrine account',
-        'You are one step from a museum',
-        `<p>You created a Vitrine account a few days ago but did not finish setting your museum up.</p>
-         <p>It is a short form — a name and what you collect — and nothing you choose is permanent.</p>`,
+        'Your museum is one step away',
+        'Give your collection a museum of its own',
+        `<p>You started a Vitrine account a few days ago. The good part is next: name your museum and tell us what you collect.</p>
+         <p>From there you get a proper catalogue of everything you own, and a page you can send to anyone who asks about it.</p>`,
         dashboard,
-        'Finish setting up',
+        'Name your museum',
       )
     case 'c7':
       return shell(
-        'Your Vitrine account is still waiting',
-        'Still here when you are',
-        `<p>It has been a week since you created your Vitrine account. Setting your museum up is the one step left.</p>
-         <p>It takes a minute, and you can change every part of it afterwards.</p>`,
+        'What are you collecting?',
+        'Tell us what you collect',
+        `<p>It is the only question left, and Vitrine shapes itself around the answer — coins, ceramics, watches, records, or something nobody else has thought to catalogue.</p>
+         <p>Name your museum, say what goes in it, and it is yours.</p>`,
         dashboard,
-        'Finish setting up',
+        'Name your museum',
       )
     case 'c30':
       return shell(
-        'Your Vitrine account',
-        "We've kept your place",
-        `<p>You created a Vitrine account a month ago and never set a museum up. It is still there if you want it.</p>
-         <p>If now isn't a good time, no problem. This is the last email we'll send about it.</p>`,
+        'Still worth cataloguing',
+        "Whatever you collect, it's worth keeping properly",
+        `<p>You started a Vitrine account a month ago. Whatever is on your shelves is still worth recording properly — what it is, where it came from, what it's worth now.</p>
+         <p>Your account is here when you want it. This is the last email we'll send about it.</p>`,
         dashboard,
-        'Finish setting up',
+        'Name your museum',
       )
     case 'b180':
       return shell(
