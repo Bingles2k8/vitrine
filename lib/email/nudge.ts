@@ -13,10 +13,17 @@
  * worse, and promising a museum to someone who never made one is worst of the
  * three, because they can check.
  *
- * The voice is deliberately flat. This is a reminder that an account exists,
- * not an attempt to start a conversation, so it does not ask for a reply, does
- * not editorialise, and carries no sign-off. Two short sentences and a button
- * is the whole of it, and the button is the only thing being asked for.
+ * Two short sentences and a button is the whole of it, it asks for no reply,
+ * and it carries no sign-off.
+ *
+ * What those two sentences do is offer something, not defend against an
+ * objection. An earlier draft reassured — it takes a minute, nothing is
+ * permanent, everything is as you left it — which answers "will this waste my
+ * time?", a question the reader was not asking. Nobody opens their collection
+ * back up because it would be inexpensive to. They open it because having the
+ * thing they collect properly catalogued is a pleasure. So the second sentence
+ * names that, and the button names the appealing step rather than the
+ * administrative one.
  *
  * Styled to the public site rather than to the plain-text house style the older
  * transactional mail uses: the stone-950 band and amber accent are the same
@@ -177,7 +184,9 @@ function neverReturned(gap: string) {
     cta: 'Open your museum',
     paragraphs: [
       plain(`You set up a museum on Vitrine ${gap} ago and haven't been back since.`),
-      plain("It's still set up. You can log back in whenever you want to."),
+      // Deliberately does not say "your collection" — this reader has not put
+      // anything in yet, and telling them otherwise reads as a mailmerge fault.
+      plain("It's ready when you are. Adding the first piece is when it starts to feel like yours."),
     ] as Para[],
   }
 }
@@ -194,11 +203,11 @@ function neverReturned(gap: string) {
  */
 function noMuseum(gap: string) {
   return {
-    subject: 'Your Vitrine account',
-    cta: 'Finish setting up',
+    subject: 'One step from your museum',
+    cta: 'Name your museum',
     paragraphs: [
-      plain(`You created a Vitrine account ${gap} ago but never finished setting your museum up.`),
-      plain('The account is still there. Finishing takes a minute, and nothing you enter is final.'),
+      plain(`You created a Vitrine account ${gap} ago but never named your museum.`),
+      plain('Whatever you collect, one short step gives it a home of its own.'),
     ] as Para[],
   }
 }
@@ -216,7 +225,9 @@ function dormant(gap: string, museumName: string | null) {
     cta: 'Open your museum',
     paragraphs: [
       opener,
-      plain('Your collection is still there, exactly as you left it.'),
+      // Collectors keep collecting. Asking after what they have picked up since
+      // is warmer than promising them nothing has moved.
+      plain("If you've picked anything up since, there's a place ready for it."),
     ] as Para[],
   }
 }

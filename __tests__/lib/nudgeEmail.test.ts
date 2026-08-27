@@ -44,6 +44,8 @@ describe('renderNudgeEmail', () => {
     expect(subject).toBe('Your Vitrine museum')
     expect(html).toContain('about 3 months ago')
     expect(html).not.toMatch(/your collection/i)
+    // Offers the appeal rather than reassuring about cost or permanence.
+    expect(html).not.toMatch(/takes a minute|nothing is (final|permanent)/i)
   })
 
   it('tells a dormant owner how long it has been, by name', () => {
@@ -120,7 +122,7 @@ describe('renderNudgeEmail, no-museum variant', () => {
 
   it('dates the signup and never claims they have a museum or a collection', () => {
     const { subject, html, text } = renderNudgeEmail(orphan)
-    expect(subject).toBe('Your Vitrine account')
+    expect(subject).toBe('One step from your museum')
     expect(html).toContain('about 3 months ago')
     expect(html).not.toMatch(/your collection/i)
     expect(html).not.toMatch(/still set up/i)
@@ -132,13 +134,13 @@ describe('renderNudgeEmail, no-museum variant', () => {
     // reader would fill the form in before discovering it could not save.
     const { html, text } = renderNudgeEmail(orphan)
     expect(html).toContain('https://vitrinecms.com/dashboard"')
-    expect(html).toContain('Finish setting up')
-    expect(text).toContain('Finish setting up: https://vitrinecms.com/dashboard')
+    expect(html).toContain('Name your museum')
+    expect(text).toContain('Name your museum: https://vitrinecms.com/dashboard')
   })
 
   it('ignores a museum name if one is somehow passed', () => {
     const { subject, html } = renderNudgeEmail({ ...orphan, museumName: 'Whitby Museum' })
-    expect(subject).toBe('Your Vitrine account')
+    expect(subject).toBe('One step from your museum')
     expect(html).not.toContain('Whitby Museum')
   })
 
