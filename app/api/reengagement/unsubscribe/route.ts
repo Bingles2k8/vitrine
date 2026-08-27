@@ -128,7 +128,15 @@ export async function GET(request: Request) {
         ? await service.from('account_email_opt_outs').delete().eq('user_id', userId)
         : await service.from('account_email_opt_outs').upsert({ user_id: userId }, { onConflict: 'user_id' })
 
-  if (error) {
+  // A user token naming an account that no longer exists violates the foreign
+  // key to auth.users, because the opt-out is an INSERT where the museum paths
+  // are an UPDATE that simply matches no rows. That happens for real: someone
+  // deletes their account, then clicks the unsubscribe link in an email still
+  // sitting in their inbox. There is nothing to opt out and never will be, so
+  // the honest answer is the success page, not a 500 telling them we failed.
+  const gone = error?.code === '23503'
+
+  if (error && !gone) {
     return page(
       'Something went wrong',
       `<p>We could not update your preferences just now. Please try again shortly, or reply to any Vitrine email and we will do it for you.</p>`,
