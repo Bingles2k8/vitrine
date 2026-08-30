@@ -201,7 +201,7 @@ export async function GET(request: Request) {
         if (i.objectTitle) subjectBits.push(`${i.emoji ? `${esc(i.emoji)} ` : ''}${esc(i.objectTitle)}`)
         if (i.accession) subjectBits.push(`(${esc(i.accession)})`)
         if (i.detail) subjectBits.push(esc(i.detail))
-        const context = subjectBits.length ? ` — ${subjectBits.join(' ')}` : ''
+        const context = subjectBits.length ? `: ${subjectBits.join(' ')}` : ''
         return `
           <tr>
             <td style="padding:8px 12px;border-bottom:1px solid #eee">
@@ -212,7 +212,7 @@ export async function GET(request: Request) {
           </tr>`
       }).join('')
 
-      const subject = `${museumItems.length} upcoming compliance date${museumItems.length === 1 ? '' : 's'} — ${museum.name}`
+      const subject = `${museumItems.length} upcoming compliance date${museumItems.length === 1 ? '' : 's'} for ${museum.name}`
       const html = `
         <div style="font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:24px;color:#1a1a1a">
           <h2 style="font-style:italic;margin:0 0 12px">Compliance reminders</h2>
@@ -230,7 +230,7 @@ export async function GET(request: Request) {
           <p style="margin-top:20px"><a href="https://vitrinecms.com/dashboard/collections-review" style="color:#b45309">Open your compliance dashboard →</a></p>
           <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
           <p style="font-size:12px;color:#888">
-            Vitrine — ${esc(museum.name)}<br>
+            Vitrine &middot; ${esc(museum.name)}<br>
             <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from reminder emails</a>.
             This will not affect billing or security notices.
           </p>
