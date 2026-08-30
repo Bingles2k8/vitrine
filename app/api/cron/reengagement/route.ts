@@ -123,37 +123,37 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
   switch (stage) {
     case 'a3':
       return shell(
-        'Your Vitrine museum is ready when you are',
-        'Ready to add your first object?',
-        `<p>You set up a museum on Vitrine a few days ago. It's ready for its first object whenever you are.</p>
-         <p>Adding one is quick. Give it a title, a photo, and any details you have. You can edit everything later.</p>`,
+        'The first object is the good one',
+        'Start with one piece',
+        `<p>You set up a museum on Vitrine a few days ago. It comes to life with the first object you put in it.</p>
+         <p>Start with the piece you would show someone first. A title and a photo is enough, and the record grows as you learn more about it.</p>`,
         newObject,
         'Add your first object',
       )
     case 'a7':
       return shell(
-        'Your Vitrine museum is still empty',
-        'A minute is all it takes',
-        `<p>It's been a week since you created your museum, and it's still waiting for its first object.</p>
-         <p>Most people start with one piece. Add a title and a photo, then build from there when you have time.</p>`,
+        'What would you put in it first?',
+        'What goes in first?',
+        `<p>Your museum has been waiting a week for its first object, and the choice of which one is half the fun.</p>
+         <p>Most collectors start with the piece they would show someone first. Give it a title and a photo and you have the beginning of a catalogue you can keep for years.</p>`,
         newObject,
         'Add your first object',
       )
     case 'a30':
       return shell(
-        'Your Vitrine museum is still here',
-        "We've kept your place",
-        `<p>You created a museum on Vitrine a month ago. It's still set up and ready whenever you want to start adding your collection.</p>
-         <p>If now isn't a good time, no problem. Your account will be here when it is.</p>`,
-        dashboard,
-        'Pick up where you left off',
+        'Still worth starting',
+        'Your collection deserves a catalogue',
+        `<p>You set up a museum on Vitrine a month ago and it is still empty. The collection it was made for has not gone anywhere.</p>
+         <p>Add the piece you care most about and the rest can follow. This is the last email we'll send about it.</p>`,
+        newObject,
+        'Add your first object',
       )
     case 'b30':
       return shell(
-        "Your collection's waiting on Vitrine",
-        "It's been a little while",
-        `<p>We haven't seen you at <strong>${name}</strong> for about a month. Your collection is just as you left it.</p>
-         <p>Got a new acquisition to catalogue, or want to look back over what's there? It's all there when you want it.</p>`,
+        'Anything new on the shelves?',
+        'Anything new since you were last in?',
+        `<p>It's been about a month since you were last at <strong>${name}</strong>.</p>
+         <p>If something has come into the collection since, it belongs in the catalogue. And if not, what's already there is worth another look on its own.</p>`,
         dashboard,
         'Open your museum',
       )
@@ -189,13 +189,12 @@ function copy(stage: Stage, museumName: string | null, siteUrl: string, unsubscr
       )
     case 'b180':
       return shell(
-        'Checking in one last time',
-        'Your collection is safe with us',
-        `<p>It's been six months since you last visited <strong>${name}</strong>. This is just a quick check-in, and the last email we'll send about it.</p>
-         <p>Your collection is still here. Log back in any time and it'll be waiting.</p>
-         <p>Thanks for trying Vitrine.</p>`,
+        'Six months of acquisitions?',
+        'Anything you have picked up since?',
+        `<p>It's been six months since you last opened <strong>${name}</strong>. Whatever has come into the collection in that time is not in the catalogue yet.</p>
+         <p>Everything you recorded before is still there. This is the last email we'll send about it, and thanks for trying Vitrine.</p>`,
         dashboard,
-        'Return to your museum',
+        'Open your museum',
       )
   }
 }

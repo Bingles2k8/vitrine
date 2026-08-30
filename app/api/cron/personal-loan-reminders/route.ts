@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     const obj = loan.objects as unknown as { title: string | null; emoji: string | null; accession_no: string | null } | null
     const title = obj?.title || 'your object'
     const unsubscribeUrl = `${siteUrl}/api/reengagement/unsubscribe?token=${signReminderUnsubscribeToken(museum.id)}`
-    const subject = `${obj?.emoji ? `${obj.emoji} ` : ''}${title} is overdue — lent to ${loan.borrower_name}`
+    const subject = `${obj?.emoji ? `${obj.emoji} ` : ''}${title} is overdue: lent to ${loan.borrower_name}`
     const html = `
       <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
         <h2 style="font-style:italic;margin:0 0 12px">Overdue loan reminder</h2>
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
         <p style="margin-top:20px"><a href="https://vitrinecms.com/dashboard/on-loan" style="color:#b45309">Open your loan tracker →</a></p>
         <hr style="border:none;border-top:1px solid #eee;margin-top:28px">
         <p style="font-size:12px;color:#888">
-          Vitrine — ${esc(museum.name)}<br>
+          Vitrine &middot; ${esc(museum.name)}<br>
           <a href="${unsubscribeUrl}" style="color:#888">Unsubscribe from reminder emails</a>.
           This will not affect billing or security notices.
         </p>
