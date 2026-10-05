@@ -209,10 +209,13 @@ export default function PlanPage() {
     }
   }
 
-  async function handleManageSubscription() {
+  /** `changePlan` opens the portal straight on its change-plan screen. */
+  async function handleManageSubscription(changePlan = false) {
     setActionLoading('manage')
     try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const res = await fetch('/api/stripe/portal', changePlan
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ flow: 'update' }) }
+        : { method: 'POST' })
       const data = await readJson(res)
       if (data.url) {
         window.location.href = data.url
@@ -291,7 +294,7 @@ export default function PlanPage() {
                   {trialEndDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 . Cancel anytime from{' '}
-                <button onClick={handleManageSubscription} className="underline hover:no-underline">
+                <button onClick={() => handleManageSubscription()} className="underline hover:no-underline">
                   your billing portal
                 </button>.
               </p>
@@ -340,7 +343,7 @@ export default function PlanPage() {
                 )}
                 You can cancel this change from{' '}
                 <button
-                  onClick={handleManageSubscription}
+                  onClick={() => handleManageSubscription()}
                   className="underline hover:no-underline"
                 >
                   your billing portal
@@ -429,7 +432,7 @@ export default function PlanPage() {
                         {currentPlan !== 'community' && currentPlan !== 'enterprise' && isOwner && (
                           <>
                             <button
-                              onClick={handleManageSubscription}
+                              onClick={() => handleManageSubscription()}
                               disabled={actionLoading !== null}
                               className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
                             >
@@ -477,7 +480,7 @@ export default function PlanPage() {
                       museum?.stripe_subscription_id ? (
                         <>
                           <button
-                            onClick={handleManageSubscription}
+                            onClick={() => handleManageSubscription(true)}
                             disabled={actionLoading !== null}
                             className="w-full text-xs font-mono py-2 rounded bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 transition-colors disabled:opacity-50"
                           >
