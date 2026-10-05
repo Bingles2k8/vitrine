@@ -2,7 +2,7 @@ import { type LegalDoc, textItems } from './types'
 
 export const privacyDoc: LegalDoc = {
   title: 'Privacy Policy',
-  updated: 'Last updated: August 2026',
+  updated: 'Last updated: October 2026',
   sections: [
     {
       heading: 'Who we are',
@@ -104,7 +104,7 @@ export const privacyDoc: LegalDoc = {
           content: [
             { text: 'If your subscription ends', strong: true },
             {
-              text: ', nothing is deleted straight away. Your account becomes read-only and your public site stops being visible, but your records are kept so that you can come back or take a copy with you. We keep them for 180 days if you have previously paid, or 30 days if you only ever used a free trial. We email you 30 days and again 7 days before anything is removed. You can download a complete copy of your collection at any point during that window.',
+              text: ', nothing is deleted straight away. Your account becomes read-only and your public site stops being visible, but your records are kept so that you can come back or take a copy with you. We keep them for 180 days if you have previously paid, or 30 days if you only ever used a free trial. We email you 30 days and again 7 days before anything is removed. You can download a complete copy of your collection at any point during that window. These periods apply while Vitrine is still running. If it shuts down, see "Keeping your own backups" below.',
             },
           ],
         },
@@ -139,6 +139,29 @@ export const privacyDoc: LegalDoc = {
           content: [
             {
               text: 'We keep these records under Article 6(1)(c), legal obligation, and Article 6(1)(f), legitimate interests. UK consumer subscription law requires us to give you certain notices and rights, and to be able to demonstrate that we did. Six years matches the limitation period for a contract claim in England and Wales. Because these records are kept to meet a legal obligation, a request to erase them is one of the limited cases where we may not be able to comply, though you can still ask us for a copy of what they contain.',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: 'Keeping your own backups',
+      blocks: [
+        {
+          kind: 'p',
+          content: [
+            {
+              text: 'The retention and notice periods above describe what we aim to do while Vitrine is operating normally. They are not a guarantee. If Vitrine shuts down, including if Composition Limited stops trading or becomes insolvent, we may not be able to keep your data for those periods or email you before it is deleted. Data stored on our servers is subject to deletion without notice, and may also be lost or become inaccessible through technical failure or other causes, as set out in our ',
+            },
+            { text: 'Terms of Service', siteHref: '/terms' },
+            { text: '.' },
+          ],
+        },
+        {
+          kind: 'p',
+          content: [
+            {
+              text: 'We recommend that you keep your own backups of your collection data somewhere other than Vitrine, alongside your use of the service. "Export my data" in Settings downloads a copy of your records at any time. It does not include the image and document files you have uploaded, so please keep your own copies of those as well.',
             },
           ],
         },
