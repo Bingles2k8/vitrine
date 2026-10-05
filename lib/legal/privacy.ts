@@ -104,7 +104,7 @@ export const privacyDoc: LegalDoc = {
           content: [
             { text: 'If your subscription ends', strong: true },
             {
-              text: ', nothing is deleted straight away. Your account becomes read-only and your public site stops being visible, but your records are kept so that you can come back or take a copy with you. We keep them for 180 days if you have previously paid, or 30 days if you only ever used a free trial. We email you 30 days and again 7 days before anything is removed. You can download a complete copy of your collection at any point during that window.',
+              text: ', nothing is deleted straight away. Your account becomes read-only and your public site stops being visible, but your records are kept so that you can come back or take a copy with you. We keep them for 180 days if you have previously paid, or 30 days if you only ever used a free trial. We email you 30 days and again 7 days before anything is removed. You can download a complete copy of your collection at any point during that window. These periods apply while Vitrine is still running. If it shuts down, see "Keeping your own backups" below.',
             },
           ],
         },
@@ -151,7 +151,7 @@ export const privacyDoc: LegalDoc = {
           kind: 'p',
           content: [
             {
-              text: 'The retention periods above describe what we aim to do, not a guarantee. Data stored on our servers is subject to deletion without notice, and may be lost or become inaccessible through technical failure or other causes, as set out in our ',
+              text: 'The retention and notice periods above describe what we aim to do while Vitrine is operating normally. They are not a guarantee. If Vitrine shuts down, including if Composition Limited stops trading or becomes insolvent, we may not be able to keep your data for those periods or email you before it is deleted. Data stored on our servers is subject to deletion without notice, and may also be lost or become inaccessible through technical failure or other causes, as set out in our ',
             },
             { text: 'Terms of Service', siteHref: '/terms' },
             { text: '.' },

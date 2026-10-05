@@ -95,7 +95,16 @@ export const termsDoc: LegalDoc = {
             },
             { text: 'Privacy Policy', siteHref: '/privacy' },
             {
-              text: ', but we do not guarantee that any data will be retained for any period. Your data may be deleted, lost, corrupted, or become inaccessible at any time and without warning, whether through technical failure, a security incident, account suspension or termination, discontinuation of the service, or any other cause.',
+              text: ', but we do not guarantee that any data will be retained for any period. Your data may be deleted, lost, corrupted, or become inaccessible at any time and without warning, whether through technical failure, a security incident, account suspension or termination, or any other cause.',
+            },
+          ],
+        },
+        {
+          kind: 'p',
+          content: [
+            { text: 'If Vitrine shuts down', strong: true },
+            {
+              text: ', the same applies. We may discontinue Vitrine, in whole or in part, at any time, including if Composition Limited stops trading or becomes insolvent. We will try to give you notice and a chance to export your data where we reasonably can, but we may not be able to. In that event the retention and notice periods described in our Privacy Policy, including how long we keep data after a subscription ends and the emails we send before deleting it, may not be honoured, and your data may be permanently deleted without notice.',
             },
           ],
         },
