@@ -30,6 +30,16 @@ vi.mock('resend', () => ({
   },
 }))
 
+// The overage measurement queries the database in ways this mock client does
+// not model; it has its own tests in __tests__/lib/downgrade.test.ts.
+const { mockMeasureOverage } = vi.hoisted(() => ({ mockMeasureOverage: vi.fn() }))
+vi.mock('@/lib/billing/downgrade', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/billing/downgrade')>()),
+  measureOverage: mockMeasureOverage,
+}))
+
+const NO_OVERAGE = { objects: 0, images: 0, files: 0, fileBytes: 0, staff: 0, shareLinks: 0 }
+
 // Mock the Supabase client — configured per-test via mockSupabaseClient
 let mockSupabaseClient: ReturnType<typeof makeMockClient>
 vi.mock('@supabase/supabase-js', () => ({
@@ -151,6 +161,7 @@ describe('POST /api/stripe/webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSupabaseClient = makeMockClient()
+    mockMeasureOverage.mockResolvedValue(NO_OVERAGE)
   })
 
   // ── Signature validation ──────────────────────────────────────────────────
@@ -235,9 +246,9 @@ describe('POST /api/stripe/webhook', () => {
 
   // ── subscription.deleted ─────────────────────────────────────────────────
 
-  it('locks museum with 180-day window when ex-paying customer cancels', async () => {
+  it('moves an ex-paying customer to Community without locking anything', async () => {
     mockSupabaseClient = makeMockClient([
-      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: null, ever_paid: true }, error: null },
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: true }, error: null },
     ])
     constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
@@ -249,20 +260,23 @@ describe('POST /api/stripe/webhook', () => {
     const updates = mockSupabaseClient.getUpdatesFor('museums')
     expect(updates).toHaveLength(1)
     expect(updates[0]).toMatchObject({
-      lock_reason: 'subscription_ended',
+      plan: 'community',
+      ui_mode: 'simple',
       stripe_subscription_id: null,
       payment_past_due: false,
+      locked_at: null,
+      lock_reason: null,
+      read_only_until: null,
+      scheduled_deletion_at: null,
+      // Nothing over Community's limits, so nothing is scheduled for deletion.
+      over_limit_purge_at: null,
     })
-    expect(updates[0].locked_at).toBeTruthy()
-    // ~180 days in the future (allow a few seconds of test drift)
-    const deleteAt = new Date(updates[0].scheduled_deletion_at as string).getTime()
-    const expected = Date.now() + 180 * 24 * 60 * 60 * 1000
-    expect(Math.abs(deleteAt - expected)).toBeLessThan(60_000)
   })
 
-  it('locks museum with 30-day window when trial-only user cancels without ever paying', async () => {
+  it('schedules over-limit data for deletion 180 days out for an ex-paying customer, and says what', async () => {
+    mockMeasureOverage.mockResolvedValue({ ...NO_OVERAGE, objects: 40, staff: 2 })
     mockSupabaseClient = makeMockClient([
-      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: null, ever_paid: false }, error: null },
+      { data: { id: 'museum-uuid', name: 'Test Museum', slug: 't', owner_id: 'owner-1', ever_paid: true }, error: null },
     ])
     constructEvent.mockReturnValue({
       type: 'customer.subscription.deleted',
@@ -272,10 +286,73 @@ describe('POST /api/stripe/webhook', () => {
     await POST(makeRequest({}))
 
     const updates = mockSupabaseClient.getUpdatesFor('museums')
-    expect(updates[0]).toMatchObject({ lock_reason: 'trial_expired' })
-    const deleteAt = new Date(updates[0].scheduled_deletion_at as string).getTime()
-    const expected = Date.now() + 30 * 24 * 60 * 60 * 1000
-    expect(Math.abs(deleteAt - expected)).toBeLessThan(60_000)
+    const purgeAt = new Date(updates[0].over_limit_purge_at as string).getTime()
+    expect(Math.abs(purgeAt - (Date.now() + 180 * 24 * 60 * 60 * 1000))).toBeLessThan(60_000)
+    expect(updates[0].purge_warning_30d_sent_at).toBeNull()
+
+    expect(mockEmailSend).toHaveBeenCalledTimes(1)
+    const email = mockEmailSend.mock.calls[0][0]
+    expect(email.to).toBe('owner@example.org')
+    expect(email.html).toContain('40 objects')
+    expect(email.html).toContain('2 staff accounts')
+    expect(email.html).toMatch(/permanently deleted on/)
+  })
+
+  it('uses a 30 day window for a trial that ended without paying', async () => {
+    mockMeasureOverage.mockResolvedValue({ ...NO_OVERAGE, files: 3, fileBytes: 1024 })
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: false }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: { object: makeSub() },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates[0]).toMatchObject({ plan: 'community', locked_at: null })
+    const purgeAt = new Date(updates[0].over_limit_purge_at as string).getTime()
+    expect(Math.abs(purgeAt - (Date.now() + 30 * 24 * 60 * 60 * 1000))).toBeLessThan(60_000)
+    expect(mockEmailSend.mock.calls[0][0].html).toMatch(/free trial/)
+  })
+
+  it('still downgrades, and schedules the purge to re-measure, if measuring fails', async () => {
+    mockMeasureOverage.mockRejectedValue(new Error('db down'))
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: true }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: { object: makeSub() },
+    } as unknown as Stripe.Event)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates[0]).toMatchObject({ plan: 'community' })
+    expect(updates[0].over_limit_purge_at).toBeTruthy()
+    expect(mockEmailSend.mock.calls[0][0].html).toMatch(/Anything over Community/)
+  })
+
+  it('cancels a scheduled purge when the customer resubscribes', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid' }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.created',
+      data: { object: makeSub() },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    expect(mockSupabaseClient.getUpdatesFor('museums')[0]).toMatchObject({
+      plan: 'professional',
+      over_limit_purge_at: null,
+      purge_warning_30d_sent_at: null,
+      purge_warning_7d_sent_at: null,
+    })
   })
 
   // ── subscription.created (trial + unlock) ─────────────────────────────────

@@ -9,6 +9,7 @@ import { stripe } from '@/lib/stripe'
 import { r2, r2PathFromUrl, DeleteObjectsCommand, ListObjectsV2Command } from '@/lib/r2'
 import { cancelSubscription } from '@/lib/billing/cancel'
 import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
+import { tryDescribeOverage } from '@/lib/billing/downgrade'
 import { sendComplianceEmail } from '@/lib/email/send'
 import { renderNudgeEmail, nudgeVariant, type NudgeVariant } from '@/lib/email/nudge'
 import { signUnsubscribeToken, signUserUnsubscribeToken } from '@/lib/emailTokens'
@@ -216,6 +217,7 @@ export async function cancelSubscriptionForCustomer(
       effectiveAt: result.effectiveAt,
       mode: result.mode,
       retentionDays: result.retentionDays,
+      overageLines: await tryDescribeOverage(admin, museumId),
       refundAmount: result.refundAmount,
       currency: result.currency,
       initiatedBy: 'support',

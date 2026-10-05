@@ -14,6 +14,8 @@ interface ShellMuseum {
   slug?: string | null
   plan?: string | null
   payment_past_due?: boolean | null
+  /** Set while data over Community's limits is waiting to be deleted. */
+  over_limit_purge_at?: string | null
 }
 
 interface DashboardShellProps {
@@ -150,6 +152,19 @@ export default function DashboardShell({
           <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <span>Your last payment failed. Please update your payment method to keep your plan active.</span>
             <a href="/dashboard/plan" className="underline font-medium whitespace-nowrap">Update billing →</a>
+          </div>
+        )}
+        {museum?.over_limit_purge_at && (
+          <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>
+              Your museum is on the free Community plan. Anything over Community&apos;s limits will be
+              permanently deleted on{' '}
+              <strong>
+                {new Date(museum.over_limit_purge_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </strong>
+              , newest first, unless you resubscribe.
+            </span>
+            <a href="/dashboard/plan" className="underline font-medium whitespace-nowrap">See what and resubscribe →</a>
           </div>
         )}
         <DashboardProvider value={{ museum, pathname, isShallow }}>

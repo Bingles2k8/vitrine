@@ -2,7 +2,7 @@ import { type LegalDoc, textItems } from './types'
 
 export const privacyDoc: LegalDoc = {
   title: 'Privacy Policy',
-  updated: 'Last updated: August 2026',
+  updated: 'Last updated: October 2026',
   sections: [
     {
       heading: 'Who we are',
@@ -104,7 +104,7 @@ export const privacyDoc: LegalDoc = {
           content: [
             { text: 'If your subscription ends', strong: true },
             {
-              text: ', nothing is deleted straight away. Your account becomes read-only and your public site stops being visible, but your records are kept so that you can come back or take a copy with you. We keep them for 180 days if you have previously paid, or 30 days if you only ever used a free trial. We email you 30 days and again 7 days before anything is removed. You can download a complete copy of your collection at any point during that window.',
+              text: ', your museum moves to the free Community plan and nothing is deleted straight away. Your account and public site stay available. Anything over the Community plan\'s limits (objects beyond the limit, extra photos, documents, staff accounts and private share links) is kept for 180 days if you have previously paid, or 30 days if you only ever used a free trial, so that you can come back or take a copy with you. After that it is permanently deleted, most recently added first. We email you before that happens, 30 days and again 7 days beforehand where the window allows. Everything within Community\'s limits is kept for as long as your account is active. You can download a complete copy of your collection at any time.',
             },
           ],
         },

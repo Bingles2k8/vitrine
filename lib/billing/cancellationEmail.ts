@@ -12,14 +12,21 @@
 
 import { esc } from '@/lib/email/send'
 import { formatBillingDate } from './coolingOff'
+import { communityLimitsSummary } from './downgrade'
 
 export type CancellationEmailInput = {
   museumName: string | null
   /** When service actually ends. */
   effectiveAt: string
   mode: 'period_end' | 'immediate'
-  /** Days the collection is retained after service ends. */
+  /** Days data over Community's limits is kept after service ends. */
   retentionDays: number
+  /**
+   * What is over Community's limits right now, from describeOverage. Empty
+   * when everything fits. Omitted when it could not be measured, in which case
+   * the email states the limits instead.
+   */
+  overageLines?: string[]
   /** Smallest currency unit. Zero when no refund is due. */
   refundAmount?: number
   currency?: string | null
@@ -45,7 +52,7 @@ export function renderCancellationEmail(input: CancellationEmailInput): {
 
   const opening =
     input.mode === 'immediate'
-      ? `Your subscription has been cancelled and access ended on ${esc(date)}.`
+      ? `Your subscription has been cancelled and your paid plan ended on ${esc(date)}.`
       : `Your subscription has been cancelled. You keep full access until ${esc(date)}, which is the end of the period you have already paid for. You will not be charged again.`
 
   const refundLine =
@@ -68,13 +75,17 @@ export function renderCancellationEmail(input: CancellationEmailInput): {
 
   <h2 style="font-size:16px;margin:24px 0 8px">What happens to your collection</h2>
 
-  <p style="margin:0 0 16px">Nothing is deleted when your subscription ends. The records for ${esc(name)} are kept for <strong>${input.retentionDays} days</strong> after ${esc(date)}, including every image and document you have uploaded. Your public site stops being visible during that time, and you will not be able to add or edit records, but nothing is lost.</p>
+  <p style="margin:0 0 16px">${
+    input.mode === 'immediate'
+      ? `${esc(name)} has moved to the free Community plan.`
+      : `When your subscription ends on ${esc(date)}, ${esc(name)} moves to the free Community plan.`
+  } Your dashboard and public site stay online, and nothing is deleted that day.</p>
 
-  <p style="margin:0 0 16px">We will email you before anything is removed, twice: 30 days before and again 7 days before. If you resubscribe at any point in that window, everything comes back exactly as you left it.</p>
+  ${overageSection(input)}
 
   <h2 style="font-size:16px;margin:24px 0 8px">Taking your data with you</h2>
 
-  <p style="margin:0 0 16px">You can download a complete copy at any time, now or during the retention window. It is a single ZIP file containing every record as a spreadsheet, plus all of your images and documents in their original quality.</p>
+  <p style="margin:0 0 16px">You can download a complete copy at any time, now or after your plan ends. It is a single ZIP file containing every record as a spreadsheet, plus all of your images and documents in their original quality.</p>
 
   <p style="margin:0 0 24px"><a href="${esc(exportUrl)}" style="display:inline-block;background:#292524;color:#fafaf9;padding:10px 18px;border-radius:6px;text-decoration:none">Download your collection</a></p>
 
@@ -86,6 +97,20 @@ export function renderCancellationEmail(input: CancellationEmailInput): {
 </div>`
 
   return { subject, html }
+}
+
+/** What is over Community's limits, and when it goes. */
+function overageSection(input: CancellationEmailInput): string {
+  const lines = input.overageLines
+  if (lines && lines.length === 0) {
+    return `<p style="margin:0 0 16px">Everything you have fits within Community's limits, so nothing will be deleted.</p>`
+  }
+  const what = lines
+    ? `<p style="margin:0 0 16px">Community has lower limits than your current plan. Right now this is over them:</p>
+  <ul style="margin:0 0 16px;padding-left:20px">${lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>`
+    : `<p style="margin:0 0 16px">Community has lower limits than your current plan. ${esc(communityLimitsSummary())}.</p>`
+  return `${what}
+  <p style="margin:0 0 16px">Anything still over those limits <strong>${input.retentionDays} days</strong> after your plan ends is permanently deleted, starting with what was added most recently. We will email you before that happens. If you resubscribe at any point before then, nothing is deleted.</p>`
 }
 
 /** Format a Stripe minor-unit amount for display. */

@@ -41,7 +41,7 @@ type Report = {
   skipped: number
   failed: Array<{ subscription: string; type: string; error: string }>
   reconciled: string[]
-  lockedAfterReadOnly: string[]
+  clearedReadOnly: string[]
   staleStripeCustomers: string[]
   purged?: Array<{ table_name: string; rows_deleted: number }>
   reconcileError?: string
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     skipped: 0,
     failed: [],
     reconciled: [],
-    lockedAfterReadOnly: [],
+    clearedReadOnly: [],
     staleStripeCustomers: [],
   }
 
@@ -203,31 +203,22 @@ export async function GET(request: Request) {
     }
   }
 
-  // ---- Pass 3: close expired read-only windows ---------------------------
-  // A cooling-off cancellation leaves the account read-only rather than locked.
-  // When that window closes the normal payment wall applies. Nothing else
-  // performs this transition, so without it an account would stay read-only
-  // until deletion.
+  // ---- Pass 3: clear expired read-only windows ---------------------------
+  // A cooling-off cancellation used to leave the account read-only and then
+  // lock it when the window closed. Subscription end now moves the museum to
+  // Community instead (lib/billing/downgrade.ts) and nothing sets
+  // read_only_until any more, so this only tidies up a row left over from the
+  // old policy. It never locks anyone.
   if (!dryRun) {
     const { data: expired } = await service
       .from('museums')
-      .select('id, ever_paid')
+      .select('id')
       .not('read_only_until', 'is', null)
       .lt('read_only_until', now.toISOString())
-      // A museum that resubscribed inside its window is a paying customer and
-      // must not be locked when the stale window runs out.
-      .is('stripe_subscription_id', null)
 
     for (const museum of expired ?? []) {
-      await service
-        .from('museums')
-        .update({
-          read_only_until: null,
-          locked_at: now.toISOString(),
-          lock_reason: museum.ever_paid ? 'subscription_ended' : 'trial_expired',
-        })
-        .eq('id', museum.id)
-      report.lockedAfterReadOnly.push(museum.id)
+      await service.from('museums').update({ read_only_until: null }).eq('id', museum.id)
+      report.clearedReadOnly.push(museum.id)
     }
   }
 

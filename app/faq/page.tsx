@@ -137,7 +137,7 @@ const faqs: { question: string; answer: string; display?: React.ReactNode }[] = 
   {
     question: 'What happens to my data if I cancel?',
     answer:
-      'You can export all your data as CSV before cancelling. After cancellation, your account and data are retained for 30 days, during which you can reactivate. After 30 days, data is permanently deleted in accordance with our privacy policy.',
+      'When your subscription ends your museum moves to the free Community plan and stays online. Anything over Community\'s limits is kept for 180 days (30 if you only used a free trial) and then deleted, most recently added first, unless you resubscribe. You can download a full copy of your collection at any time.',
   },
   {
     question: 'Do you offer discounts for non-profit organisations?',

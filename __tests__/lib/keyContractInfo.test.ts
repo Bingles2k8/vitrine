@@ -7,6 +7,7 @@ import {
 } from '@/lib/billing/keyContractInfo'
 import { renderPreContractEmail } from '@/lib/billing/preContractEmail'
 import { VAT_REGISTERED } from '@/lib/billing/config'
+import { PLANS } from '@/lib/plans'
 
 const start = new Date('2026-08-11T10:00:00.000Z')
 
@@ -203,5 +204,23 @@ describe('the email carries the same facts as the panel', () => {
     })
     expect(html).not.toContain('—')
     expect(subject).not.toContain('—')
+  })
+})
+
+describe('what happens to the collection on cancelling', () => {
+  // The wording names Community's limits. It must not drift from the limits
+  // that are actually enforced and purged against.
+  it('states Community’s real limits and the downgrade, not a lockout', () => {
+    const value = valueFor(build().terms, 'What happens to your collection if you cancel')
+    expect(value).toMatch(/free Community plan/)
+    expect(value).toContain(`${PLANS.community.objects} objects`)
+    expect(value).toContain(`${PLANS.community.imagesPerObject} photo per object`)
+    expect(PLANS.community.documentStorageMb).toBe(0)
+    expect(value).toContain('no document storage')
+    expect(PLANS.community.staff).toBe(1)
+    expect(value).toContain('no staff accounts besides the owner')
+    expect(PLANS.community.shareLinks).toBe(0)
+    expect(value).toContain('no share links')
+    expect(value).not.toMatch(/read-only|locked/i)
   })
 })

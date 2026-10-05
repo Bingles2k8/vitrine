@@ -279,6 +279,16 @@ margin.
 
 ### 1.10 Lockout and retention as they stand
 
+> **Superseded 5 October 2026.** Subscription end no longer locks the museum. It moves
+> to Community straight away and stays online; anything over Community's limits is kept
+> for 180 days (ever paid) or 30 (trial only), with reminders at 30 and 7 days, and is
+> then deleted newest first by the account-deletion cron unless the customer
+> resubscribes. Read-only cooling-off windows are no longer set. See
+> [lib/billing/downgrade.ts](lib/billing/downgrade.ts) and
+> [supabase/community-downgrade-2026-10-05.sql](supabase/community-downgrade-2026-10-05.sql).
+> The key contract information was re-versioned to `2026-10-05.1` for the new wording.
+
+
 `customer.subscription.deleted` locks the museum rather than deleting it. Middleware
 ([middleware.ts:148](middleware.ts:148)) redirects every dashboard path except
 `/dashboard/billing-required` for a locked museum, and the public site 404s. Retention is 180

@@ -6,6 +6,18 @@ import { generateTicketCode } from '@/lib/ticket-utils'
 import { syncSubscriptionToMirror } from '@/lib/billing/syncSubscription'
 import { sendPreContractNotice } from '@/lib/billing/sendPreContractNotice'
 import { reconcileSubscriptionRefund } from '@/lib/billing/reconcileRefund'
+import {
+  CANCEL_PURGE_FIELDS,
+  communityLimitsSummary,
+  describeOverage,
+  downgradeUpdate,
+  hasOverage,
+  measureOverage,
+  purgeDate,
+  retentionDays,
+} from '@/lib/billing/downgrade'
+import { renderDowngradeEmail } from '@/lib/billing/downgradeEmail'
+import { sendComplianceEmail } from '@/lib/email/send'
 import { Resend } from 'resend'
 import type Stripe from 'stripe'
 
@@ -72,6 +84,8 @@ export async function POST(request: Request) {
           scheduled_deletion_at: null,
           deletion_warning_30d_sent_at: null,
           deletion_warning_7d_sent_at: null,
+          // Paying again: nothing over the old Community limits is deleted.
+          ...CANCEL_PURGE_FIELDS,
         }
         // Record trial usage once, on the first trialing subscription.
         if (subscription.status === 'trialing' && subscription.trial_end) {
@@ -182,89 +196,58 @@ export async function POST(request: Request) {
       .maybeSingle()
     if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
 
-    // Determine deletion window: ex-customers get 180 days; trial-only users
-    // who never converted get 30 days.
+    // The museum drops to Community straight away: dashboard and public site
+    // stay up, nothing is locked and nothing is deleted today. Whatever is over
+    // Community's limits is kept for 180 days (ever paid) or 30 (trial only)
+    // and then removed newest first by the account-deletion cron, unless they
+    // resubscribe first. See lib/billing/downgrade.ts.
     const everPaid = verifiedDeletedMuseum.ever_paid === true
-    const windowDays = everPaid ? 180 : 30
-    const lockReason: 'subscription_ended' | 'trial_expired' =
-      everPaid ? 'subscription_ended' : 'trial_expired'
+    const windowDays = retentionDays(everPaid)
     const now = new Date()
-    const deleteAt = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000)
 
-    // If this ended inside a cooling-off window, the account goes read-only for
-    // the remainder of that window rather than straight to the payment wall.
-    // The collection stays browsable and exportable; writes are refused. When
-    // the window closes the notices cron applies the normal lockout.
-    //
-    // Retention and the deletion date are unaffected: the customer still gets
-    // their 30 or 180 days, and read-only sits at the front of it.
-    const { data: mirrorForLock } = await supabase
-      .from('subscriptions')
-      .select('cooling_off_ends_at')
-      .eq('stripe_subscription_id', subscription.id)
-      .maybeSingle()
-
-    const coolingOffEndsAt = mirrorForLock?.cooling_off_ends_at
-      ? new Date(mirrorForLock.cooling_off_ends_at)
-      : null
-    const stillCoolingOff = coolingOffEndsAt !== null && coolingOffEndsAt.getTime() > now.getTime()
+    // Measuring failing must not stop the downgrade. Schedule the purge anyway:
+    // it re-measures on the day and removes nothing if nothing is over.
+    let overageLines: string[]
+    let isOver: boolean
+    try {
+      const overage = await measureOverage(supabase, museumId)
+      overageLines = describeOverage(overage)
+      isOver = hasOverage(overage)
+    } catch (err) {
+      console.error('[webhook] could not measure overage:', err instanceof Error ? err.message : err)
+      overageLines = [communityLimitsSummary()]
+      isOver = true
+    }
+    const purgeAt = isOver ? purgeDate(now, windowDays) : null
 
     await supabase
       .from('museums')
-      .update({
-        locked_at: stillCoolingOff ? null : now.toISOString(),
-        read_only_until: stillCoolingOff ? coolingOffEndsAt.toISOString() : null,
-        lock_reason: lockReason,
-        scheduled_deletion_at: deleteAt.toISOString(),
-        stripe_subscription_id: null,
-        pending_downgrade_plan: null,
-        pending_downgrade_date: null,
-        payment_past_due: false,
-        deletion_warning_30d_sent_at: null,
-        deletion_warning_7d_sent_at: null,
-      })
+      .update(downgradeUpdate({ now, purgeAt, retentionDays: windowDays }))
       .eq('id', museumId)
 
     await supabase.from('activity_log').insert({
       museum_id: museumId,
-      action_type: 'account_locked',
-      description: `Account locked (${lockReason}). Scheduled for deletion on ${deleteAt.toISOString().slice(0, 10)}.`,
+      action_type: 'plan_downgraded',
+      description: purgeAt
+        ? `${everPaid ? 'Subscription' : 'Trial'} ended. Moved to Community. Data over Community's limits will be deleted on ${purgeAt.toISOString().slice(0, 10)} unless they resubscribe.`
+        : `${everPaid ? 'Subscription' : 'Trial'} ended. Moved to Community. Nothing is over Community's limits.`,
     })
 
-    // Notify owner that they're in the lockout window
     let ownerEmail: string | null = null
     if (verifiedDeletedMuseum.owner_id) {
       const { data: ownerUser } = await supabase.auth.admin.getUserById(verifiedDeletedMuseum.owner_id)
       ownerEmail = ownerUser?.user?.email ?? null
     }
-    if (ownerEmail && process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
-      const museumName = verifiedDeletedMuseum.name ?? 'Your museum'
-      const deleteAtFormatted = deleteAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-      const headline = everPaid
-        ? `Your Vitrine subscription has ended`
-        : `Your Vitrine trial has ended`
-      const body = everPaid
-        ? `<p>Your subscription for <strong>${esc(museumName)}</strong> has been cancelled. Your public site is now offline and your dashboard is locked.</p>
-           <p>You have <strong>180 days</strong> to resubscribe before your collection is permanently deleted. If you don't resubscribe, all your data will be removed on <strong>${esc(deleteAtFormatted)}</strong>.</p>`
-        : `<p>Your trial for <strong>${esc(museumName)}</strong> has ended without a subscription. Your public site is now offline and your dashboard is locked.</p>
-           <p>You have <strong>30 days</strong> to subscribe before your collection is permanently deleted. If you don't, all your data will be removed on <strong>${esc(deleteAtFormatted)}</strong>.</p>`
-      await resend.emails.send({
-        from: 'Vitrine <noreply@contact.vitrinecms.com>',
-        to: ownerEmail,
-        subject: `${museumName}: account locked — ${everPaid ? 'resubscribe' : 'subscribe'} to restore access`,
-        html: `
-          <p>Hi,</p>
-          <h2 style="font-style:italic">${headline}</h2>
-          ${body}
-          <p style="margin-top:24px">
-            <a href="${siteUrl}/dashboard/plan" style="background:#000;color:#fff;padding:10px 18px;text-decoration:none;border-radius:4px">Resubscribe now →</a>
-          </p>
-          <p style="color:#666;font-size:13px;margin-top:16px">You can also <a href="${siteUrl}/dashboard/billing-required" style="color:#666">export your data</a> at any time before deletion.</p>
-          <p>— The Vitrine team</p>
-        `,
-      }).catch(err => console.error('[webhook] lockout email failed:', err instanceof Error ? err.message : err))
+    if (ownerEmail) {
+      const { subject, html } = renderDowngradeEmail({
+        museumName: verifiedDeletedMuseum.name ?? null,
+        trialOnly: !everPaid,
+        overageLines: purgeAt ? overageLines : [],
+        purgeAt: purgeAt?.toISOString() ?? null,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com',
+      })
+      const sent = await sendComplianceEmail({ to: ownerEmail, subject, html })
+      if (sent.error) console.error('[webhook] downgrade email failed:', sent.error)
     }
   }
 
@@ -362,6 +345,7 @@ export async function POST(request: Request) {
             scheduled_deletion_at: null,
             deletion_warning_30d_sent_at: null,
             deletion_warning_7d_sent_at: null,
+            ...CANCEL_PURGE_FIELDS,
           })
           .eq('id', museumId)
           .eq('stripe_customer_id', customerId)

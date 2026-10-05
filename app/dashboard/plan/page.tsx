@@ -13,6 +13,7 @@ import { formatSize } from '@/lib/formatSize'
 import DashboardTopBar from '@/components/DashboardTopBar'
 import CancelSubscription from '@/components/billing/CancelSubscription'
 import PreCheckoutDialog from '@/components/billing/PreCheckoutDialog'
+import { retentionDays } from '@/lib/billing/config'
 
 const CHECK = '✓'
 const CROSS = '—'
@@ -88,6 +89,8 @@ export default function PlanPage() {
   const [staffCount, setStaffCount] = useState(0)
   const [storageUsedBytes, setStorageUsedBytes] = useState(0)
   const [currency, setCurrency] = useState<ReturnType<typeof readCurrencyCookie>>('GBP')
+  // What is over Community's limits, while a deletion is scheduled.
+  const [overageLines, setOverageLines] = useState<string[] | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -131,6 +134,13 @@ export default function PlanPage() {
       }
 
       setLoading(false)
+
+      if (museum.over_limit_purge_at && isOwner) {
+        fetch('/api/subscription/downgrade-preview')
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => setOverageLines(data?.lines ?? null))
+          .catch(() => {})
+      }
 
       // If returning from a successful checkout but the webhook hasn't fired yet,
       // poll until the plan updates in the database (race condition with Stripe webhooks).
@@ -287,6 +297,31 @@ export default function PlanPage() {
               </p>
             </div>
           )}
+          {museum?.over_limit_purge_at && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+              <p className="font-mono">
+                Your museum moved to the free Community plan when your subscription ended. Unless you
+                resubscribe, anything over Community&apos;s limits will be permanently deleted on{' '}
+                <span className="font-medium">
+                  {new Date(museum.over_limit_purge_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+                , most recently added first.
+              </p>
+              {overageLines && overageLines.length > 0 && (
+                <ul className="list-disc pl-5 mt-2 space-y-0.5" data-testid="plan-overage">
+                  {overageLines.map(line => <li key={line}>{line}</li>)}
+                </ul>
+              )}
+              {overageLines && overageLines.length === 0 && (
+                <p className="mt-2">You are now within Community&apos;s limits, so nothing will be deleted.</p>
+              )}
+              <p className="mt-2">
+                To keep it, choose a plan below. You can also{' '}
+                <a href="/api/account/export" className="underline hover:no-underline">download a full copy</a>{' '}
+                of your collection.
+              </p>
+            </div>
+          )}
           {museum?.pending_downgrade_plan && (
             <div className="mb-6 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
               <p className="text-sm text-amber-700 dark:text-amber-300 font-mono">
@@ -299,7 +334,11 @@ export default function PlanPage() {
                     day: 'numeric', month: 'long', year: 'numeric'
                   })}</>
                 )}
-                .{' '}You can cancel this change from{' '}
+                .{' '}
+                {museum.pending_downgrade_plan === 'community' && (
+                  <>Anything over Community&apos;s limits will be deleted {retentionDays(!!museum.ever_paid)} days after that, newest first, unless you resubscribe.{' '}</>
+                )}
+                You can cancel this change from{' '}
                 <button
                   onClick={handleManageSubscription}
                   className="underline hover:no-underline"
@@ -418,17 +457,19 @@ export default function PlanPage() {
                         Contact us →
                       </a>
                     ) : id === 'community' ? (
-                      currentPlan !== 'community' && isOwner && !lapsed ? (
+                      // Moving to Community is cancelling. It goes through the
+                      // in-app dialogue, which says exactly what is over
+                      // Community's limits and when it would be deleted.
+                      currentPlan !== 'community' && isOwner && !lapsed
+                        && museum?.stripe_subscription_id && museum?.pending_downgrade_plan !== 'community' ? (
                         <>
-                          <button
-                            onClick={handleManageSubscription}
-                            disabled={actionLoading !== null}
-                            className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50"
-                          >
-                            {actionLoading === 'manage' ? 'Redirecting…' : 'Downgrade'}
-                          </button>
+                          <CancelSubscription
+                            museumId={museum.id}
+                            triggerLabel="Downgrade to Community"
+                            onCancelled={() => router.refresh()}
+                          />
                           <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
-                            Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                            Takes effect at the end of your billing period. Anything over Community&apos;s limits is deleted {retentionDays(!!museum.ever_paid)} days later, newest first, unless you resubscribe.
                           </p>
                         </>
                       ) : null
@@ -444,7 +485,7 @@ export default function PlanPage() {
                           </button>
                           {isDowngrade && (
                             <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
-                              Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                              Takes effect at the end of your billing period. You will not be able to add more than this plan allows.
                             </p>
                           )}
                         </>
@@ -479,7 +520,7 @@ export default function PlanPage() {
                           </button>
                           {isDowngrade && (
                             <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-1 text-center leading-relaxed">
-                              Takes effect at end of billing cycle. Please ensure your account meets this plan&apos;s limits or excess data may be removed without warning.
+                              Takes effect at the end of your billing period. You will not be able to add more than this plan allows.
                             </p>
                           )}
                         </>

@@ -48,3 +48,15 @@ export const VAT_REGISTERED = false
  * that a notice or a refund can state which right is being exercised.
  */
 export type CoolingOffReason = 'initial' | 'trial_conversion' | 'renewal'
+
+/**
+ * Days data over Community's limits is kept after a subscription ends, before
+ * the account-deletion cron removes it: 180 if the museum ever paid, 30 if it
+ * only ever trialled. See lib/billing/downgrade.ts.
+ *
+ * Lives here rather than in downgrade.ts because client components show it,
+ * and downgrade.ts pulls in the R2 client.
+ */
+export function retentionDays(everPaid: boolean): number {
+  return everPaid ? 180 : 30
+}

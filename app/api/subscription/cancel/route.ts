@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { createClient } from '@supabase/supabase-js'
 import { createServerSideClient } from '@/lib/supabase-server'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
 import { cancelSubscription } from '@/lib/billing/cancel'
 import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
+import { tryDescribeOverage } from '@/lib/billing/downgrade'
 import { sendComplianceEmail } from '@/lib/email/send'
 
 /**
@@ -71,12 +73,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
+  // What will be over Community's limits once the plan ends, so the customer
+  // is told specifically what is at risk and not just the general rule.
+  const overageLines = await tryDescribeOverage(
+    createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+    museum.id
+  )
+
   if (result.customerEmail) {
     const { subject, html } = renderCancellationEmail({
       museumName: result.museumName,
       effectiveAt: result.effectiveAt,
       mode: result.mode,
       retentionDays: result.retentionDays,
+      overageLines,
       refundAmount: result.refundAmount,
       currency: result.currency,
       initiatedBy: 'self_serve',
@@ -95,5 +105,6 @@ export async function POST(request: Request) {
     refundAmount: result.refundAmount,
     currency: result.currency,
     retentionDays: result.retentionDays,
+    overageLines: overageLines ?? null,
   })
 }

@@ -23,4 +23,20 @@ export function r2PathFromUrl(bucket: string, url: string): string {
   return url.replace(`${PUBLIC_URLS[bucket]}/`, '')
 }
 
+/**
+ * Which bucket a stored public URL points into, and its key there. Null for a
+ * URL that is not one of ours (an external image link, say), which callers
+ * must leave alone rather than guess at.
+ */
+export function r2Locate(url: string | null | undefined): { bucket: string; key: string } | null {
+  if (!url) return null
+  for (const [bucket, base] of Object.entries(PUBLIC_URLS)) {
+    if (base && url.startsWith(`${base}/`)) {
+      const key = url.slice(base.length + 1)
+      return key ? { bucket, key } : null
+    }
+  }
+  return null
+}
+
 export { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand }

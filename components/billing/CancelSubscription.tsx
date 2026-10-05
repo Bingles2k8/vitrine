@@ -37,11 +37,23 @@ type Props = {
   museumId: string
   /** Called after a successful cancellation so the page can refresh. */
   onCancelled?: () => void
+  /** Trigger text. The Community card uses "Downgrade to Community". */
+  triggerLabel?: string
 }
 
-export default function CancelSubscription({ museumId, onCancelled }: Props) {
+/** From /api/subscription/downgrade-preview. */
+type Preview = {
+  /** What is over Community's limits. Null if it could not be measured. */
+  lines: string[] | null
+  /** Community's limits in one line, for when `lines` is null. */
+  limits: string
+  retentionDays: number
+}
+
+export default function CancelSubscription({ museumId, onCancelled, triggerLabel = 'Cancel subscription' }: Props) {
   const [open, setOpen] = useState(false)
   const [mirror, setMirror] = useState<MirrorRow | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null)
   const [mode, setMode] = useState<'period_end' | 'immediate'>('period_end')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +70,10 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setMirror(data as MirrorRow | null))
+    fetch('/api/subscription/downgrade-preview')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => setPreview(data as Preview | null))
+      .catch(() => setPreview(null))
   }, [open, museumId])
 
   const window_ =
@@ -95,12 +111,12 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
       <div className="rounded border border-stone-200 dark:border-stone-700 p-4 text-sm">
         <p className="text-stone-700 dark:text-stone-300">
           {done.mode === 'immediate'
-            ? 'Your subscription has been cancelled and access has ended.'
-            : `Your subscription has been cancelled. You keep full access until ${formatBillingDate(done.effectiveAt)}.`}
+            ? 'Your subscription has been cancelled and your museum is now on the free Community plan.'
+            : `Your subscription has been cancelled. You keep full access until ${formatBillingDate(done.effectiveAt)}, then move to the free Community plan.`}
         </p>
         <p className="text-stone-500 dark:text-stone-400 mt-2">
-          We have emailed you a confirmation, including how to download a copy of your collection.
-          Nothing has been deleted.
+          We have emailed you a confirmation, including what is over Community&apos;s limits and how
+          to download a copy of your collection. Nothing has been deleted.
         </p>
       </div>
     )
@@ -114,7 +130,7 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
         data-testid="cancel-subscription-trigger"
         className="w-full text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
       >
-        Cancel subscription
+        {triggerLabel}
       </button>
 
       {open && (
@@ -156,7 +172,7 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
                     selected={mode === 'immediate'}
                     onSelect={() => setMode('immediate')}
                     title="Cancel now and get a refund"
-                    body="Access ends today and we refund the part of this period you have not used. The refund goes back to the card you paid with."
+                    body="Your paid plan ends today and your museum moves to the free Community plan. We refund the part of this period you have not used, to the card you paid with."
                   />
                 </div>
               </>
@@ -168,10 +184,7 @@ export default function CancelSubscription({ museumId, onCancelled }: Props) {
               </p>
             )}
 
-            <p className="text-sm text-stone-500 dark:text-stone-400 mt-4">
-              Your collection is not deleted. Everything is kept, and you can download a full copy
-              at any time. We will email you a confirmation.
-            </p>
+            <DowngradeNotice preview={preview} />
 
             {error && (
               <p className="text-sm text-red-600 dark:text-red-400 mt-4" role="alert">
@@ -225,5 +238,49 @@ function ChoiceCard({
         {body}
       </span>
     </button>
+  )
+}
+
+/**
+ * What happens to the collection when the plan ends. Specific when the
+ * overage could be measured, the general limits when it could not. Stated as
+ * plain facts: this is information the customer is owed before cancelling,
+ * not a reason to stay.
+ */
+function DowngradeNotice({ preview }: { preview: Preview | null }) {
+  const days = preview?.retentionDays ?? 180
+  const lines = preview?.lines
+
+  return (
+    <div className="text-sm text-stone-600 dark:text-stone-400 mt-4 space-y-2">
+      <p>
+        When your plan ends, your museum moves to the free Community plan. Your dashboard and
+        public site stay online.
+      </p>
+      {lines && lines.length === 0 ? (
+        <p>Everything you have fits within Community&apos;s limits, so nothing will be deleted.</p>
+      ) : (
+        <>
+          {lines ? (
+            <>
+              <p>This is over Community&apos;s limits:</p>
+              <ul className="list-disc pl-5 space-y-0.5" data-testid="downgrade-overage">
+                {lines.map(line => <li key={line}>{line}</li>)}
+              </ul>
+            </>
+          ) : (
+            <p>{preview?.limits ?? 'Community has lower limits than your current plan.'}</p>
+          )}
+          <p>
+            Anything still over those limits {days} days after your plan ends is permanently deleted,
+            most recently added first. Resubscribe before then and nothing is deleted.
+          </p>
+        </>
+      )}
+      <p className="text-stone-500 dark:text-stone-400">
+        You can download a full copy of your collection at any time from Settings. We will email you
+        a confirmation.
+      </p>
+    </div>
   )
 }

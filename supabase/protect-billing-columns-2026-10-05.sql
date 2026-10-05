@@ -19,6 +19,9 @@
 -- On INSERT the only plan a client may create a museum on is 'community',
 -- which is what onboarding already does. Checkout upgrades it via the webhook.
 --
+-- Requires community-downgrade-2026-10-05.sql (over_limit_purge_at and the
+-- purge_warning_* columns) to be applied first.
+--
 -- Deploy note: app/api/stripe/checkout/route.ts must write stripe_customer_id
 -- through the service role before this is applied, or checkout will fail for
 -- museums without a Stripe customer yet.
@@ -46,6 +49,7 @@ BEGIN
       OR NEW.lock_reason IS NOT NULL
       OR NEW.read_only_until IS NOT NULL
       OR NEW.scheduled_deletion_at IS NOT NULL
+      OR NEW.over_limit_purge_at IS NOT NULL
       OR NEW.is_test_account IS DISTINCT FROM false
     THEN
       RAISE EXCEPTION 'New museums start on the community plan. Billing fields are set by the server.'
@@ -68,6 +72,9 @@ BEGIN
     OR NEW.scheduled_deletion_at IS DISTINCT FROM OLD.scheduled_deletion_at
     OR NEW.deletion_warning_30d_sent_at IS DISTINCT FROM OLD.deletion_warning_30d_sent_at
     OR NEW.deletion_warning_7d_sent_at IS DISTINCT FROM OLD.deletion_warning_7d_sent_at
+    OR NEW.over_limit_purge_at IS DISTINCT FROM OLD.over_limit_purge_at
+    OR NEW.purge_warning_30d_sent_at IS DISTINCT FROM OLD.purge_warning_30d_sent_at
+    OR NEW.purge_warning_7d_sent_at IS DISTINCT FROM OLD.purge_warning_7d_sent_at
     OR NEW.is_test_account IS DISTINCT FROM OLD.is_test_account
   THEN
     RAISE EXCEPTION 'Billing fields on museums can only be changed by the server.'
