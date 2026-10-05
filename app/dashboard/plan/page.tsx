@@ -134,15 +134,17 @@ export default function PlanPage() {
 
       // If returning from a successful checkout but the webhook hasn't fired yet,
       // poll until the plan updates in the database (race condition with Stripe webhooks).
-      // Note: if webhook already fired before page loaded, museum.plan will already be updated
-      // and we skip polling — show "Subscription activated!" immediately.
-      if (checkoutParam === 'success' && museum.plan === 'community') {
+      // Note: if webhook already fired before page loaded, the subscription id is already
+      // set and we skip polling — show "Subscription activated!" immediately. Keyed on the
+      // subscription rather than the plan, because a resubscribing customer's plan was
+      // never reset to community and would otherwise read as activated straight away.
+      if (checkoutParam === 'success' && !museum.stripe_subscription_id) {
         setPollingForPlan(true)
         pollAttemptsRef.current = 0
         pollIntervalRef.current = setInterval(async () => {
           pollAttemptsRef.current++
           const polledResult = await getMuseumForUser(supabase)
-          if (polledResult && polledResult.museum.plan !== 'community') {
+          if (polledResult?.museum.stripe_subscription_id) {
             clearInterval(pollIntervalRef.current!)
             setMuseum(polledResult.museum)
             setPollingForPlan(false)
@@ -231,6 +233,10 @@ export default function PlanPage() {
   }
 
   const currentPlan = museum?.plan || 'community'
+  // A cancelled subscription or expired trial leaves museums.plan on the old
+  // tier. That tier is not current: the customer must be able to subscribe to
+  // it again, and there is nothing left to manage, downgrade or cancel.
+  const lapsed = !!museum?.lock_reason && !museum?.stripe_subscription_id
   const trialEndDate = museum?.trial_used_at ? new Date(museum.trial_used_at) : null
   const isTrialing = !!trialEndDate && trialEndDate.getTime() > Date.now()
   const trialEligible = !!museum
@@ -325,8 +331,12 @@ export default function PlanPage() {
 
           <div className="mb-8">
             <p className="text-sm text-stone-500 dark:text-stone-400">
-              You are currently on the <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> plan.
-              {currentPlan === 'community' ? (
+              {lapsed ? (
+                <>Your <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> subscription has ended. Choose a plan below to restore access.</>
+              ) : (
+                <>You are currently on the <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> plan.</>
+              )}
+              {lapsed ? null : currentPlan === 'community' ? (
                 <span> Upgrade to unlock more features and higher collection limits.</span>
               ) : currentPlan !== 'enterprise' ? (
                 <span> Manage your subscription or switch plans below.</span>
@@ -337,10 +347,10 @@ export default function PlanPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             {PLAN_ORDER.map(id => {
               const p = PLANS[id]
-              const isCurrent = currentPlan === id
+              const isCurrent = currentPlan === id && !lapsed
               const isComingSoon = p.comingSoon
               const isPendingTarget = museum?.pending_downgrade_plan === id
-              const isDowngrade = PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan as PlanId)
+              const isDowngrade = !lapsed && PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan as PlanId)
 
               return (
                 <div
@@ -408,7 +418,7 @@ export default function PlanPage() {
                         Contact us →
                       </a>
                     ) : id === 'community' ? (
-                      currentPlan !== 'community' && isOwner ? (
+                      currentPlan !== 'community' && isOwner && !lapsed ? (
                         <>
                           <button
                             onClick={handleManageSubscription}

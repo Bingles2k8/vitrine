@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerSideClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import { stripe, STRIPE_PRICE_MAP } from '@/lib/stripe'
 import { stripeCheckoutSchema, parseBody } from '@/lib/validations'
 import { apiLimiter, rateLimit } from '@/lib/rate-limit'
@@ -57,7 +58,14 @@ export async function POST(request: Request) {
       metadata: { museum_id: museum.id, supabase_user_id: user.id },
     })
     customerId = customer.id
-    await supabase
+    // Billing columns on museums are server-managed: a trigger refuses writes
+    // to them from the user's own session, so this goes through the service
+    // role. Ownership was established by the owner_id lookup above.
+    const service = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    await service
       .from('museums')
       .update({ stripe_customer_id: customerId })
       .eq('id', museum.id)
@@ -82,6 +90,10 @@ export async function POST(request: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${siteUrl}/dashboard/plan?checkout=success`,
     cancel_url: `${siteUrl}/dashboard/plan?checkout=cancelled`,
+    // Read by the webhook's checkout.session.completed fallback. Stripe does
+    // not copy subscription_data.metadata onto the session, so without this
+    // the fallback never had a museum or plan to activate.
+    metadata: { museum_id: museum.id, plan_id: planId },
     subscription_data: {
       metadata: { museum_id: museum.id, plan_id: planId },
       ...(wantsTrial ? { trial_period_days: 30 } : {}),

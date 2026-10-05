@@ -135,11 +135,15 @@ export async function middleware(request: NextRequest) {
   // a hole in than a guard repeated across fifty handlers.
   //
   // Reads pass through untouched, as does the export route, since the whole
-  // point is that the customer can still get their data out.
+  // point is that the customer can still get their data out. Checkout and the
+  // billing portal pass too: the refusal below tells the customer to
+  // resubscribe, so the resubscribe request itself has to get through.
   if (
     pathname.startsWith('/api/') &&
     ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
     !pathname.startsWith('/api/stripe/webhook') &&
+    !pathname.startsWith('/api/stripe/checkout') &&
+    !pathname.startsWith('/api/stripe/portal') &&
     !pathname.startsWith('/api/cron/') &&
     !pathname.startsWith('/api/account/export') &&
     !pathname.startsWith('/api/subscription/') &&

@@ -214,6 +214,9 @@ export async function GET(request: Request) {
       .select('id, ever_paid')
       .not('read_only_until', 'is', null)
       .lt('read_only_until', now.toISOString())
+      // A museum that resubscribed inside its window is a paying customer and
+      // must not be locked when the stale window runs out.
+      .is('stripe_subscription_id', null)
 
     for (const museum of expired ?? []) {
       await service

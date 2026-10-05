@@ -312,10 +312,72 @@ describe('POST /api/stripe/webhook', () => {
     expect(updates[0]).toMatchObject({
       locked_at: null,
       lock_reason: null,
+      read_only_until: null,
       scheduled_deletion_at: null,
       deletion_warning_30d_sent_at: null,
       deletion_warning_7d_sent_at: null,
     })
+  })
+
+  // ── checkout.session.completed (subscription fallback) ───────────────────
+
+  function makeSubscriptionSession(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'cs_test',
+      mode: 'subscription',
+      payment_status: 'paid',
+      subscription: 'sub_test',
+      customer: 'cus_test',
+      metadata: { museum_id: 'museum-uuid', plan_id: 'hobbyist' },
+      ...overrides,
+    }
+  }
+
+  it('activates the plan and clears lockout on subscription checkout completion', async () => {
+    constructEvent.mockReturnValue({
+      type: 'checkout.session.completed',
+      data: { object: makeSubscriptionSession() },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates).toHaveLength(1)
+    expect(updates[0]).toMatchObject({
+      plan: 'hobbyist',
+      ui_mode: 'simple',
+      stripe_subscription_id: 'sub_test',
+      locked_at: null,
+      lock_reason: null,
+      read_only_until: null,
+    })
+  })
+
+  it('activates a trial checkout, which Stripe reports as no_payment_required', async () => {
+    constructEvent.mockReturnValue({
+      type: 'checkout.session.completed',
+      data: {
+        object: makeSubscriptionSession({
+          payment_status: 'no_payment_required',
+          metadata: { museum_id: 'museum-uuid', plan_id: 'professional' },
+        }),
+      },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    expect(mockSupabaseClient.getUpdatesFor('museums')[0]).toMatchObject({ plan: 'professional' })
+  })
+
+  it('does not activate a subscription checkout whose payment has not cleared', async () => {
+    constructEvent.mockReturnValue({
+      type: 'checkout.session.completed',
+      data: { object: makeSubscriptionSession({ payment_status: 'unpaid' }) },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    expect(mockSupabaseClient.getUpdatesFor('museums')).toHaveLength(0)
   })
 
   // ── invoice.payment_failed ───────────────────────────────────────────────

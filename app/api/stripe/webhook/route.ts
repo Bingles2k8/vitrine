@@ -63,9 +63,12 @@ export async function POST(request: Request) {
           stripe_subscription_id: subscription.id,
           pending_downgrade_plan: null,
           pending_downgrade_date: null,
-          // Clear any lockout state — they've (re)subscribed
+          // Clear any lockout state — they've (re)subscribed. read_only_until
+          // must go too: left set, middleware keeps refusing every write, and
+          // the notices cron locks the museum when the old window expires.
           locked_at: null,
           lock_reason: null,
+          read_only_until: null,
           scheduled_deletion_at: null,
           deletion_warning_30d_sent_at: null,
           deletion_warning_7d_sent_at: null,
@@ -339,7 +342,11 @@ export async function POST(request: Request) {
         ? session.customer
         : (session.customer as Stripe.Customer)?.id
 
-      if (planId && planId in PLANS && subscriptionId && customerId && museumId) {
+      // 'unpaid' means a delayed payment method has not cleared yet. Leave
+      // activation to customer.subscription.updated once it does.
+      const paid = session.payment_status !== 'unpaid'
+
+      if (paid && planId && planId in PLANS && subscriptionId && customerId && museumId) {
         await supabase
           .from('museums')
           .update({
@@ -351,6 +358,7 @@ export async function POST(request: Request) {
             // Clear any lockout state — checkout completion unlocks
             locked_at: null,
             lock_reason: null,
+            read_only_until: null,
             scheduled_deletion_at: null,
             deletion_warning_30d_sent_at: null,
             deletion_warning_7d_sent_at: null,
