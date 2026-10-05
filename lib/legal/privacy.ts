@@ -2,7 +2,7 @@ import { type LegalDoc, textItems } from './types'
 
 export const privacyDoc: LegalDoc = {
   title: 'Privacy Policy',
-  updated: 'Last updated: August 2026',
+  updated: 'Last updated: October 2026',
   sections: [
     {
       heading: 'Who we are',
@@ -139,6 +139,29 @@ export const privacyDoc: LegalDoc = {
           content: [
             {
               text: 'We keep these records under Article 6(1)(c), legal obligation, and Article 6(1)(f), legitimate interests. UK consumer subscription law requires us to give you certain notices and rights, and to be able to demonstrate that we did. Six years matches the limitation period for a contract claim in England and Wales. Because these records are kept to meet a legal obligation, a request to erase them is one of the limited cases where we may not be able to comply, though you can still ask us for a copy of what they contain.',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: 'Keeping your own backups',
+      blocks: [
+        {
+          kind: 'p',
+          content: [
+            {
+              text: 'The retention periods above describe what we aim to do, not a guarantee. Data stored on our servers is subject to deletion without notice, and may be lost or become inaccessible through technical failure or other causes, as set out in our ',
+            },
+            { text: 'Terms of Service', siteHref: '/terms' },
+            { text: '.' },
+          ],
+        },
+        {
+          kind: 'p',
+          content: [
+            {
+              text: 'We recommend that you keep your own backups of your collection data somewhere other than Vitrine, alongside your use of the service. "Export my data" in Settings downloads a copy of your records at any time. It does not include the image and document files you have uploaded, so please keep your own copies of those as well.',
             },
           ],
         },

@@ -2,7 +2,7 @@ import { type LegalDoc, textItems } from './types'
 
 export const termsDoc: LegalDoc = {
   title: 'Terms of Service',
-  updated: 'Last updated: March 2026',
+  updated: 'Last updated: October 2026',
   sections: [
     {
       heading: '1. The service',
@@ -84,7 +84,33 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '6. Service availability',
+      heading: '6. Data deletion and backups',
+      blocks: [
+        {
+          kind: 'p',
+          content: [
+            { text: 'Data stored on our servers is subject to deletion without notice.', strong: true },
+            {
+              text: ' We aim to follow the retention and notice periods described in our ',
+            },
+            { text: 'Privacy Policy', siteHref: '/privacy' },
+            {
+              text: ', but we do not guarantee that any data will be retained for any period. Your data may be deleted, lost, corrupted, or become inaccessible at any time and without warning, whether through technical failure, a security incident, account suspension or termination, discontinuation of the service, or any other cause.',
+            },
+          ],
+        },
+        {
+          kind: 'p',
+          content: [
+            {
+              text: 'We strongly recommend that you keep your own up-to-date backups of your collection records, images, and documents somewhere other than Vitrine, alongside your use of the service. "Export my data" in Settings downloads a copy of your records at any time, but it does not include the image and document files you have uploaded, so please keep your own copies of those as well. You are solely responsible for maintaining independent backups of your data, and Vitrine should not be relied on as the only copy of it.',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      heading: '7. Service availability',
       blocks: [
         {
           kind: 'p',
@@ -97,7 +123,7 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '7. Beta and pre-release software',
+      heading: '8. Beta and pre-release software',
       blocks: [
         {
           kind: 'p',
@@ -110,7 +136,7 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '8. Disclaimer of warranties and limitation of liability',
+      heading: '9. Disclaimer of warranties and limitation of liability',
       blocks: [
         {
           kind: 'p',
@@ -128,18 +154,10 @@ export const termsDoc: LegalDoc = {
             },
           ],
         },
-        {
-          kind: 'p',
-          content: [
-            {
-              text: 'We do not guarantee that data stored on Vitrine will be retained indefinitely. Data may be lost, corrupted, or become inaccessible due to technical failure, account termination, or service discontinuation. You are solely responsible for maintaining independent backups of your collection data.',
-            },
-          ],
-        },
       ],
     },
     {
-      heading: '9. Termination',
+      heading: '10. Termination',
       blocks: [
         {
           kind: 'p',
@@ -152,7 +170,7 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '10. Dispute resolution and mandatory binding arbitration',
+      heading: '11. Dispute resolution and mandatory binding arbitration',
       blocks: [
         {
           kind: 'p',
@@ -189,7 +207,7 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '11. Governing law',
+      heading: '12. Governing law',
       blocks: [
         {
           kind: 'p',
@@ -202,7 +220,7 @@ export const termsDoc: LegalDoc = {
       ],
     },
     {
-      heading: '12. Contact',
+      heading: '13. Contact',
       blocks: [
         {
           kind: 'p',
