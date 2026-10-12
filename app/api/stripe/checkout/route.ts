@@ -24,11 +24,20 @@ export async function POST(request: Request) {
 
   const { data: museum } = await supabase
     .from('museums')
-    .select('id, stripe_customer_id, stripe_subscription_id, owner_id, trial_used_at, ever_paid')
+    .select('id, stripe_customer_id, stripe_subscription_id, owner_id, trial_used_at, ever_paid, complimentary_plan')
     .eq('owner_id', user.id)
     .maybeSingle()
 
   if (!museum) return NextResponse.json({ error: 'Museum not found' }, { status: 404 })
+
+  // A complimentary plan is changed by us, not by subscribing on top of it.
+  // Otherwise they would start paying for something they already get free.
+  if (museum.complimentary_plan) {
+    return NextResponse.json(
+      { error: 'Your museum is on a complimentary plan. Get in touch if you would like to change it.' },
+      { status: 400 }
+    )
+  }
 
   // Already has an active subscription — use the portal to change plans
   if (museum.stripe_subscription_id) {

@@ -17,6 +17,7 @@ import {
   retentionDays,
 } from '@/lib/billing/downgrade'
 import { renderDowngradeEmail } from '@/lib/billing/downgradeEmail'
+import { grantComplimentaryUpdate, isComplimentaryPlan } from '@/lib/billing/complimentary'
 import { sendComplianceEmail } from '@/lib/email/send'
 import { Resend } from 'resend'
 import type Stripe from 'stripe'
@@ -190,11 +191,32 @@ export async function POST(request: Request) {
 
     const { data: verifiedDeletedMuseum } = await supabase
       .from('museums')
-      .select('id, name, slug, owner_id, ever_paid')
+      .select('id, name, slug, owner_id, ever_paid, complimentary_plan')
       .eq('id', museumId)
       .eq('stripe_customer_id', deletedCustomerId)
       .maybeSingle()
     if (!verifiedDeletedMuseum) return NextResponse.json({ received: true })
+
+    // A museum we gave a plan to free never drops below it. Checkout refuses
+    // complimentary museums, so this only matters if a subscription was made
+    // some other way (by hand in Stripe, or before the plan was granted).
+    if (isComplimentaryPlan(verifiedDeletedMuseum.complimentary_plan)) {
+      await supabase
+        .from('museums')
+        .update({ ...grantComplimentaryUpdate(verifiedDeletedMuseum.complimentary_plan), stripe_subscription_id: null })
+        .eq('id', museumId)
+      await supabase.from('activity_log').insert({
+        museum_id: museumId,
+        action_type: 'plan_downgraded',
+        description: `Subscription ended. Back on the complimentary ${PLANS[verifiedDeletedMuseum.complimentary_plan].label} plan.`,
+      })
+      try {
+        await syncSubscriptionToMirror({ supabase, museumId, subscription })
+      } catch (err) {
+        console.error('[webhook] could not sync ended subscription:', err instanceof Error ? err.message : err)
+      }
+      return NextResponse.json({ received: true })
+    }
 
     // The museum drops to Community straight away: dashboard and public site
     // stay up, nothing is locked and nothing is deleted today. Whatever is over

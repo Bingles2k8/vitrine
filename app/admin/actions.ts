@@ -9,7 +9,22 @@ import { stripe } from '@/lib/stripe'
 import { r2, r2PathFromUrl, DeleteObjectsCommand, ListObjectsV2Command } from '@/lib/r2'
 import { cancelSubscription } from '@/lib/billing/cancel'
 import { renderCancellationEmail } from '@/lib/billing/cancellationEmail'
-import { tryDescribeOverage } from '@/lib/billing/downgrade'
+import {
+  communityLimitsSummary,
+  describeOverage,
+  hasOverage,
+  measureOverage,
+  purgeDate,
+  tryDescribeOverage,
+} from '@/lib/billing/downgrade'
+import {
+  COMPLIMENTARY_RETENTION_DAYS,
+  grantComplimentaryUpdate,
+  isComplimentaryPlan,
+  revokeComplimentaryUpdate,
+} from '@/lib/billing/complimentary'
+import { renderDowngradeEmail } from '@/lib/billing/downgradeEmail'
+import { getPlan, type PlanId } from '@/lib/plans'
 import { sendComplianceEmail } from '@/lib/email/send'
 import { renderNudgeEmail, nudgeVariant, type NudgeVariant } from '@/lib/email/nudge'
 import { signUnsubscribeToken, signUserUnsubscribeToken } from '@/lib/emailTokens'
@@ -176,6 +191,86 @@ export async function toggleTestAccount(museumId: string, currentValue: boolean)
     .eq('id', museumId)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
+}
+
+/**
+ * Give a museum a paid plan for free, indefinitely, or take it away.
+ *
+ * Granting refuses a museum with a live Stripe subscription: cancel that first,
+ * or the customer keeps being charged for something they now get free.
+ * Removing is treated like a paid subscription ending. The museum moves to
+ * Community, anything over the limit gets the 180-day window, and the owner is
+ * emailed what is over and when it goes, as on any other downgrade.
+ */
+export async function setComplimentaryPlan(museumId: string, planId: string | null) {
+  await assertAdmin()
+  const admin = adminClient()
+
+  const { data: museum, error: fetchError } = await admin
+    .from('museums')
+    .select('id, name, owner_id, plan, stripe_subscription_id, complimentary_plan')
+    .eq('id', museumId)
+    .maybeSingle()
+  if (fetchError) throw new Error(fetchError.message)
+  if (!museum) throw new Error('Museum not found')
+
+  if (planId !== null) {
+    if (!isComplimentaryPlan(planId)) throw new Error(`Not a plan that can be given free: ${planId}`)
+    if (museum.stripe_subscription_id) {
+      throw new Error('This museum has a live Stripe subscription. Cancel it first, then grant the complimentary plan.')
+    }
+    const { error } = await admin.from('museums').update(grantComplimentaryUpdate(planId)).eq('id', museumId)
+    if (error) throw new Error(error.message)
+    await admin.from('activity_log').insert({
+      museum_id: museumId,
+      action_type: 'complimentary_granted',
+      description: `Complimentary ${getPlan(planId).label} plan granted by admin.`,
+    })
+  } else if (museum.complimentary_plan) {
+    const now = new Date()
+    let overageLines: string[]
+    let isOver: boolean
+    try {
+      const overage = await measureOverage(admin, museumId)
+      overageLines = describeOverage(overage)
+      isOver = hasOverage(overage)
+    } catch (err) {
+      console.error('[admin setComplimentaryPlan] could not measure overage:', err instanceof Error ? err.message : err)
+      overageLines = [communityLimitsSummary()]
+      isOver = true
+    }
+    const purgeAt = isOver ? purgeDate(now, COMPLIMENTARY_RETENTION_DAYS) : null
+
+    const { error } = await admin.from('museums').update(revokeComplimentaryUpdate({ now, purgeAt })).eq('id', museumId)
+    if (error) throw new Error(error.message)
+    await admin.from('activity_log').insert({
+      museum_id: museumId,
+      action_type: 'complimentary_removed',
+      description: purgeAt
+        ? `Complimentary plan removed by admin. Moved to Community. Data over Community's limits will be deleted on ${purgeAt.toISOString().slice(0, 10)}.`
+        : `Complimentary plan removed by admin. Moved to Community. Nothing is over Community's limits.`,
+    })
+
+    const { data: owner } = museum.owner_id
+      ? await admin.auth.admin.getUserById(museum.owner_id)
+      : { data: null }
+    const ownerEmail = owner?.user?.email
+    if (ownerEmail) {
+      const { subject, html } = renderDowngradeEmail({
+        museumName: museum.name ?? null,
+        trialOnly: false,
+        complimentaryPlanLabel: getPlan(museum.complimentary_plan as PlanId).label,
+        overageLines: purgeAt ? overageLines : [],
+        purgeAt: purgeAt?.toISOString() ?? null,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com',
+      })
+      const sent = await sendComplianceEmail({ to: ownerEmail, subject, html })
+      if (sent.error) console.error('[admin setComplimentaryPlan] downgrade email failed:', sent.error)
+    }
+  }
+
+  revalidatePath('/admin')
+  revalidatePath(`/admin/${museumId}`)
 }
 
 /**

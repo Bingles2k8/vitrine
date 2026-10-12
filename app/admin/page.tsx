@@ -35,7 +35,8 @@ function daysAgoLabel(iso: string): string {
   return `${days} days ago`
 }
 
-function subStatus(plan: string, stripeSubId: string | null, pastDue: boolean) {
+function subStatus(plan: string, stripeSubId: string | null, pastDue: boolean, complimentary: string | null) {
+  if (complimentary && !stripeSubId)        return { label: 'comp',      cls: 'text-emerald-600' }
   if (plan === 'community' && !stripeSubId) return { label: 'free',      cls: 'text-gray-400' }
   if (plan === 'community' && stripeSubId)  return { label: 'cancelled', cls: 'text-gray-400 line-through' }
   if (pastDue)                              return { label: 'past due',  cls: 'text-red-500 font-medium' }
@@ -74,7 +75,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   ] = await Promise.all([
     admin
       .from('museums')
-      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id, is_test_account, reengage_opt_out, reengage_a3_sent_at, reengage_a7_sent_at, reengage_a30_sent_at, reengage_b30_sent_at, reengage_b180_sent_at, deletion_warning_30d_sent_at, deletion_warning_7d_sent_at')
+      .select('id, name, slug, plan, owner_id, created_at, discoverable, payment_past_due, stripe_subscription_id, complimentary_plan, is_test_account, reengage_opt_out, reengage_a3_sent_at, reengage_a7_sent_at, reengage_a30_sent_at, reengage_b30_sent_at, reengage_b180_sent_at, deletion_warning_30d_sent_at, deletion_warning_7d_sent_at')
       .order('created_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('objects').select('museum_id'),
@@ -189,11 +190,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return acc
   }, {})
   const pastDueCount = rows.filter(m => m.payment_past_due).length
-  const paidCount    = rows.filter(m => m.plan !== 'community').length
+  // Complimentary plans are paid tiers nobody pays for: not revenue.
+  const paidCount    = rows.filter(m => m.plan !== 'community' && !(m.complimentary_plan && !m.stripe_subscription_id)).length
   const totalObjects = hideTest
     ? (objects ?? []).filter(o => o.museum_id && !testMuseumIds.has(o.museum_id)).length
     : (objects?.length ?? 0)
-  const mrr = rows.reduce((sum, m) => sum + (PLAN_MRR[m.plan] ?? 0), 0)
+  const mrr = rows.reduce((sum, m) => sum + (m.complimentary_plan && !m.stripe_subscription_id ? 0 : (PLAN_MRR[m.plan] ?? 0)), 0)
 
   return (
     <div className="min-h-screen bg-white p-6 font-sans">
@@ -277,7 +279,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const isEmpty    = objCount === 0
                 const lastActive = lastActivityByMuseum.get(m.id)
                 const lastLogin  = lastLoginForMuseum(m.id, m.owner_id)
-                const status     = subStatus(m.plan, m.stripe_subscription_id, m.payment_past_due)
+                const status     = subStatus(m.plan, m.stripe_subscription_id, m.payment_past_due, m.complimentary_plan)
                 const isTest     = m.is_test_account
                 const owner      = authUserById.get(m.owner_id)
                 const lastEmailed = lastEmailedForMuseum(m)

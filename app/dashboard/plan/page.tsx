@@ -250,6 +250,8 @@ export default function PlanPage() {
   // tier. That tier is not current: the customer must be able to subscribe to
   // it again, and there is nothing left to manage, downgrade or cancel.
   const lapsed = !!museum?.lock_reason && !museum?.stripe_subscription_id
+  // A paid plan we gave them free. Nothing to manage, cancel or subscribe to.
+  const complimentary = !!museum?.complimentary_plan && !museum?.stripe_subscription_id
   const trialEndDate = museum?.trial_used_at ? new Date(museum.trial_used_at) : null
   const isTrialing = !!trialEndDate && trialEndDate.getTime() > Date.now()
   const trialEligible = !!museum
@@ -297,6 +299,16 @@ export default function PlanPage() {
                 <button onClick={() => handleManageSubscription()} className="underline hover:no-underline">
                   your billing portal
                 </button>.
+              </p>
+            </div>
+          )}
+          {complimentary && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-mono">
+                Your museum is on a complimentary{' '}
+                <span className="font-medium">{getPlan(currentPlan).label}</span> plan. There is nothing to pay
+                and it does not expire. To change it, email{' '}
+                <a href="mailto:support@vitrinecms.com" className="underline hover:no-underline">support@vitrinecms.com</a>.
               </p>
             </div>
           )}
@@ -378,7 +390,9 @@ export default function PlanPage() {
               ) : (
                 <>You are currently on the <span className="font-medium text-stone-900 dark:text-stone-100 capitalize">{currentPlan}</span> plan.</>
               )}
-              {lapsed ? null : currentPlan === 'community' ? (
+              {lapsed ? null : complimentary ? (
+                <span> It is complimentary, so there is nothing to pay.</span>
+              ) : currentPlan === 'community' ? (
                 <span> Upgrade to unlock more features and higher collection limits.</span>
               ) : currentPlan !== 'enterprise' ? (
                 <span> Manage your subscription or switch plans below.</span>
@@ -429,7 +443,7 @@ export default function PlanPage() {
                         <div className="w-full text-center text-xs font-mono py-2 rounded border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500">
                           Current plan
                         </div>
-                        {currentPlan !== 'community' && currentPlan !== 'enterprise' && isOwner && (
+                        {currentPlan !== 'community' && currentPlan !== 'enterprise' && isOwner && !complimentary && (
                           <>
                             <button
                               onClick={() => handleManageSubscription()}
@@ -476,7 +490,7 @@ export default function PlanPage() {
                           </p>
                         </>
                       ) : null
-                    ) : isOwner ? (
+                    ) : isOwner && !complimentary ? (
                       museum?.stripe_subscription_id ? (
                         <>
                           <button
