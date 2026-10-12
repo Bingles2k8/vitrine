@@ -233,6 +233,16 @@ export async function POST(request: Request) {
         : `${everPaid ? 'Subscription' : 'Trial'} ended. Moved to Community. Nothing is over Community's limits.`,
     })
 
+    // Mark the mirror row ended. Left as active or trialing, the notices cron
+    // keeps sending renewal reminders until the nightly reconciliation catches
+    // up, and it dispatches before it reconciles. After the downgrade so a
+    // failure here cannot leave the museum on its old plan.
+    try {
+      await syncSubscriptionToMirror({ supabase, museumId, subscription })
+    } catch (err) {
+      console.error('[webhook] could not sync ended subscription:', err instanceof Error ? err.message : err)
+    }
+
     let ownerEmail: string | null = null
     if (verifiedDeletedMuseum.owner_id) {
       const { data: ownerUser } = await supabase.auth.admin.getUserById(verifiedDeletedMuseum.owner_id)

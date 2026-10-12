@@ -273,6 +273,26 @@ describe('POST /api/stripe/webhook', () => {
     })
   })
 
+  it('marks the mirror row ended so no renewal reminders go out for it', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: true }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: { object: makeSub({ status: 'canceled', ended_at: 1791813509 }) },
+    } as unknown as Stripe.Event)
+
+    await POST(makeRequest({}))
+
+    const mirror = mockSupabaseClient.getUpsertsFor('subscriptions')
+    expect(mirror).toHaveLength(1)
+    expect(mirror[0]).toMatchObject({
+      stripe_subscription_id: 'sub_test',
+      status: 'canceled',
+      ended_at: new Date(1791813509 * 1000).toISOString(),
+    })
+  })
+
   it('schedules over-limit data for deletion 180 days out for an ex-paying customer, and says what', async () => {
     mockMeasureOverage.mockResolvedValue({ ...NO_OVERAGE, objects: 40, staff: 2 })
     mockSupabaseClient = makeMockClient([
