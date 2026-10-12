@@ -273,6 +273,31 @@ describe('POST /api/stripe/webhook', () => {
     })
   })
 
+  it('puts a complimentary museum back on its free plan instead of Community', async () => {
+    mockSupabaseClient = makeMockClient([
+      { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: true, complimentary_plan: 'hobbyist' }, error: null },
+    ])
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: { object: makeSub({ status: 'canceled' }) },
+    } as unknown as Stripe.Event)
+
+    const res = await POST(makeRequest({}))
+
+    expect(res.status).toBe(200)
+    const updates = mockSupabaseClient.getUpdatesFor('museums')
+    expect(updates).toHaveLength(1)
+    expect(updates[0]).toMatchObject({
+      plan: 'hobbyist',
+      complimentary_plan: 'hobbyist',
+      stripe_subscription_id: null,
+      over_limit_purge_at: null,
+    })
+    expect(mockMeasureOverage).not.toHaveBeenCalled()
+    expect(mockEmailSend).not.toHaveBeenCalled()
+    expect(mockSupabaseClient.getUpsertsFor('subscriptions')[0]).toMatchObject({ status: 'canceled' })
+  })
+
   it('marks the mirror row ended so no renewal reminders go out for it', async () => {
     mockSupabaseClient = makeMockClient([
       { data: { id: 'museum-uuid', name: 'Test', slug: 't', owner_id: 'owner-1', ever_paid: true }, error: null },

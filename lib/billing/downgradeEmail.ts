@@ -37,6 +37,8 @@ function button(href: string, label: string): string {
 export function renderDowngradeEmail(input: Common & {
   /** True if the museum only ever trialled. */
   trialOnly: boolean
+  /** Set when what ended was a complimentary plan rather than a subscription. */
+  complimentaryPlanLabel?: string
 }): { subject: string; html: string } {
   const name = input.museumName ?? 'your museum'
   const planUrl = `${input.siteUrl}/dashboard/plan`
@@ -47,9 +49,11 @@ export function renderDowngradeEmail(input: Common & {
     ? `${input.museumName ?? 'Your museum'} is now on Community: some data will be deleted on ${formatBillingDate(input.purgeAt!)}`
     : `${input.museumName ?? 'Your museum'} is now on the free Community plan`
 
-  const opening = input.trialOnly
-    ? `Your free trial for <strong>${esc(name)}</strong> has ended without a subscription, so your museum has moved to the free Community plan.`
-    : `Your Vitrine subscription for <strong>${esc(name)}</strong> has ended, so your museum has moved to the free Community plan.`
+  const opening = input.complimentaryPlanLabel
+    ? `Your complimentary ${esc(input.complimentaryPlanLabel)} plan for <strong>${esc(name)}</strong> has ended, so your museum has moved to the free Community plan.`
+    : input.trialOnly
+      ? `Your free trial for <strong>${esc(name)}</strong> has ended without a subscription, so your museum has moved to the free Community plan.`
+      : `Your Vitrine subscription for <strong>${esc(name)}</strong> has ended, so your museum has moved to the free Community plan.`
 
   const body = over
     ? `<p style="margin:0 0 16px">Community has lower limits than your previous plan. This is over them:</p>
@@ -62,7 +66,7 @@ export function renderDowngradeEmail(input: Common & {
   <p style="margin:0 0 16px">Hello,</p>
   <p style="margin:0 0 16px">${opening} Your dashboard and public site stay online with Community's features.</p>
   ${body}
-  ${button(planUrl, input.trialOnly ? 'Choose a plan' : 'Resubscribe')}
+  ${button(planUrl, input.trialOnly || input.complimentaryPlanLabel ? 'Choose a plan' : 'Resubscribe')}
   <p style="margin:0 0 16px">If you would rather keep a copy yourself, you can <a href="${esc(exportUrl)}" style="color:#b45309">download your whole collection</a> at any time, including every image and document.</p>
   <p style="margin:0 0 16px">If any of this is wrong, just reply to this email.</p>
   ${WRAP_CLOSE}`

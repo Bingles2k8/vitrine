@@ -6,6 +6,7 @@ import { createServerSideClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { DeleteUserButton } from '../DeleteUserModal'
 import { TestAccountToggle } from '../TestAccountToggle'
+import { ComplimentaryPlanControl } from '../ComplimentaryPlanControl'
 import BillingHistory from './BillingHistory'
 
 const PLAN_COLOURS: Record<string, string> = {
@@ -127,6 +128,11 @@ export default async function AdminMuseumDetailPage({
               <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${PLAN_COLOURS[museum.plan] ?? 'bg-gray-100 text-gray-600'}`}>
                 {museum.plan}
               </span>
+              {museum.complimentary_plan && (
+                <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700">
+                  complimentary
+                </span>
+              )}
               <TestAccountToggle museumId={museum.id} isTest={!!museum.is_test_account} />
             </div>
             <div className="text-sm text-gray-500 font-mono">
@@ -198,6 +204,16 @@ export default async function AdminMuseumDetailPage({
 
           <Section title="Billing">
             <DL>
+              <Row
+                k="Complimentary plan"
+                v={
+                  <ComplimentaryPlanControl
+                    museumId={museum.id}
+                    current={museum.complimentary_plan ?? null}
+                    hasSubscription={!!museum.stripe_subscription_id}
+                  />
+                }
+              />
               <Row k="Stripe customer" v={museum.stripe_customer_id ? <code className="text-xs">{museum.stripe_customer_id}</code> : '—'} />
               <Row k="Stripe subscription" v={museum.stripe_subscription_id ? <code className="text-xs">{museum.stripe_subscription_id}</code> : '—'} />
               <Row k="Payment past due" v={museum.payment_past_due ? <span className="text-red-600 font-medium">Yes</span> : 'No'} />
