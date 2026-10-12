@@ -205,9 +205,16 @@ describe('the keep and cancel controls carry equal visual weight', () => {
 
 describe('exactly one confirmation step', () => {
   it('submits straight from the dialogue with no second are-you-sure', () => {
-    // One fetch to the cancel endpoint, called directly by the confirm button.
-    const fetchCalls = cancelMarkup.match(/fetch\(/g) ?? []
-    expect(fetchCalls).toHaveLength(1)
+    // One POST, to the cancel endpoint, called directly by the confirm button.
+    // The dialogue also GETs the downgrade preview so it can say what is over
+    // Community's limits; that is information shown, not a step to confirm.
+    const cancelCalls = cancelMarkup.match(/fetch\('\/api\/subscription\/cancel'/g) ?? []
+    expect(cancelCalls).toHaveLength(1)
+    const posts = cancelMarkup.match(/method: 'POST'/g) ?? []
+    expect(posts).toHaveLength(1)
+    const otherFetches = (cancelMarkup.match(/fetch\('([^']+)'/g) ?? [])
+      .filter(call => !call.includes('/api/subscription/cancel'))
+    expect(otherFetches).toEqual(["fetch('/api/subscription/downgrade-preview'"])
     expect(cancelMarkup).toMatch(/onClick: submit|onClick=\{submit\}/)
     // window.confirm would be a second dialogue on top of this one.
     expect(cancelMarkup).not.toMatch(/window\.confirm|confirm\(/)

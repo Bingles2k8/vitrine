@@ -108,4 +108,50 @@ describe('POST /api/stripe/portal', () => {
       await expect(res.json()).resolves.toHaveProperty('error')
     }
   })
+
+  describe('change-plan flow', () => {
+    const req = (body: unknown) => new Request('http://localhost/api/stripe/portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    beforeEach(() => {
+      maybeSingle.mockResolvedValue({
+        data: { stripe_customer_id: 'cus_x', stripe_subscription_id: 'sub_x', owner_id: 'user-1' },
+      })
+    })
+
+    it('opens the portal on the change-plan screen for the subscription', async () => {
+      portalCreate.mockResolvedValue({ url: 'https://billing.stripe.com/session/update' })
+
+      const res = await POST(req({ flow: 'update' }))
+      expect(res.status).toBe(200)
+      expect(portalCreate).toHaveBeenCalledTimes(1)
+      expect(portalCreate.mock.calls[0][0].flow_data).toMatchObject({
+        type: 'subscription_update',
+        subscription_update: { subscription: 'sub_x' },
+      })
+    })
+
+    it('falls back to the portal home when plan changes are not enabled in Stripe', async () => {
+      portalCreate
+        .mockRejectedValueOnce(new Error('This feature is not enabled in your portal configuration'))
+        .mockResolvedValueOnce({ url: 'https://billing.stripe.com/session/home' })
+
+      const res = await POST(req({ flow: 'update' }))
+      expect(res.status).toBe(200)
+      await expect(res.json()).resolves.toEqual({ url: 'https://billing.stripe.com/session/home' })
+      expect(portalCreate.mock.calls[1][0].flow_data).toBeUndefined()
+    })
+
+    it('ignores the flow when there is no subscription to change', async () => {
+      maybeSingle.mockResolvedValue({ data: { stripe_customer_id: 'cus_x', stripe_subscription_id: null, owner_id: 'user-1' } })
+      portalCreate.mockResolvedValue({ url: 'https://billing.stripe.com/session/home' })
+
+      await POST(req({ flow: 'update' }))
+      expect(portalCreate).toHaveBeenCalledTimes(1)
+      expect(portalCreate.mock.calls[0][0].flow_data).toBeUndefined()
+    })
+  })
 })

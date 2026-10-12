@@ -28,7 +28,7 @@ import { formatBillingDate } from './coolingOff'
  * customer disputes what they were told we can identify the exact version they
  * saw rather than guessing from the current code.
  */
-export const KEY_CONTRACT_INFO_VERSION = '2026-08-11.1'
+export const KEY_CONTRACT_INFO_VERSION = '2026-10-05.1'
 
 export type KeyContractTerm = {
   label: string
@@ -114,7 +114,7 @@ export function buildKeyContractInfo(args: {
     {
       label: 'What happens to your collection if you cancel',
       value:
-        'Nothing is deleted. Your account becomes read-only and you can download a full copy at any time. Records are kept for 180 days if you have paid, or 30 days if you only used a free trial, and we email you before anything is removed.',
+        'Your museum moves to the free Community plan and stays online. Nothing is deleted when your plan ends. Anything over Community\'s limits (100 objects, 1 photo per object, no document storage, no staff accounts besides the owner, no share links) is kept for 180 days if you have paid, or 30 days if you only used a free trial, and then deleted, most recently added first. We email you before that happens, and resubscribing before then keeps everything. You can download a full copy at any time.',
     },
   ]
 

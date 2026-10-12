@@ -41,7 +41,7 @@ export type CancelResult =
       currency: string | null
       customerEmail: string | null
       museumName: string | null
-      /** Days the collection is retained after service ends. */
+      /** Days data over Community's limits is kept after service ends. */
       retentionDays: number
     }
   | { ok: false; error: string; status: number }

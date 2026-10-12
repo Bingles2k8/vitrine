@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { describeOverage, measureOverage } from '@/lib/billing/downgrade'
+import { renderPurgeWarningEmail } from '@/lib/billing/downgradeEmail'
+import { sendComplianceEmail } from '@/lib/email/send'
 
 // Daily cron: sends 30-day and 7-day deletion warning emails to locked
 // museums. Idempotent via `deletion_warning_30d_sent_at` /
@@ -10,6 +13,12 @@ import { Resend } from 'resend'
 // The final "your account has been deleted" email is sent inline by the
 // account-deletion cron (see ../account-deletion/route.ts) immediately
 // before each deletion.
+//
+// Also sends the 30 and 7 day reminders before data over Community's limits is
+// deleted from a museum that dropped to Community (over_limit_purge_at), via
+// purge_warning_30d_sent_at / purge_warning_7d_sent_at. Each reminder
+// re-measures, so it lists what is over on the day, and is skipped if the
+// owner has already brought the museum within the limits.
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -131,10 +140,70 @@ export async function GET(request: Request) {
   sent30 = await sendFor(due30, 'deletion_warning_30d_sent_at')
   sent7 = await sendFor(due7, 'deletion_warning_7d_sent_at')
 
+  // ---- Over-limit purge reminders, 30 and 7 days out --------------------
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vitrinecms.com'
+
+  async function sendPurgeWarnings(
+    flagColumn: 'purge_warning_30d_sent_at' | 'purge_warning_7d_sent_at',
+    from: string,
+    to: string,
+  ): Promise<{ checked: number; sent: number }> {
+    const { data: museums } = await service
+      .from('museums')
+      .select('id, name, owner_id, over_limit_purge_at')
+      .is(flagColumn, null)
+      .not('over_limit_purge_at', 'is', null)
+      .gte('over_limit_purge_at', from)
+      .lte('over_limit_purge_at', to)
+      .limit(500)
+
+    let sent = 0
+    for (const m of museums ?? []) {
+      if (!m.owner_id || !m.over_limit_purge_at) continue
+      try {
+        const lines = describeOverage(await measureOverage(service, m.id))
+        // Already within the limits: nothing will be deleted, so no warning.
+        if (lines.length === 0) continue
+
+        const { data: owner } = await service.auth.admin.getUserById(m.owner_id)
+        const email = owner?.user?.email
+        if (!email) continue
+
+        const { subject, html } = renderPurgeWarningEmail({
+          museumName: m.name,
+          overageLines: lines,
+          purgeAt: m.over_limit_purge_at as string,
+          daysLeft: daysBetween(m.over_limit_purge_at as string),
+          siteUrl,
+        })
+        const result = await sendComplianceEmail({ to: email, subject, html })
+        if (result.error) {
+          console.error(`[deletion-warnings] ${flagColumn} ${m.id}:`, result.error)
+          continue
+        }
+        await service
+          .from('museums')
+          .update({ [flagColumn]: new Date().toISOString() })
+          .eq('id', m.id)
+        sent++
+      } catch (err) {
+        console.error(`[deletion-warnings] ${flagColumn} ${m.id}:`, err)
+      }
+    }
+    return { checked: museums?.length ?? 0, sent }
+  }
+
+  const purge30 = await sendPurgeWarnings('purge_warning_30d_sent_at', in29d, in31d)
+  const purge7 = await sendPurgeWarnings('purge_warning_7d_sent_at', in6d, in8d)
+
   return NextResponse.json({
     sent_30d: sent30,
     sent_7d: sent7,
     checked_30d: due30?.length ?? 0,
     checked_7d: due7?.length ?? 0,
+    purge_sent_30d: purge30.sent,
+    purge_sent_7d: purge7.sent,
+    purge_checked_30d: purge30.checked,
+    purge_checked_7d: purge7.checked,
   })
 }
