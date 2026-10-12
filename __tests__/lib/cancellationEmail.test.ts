@@ -80,10 +80,38 @@ describe('renderCancellationEmail', () => {
     expect(html).not.toMatch(/actioned by the Vitrine team/i)
   })
 
-  it('says access has already ended for an immediate cancellation', () => {
+  it('says the paid plan has already ended for an immediate cancellation', () => {
     const { subject, html } = renderCancellationEmail({ ...base, mode: 'immediate' })
     expect(subject).toMatch(/has been cancelled/i)
-    expect(html).toMatch(/access ended/i)
+    expect(html).toMatch(/paid plan ended/i)
+    expect(html).toMatch(/has moved to the free Community plan/)
+  })
+
+  it('says the museum moves to Community, not that it is locked', () => {
+    const { html } = renderCancellationEmail(base)
+    expect(html).toMatch(/moves to the free Community plan/)
+    expect(html).not.toMatch(/locked|read-only|stops being visible/i)
+  })
+
+  it('lists what is over Community’s limits and when it is deleted', () => {
+    const { html } = renderCancellationEmail({
+      ...base,
+      overageLines: ['12 objects, the most recently added (Community allows 100)'],
+    })
+    expect(html).toContain('12 objects, the most recently added')
+    expect(html).toMatch(/<strong>180 days<\/strong> after your plan ends is permanently deleted/)
+    expect(html).toMatch(/added most recently/)
+  })
+
+  it('says nothing will be deleted when everything fits within Community', () => {
+    const { html } = renderCancellationEmail({ ...base, overageLines: [] })
+    expect(html).toMatch(/nothing will be deleted/)
+    expect(html).not.toMatch(/permanently deleted/)
+  })
+
+  it('states Community’s limits when the overage could not be measured', () => {
+    const { html } = renderCancellationEmail(base)
+    expect(html).toMatch(/100 objects, 1 photo per object, no document storage/)
   })
 
   it('escapes a museum name containing HTML', () => {
