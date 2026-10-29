@@ -80,7 +80,7 @@ export default function TrashPage() {
         .eq('museum_id', museum!.id)
         .is('deleted_at', null)
       if ((count ?? 0) >= planInfo.objects) {
-        toast(`Your ${planInfo.label} plan allows up to ${planInfo.objects.toLocaleString()} objects. Delete items permanently to free up space.`, 'error')
+        toast(`Your ${planInfo.label} plan allows up to ${planInfo.objects.toLocaleString()} objects, and items in the bin don't count. Upgrade your plan, or move another item to the bin, to restore this one.`, 'error')
         return
       }
     }

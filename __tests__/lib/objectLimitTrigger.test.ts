@@ -7,7 +7,7 @@ import { PLANS, type PlanId } from '@/lib/plans'
 // once, capping paying Hobbyist customers at 500 objects when the plan sells
 // 1,000. This reads the current definition and checks it against lib/plans.ts.
 const sql = readFileSync(
-  path.resolve(__dirname, '../../supabase/community-downgrade-2026-10-05.sql'),
+  path.resolve(__dirname, '../../supabase/object-limit-restore-2026-10-29.sql'),
   'utf8'
 )
 
@@ -27,5 +27,10 @@ describe('enforce_object_limit trigger', () => {
 
   it('counts only objects that are not in the bin, like insert_object_if_quota_ok', () => {
     expect(fn).toMatch(/deleted_at IS NULL/)
+  })
+
+  it('also runs when an object is restored from the bin', () => {
+    expect(fn).toMatch(/BEFORE INSERT OR UPDATE OF deleted_at ON public\.objects/)
+    expect(fn).toMatch(/OLD\.deleted_at IS NOT NULL AND NEW\.deleted_at IS NULL/)
   })
 })
