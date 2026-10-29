@@ -643,13 +643,20 @@ export default function EntryRegisterPage() {
                   <div className="h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
                   </div>
+                  {count >= limit && (
+                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                      You&apos;ve reached the {limit.toLocaleString()}-object limit on the {planInfo.label} plan. Upgrade to add more.
+                    </p>
+                  )}
                 </div>
                 {pct >= 80 && (
                   <button
                     onClick={() => router.push('/dashboard/plan')}
-                    className="text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors"
+                    className={count >= limit
+                      ? 'text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded whitespace-nowrap transition-colors'
+                      : 'text-xs font-mono text-amber-600 hover:text-amber-700 dark:hover:text-amber-500 whitespace-nowrap transition-colors'}
                   >
-                    Upgrade →
+                    {count >= limit ? 'See plans →' : 'Upgrade →'}
                   </button>
                 )}
               </div>
