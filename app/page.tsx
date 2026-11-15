@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
-import PublicFooter from '@/components/PublicFooter'
-import PublicNav from '@/components/PublicNav'
+import { Newsreader } from 'next/font/google'
 import { buildPageMetadata, SITE_URL } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
-import HomeMockup from '@/components/HomeMockup'
-import HomeSections from '@/components/HomeSections'
-import ClockHero from '@/components/hero/ClockHero'
+import styles from './afterhours.module.css'
+import Nav from '@/components/afterhours/Nav'
+import Footer from '@/components/afterhours/Footer'
+import Hero from '@/components/afterhours/Hero'
+import Pricing from '@/components/afterhours/Pricing'
+import { Closing, Features, Featured, Who } from '@/components/afterhours/Sections'
 
 export const revalidate = 3600
+
+const newsreader = Newsreader({
+  variable: '--font-newsreader',
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+})
 
 export const metadata = buildPageMetadata({
   title: 'Vitrine – Collection Management App for Museums & Collectors',
@@ -138,24 +147,18 @@ export default async function Home() {
   const featured = await getFeaturedCollections()
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100">
+    <div className={`${styles.root} ${newsreader.variable}`}>
       <JsonLd data={organizationSchema} />
+      <div className="grain" aria-hidden="true" />
 
-      <PublicNav />
-
-      <ClockHero />
-
-      {/* The product shot the old hero carried alongside the copy. The aisle
-          needs the whole frame, so it stands on its own below it. */}
-      <section className="relative overflow-hidden px-6 pb-28 pt-4">
-        <div className="mx-auto max-w-6xl">
-          <HomeMockup />
-        </div>
-      </section>
-
-      <HomeSections featured={featured} />
-
-      <PublicFooter />
+      <Nav />
+      <Hero />
+      <Featured featured={featured} />
+      <Features />
+      <Who />
+      <Pricing />
+      <Closing />
+      <Footer />
     </div>
   )
 }
